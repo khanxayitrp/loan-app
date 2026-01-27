@@ -1,0 +1,17 @@
+/* src/assets/main.css */
+@import "tailwindcss";
+@plugin "flyonui";
+
+@import "flyonui/variants.css";
+@source "../node_modules/flyonui/flyonui.js";
+
+body {
+  font-family: 'Noto Sans Lao', sans-serif;
+}
+
+/* Debug test */
+.test-tailwind-loaded {
+  background-color: #ff0000 !important;
+}
+
+@plugin "@iconify/tailwind4";
