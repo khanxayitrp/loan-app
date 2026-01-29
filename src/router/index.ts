@@ -1,3 +1,4 @@
+
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
@@ -31,10 +32,40 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
+        path: 'changePassword',
+        name: 'ChangePassword',
+        component: () => import('@/views/auth/ChangePassword.vue'),
+        meta: {
+          requiresAuth: false,           // ต้อง login
+          bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+          permission: 'manage_users'
+        }
+      },
+      {
+        path: 'PermissionManagement',
+        name: 'PermissionManagement',
+        component: () => import('@/views/auth/PermissionManagement.vue'),
+        meta: {
+          requiresAuth: false,           // ต้อง login
+          bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+          permission: 'manage_users'
+        }
+      },
+      {
         path: 'loans',
         name: 'LoanList',
         component: () => import('@/views/loans/LoanList.vue'),
         meta: { requiresAuth: true, permission: 'view_loans' }
+      },
+      {
+        path: 'stores',
+        name: 'Stores',
+        component: () => import('@/views/shops/ShopManagement.vue'),
+         meta: {
+          requiresAuth: false,           // ต้อง login
+          bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+          permission: 'partner_manage'
+        }
       },
       // เพิ่ม route อื่น ๆ ที่ต้องการ layout และ auth ที่นี่
       {

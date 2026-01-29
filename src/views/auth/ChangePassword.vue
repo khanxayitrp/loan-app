@@ -1,16 +1,16 @@
 <!-- UserManagement.vue -->
 <template>
   <main class="p-6">
-    <h1 class="text-2xl font-bold mb-6">ຈັດການຜູ້ໃຊ້</h1>
+    <h1 class="text-2xl font-bold mb-6">ປ່ຽນລະຫັດຜ່ານ</h1>
     <div class="divider"></div>
 
-    <ListUsers />
+    <ChangePass />
 
   </main>
 </template>
 
 <script setup lang="ts">
-import ListUsers from '@/components/users/ListUsers.vue'
+import ChangePass from '@/components/users/ChangePass.vue'
 </script>
 
 <style scoped>

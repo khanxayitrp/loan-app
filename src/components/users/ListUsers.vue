@@ -1,7 +1,7 @@
 <template>
   <div class="p-6">
     <!-- Toolbar: Search + Export + Add Button -->
-    <div v-if="!isCreatingUser"
+    <div v-if="!isCreatingUser && !showStatusModal"
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <!-- Search -->
       <input v-model="searchQuery" type="text" placeholder="ຄົ້ນຫາຊື່ເຕັມ ຫຼື ຊື່ຜູ້ໃຊ້..."
@@ -19,11 +19,38 @@
     </div>
 
     <!-- Create User Form -->
-    <CreateUser
-    v-if="isCreatingUser"
-    :initial-user="editingUser"
-    @save="handleSaveUser"
-    @cancel="handleCancelCreateUser" />
+    <CreateUser v-if="isCreatingUser" :initial-user="editingUser" @save="handleSaveUser"
+      @cancel="handleCancelCreateUser" />
+
+    <!-- Modal ยืนยันเปิด/ปิดสถานะ -->
+    <!-- Modal ยืนยันเปิด/ปิดสถานะ -->
+<div v-if="showStatusModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+    <h3 class="font-bold text-lg mb-4">
+      {{ userToToggle?.is_active === 1 ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+    </h3>
+    <p class="py-4 text-gray-700 dark:text-gray-300">
+      ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການ
+      {{ userToToggle?.is_active === 1 ? 'ປິດ' : 'ເປີດ' }}
+      ການໃຊ້ງານຂອງ "{{ userToToggle?.full_name }}" ?
+    </p>
+    <div class="flex justify-end gap-3 mt-6">
+      <button
+        class="btn btn-soft btn-secondary"
+        @click="showStatusModal = false"
+      >
+        ຍົກເລີກ
+      </button>
+      <button
+        class="btn"
+        :class="userToToggle?.is_active === 1 ? 'btn-error' : 'btn-success'"
+        @click="confirmToggleStatus"
+      >
+        {{ userToToggle?.is_active === 1 ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+      </button>
+    </div>
+  </div>
+</div>
 
     <!-- Loading State -->
     <div v-if="isLoading && !isCreatingUser" class="text-center py-8">
@@ -31,7 +58,8 @@
     </div>
 
     <!-- Table -->
-    <div v-if="!isCreatingUser && !isLoading" class="w-full overflow-x-auto rounded-lg border border-base-content/10">
+    <div v-if="!isCreatingUser && !showStatusModal && !isLoading"
+      class="w-full overflow-x-auto rounded-lg border border-base-content/10">
       <table class="table table-zebra w-full min-w-max">
         <thead>
           <tr>
@@ -42,14 +70,14 @@
             <th>
               <button @click="toggleSort('full_name')" class="flex items-center gap-1 hover:text-primary">
                 ຊື່ ແລະ ນາມສະກຸນ
-                <span v-if="sortColumn === 'full_name'" class="icon-[tabler--sort-desc] size-4"
+                <span v-if="sortColumn === 'full_name'" class="icon-[tabler--arrows-sort] size-4"
                   :class="sortDirection === 'asc' ? 'rotate-180' : ''"></span>
               </button>
             </th>
             <th>
               <button @click="toggleSort('username')" class="flex items-center gap-1 hover:text-primary">
                 ຊື່ຜູ້ໃຊ້
-                <span v-if="sortColumn === 'username'" class="icon-[tabler--sort-desc] size-4"
+                <span v-if="sortColumn === 'username'" class="icon-[tabler--arrows-sort] size-4"
                   :class="sortDirection === 'asc' ? 'rotate-180' : ''"></span>
               </button>
             </th>
@@ -59,7 +87,7 @@
             <th>
               <button @click="toggleSort('created_at')" class="flex items-center gap-1 hover:text-primary">
                 ວັນທີສ້າງ
-                <span v-if="sortColumn === 'created_at'" class="icon-[tabler--sort-desc] size-4"
+                <span v-if="sortColumn === 'created_at'" class="icon-[tabler--arrows-sort] size-4"
                   :class="sortDirection === 'asc' ? 'rotate-180' : ''"></span>
               </button>
             </th>
@@ -94,9 +122,15 @@
                 <button class="btn btn-circle btn-text btn-sm" @click="deleteUser(user.id)" aria-label="Delete">
                   <span class="icon-[tabler--trash] size-4"></span>
                 </button>
-                <button class="btn btn-circle btn-text btn-sm" aria-label="Action button">
-                  <span class="icon-[tabler--dots-vertical] size-5"></span>
-                </button>
+                <!-- Dropdown สำหรับ Actions (ปุ่มสามจุด) -->
+                <div class="dropdown dropdown-end">
+                  <button tabindex="0" title="Click Active/Inactive" class="btn btn-circle btn-text btn-sm"  @click.prevent.stop="toggleUserStatus(user)">
+                    <span class="icon-[tabler--dots-vertical] size-5">
+                      {{ user.is_active === 1 ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+                    </span>
+                  </button>
+                </div>
+
               </div>
             </td>
           </tr>
@@ -110,7 +144,8 @@
     </div>
 
     <!-- Pagination Controls -->
-    <div v-if="!isCreatingUser && !isLoading" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
+    <div v-if="!isCreatingUser && !showStatusModal && !isLoading"
+      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
       <div>
         ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalUsers }} ລາຍການ
       </div>
@@ -174,6 +209,41 @@ const users = ref<User[]>([
   { id: 11, full_name: 'ອຸດົມ ສີສົມບັດ', username: 'udom2', role: 'admin', is_active: 1, created_at: '2024-02-28' },
   { id: 12, full_name: 'ຈັນດາ ວົງສີ', username: 'chanda2', role: 'staff', staff_level: 'requester', is_active: 0, created_at: '2024-03-15' }
 ])
+
+const showStatusModal = ref(false)
+const userToToggle = ref<User | null>(null)
+
+
+// ฟังก์ชันเปิด modal เปิด/ปิดสถานะ
+const toggleUserStatus = (user: User) => {
+  console.log('toggleUserStatus called with user:', user)
+  userToToggle.value = { ...user } // 👈 สร้าง copy เพื่อความปลอดภัย
+  showStatusModal.value = true
+  console.log('Modal should be open now')
+}
+
+// ยืนยันการเปิด/ปิดสถานะ
+const confirmToggleStatus = () => {
+  if (userToToggle.value) {
+    // สร้าง object ใหม่ทั้งหมดเพื่อให้ Vue ตรวจจับการเปลี่ยนแปลง
+    const updatedUser = {
+      ...userToToggle.value,
+      is_active: userToToggle.value.is_active === 1 ? 0 : 1
+    }
+
+    // อัปเดตใน array
+    const index = users.value.findIndex(u => u.id === updatedUser.id)
+    if (index !== -1) {
+      users.value[index] = updatedUser // 👈 สร้าง object ใหม่
+    }
+
+    // รีโหลดตาราง
+    refreshUsers()
+  }
+
+  showStatusModal.value = false
+  userToToggle.value = null
+}
 
 // เปิดฟอร์มเพิ่มผู้ใช้ใหม่
 const openCreateUser = () => {
