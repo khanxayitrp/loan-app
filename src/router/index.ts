@@ -67,6 +67,29 @@ const routes: RouteRecordRaw[] = [
           permission: 'partner_manage'
         }
       },
+      // เปลี่ยนเป็น 2 routes แยกกัน
+{
+  path: 'products',
+  name: 'Products',
+  component: () => import('@/views/products/ProductManagement.vue'),
+  meta: {
+    requiresAuth: false,
+    bypassAuth: true,
+    permission: 'partner_manage',
+    pageType: 'products' // 👈 เพิ่ม meta data
+  }
+},
+{
+  path: 'productTypes',
+  name: 'ProductTypes',
+  component: () => import('@/views/products/ProductManagement.vue'),
+  meta: {
+    requiresAuth: false,
+    bypassAuth: true,
+    permission: 'partner_manage',
+    pageType: 'types' // 👈 เพิ่ม meta data
+  }
+},
       // เพิ่ม route อื่น ๆ ที่ต้องการ layout และ auth ที่นี่
       {
         path: '',

@@ -119,7 +119,7 @@
                 <button class="btn btn-circle btn-text btn-sm" @click="editUser(user)" aria-label="Edit">
                   <span class="icon-[tabler--pencil] size-4"></span>
                 </button>
-                <button class="btn btn-circle btn-text btn-sm" @click="deleteUser(user.id)" aria-label="Delete">
+                <button class="btn btn-circle btn-text btn-sm text-error" @click="deleteUser(user.id)" aria-label="Delete">
                   <span class="icon-[tabler--trash] size-4"></span>
                 </button>
                 <!-- Dropdown สำหรับ Actions (ปุ่มสามจุด) -->

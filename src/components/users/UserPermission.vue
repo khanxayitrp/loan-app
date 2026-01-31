@@ -7,7 +7,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການສິດທິການເຂົ້າເຖິງຂອງຜູ້ໃຊ້</p>
       </div>
       <button class="btn btn-gradient btn-primary" @click="openAddPermissionModal">
-        <span class="icon-[tabler--plus] size-5"></span> ເພີ່ມສິດທິ
+        <span class="icon-[tabler--shield-plus] size-5"></span> ເພີ່ມສິດທິ
       </button>
     </div>
 
