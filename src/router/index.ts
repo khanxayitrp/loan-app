@@ -60,31 +60,42 @@ const routes: RouteRecordRaw[] = [
           bypassAuth: true,
           permission: 'view_loans'
         },
-  children: [
-    {
-      path: '',                    // /loans
-      name: 'LoanListAll',
-      component: () => import('@/components/loans/status/AllLoanStatusList.vue'),
-      props: { loanStatus: 'all' },   // ส่ง props ไปบอกว่าแสดงทั้งหมด
-      meta: {
-        requiresAuth: false,
-        bypassAuth: true,
-        permission: 'view_loans'
-      }
-    },
-    {
-      path: 'pendingLoans',        // /loans/pendingLoans
-      name: 'PendingLoans',
-      component: () => import('@/components/loans/status/PendingLoanList.vue'), // ใช้ component เดียวกัน
-      props: { loanStatus: 'pending' }, // ส่ง props ไปบอกว่า filter pending
-      meta: {
-        requiresAuth: false,
-        bypassAuth: true,
-        permission: 'manage_pending_loans'
-      }
-    }
-  ]
-},
+        children: [
+          {
+            path: '',                    // /loans
+            name: 'LoanListAll',
+            component: () => import('@/components/loans/status/AllLoanStatusList.vue'),
+            props: { loanStatus: 'all' },   // ส่ง props ไปบอกว่าแสดงทั้งหมด
+            meta: {
+              requiresAuth: false,
+              bypassAuth: true,
+              permission: 'view_loans'
+            }
+          },
+          {
+            path: 'pendingLoans',        // /loans/pendingLoans
+            name: 'PendingLoans',
+            component: () => import('@/components/loans/status/PendingLoanList.vue'), // ใช้ component เดียวกัน
+            props: { loanStatus: 'pending' }, // ส่ง props ไปบอกว่า filter pending
+            meta: {
+              requiresAuth: false,
+              bypassAuth: true,
+              permission: 'manage_pending_loans'
+            }
+          },
+          {
+            path: 'approvedLoans',        // /loans/approvedLoans
+            name: 'ApprovedLoans',
+            component: () => import('@/components/loans/status/ApprovedLoanList.vue'), // ใช้ component เดียวกัน
+            props: { loanStatus: 'approved' }, // ส่ง props ไปบอกว่า filter approved
+            meta: {
+              requiresAuth: false,
+              bypassAuth: true,
+              permission: 'manage_approved_loans'
+            }
+          }
+        ]
+      },
       {
         path: 'stores',
         name: 'Stores',
