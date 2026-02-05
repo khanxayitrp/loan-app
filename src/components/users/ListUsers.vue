@@ -23,34 +23,27 @@
       @cancel="handleCancelCreateUser" />
 
     <!-- Modal ยืนยันเปิด/ปิดสถานะ -->
-    <!-- Modal ยืนยันเปิด/ปิดสถานะ -->
-<div v-if="showStatusModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-    <h3 class="font-bold text-lg mb-4">
-      {{ userToToggle?.is_active === 1 ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
-    </h3>
-    <p class="py-4 text-gray-700 dark:text-gray-300">
-      ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການ
-      {{ userToToggle?.is_active === 1 ? 'ປິດ' : 'ເປີດ' }}
-      ການໃຊ້ງານຂອງ "{{ userToToggle?.full_name }}" ?
-    </p>
-    <div class="flex justify-end gap-3 mt-6">
-      <button
-        class="btn btn-soft btn-secondary"
-        @click="showStatusModal = false"
-      >
-        ຍົກເລີກ
-      </button>
-      <button
-        class="btn"
-        :class="userToToggle?.is_active === 1 ? 'btn-error' : 'btn-success'"
-        @click="confirmToggleStatus"
-      >
-        {{ userToToggle?.is_active === 1 ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
-      </button>
+    <div v-if="showStatusModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+        <h3 class="font-bold text-lg mb-4">
+          {{ userToToggle?.is_active === true ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+        </h3>
+        <p class="py-4 text-gray-700 dark:text-gray-300">
+          ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການ
+          {{ userToToggle?.is_active === true ? 'ປິດ' : 'ເປີດ' }}
+          ການໃຊ້ງານຂອງ "{{ userToToggle?.full_name }}" ?
+        </p>
+        <div class="flex justify-end gap-3 mt-6">
+          <button class="btn btn-soft btn-secondary" @click="showStatusModal = false">
+            ຍົກເລີກ
+          </button>
+          <button class="btn" :class="userToToggle?.is_active === true ? 'btn-error' : 'btn-success'"
+            @click="confirmToggleStatus">
+            {{ userToToggle?.is_active === true ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
     <!-- Loading State -->
     <div v-if="isLoading && !isCreatingUser" class="text-center py-8">
@@ -110,27 +103,25 @@
             <td>{{ user.staff_level || 'N/A' }}</td>
             <td>
               <span class="badge badge-soft" :class="getIsActiveBadgeClass(user.is_active)">
-                {{ user.is_active === 1 ? 'Active' : 'Inactive' }}
+                {{ user.is_active === true ? 'Active' : 'Inactive' }}
               </span>
             </td>
-            <td>{{ formatDate(user.created_at) }}</td>
+            <td>{{ formatDate(user.createdAt) }}</td>
             <td>
               <div class="flex gap-1">
                 <button class="btn btn-circle btn-text btn-sm" @click="editUser(user)" aria-label="Edit">
                   <span class="icon-[tabler--pencil] size-4"></span>
                 </button>
-                <button class="btn btn-circle btn-text btn-sm text-error" @click="deleteUser(user.id)" aria-label="Delete">
+                <button class="btn btn-circle btn-text btn-sm text-error" @click="deleteUser(user.id)"
+                  aria-label="Delete">
                   <span class="icon-[tabler--trash] size-4"></span>
                 </button>
-                <!-- Dropdown สำหรับ Actions (ปุ่มสามจุด) -->
                 <div class="dropdown dropdown-end">
-                  <button tabindex="0" title="Click Active/Inactive" class="btn btn-circle btn-text btn-sm"  @click.prevent.stop="toggleUserStatus(user)">
-                    <span class="icon-[tabler--dots-vertical] size-5">
-                      {{ user.is_active === 1 ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
-                    </span>
+                  <button tabindex="0" title="Click Active/Inactive" class="btn btn-circle btn-text btn-sm"
+                    @click.prevent.stop="toggleUserStatus(user)">
+                    <span class="icon-[tabler--dots-vertical] size-5"></span>
                   </button>
                 </div>
-
               </div>
             </td>
           </tr>
@@ -178,14 +169,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import Papa from 'papaparse'
 import type { User } from '@/types/auth'
 import CreateUser from './CreateUser.vue'
+import { useAuthStore } from '@/stores/auth'
+
+// ✅ ใช้ auth store
+const authStore = useAuthStore()
 
 // Reactive state
 const isCreatingUser = ref(false)
-const editingUser = ref<User | null>(null) // เก็บข้อมูลผู้ใช้ที่กำลังแก้ไข
+const editingUser = ref<User | null>(null)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -194,112 +189,140 @@ const isLoading = ref(false)
 const sortColumn = ref<keyof User | null>(null)
 const sortDirection = ref<'asc' | 'desc'>('asc')
 
-// Mock data
-const users = ref<User[]>([
-  { id: 1, full_name: 'ສົມຊາຍ ພົນສຸກ', username: 'somchai', role: 'admin', is_active: 1, created_at: '2024-01-15' },
-  { id: 2, full_name: 'ສົມສິງ ດຳດີ', username: 'somsing', role: 'staff', staff_level: 'requester', is_active: 1, created_at: '2024-02-20' },
-  { id: 3, full_name: 'ອຸດົມ ສີສົມບັດ', username: 'udom', role: 'partner', is_active: 1, created_at: '2024-03-10' },
-  { id: 4, full_name: 'ຈັນດາ ວົງສີ', username: 'chanda', role: 'customer', is_active: 0, created_at: '2024-01-30' },
-  { id: 5, full_name: 'ບຸນເຊີຍ ສຸກສົມ', username: 'bunsouy', role: 'staff', staff_level: 'approver', is_active: 1, created_at: '2024-02-05' },
-  { id: 6, full_name: 'ນາງ ພົນທອງ', username: 'nang', role: 'customer', is_active: 1, created_at: '2024-03-25' },
-  { id: 7, full_name: 'ໄຊສົມບັດ ສີຫາວ', username: 'saisombath', role: 'admin', is_active: 1, created_at: '2024-01-20' },
-  { id: 8, full_name: 'ມາລີ ສົມບຸນ', username: 'mali', role: 'partner', is_active: 0, created_at: '2024-02-15' },
-  { id: 9, full_name: 'ວິໄລ ສີສົມ', username: 'vilay', role: 'staff', staff_level: 'none', is_active: 1, created_at: '2024-03-05' },
-  { id: 10, full_name: 'ສົມບຸນ ພົນສຸກ', username: 'somboun', role: 'customer', is_active: 1, created_at: '2024-01-25' },
-  { id: 11, full_name: 'ອຸດົມ ສີສົມບັດ', username: 'udom2', role: 'admin', is_active: 1, created_at: '2024-02-28' },
-  { id: 12, full_name: 'ຈັນດາ ວົງສີ', username: 'chanda2', role: 'staff', staff_level: 'requester', is_active: 0, created_at: '2024-03-15' }
-])
-
+// Modal state
 const showStatusModal = ref(false)
 const userToToggle = ref<User | null>(null)
 
+// ✅ ดึงข้อมูล users จาก store
+const users = computed(() => authStore.allUsers)
 
-// ฟังก์ชันเปิด modal เปิด/ปิดสถานะ
+
+// ✅ Fetch users จาก API เมื่อ component โหลด
+const fetchUsers = async () => {
+  isLoading.value = true
+  try {
+    await authStore.fetchAllUsers()
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    alert('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນຜູ້ໃຊ້')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// ✅ เรียกครั้งแรกเมื่อ component mount
+onMounted(() => {
+  fetchUsers()
+ console.log('ListUsers component mounted, fetching users...', users.value)
+ console.log('Current user from store:', useAuthStore.allUsers) // debug เพื่อดูข้อมูล users ที่ได้จาก store
+
+})
+
+// ฟังก์ชันเปิด modal เปิด/ปิดสถานະ
 const toggleUserStatus = (user: User) => {
   console.log('toggleUserStatus called with user:', user)
-  userToToggle.value = { ...user } // 👈 สร้าง copy เพื่อความปลอดภัย
+  userToToggle.value = { ...user }
   showStatusModal.value = true
-  console.log('Modal should be open now')
 }
 
 // ยืนยันการเปิด/ปิดสถานะ
-const confirmToggleStatus = () => {
-  if (userToToggle.value) {
-    // สร้าง object ใหม่ทั้งหมดเพื่อให้ Vue ตรวจจับการเปลี่ยนแปลง
-    const updatedUser = {
-      ...userToToggle.value,
-      is_active: userToToggle.value.is_active === 1 ? 0 : 1
-    }
+const confirmToggleStatus = async () => {
+  if (!userToToggle.value) return
 
-    // อัปเดตใน array
-    const index = users.value.findIndex(u => u.id === updatedUser.id)
-    if (index !== -1) {
-      users.value[index] = updatedUser // 👈 สร้าง object ใหม่
-    }
+  try {
+    const newStatus = userToToggle.value.is_active === true ? 0 : 1
 
-    // รีโหลดตาราง
-    refreshUsers()
+    // ✅ เรียก API update user status
+    await authStore.updateUserStatus(userToToggle.value.id, newStatus)
+
+    // ✅ Refresh data
+    await fetchUsers()
+
+    showStatusModal.value = false
+    userToToggle.value = null
+  } catch (error) {
+    console.error('Error toggling user status:', error)
+    alert('ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ')
   }
-
-  showStatusModal.value = false
-  userToToggle.value = null
 }
 
 // เปิดฟอร์มเพิ่มผู้ใช้ใหม่
 const openCreateUser = () => {
-  editingUser.value = null // ล้างข้อมูลเก่า
+  editingUser.value = null
   isCreatingUser.value = true
 }
 
 // Action handlers
 const editUser = (user: User) => {
   console.log('Edit user:', user)
-  // Implement edit logic
-  editingUser.value = { ...user } // copy ข้อมูลมาเติมฟอร์ม
+  editingUser.value = { ...user }
   isCreatingUser.value = true
 }
 
-// ฟังก์ชันรีโหลดข้อมูลใหม่ + รีเซ็ตไปหน้า 1
-const refreshUsers = () => {
-  isLoading.value = true
-  // จำลอง fetch API (delay 800ms เพื่อให้เห็น loading)
-  setTimeout(() => {
-    // สามารถ shuffle หรือเพิ่มข้อมูลใหม่เพื่อทดสอบ
-    users.value = [...users.value] // copy array ใหม่เพื่อ trigger reactivity
-    currentPage.value = 1 // รีเซ็ตกลับหน้า 1 เสมอ
-    selectedRows.value = [] // ล้างการเลือก
-    isLoading.value = false
-    console.log('ListUsers: รีโหลดข้อมูลใหม่ + กลับหน้า 1 เรียบร้อย')
-  }, 800)
-}
+// // เมื่อบันทึก (ทั้ง add และ edit)
+// const handleSaveUser = async (updatedUser: User) => {
+//   try {
+//     if (editingUser.value) {
+//       // โหมดแก้ไข
+//       await authStore.updateUser(updatedUser.id, updatedUser)
+//     } else {
+//       // โหมดเพิ่มใหม่
+//       await authStore.createUser(updatedUser)
+//     }
+
+//     // ✅ Refresh data
+//     await fetchUsers()
+
+//     isCreatingUser.value = false
+//     editingUser.value = null
+//   } catch (error) {
+//     console.error('Error saving user:', error)
+//     alert('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ')
+//   }
+// }
 
 // เมื่อบันทึก (ทั้ง add และ edit)
-const handleSaveUser = (updatedUser: User) => {
-  if (editingUser.value) {
-    // โหมดแก้ไข → อัปเดตข้อมูลเก่า
-    const index = users.value.findIndex(u => u.id === updatedUser.id)
-    if (index !== -1) {
-      users.value[index] = { ...updatedUser }
-    }
-  } else {
-    // โหมดเพิ่มใหม่
-    const newUser = {
-      ...updatedUser,
-      id: users.value.length + 1,
-      created_at: new Date().toISOString().split('T')[0]
-    }
-    users.value.unshift(newUser)
+const handleSaveUser = async (userData: any) => {
+  // ✅ ป้องกันการเรียก API ซ้ำ
+  if (isLoading.value) {
+    console.log('[ListUsers] Already processing, ignoring...')
+    return
   }
 
-  isCreatingUser.value = false
-  editingUser.value = null
-  //refreshUsers() // รีโหลด + กลับหน้า 1
+  isLoading.value = true
+
+  try {
+    console.log('[ListUsers] Received user data:', userData)
+
+    if (editingUser.value && userData.id) {
+      // โหมดแก้ไข
+      console.log('[ListUsers] Updating user:', userData.id)
+      await authStore.updateUser(userData.id, userData)
+    } else {
+      // โหมดเพิ่มใหม่
+      console.log('[ListUsers] Creating new user')
+      await authStore.createUser(userData)
+    }
+
+    // ✅ Refresh data
+    await fetchUsers()
+
+    // ปิดฟอร์ม
+    isCreatingUser.value = false
+    editingUser.value = null
+
+    console.log('[ListUsers] User saved successfully')
+  } catch (error: any) {
+    console.error('[ListUsers] Error saving user:', error)
+    alert(error.message || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const handleCancelCreateUser = () => {
   isCreatingUser.value = false
   editingUser.value = null
-  refreshUsers() // รีโหลด + กลับหน้า 1
 }
 
 // Debounced search query
@@ -312,7 +335,7 @@ watch(searchQuery, (newValue) => {
   }
   debounceTimer = setTimeout(() => {
     debouncedSearch.value = newValue
-    currentPage.value = 1 // Reset to first page on search
+    currentPage.value = 1
   }, 300)
 })
 
@@ -339,7 +362,6 @@ const sortedUsers = computed(() => {
   }
 
   const sorted = [...filteredUsers.value].sort((a, b) => {
-    // Handle optional properties for sorting gracefully
     const aVal = a[sortColumn.value!] ?? ''
     const bVal = b[sortColumn.value!] ?? ''
 
@@ -381,12 +403,10 @@ const someRowsSelected = computed(() => {
 
 const toggleAllRows = () => {
   if (allRowsSelected.value) {
-    // Deselect all on current page
     selectedRows.value = selectedRows.value.filter(
       id => !displayedUsers.value.some(user => user.id === id)
     )
   } else {
-    // Select all on current page
     const newSelections = displayedUsers.value.map(user => user.id)
     selectedRows.value = [...new Set([...selectedRows.value, ...newSelections])]
   }
@@ -437,10 +457,10 @@ watch(totalPages, (newTotal) => {
 })
 
 // Utility functions
-const getIsActiveBadgeClass = (isActive: number | undefined) => {
+const getIsActiveBadgeClass = (isActive: boolean | undefined) => {
   switch (isActive) {
-    case 1: return 'badge-success'
-    case 0: return 'badge-error'
+    case true: return 'badge-success'
+    case false: return 'badge-error'
     default: return 'badge-info'
   }
 }
@@ -460,15 +480,19 @@ const formatDate = (dateString: string | undefined) => {
   return new Date(dateString).toLocaleDateString('lo-LA')
 }
 
-
-
-const deleteUser = (userId: number) => {
+const deleteUser = async (userId: number) => {
   if (confirm('ຕ້ອງການລຶບຜູ້ໃຊ້ນີ້ບໍ?')) {
-    const index = users.value.findIndex(user => user.id === userId)
-    if (index !== -1) {
-      users.value.splice(index, 1)
-      // Reset selection if needed
+    try {
+      // TODO: เรียก API delete user
+      // await authStore.deleteUser(userId)
+
+      // ✅ Refresh data
+      await fetchUsers()
+
       selectedRows.value = selectedRows.value.filter(id => id !== userId)
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຜູ້ໃຊ້')
     }
   }
 }
@@ -483,8 +507,8 @@ const exportToCSV = () => {
     'ຊື່ຜູ້ໃຊ້': user.username,
     'ບົດບາດ': user.role,
     'ລະດັບພະນັກງານ': user.staff_level || 'N/A',
-    'ສະຖານະ': user.is_active === 1 ? 'Active' : 'Inactive',
-    'ວັນທີສ້າງ': formatDate(user.created_at)
+    'ສະຖານະ': user.is_active === true ? 'Active' : 'Inactive',
+    'ວັນທີສ້າງ': formatDate(user.createdAt)
   }))
 
   const csv = Papa.unparse(csvData)

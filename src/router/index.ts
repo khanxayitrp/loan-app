@@ -4,7 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
-import DefaultLayout from '@/layouts/DefaultLayout.vue' // path ไป layout ของคุณ
+
 
 const routes: RouteRecordRaw[] = [
   // Public routes (ไม่ต้อง login)
@@ -12,144 +12,186 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: false, layout: 'blank' } // 👈 เพิ่ม meta นี้
   },
-
-  // Protected routes (ต้อง login + layout)
-  {
-    path: '/',
-    component: DefaultLayout, // ใช้ layout หลักสำหรับทุก protected route
-    meta: { requiresAuth: true }, // default เป็นต้อง login
-    children: [
-      {
-        path: 'users',
-        name: 'UserManagement',
-        component: () => import('@/views/users/UserManagement.vue'),
-        meta: {
-          requiresAuth: false,           // ต้อง login
-          bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
-          permission: 'manage_users'
-        }
-      },
-      {
-        path: 'changePassword',
-        name: 'ChangePassword',
-        component: () => import('@/views/auth/ChangePassword.vue'),
-        meta: {
-          requiresAuth: false,           // ต้อง login
-          bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
-          permission: 'manage_users'
-        }
-      },
-      {
-        path: 'PermissionManagement',
-        name: 'PermissionManagement',
-        component: () => import('@/views/auth/PermissionManagement.vue'),
-        meta: {
-          requiresAuth: false,           // ต้อง login
-          bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
-          permission: 'manage_users'
-        }
-      },
-      {
-        path: 'loans',
-        name: 'LoanList',
-        component: () => import('@/views/loans/LoanList.vue'),
-        meta: {
-          requiresAuth: false,           // ต้อง login
-          bypassAuth: true,
-          permission: 'view_loans'
-        },
-        children: [
-          {
-            path: '',                    // /loans
-            name: 'LoanListAll',
-            component: () => import('@/components/loans/status/AllLoanStatusList.vue'),
-            props: { loanStatus: 'all' },   // ส่ง props ไปบอกว่าแสดงทั้งหมด
-            meta: {
-              requiresAuth: false,
-              bypassAuth: true,
-              permission: 'view_loans'
-            }
-          },
-          {
-            path: 'pendingLoans',        // /loans/pendingLoans
-            name: 'PendingLoans',
-            component: () => import('@/components/loans/status/PendingLoanList.vue'), // ใช้ component เดียวกัน
-            props: { loanStatus: 'pending' }, // ส่ง props ไปบอกว่า filter pending
-            meta: {
-              requiresAuth: false,
-              bypassAuth: true,
-              permission: 'manage_pending_loans'
-            }
-          },
-          {
-            path: 'approvedLoans',        // /loans/approvedLoans
-            name: 'ApprovedLoans',
-            component: () => import('@/components/loans/status/ApprovedLoanList.vue'), // ใช้ component เดียวกัน
-            props: { loanStatus: 'approved' }, // ส่ง props ไปบอกว่า filter approved
-            meta: {
-              requiresAuth: false,
-              bypassAuth: true,
-              permission: 'manage_approved_loans'
-            }
-          }
-        ]
-      },
-      {
-        path: 'stores',
-        name: 'Stores',
-        component: () => import('@/views/shops/ShopManagement.vue'),
-        meta: {
-          requiresAuth: false,           // ต้อง login
-          bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
-          permission: 'partner_manage'
-        }
-      },
-      // เปลี่ยนเป็น 2 routes แยกกัน
-      {
-        path: 'products',
-        name: 'Products',
-        component: () => import('@/views/products/ProductManagement.vue'),
-        meta: {
-          requiresAuth: false,
-          bypassAuth: true,
-          permission: 'partner_manage',
-          pageType: 'products' // 👈 เพิ่ม meta data
-        }
-      },
-      {
-        path: 'productTypes',
-        name: 'ProductTypes',
-        component: () => import('@/views/products/ProductManagement.vue'),
-        meta: {
-          requiresAuth: false,
-          bypassAuth: true,
-          permission: 'partner_manage',
-          pageType: 'types' // 👈 เพิ่ม meta data
-        }
-      },
-      // เพิ่ม route อื่น ๆ ที่ต้องการ layout และ auth ที่นี่
-      {
-        path: '',
-        redirect: '/users' // หรือหน้า default หลัง login
-      }
-    ]
-  },
-
-  // Error pages (public)
+   // Error pages (public)
   {
     path: '/unauthorized',
     name: 'Unauthorized',
     component: () => import('@/views/errors/Unauthorized.vue'),
-    meta: { requiresAuth: false }
+    meta: {
+      requiresAuth: false,
+      layout: 'blank' // 👈 เพิ่ม meta นี้
+     }
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/errors/NotFound.vue'),
-    meta: { requiresAuth: false }
-  }
+    meta: {
+      requiresAuth: false,
+      layout: 'blank' // 👈 เพิ่ม meta นี้
+     }
+  },
+
+  // Protected routes (ต้อง login + layout)
+
+  {
+    path: '/users',
+    name: 'UserManagement',
+    component: () => import('@/views/users/UserManagement.vue'),
+    meta: {
+      requiresAuth: true,           // ต้อง login
+      // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+      permission: 'user_manage'
+    }
+  },
+  {
+    path: '/changePassword',
+    name: 'ChangePassword',
+    component: () => import('@/views/auth/ChangePassword.vue'),
+    meta: {
+      requiresAuth: true,           // ต้อง login
+      // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+      permission: 'user_manage'
+    }
+  },
+  {
+    path: '/PermissionManagement',
+    name: 'PermissionManagement',
+    component: () => import('@/views/auth/PermissionManagement.vue'),
+    meta: {
+      requiresAuth: true,           // ต้อง login
+      // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+      permission: 'permission_manage'
+    }
+  },
+  {
+    path: '/createLoan',
+    name: 'CreateLoan',
+    component: () => import('@/views/loans/LoanView.vue'),
+    meta: {
+      requiresAuth: false,           // ต้อง login
+      bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+      permission: 'loan_create'
+    }
+  },
+  {
+    path: '/loans',
+    name: 'LoanList',
+    component: () => import('@/views/loans/LoanList.vue'),
+    meta: {
+      requiresAuth: true,           // ต้อง login
+      // bypassAuth: true,
+      permission: 'loan_view_all'
+    },
+    children: [
+      {
+        path: '',                    // /loans
+        name: 'LoanListAll',
+        component: () => import('@/components/loans/status/AllLoanStatusList.vue'),
+        props: { loanStatus: 'all' },   // ส่ง props ไปบอกว่าแสดงทั้งหมด
+        meta: {
+          requiresAuth: true,
+          // bypassAuth: true,
+          permission: 'loan_view_all'
+        }
+      },
+      {
+        path: '/pendingLoans',        // /loans/pendingLoans
+        name: 'PendingLoans',
+        component: () => import('@/components/loans/status/PendingLoanList.vue'), // ใช้ component เดียวกัน
+        props: { loanStatus: 'pending' }, // ส่ง props ไปบอกว่า filter pending
+        meta: {
+          requiresAuth: true,
+          // bypassAuth: true,
+          permission: 'loan_view_assigned'
+        }
+      },
+      {
+        path: '/approvedLoans',        // /loans/approvedLoans
+        name: 'ApprovedLoans',
+        component: () => import('@/components/loans/status/ApprovedLoanList.vue'), // ใช้ component เดียวกัน
+        props: { loanStatus: 'approved' }, // ส่ง props ไปบอกว่า filter approved
+        meta: {
+          requiresAuth: true,
+          // bypassAuth: true,
+          permission: 'loan_approve'
+        }
+      },
+      {
+        path: '/createDraftLoan',        // /loans/createDraftLoan
+        name: 'CreateDraftLoan',
+        component: () => import('@/components/loans/form/CreateDraftLoan.vue'),
+        meta: {
+          requiresAuth: true,
+          // bypassAuth: true,
+          permission: 'loan_approve'
+        }
+      },
+      {
+        path: '/listDraftsloan',        // /loans/listDrafts
+        name: 'ListDraftLoans',
+        component: () => import('@/components/loans/form/ListDraftLoan.vue'),
+        meta: {
+          requiresAuth: true,
+          // bypassAuth: true,
+          permission: 'loan_view_assigned'
+        }
+      },
+      {
+        path: '/listLoans',        // /loans/listLoans
+        name: 'ListLoans',
+        component: () => import('@/components/loans/form/ListLoan.vue'),
+        meta: {
+          requiresAuth: true,
+          // bypassAuth: true,
+          permission: 'loan_view_assigned'
+        }
+      }
+    ]
+  },
+  {
+    path: '/stores',
+    name: 'Stores',
+    component: () => import('@/views/shops/ShopManagement.vue'),
+    meta: {
+      requiresAuth: false,           // ต้อง login
+      bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+      permission: 'partner_manage'
+    }
+  },
+  // เปลี่ยนเป็น 2 routes แยกกัน
+  {
+    path: '/products',
+    name: 'Products',
+    component: () => import('@/views/products/ProductManagement.vue'),
+    meta: {
+      requiresAuth: true,
+      // bypassAuth: true,
+      permission: 'partner_manage',
+      pageType: 'products' // 👈 เพิ่ม meta data
+    }
+  },
+  {
+    path: '/productTypes',
+    name: 'ProductTypes',
+    component: () => import('@/views/products/ProductManagement.vue'),
+    meta: {
+      requiresAuth: false,
+      bypassAuth: true,
+      permission: 'partner_manage',
+      pageType: 'types' // 👈 เพิ่ม meta data
+    }
+  },
+  // เพิ่ม route อื่น ๆ ที่ต้องการ layout และ auth ที่นี่
+  {
+    path: '/',
+    redirect: '/users' // หรือหน้า default หลัง login
+  },
+
+
+
 ]
 
 const router = createRouter({
@@ -161,19 +203,43 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
+  // 1. ✅ ข้ามการเช็ค auth สำหรับ blank layout pages
+  if (to.meta.layout === 'blank' && !to.meta.requiresAuth) {
+    next()
+    return
+  }
+
   // 1. ข้ามการเช็ค auth ถ้า route นี้ bypassAuth = true
   if (to.meta.bypassAuth) {
     next()
     return
   }
 
+  // 2. ถ้าไปหน้า login แต่ login อยู่แล้ว → redirect ตาม role
+  if (to.path === '/login' && authStore.isAuthenticated) {
+    const user = authStore.currentUser
+
+    if (user?.role === 'admin' || user?.role === 'staff') {
+      next({ name: 'UserManagement' })
+    } else if (user?.role === 'partner') {
+      next({ name: 'Stores' })
+    } else {
+      next({ name: 'PendingLoans' })
+    }
+    return
+  }
+
   // 2. เช็คว่าต้อง login ก่อนไหม
   if (to.meta.requiresAuth) {
     // ถ้ายังไม่ login → redirect ไป login
-    if (!authStore.isAuthenticated) {
-      // เก็บ URL เดิมเพื่อ redirect กลับหลัง login
-      next({ path: '/login', query: { redirect: to.fullPath } })
-      return
+    if (!authStore.isAuthenticated || authStore.isTokenExpired) {
+      const isValid = await authStore.checkAuth()
+      if (!isValid) {
+        // ยังไม่ login หรือ token ไม่ valid
+        next({ path: '/login', query: { redirect: to.fullPath } })
+        return
+      }
+
     }
 
     // ถ้า login แล้ว แต่มี permission → เช็คสิทธิ์

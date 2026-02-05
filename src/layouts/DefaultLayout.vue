@@ -1,3 +1,4 @@
+<!-- src/layouts/DefaultLayout.vue -->
 <template>
   <div class="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
     <!-- Navbar - เต็มความกว้างเสมอ -->
@@ -54,6 +55,7 @@ import { useAuthStore } from '@/stores/auth'
 const isSidebarOpen = ref(false)
 const isSidebarMinified = ref(false)
 const authStore = useAuthStore()
+const isMobileOpen = ref(false) // ✅ ประกาศ reactive variable นี้
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null)
 
 // Margin ซ้ายให้ main ตามความกว้าง sidebar (เฉพาะ desktop)
@@ -71,10 +73,12 @@ watch(isSidebarOpen, (newVal) => {
 
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value
+  isMobileOpen.value = isSidebarOpen.value // ✅ sync กับ isMobileOpen
 }
 
 const closeSidebar = () => {
   isSidebarOpen.value = false
+  isMobileOpen.value = false // ✅ ปิดทั้งสอง state
 }
 
 const onMinifiedChange = (minified: boolean) => {

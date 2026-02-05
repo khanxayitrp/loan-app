@@ -1,57 +1,66 @@
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
 import { usePermissionStore } from './permission'
-import { signIn as apiSignIn, signOut as apiSignOut } from '@/api/auth'
+import {
+  signIn as apiSignIn,
+  signOut as apiSignOut,
+  registerUser as apiCreateUser,
+  getCurrentUser
+} from '@/api/auth'
+import { getAllUsers as apiAllUsers, updateUser, updateUserStatus } from '@/api/user'
 import type { SignInRequest, SignInResponse } from '@/types/auth'
 
 export const useAuthStore = defineStore('auth', {
-  // 📦 STATE: เก็บข้อมูลหลักของ store
+  // 📦 STATE: ไม่เก็บ token แล้ว (อยู่ใน httpOnly cookies)
   state: () => ({
-    token: localStorage.getItem('token') || null,
-    refreshToken: localStorage.getItem('refreshToken') || null, // 👈 เพิ่ม refresh token
+    users: [] as SignInResponse['user'][],
     user: null as SignInResponse['user'] | null,
-    loading: false // 👈 เพิ่มสถานะ loading
+    permissions: [] as string[],
+    loading: false,
+    expiresAt: null as number | null
   }),
 
-  // 👁️ GETTERS: ฟังก์ชันสำหรับอ่านค่าแบบ computed
+  // 👁️ GETTERS
   getters: {
-    isAuthenticated: (state) => !!state.token,
+    isAuthenticated: (state) => !!state.user,
+    allUsers: (state) => state.users,
     currentUser: (state) => state.user,
-    // 👈 เพิ่ม getter สำหรับตรวจสอบ role
     isAdmin: (state) => state.user?.role === 'admin',
-    isStaff: (state) => state.user?.role === 'staff'
+    isStaff: (state) => state.user?.role === 'staff',
+    isTokenExpired: (state) => {
+      if (!state.expiresAt) return true
+      return Date.now() >= state.expiresAt * 1000
+    }
   },
 
-  // ⚡ ACTIONS: ฟังก์ชันสำหรับเปลี่ยนแปลง state หรือเรียก API
+  // ⚡ ACTIONS
   actions: {
     /**
      * เข้าสู่ระบบผู้ใช้
      */
     async signIn(credentials: SignInRequest): Promise<boolean> {
-      this.loading = true // 👈 เริ่ม loading
+      this.loading = true
 
       try {
         const response: SignInResponse = await apiSignIn(credentials)
+        console.log('การเข้าสู่ระบบสำเร็จ:', response)
 
-        // 👇 บันทึกทั้ง access token และ refresh token
-        this.token = response.tokens.access.token
-        this.refreshToken = response.tokens.refresh.token
+        // 🔥 ไม่เก็บ token แล้ว - เก็บแค่ user data
         this.user = response.user
+        this.permissions = response.permissions
+        this.expiresAt = response.expiresAt || null
 
-        // 👇 บันทึกใน localStorage (สำหรับรักษา session)
-        localStorage.setItem('token', response.tokens.access.token)
-        localStorage.setItem('refreshToken', response.tokens.refresh.token)
-
-        // 👇 ส่ง permissions ไปยัง permission store
+        // ส่ง permissions ไปยัง permission store
         const permissionStore = usePermissionStore()
         permissionStore.setPermissions(response.permissions)
+        console.log('ตั้งค่า permissions ใน store:', permissionStore.userPermissions)
 
         return true
       } catch (error) {
         console.error('การเข้าสู่ระบบล้มเหลว:', error)
         return false
       } finally {
-        this.loading = false // 👈 หยุด loading ไม่ว่าจะสำเร็จหรือไม่
+        this.loading = false
       }
     },
 
@@ -60,45 +69,114 @@ export const useAuthStore = defineStore('auth', {
      */
     async signOut(): Promise<void> {
       try {
-        // 👇 เรียก API logout เพื่อinvalidate refresh token บน server
-        if (this.refreshToken) {
-          await apiSignOut()
-        }
+        // เรียก API logout เพื่อ revoke token และลบ cookies
+        await apiSignOut()
       } catch (error) {
         console.warn('Logout API error (continuing with local logout):', error)
       } finally {
-        // 👇 ล้างข้อมูลทั้งหมดทั้งใน store และ localStorage
-        this.token = null
-        this.refreshToken = null
+        // ล้างข้อมูลทั้งหมด
         this.user = null
-
-        localStorage.removeItem('token')
-        localStorage.removeItem('refreshToken')
+        this.permissions = []
+        this.expiresAt = null
 
         const permissionStore = usePermissionStore()
         permissionStore.clearPermissions()
       }
     },
 
+    async fetchAllUsers(): Promise<void> {
+      try {
+        const response = await apiAllUsers()
+        this.users = response.users
+      } catch (error) {
+        console.error('Error fetching all users:', error)
+      }
+    },
+    // src/stores/auth.ts
+// src/stores/auth.ts
+async createUser(userData: {
+  username: string
+  password: string
+  role: 'admin' | 'staff' | 'partner' | 'customer'
+  full_name: string
+  staff_level?: 'requester' | 'approver' | 'none'
+  is_active?: number
+}): Promise<void> {
+  try {
+    console.log('[AUTH STORE] Creating user with data:', userData)
+
+    const response = await apiCreateUser(userData)
+
+    console.log('[AUTH STORE] User created:', response)
+
+    // ✅ ไม่ต้อง push เข้า users array ที่นี่
+    // จะ refresh ทั้งหมดจาก fetchUsers() แทน
+  } catch (error: any) {
+    console.error('[AUTH STORE] Error creating user:', error)
+    throw error
+  }
+},
+
+async updateUser(userId: number, userData: {
+  username?: string
+  role?: 'admin' | 'staff' | 'partner' | 'customer'
+  full_name?: string
+  staff_level?: 'requester' | 'approver' | 'none'
+  is_active?: number
+  password?: string
+}): Promise<void> {
+  try {
+    console.log('[AUTH STORE] Updating user:', userId, userData)
+
+    // ✅ ลบ password ออกถ้าเป็นค่าว่าง
+    const cleanData = { ...userData }
+    if (!cleanData.password) {
+      delete cleanData.password
+    }
+
+    const response = await updateUser(userId, cleanData)
+
+    console.log('[AUTH STORE] User updated:', response)
+
+    // ✅ ไม่ต้องอัปเดต users array ที่นี่
+    // จะ refresh ทั้งหมดจาก fetchUsers() แทน
+  } catch (error: any) {
+    console.error('[AUTH STORE] Error updating user:', error)
+    throw error
+  }
+},
+
+    async updateUserStatus(userId: number, isActive: boolean): Promise<void> {
+      try {
+        const response = await updateUserStatus(userId, isActive)
+        // อัปเดตสถานะผู้ใช้ใน state.users
+        const index = this.users.findIndex((u) => u.id === userId)
+        if (index !== -1) {
+          this.users[index] = response.user
+        }
+      } catch (error) {
+        console.error('Error updating user status:', error)
+      }
+    },
     /**
-     * ตรวจสอบว่าผู้ใช้ยังล็อกอินอยู่หรือไม่ (เช่น เมื่อรีเฟรชหน้า)
+     * ตรวจสอบว่าผู้ใช้ยังล็อกอินอยู่หรือไม่
+     * เรียก API /auth/me เพื่อดึงข้อมูลจาก token ใน cookies
      */
     async checkAuth(): Promise<boolean> {
-      const token = localStorage.getItem('token')
-
-      if (!token) {
-        return false
-      }
-
       try {
-        // 👇 ใน production ควรเรียก API /auth/me เพื่อตรวจสอบ token
-        // แต่ตอนนี้เราแค่ตรวจสอบว่ามี token อยู่
-        this.token = token
-        // 👇 หากต้องการโหลด user data ใหม่ ให้เรียก API ที่นี่
+        const response = await getCurrentUser()
+
+        this.user = response.user
+        this.permissions = response.permissions
+        this.expiresAt = response.expiresAt || null
+
+        const permissionStore = usePermissionStore()
+        permissionStore.setPermissions(response.permissions)
+
         return true
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        this.signOut() // 👈 หากตรวจสอบแล้วไม่ valid ให้ออกจากระบบ
+        // ถ้า error แสดงว่า token หมดอายุหรือไม่ valid
+        this.signOut()
         return false
       }
     }

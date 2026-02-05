@@ -26,16 +26,24 @@ export interface Tokens {
 }
 
 /**
- * Response ตอน login สำเร็จ
+ * Response ตอน login สำเร็จ (ไม่มี tokens แล้ว - เก็บใน httpOnly cookies)
  */
 export interface SignInResponse {
+  message: string
   user: User
-  tokens: Tokens
   permissions: string[] // เช่น ['view_dashboard', 'create_loan', ...]
+  expiresAt?: number // timestamp ที่ token หมดอายุ
 }
 
 
 export interface SignInRequest {
   username: string
   password: string
+}
+
+// 🔥 เพิ่ม type สำหรับ /auth/me
+export interface CurrentUserResponse {
+  user: User
+  permissions: string[]
+  expiresAt?: number
 }

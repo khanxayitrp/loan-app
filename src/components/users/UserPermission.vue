@@ -49,7 +49,7 @@
               <div class="flex flex-wrap gap-1 max-w-xs">
                 <span v-for="permission in userPermission.permissions" :key="permission.feature_id"
                   class="badge badge-soft badge-primary text-xs">
-                  {{ permission.feature.feature_name }}
+                  {{ getFeatureDisplayName(permission.feature.feature_name) }}
                 </span>
                 <span v-if="userPermission.permissions.length === 0" class="text-gray-400 text-sm">
                   ບໍ່ມີສິດທິ
@@ -100,7 +100,6 @@
     </div>
 
     <!-- Add Permission Modal -->
-    <!-- Add Permission Modal (อัปเดตแล้ว) -->
     <teleport to="body">
       <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4">
@@ -111,7 +110,7 @@
             </button>
           </div>
 
-          <!-- User Search - โครงสร้างเหมือน ChangePassword -->
+          <!-- User Search -->
           <div class="form-control mb-4">
             <label class="label">
               <span class="label-text font-medium">ເລືອກຜູ້ໃຊ້</span>
@@ -182,15 +181,34 @@
               <span class="label-text font-medium">ເລືອກສິດທິ</span>
             </label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">
-              <div v-for="feature in allFeatures" :key="feature.id"
+              <label v-for="feature in allFeatures" :key="feature.id"
                 class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
-                @click="toggleAddPermission(feature.id)">
-                <input type="checkbox" :checked="addModal.selectedPermissions.includes(feature.id)"
-                  class="checkbox checkbox-primary" @click.stop />
-                <span class="text-sm">{{ feature.feature_name }}</span>
-              </div>
+                >
+                <input
+                type="checkbox"
+                :checked="addModal.selectedPermissions.includes(feature.id)"
+                :value="feature.id"
+                @change="toggleAddPermission(feature.id)"
+                  class="checkbox checkbox-primary"
+                  />
+                <span class="text-sm">{{ getFeatureDisplayName(feature.feature_name) }}</span>
+              </label>
             </div>
           </div>
+
+          <!-- ✅ Debug Panel -->
+        <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
+          <div class="font-bold mb-2">🔍 Debug Info:</div>
+          <div>Selected User: {{ addModal.selectedUser?.username || 'None' }}</div>
+          <div>Selected Count: {{ addModal.selectedPermissions.length }}</div>
+          <div>Selected IDs: {{ addModal.selectedPermissions.join(', ') || 'None' }}</div>
+          <div class="mt-2">
+            <div class="font-semibold">Selected Features:</div>
+            <div v-for="id in addModal.selectedPermissions" :key="id" class="ml-2">
+              - {{ allFeatures.find(f => f.id === id)?.feature_name || `Unknown(${id})` }}
+            </div>
+          </div>
+        </div>
 
           <div class="flex justify-end gap-3">
             <button class="btn btn-soft btn-secondary" @click="closeAddModal">
@@ -237,19 +255,33 @@
               <span class="label-text font-medium">ສິດທິທີ່ມີຢູ່</span>
             </label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">
-              <div v-for="feature in allFeatures" :key="feature.id"
+              <label v-for="feature in allFeatures" :key="feature.id"
                 class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
-                @click="toggleEditPermission(feature.id)">
-                <input type="checkbox" :checked="editModal.selectedPermissions.includes(feature.id)"
-                  class="checkbox checkbox-primary" @click.stop />
-                <span class="text-sm">{{ feature.feature_name }}</span>
-                <!-- 👇 เพิ่ม debug info -->
-    <span class="text-xs text-gray-400 ml-2">
-      {{ editModal.selectedPermissions.includes(feature.id) ? '✓' : '✗' }}
-    </span>
-              </div>
+                >
+                <input
+                type="checkbox"
+                :checked="editModal.selectedPermissions.includes(feature.id)"
+                :value="feature.id"
+                @change="toggleEditPermission(feature.id)"
+                  class="checkbox checkbox-primary" />
+                <span class="text-sm">{{ getFeatureDisplayName(feature.feature_name) }}</span>
+              </label>
             </div>
           </div>
+
+          <!-- ✅ Debug Panel -->
+        <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
+          <div class="font-bold mb-2">🔍 Debug Info:</div>
+          <div>User: {{ editModal.user?.username || 'None' }}</div>
+          <div>Selected Count: {{ editModal.selectedPermissions.length }}</div>
+          <div>Selected IDs: {{ editModal.selectedPermissions.join(', ') || 'None' }}</div>
+          <div class="mt-2">
+            <div class="font-semibold">Selected Features:</div>
+            <div v-for="id in editModal.selectedPermissions" :key="id" class="ml-2">
+              - {{ allFeatures.find(f => f.id === id)?.feature_name || `Unknown(${id})` }}
+            </div>
+          </div>
+        </div>
 
           <div class="flex justify-end gap-3">
             <button class="btn btn-soft btn-secondary" @click="closeEditModal">
@@ -267,7 +299,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { usePermissionStore } from '@/stores/permission'
 
 // Types
 interface User {
@@ -300,7 +334,12 @@ const isLoading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// Mock data (replace with API calls)
+// Stores
+const authStore = useAuthStore()
+const permissionStore = usePermissionStore()
+
+// Comment out mock data
+/*
 const mockUsers: User[] = [
   { id: 1, full_name: 'ສົມຊາຍ ພົນສຸກ', username: 'somchai', role: 'admin' },
   { id: 2, full_name: 'ສົມສິງ ດຳດີ', username: 'somsing', role: 'staff' },
@@ -309,13 +348,29 @@ const mockUsers: User[] = [
   { id: 5, full_name: 'ບຸນເຊີຍ ສຸກສົມ', username: 'bunsouy', role: 'staff' }
 ]
 
+// ✅ อัปเดต mockFeatures ตามข้อมูลจริงจากตาราง
 const mockFeatures: Feature[] = [
-  { id: 1, feature_name: 'view_dashboard', description: 'ເບິ່ງแดຊບອດ' },
-  { id: 2, feature_name: 'create_loan', description: 'ສ້າງສິນເຊື່ອ' },
-  { id: 3, feature_name: 'approve_loan', description: 'ອະນຸມັດສິນເຊື່ອ' },
-  { id: 4, feature_name: 'manage_users', description: 'ຈັດການຜູ້ໃຊ້' },
-  { id: 5, feature_name: 'view_reports', description: 'ເບິ່ງລາຍງານ' },
-  { id: 6, feature_name: 'export_data', description: 'ສົ່ງອອກຂໍ້ມູນ' }
+  { id: 1, feature_name: 'user_view', description: 'ດູລາຍຊື່ຜູ້ໃຊ້ງານໃນລະບົບ' },
+  { id: 2, feature_name: 'user_manage', description: 'ຈັດການສ້າງ/ແກ້ໄຂ/ລະງັບ User' },
+  { id: 3, feature_name: 'permission_manage', description: 'ຈັດການສິດທິການໃຊ້ງານ (Permissions)' },
+  { id: 4, feature_name: 'loan_view_all', description: 'ດູຄຳຂໍສິນເຊື່ອທັງໝົດໃນລະບົບ' },
+  { id: 5, feature_name: 'loan_view_assigned', description: 'ດູຄຳຂໍສິນເຊື່ອທີ່ຕົນເອງຮັບຜິດຊອບ' },
+  { id: 6, feature_name: 'loan_create', description: 'ສ້າງຄຳຂໍສິນເຊື່ອໃໝ່' },
+  { id: 7, feature_name: 'loan_edit', description: 'ແກ້ໄຂລາຍລະອຽດຄຳຂໍສິນເຊື່ອ' },
+  { id: 8, feature_name: 'loan_approve', description: 'ອະນຸມັດຄຳຂໍສິນເຊື່ອ (Approver Only)' },
+  { id: 9, feature_name: 'loan_reject', description: 'ປະຕິເສດຄຳຂໍສິນເຊື່ອ' },
+  { id: 10, feature_name: 'doc_upload', description: 'ອັບໂຫຼດເອກະສານປະກອບຄຳຂໍ' },
+  { id: 11, feature_name: 'doc_view', description: 'ດູໄຟລ໌ເອກະສານແນບ' },
+  { id: 12, feature_name: 'doc_delete', description: 'ລຶບໄຟລ໌ເອກະສານ' },
+  { id: 13, feature_name: 'partner_manage', description: 'ຈັດການຂໍ້ມູນ Partner ແລະຮ້ານຄ້າ' },
+  { id: 14, feature_name: 'shop_view_report', description: 'ດູລາຍງານຍອດຂາຍ ແລະຄ່າຄອມມິດຊັ່ນ' },
+  { id: 15, feature_name: 'cust_profile_view', description: 'ດູຂໍ້ມູນໂປຣໄຟລ໌ສ່ວນຕົວ' },
+  { id: 16, feature_name: 'cust_loan_history', description: 'ດູປະວັດການຂໍສິນເຊື່ອຂອງຕົນເອງ' },
+  { id: 17, feature_name: 'payment_proof_upload', description: 'ສົ່ງຫຼັກຖານການຊຳລະເງິນ' },
+  { id: 18, feature_name: 'user_create', description: 'ສິດທິໃນການສ້າງບັນຊີຜູ້ໃຊ້ງານໃໝ່ (Staff/Partner/customer)' },
+  { id: 19, feature_name: 'payment_view', description: 'ດູປະວັດການຊຳລະເງິນ' },
+  { id: 20, feature_name: 'payment_create', description: 'ບັນທຶກການຊຳລະເງິນໃໝ່' },
+  { id: 21, feature_name: 'payment_verify', description: 'ກວດສອບ ແລະ ຢືນຢັນສລິບໂອນເງິນ' }
 ]
 
 const userPermissionsData = ref<UserWithPermissions[]>([
@@ -344,16 +399,51 @@ const userPermissionsData = ref<UserWithPermissions[]>([
     ]
   }
 ])
+*/
+
+// Use store data instead of mock data
+// แปลงโครงสร้างข้อมูลให้ตรงกับที่ใช้ใน template
+const userPermissionsData = computed(() => {
+  const users = authStore.allUsers
+  if (!Array.isArray(users)) return []
+
+  // ✅ แปลงเป็นโครงสร้างที่ template ใช้
+  return users.map(user => ({
+    user: {
+      id: user.id,
+      full_name: user.full_name,
+      username: user.username,
+      role: user.role
+    },
+    permissions: user.user_permissions?.map(permission => ({
+      user_id: user.id,
+      feature_id: permission.feature.id,
+      can_access: permission.can_access ? 1 : 0,
+      feature: {
+        id: permission.feature.id,
+        feature_name: permission.feature.feature_name,
+        description: permission.feature.description
+      }
+    })) || []
+  }))
+})
 
 // Computed properties
 const displayedUserPermissions = computed(() => {
-  console.log('Recomputing with data length:', userPermissionsData.value.length)
+  const data = userPermissionsData.value
+  if (!Array.isArray(data) || data.length === 0) {
+    return []
+  }
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return userPermissionsData.value.slice(start, end)
+  return data.slice(start, end)
 })
 
-const totalUsers = computed(() => userPermissionsData.value.length)
+// const totalUsers = computed(() => userPermissionsData.value.length)
+const totalUsers = computed(() => {
+  const data = userPermissionsData.value
+  return Array.isArray(data) ? data.length : 0
+})
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value) || 1)
 const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
 const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalUsers.value))
@@ -364,26 +454,55 @@ const hasNextPage = computed(() => currentPage.value < totalPages.value)
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 
-// Add Modal state
-// Add Modal state (อัปเดตให้เหมือน ChangePassword)
-const addModal = reactive({
+// // Add Modal state
+// const addModal = reactive({
+//   searchQuery: '',
+//   showDropdown: false,
+//   searchResults: [] as User[],
+//   selectedUser: null as User | null,
+//   selectedPermissions: [] as number[],
+//   loading: false
+// })
+
+// // Edit Modal state
+// const editModal = reactive({
+//   user: null as User | null,
+//   selectedPermissions: [] as number[],
+//   loading: false
+// })
+// ✅ ใช้ ref แทน reactive สำหรับ modal state
+const addModal = ref({
   searchQuery: '',
-  showDropdown: false, // 👈 เพิ่ม showDropdown
+  showDropdown: false,
   searchResults: [] as User[],
   selectedUser: null as User | null,
-  selectedPermissions: [] as number[],
+  selectedPermissions: [] as number[], // ✅ เป็น array ธรรมดา
   loading: false
 })
 
-// Edit Modal state
-const editModal = reactive({
+const editModal = ref({
   user: null as User | null,
-  selectedPermissions: [] as number[],
+  selectedPermissions: [] as number[], // ✅ เป็น array ธรรมดา
   loading: false
 })
 
-// All features (for permission selection)
-const allFeatures = ref<Feature[]>(mockFeatures)
+// // ✅ เพิ่ม computed function
+// const isFeatureSelected = (featureId: number): boolean => {
+//   return editModal.value.selectedPermissions.includes(featureId)
+// }
+
+// // ✅ Helper functions สำหรับจัดการ permissions
+// const togglePermission = (permissions: number[], featureId: number): number[] => {
+//   const index = permissions.indexOf(featureId)
+//   if (index > -1) {
+//     return permissions.filter((_, i) => i !== index)
+//   } else {
+//     return [...permissions, featureId]
+//   }
+// }
+
+// All features (from store)
+const allFeatures = computed(() => permissionStore.features)
 
 // Utility functions
 const getRoleBadgeClass = (role: string) => {
@@ -394,6 +513,35 @@ const getRoleBadgeClass = (role: string) => {
     case 'customer': return 'badge-secondary'
     default: return 'badge-neutral'
   }
+}
+
+// ✅ เพิ่มฟังก์ชันแสดงชื่อสิทธิ์เป็นภาษาลาว
+const getFeatureDisplayName = (featureName: string): string => {
+  const displayNames: Record<string, string> = {
+    'user_view': 'ດູລາຍຊື່ຜູ້ໃຊ້',
+    'user_manage': 'ຈັດການຜູ້ໃຊ້',
+    'permission_manage': 'ຈັດການສິດທິ',
+    'loan_view_all': 'ດູສິນເຊື່ອທັງໝົດ',
+    'loan_view_assigned': 'ດູສິນເຊື່ອທີ່ຮັບຜິດຊອບ',
+    'loan_create': 'ສ້າງສິນເຊື່ອ',
+    'loan_edit': 'ແກ້ໄຂສິນເຊື່ອ',
+    'loan_approve': 'ອະນຸມັດສິນເຊື່ອ',
+    'loan_reject': 'ປະຕິເສດສິນເຊື່ອ',
+    'doc_upload': 'ອັບໂຫຼດເອກະສານ',
+    'doc_view': 'ດູເອກະສານ',
+    'doc_delete': 'ລຶບເອກະສານ',
+    'partner_manage': 'ຈັດການຮ້ານຄ້າ',
+    'shop_view_report': 'ດູລາຍງານ',
+    'cust_profile_view': 'ດູໂປຣໄຟລ໌',
+    'cust_loan_history': 'ດູປະວັດສິນເຊື່ອ',
+    'payment_proof_upload': 'ສົ່ງຫຼັກຖານຊຳລະ',
+    'user_create': 'ສ້າງຜູ້ໃຊ້ໃໝ່',
+    'payment_view': 'ດູການຊຳລະ',
+    'payment_create': 'ບັນທຶກການຊຳລະ',
+    'payment_verify': 'ກວດສອບການຊຳລະ'
+  }
+
+  return displayNames[featureName] || featureName
 }
 
 // Pagination methods
@@ -411,6 +559,23 @@ watch(pageSize, () => {
   currentPage.value = 1
 })
 
+// Fetch data on mount
+onMounted(async () => {
+  isLoading.value = true
+  try {
+
+    await Promise.all([
+      authStore.fetchAllUsers(),
+      permissionStore.fetchFeatures()
+    ])
+  } catch (error) {
+    console.error('Error fetching data:', error)
+    alert('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນ')
+  } finally {
+    isLoading.value = false
+  }
+})
+
 // Add Modal methods
 let addDebounceTimer: NodeJS.Timeout | null = null
 const debounceAddSearch = () => {
@@ -423,15 +588,20 @@ const debounceAddSearch = () => {
 }
 
 const performAddSearch = () => {
-  if (!addModal.searchQuery.trim()) {
-    addModal.searchResults = []
+  if (!addModal.value.searchQuery.trim()) {
+    addModal.value.searchResults = []
     return
   }
 
-  const query = addModal.searchQuery.toLowerCase()
+  const query = addModal.value.searchQuery.toLowerCase()
   // Filter users that don't already have permissions
-  const existingUserIds = userPermissionsData.value.map(up => up.user.id)
-  addModal.searchResults = mockUsers
+  // ✅ ดึง ID ของผู้ใช้ที่มีสิทธิ์แล้ว (จาก user_permissions)
+  const existingUserIds = userPermissionsData.value
+    .filter(user => user.user_permissions && user.user_permissions.length > 0)
+    .map(user => user.id)
+
+  // ✅ กรองผู้ใช้ที่ยังไม่มีสิทธิ์ + ค้นหา
+  addModal.value.searchResults = authStore.users
     .filter(user => !existingUserIds.includes(user.id))
     .filter(user =>
       user.full_name.toLowerCase().includes(query) ||
@@ -439,123 +609,148 @@ const performAddSearch = () => {
     )
 }
 
-// Handle focus (เหมือน ChangePassword)
 const handleAddFocus = () => {
-  addModal.showDropdown = true
-  if (addModal.searchQuery) {
+  addModal.value.showDropdown = true
+  if (addModal.value.searchQuery) {
     performAddSearch()
   } else {
     // Show all available users (not already having permissions)
-    const existingUserIds = userPermissionsData.value.map(up => up.user.id)
-    addModal.searchResults = mockUsers.filter(user => !existingUserIds.includes(user.id))
+    // ✅ แสดงผู้ใช้ที่ยังไม่มีสิทธิ์ทั้งหมด
+    const existingUserIds = userPermissionsData.value
+      .filter(user => user.user_permissions && user.user_permissions.length > 0)
+      .map(user => user.id)
+    addModal.value.searchResults = authStore.users.filter(user => !existingUserIds.includes(user.id))
   }
 }
 
 const selectAddUser = (user: User) => {
-  addModal.selectedUser = user
-  addModal.searchQuery = user.full_name
-  addModal.showDropdown = false
+  addModal.value.selectedUser = user
+  addModal.value.searchQuery = user.full_name
+  addModal.value.showDropdown = false
 }
 
 const clearAddSelection = () => {
-  addModal.selectedUser = null
-  addModal.searchQuery = ''
-  addModal.searchResults = []
-  addModal.selectedPermissions = []
+  addModal.value.selectedUser = null
+  addModal.value.searchQuery = ''
+  addModal.value.searchResults = []
+  addModal.value.selectedPermissions = []
 }
 
 const toggleAddPermission = (featureId: number) => {
-  const index = addModal.selectedPermissions.indexOf(featureId)
+  console.log('━━━ Toggle Add Permission ━━━')
+  console.log('Feature ID:', featureId)
+  console.log('Before:', JSON.stringify(addModal.value.selectedPermissions))
+
+  // ✅ สร้าง array ใหม่ทุกครั้งเพื่อให้ Vue reactive ทำงาน
+  const currentPermissions = [...addModal.value.selectedPermissions]
+  const index = currentPermissions.indexOf(featureId)
+
   if (index > -1) {
-    addModal.selectedPermissions.splice(index, 1)
+    console.log('Action: REMOVE')
+    // ลบออก
+    currentPermissions.splice(index, 1)
   } else {
-    addModal.selectedPermissions.push(featureId)
+    console.log('Action: ADD')
+    // เพิ่มเข้าไป
+    currentPermissions.push(featureId)
   }
+
+  // ✅ Assign array ใหม่เพื่อ trigger reactivity
+  addModal.value.selectedPermissions = currentPermissions
+
+  console.log('After:', JSON.stringify(addModal.value.selectedPermissions))
+  console.log('Feature:', allFeatures.value.find(f => f.id === featureId)?.feature_name)
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━')
 }
 
 const openAddPermissionModal = () => {
   showAddModal.value = true
-  addModal.searchQuery = ''
-  addModal.searchResults = []
-  addModal.selectedUser = null
-  addModal.selectedPermissions = []
+  addModal.value.searchQuery = ''
+  addModal.value.searchResults = []
+  addModal.value.selectedUser = null
+  addModal.value.selectedPermissions = []
 }
 
 const closeAddModal = () => {
   showAddModal.value = false
 }
 
-// เพิ่มฟังก์ชันนี้ใน script setup
-const refreshUsers = () => {
+const refreshUsers = async () => {
   isLoading.value = true
-  // จำลองการโหลดข้อมูลใหม่ (ในกรณีใช้ API จริงให้เรียก API ที่นี่)
-  setTimeout(() => {
-    // สำหรับ mock data: แค่ copy array ใหม่เพื่อ trigger reactivity
-    // mockUserPermissions.length = 0
-    // mockUserPermissions.push(...mockUserPermissions)
-
-    // const newMockData = [...mockUserPermissions]
-    // mockUserPermissions.splice(0, mockUserPermissions.length, ...newMockData)
-
-    // ✅ สร้าง deep copy ใหม่ทั้งหมด
-    const newMockData = JSON.parse(JSON.stringify(userPermissionsData.value))
-    userPermissionsData.value.splice(0, userPermissionsData.value.length, ...newMockData)
-    currentPage.value = 1 // รีเซ็ตกลับไปหน้าแรก
+  try {
+    // ✅ ตรวจสอบว่าฟังก์ชันมีอยู่จริง
+    if (typeof authStore.fetchAllUsers !== 'function') {
+      throw new Error('authStore.fetchAllUsers is not available')
+    }
+    await authStore.fetchAllUsers()
+    currentPage.value = 1
+  } catch (error) {
+    console.error('Error refreshing users:', error)
+  } finally {
     isLoading.value = false
-    console.log('ManagePermissions: รีโหลดข้อมูลใหม่เรียบร้อย')
-  }, 500)
+  }
 }
 
 const saveAddPermissions = async () => {
-  if (!addModal.selectedUser) return
+  if (!addModal.value.selectedUser) return
 
-  addModal.loading = true
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('💾 [SAVE ADD] Starting save process...')
+  console.log('User:', {
+    id: addModal.value.selectedUser.id,
+    username: addModal.value.selectedUser.username
+  })
+  console.log('Selected Permissions:', JSON.stringify(addModal.value.selectedPermissions))
+
+  addModal.value.loading = true
   try {
-    // Simulate API call
-    console.log('Adding permissions:', {
-      userId: addModal.selectedUser.id,
-      permissions: addModal.selectedPermissions
+    // const permissionsData = addModal.selectedPermissions.map(featureId => ({
+    //   user_id: addModal.selectedUser!.id,
+    //   feature_id: featureId,
+    //   can_access: 1
+    // }))
+    // ✅ ถูกต้อง: ส่งแค่ array ของ feature IDs
+    // ✅ ลบค่าซ้ำ และ sort
+    const featureIds = [...new Set(addModal.value.selectedPermissions)].sort((a, b) => a - b)
+
+    console.log('Feature IDs (cleaned):', featureIds)
+    console.log('Feature Details:', featureIds.map(id => {
+      const feature = allFeatures.value.find(f => f.id === id)
+      return {
+        id,
+        name: feature?.feature_name || 'Unknown'
+      }
+    }))
+
+    console.log('🚀 Calling API with:', {
+      userId: addModal.value.selectedUser.id,
+      featureIds,
+      count: featureIds.length
     })
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await permissionStore.assignPermissions(addModal.value.selectedUser.id, featureIds)
 
-    // Add to mock data
-    const newUserPermission: UserWithPermissions = {
-      user: addModal.selectedUser,
-      permissions: addModal.selectedPermissions.map(featureId => ({
-        user_id: addModal.selectedUser!.id,
-        feature_id: featureId,
-        can_access: 1,
-        feature: mockFeatures.find(f => f.id === featureId)!
-      }))
-    }
-
-    userPermissionsData.value.push(newUserPermission)
-
-    // Close modal and reset
     closeAddModal()
+    await refreshUsers()
     alert('ເພີ່ມສິດທິສຳເລັດ!')
-
-    // 👇 เพิ่มบรรทัดนี้
-    refreshUsers()
 
   } catch (error) {
     console.error('Error adding permissions:', error)
     alert('ເກີດຂໍ້ຜິດພາດການເພີ່ມສິດທິ')
   } finally {
-    addModal.loading = false
+    addModal.value.loading = false
   }
 }
 
 // Edit Modal methods
 const openEditPermissionModal = (userPermission: UserWithPermissions) => {
   showEditModal.value = true
-  editModal.user = userPermission.user
-  editModal.selectedPermissions = userPermission.permissions.map(p => p.feature_id)
-
-  // 👇 เพิ่ม debug log
-  console.log('Opening edit modal for user:', userPermission.user.full_name)
-  console.log('Current permissions:', editModal.selectedPermissions)
+  editModal.value.user = userPermission.user
+  // editModal.selectedPermissions = userPermission.permissions.map(p => p.feature_id)
+  // ✅ ดึง feature_id จาก permissions
+  editModal.value.selectedPermissions = userPermission.permissions
+    .map((p: any) => p.feature_id)
+    .filter((id: number) => id !== undefined)
 }
 
 const closeEditModal = () => {
@@ -563,88 +758,138 @@ const closeEditModal = () => {
 }
 
 const toggleEditPermission = (featureId: number) => {
-  const index = editModal.selectedPermissions.indexOf(featureId)
+  console.log('━━━ Toggle Edit Permission ━━━')
+  console.log('Feature ID:', featureId)
+  console.log('Before:', JSON.stringify(editModal.value.selectedPermissions))
+
+  // ✅ สร้าง array ใหม่ทุกครั้ง
+  const currentPermissions = [...editModal.value.selectedPermissions]
+  const index = currentPermissions.indexOf(featureId)
+
   if (index > -1) {
-    editModal.selectedPermissions.splice(index, 1)
+    console.log('Action: REMOVE')
+    currentPermissions.splice(index, 1)
   } else {
-    editModal.selectedPermissions.push(featureId)
+    console.log('Action: ADD')
+    currentPermissions.push(featureId)
   }
+
+  // ✅ Assign array ใหม่
+  editModal.value.selectedPermissions = currentPermissions
+
+  console.log('After:', JSON.stringify(editModal.value.selectedPermissions))
+  console.log('Feature:', allFeatures.value.find(f => f.id === featureId)?.feature_name)
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━')
 }
 
-const saveEditPermissions = async () => {
-  if (!editModal.user) return
+// ✅ เพิ่ม watcher เพื่อ debug
+watch(
+  () => addModal.value.selectedPermissions,
+  (newValue) => {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🟢 [ADD MODAL] Permissions Changed:')
+    console.log('  Count:', newValue.length)
+    console.log('  IDs:', JSON.stringify(newValue))
+    console.log('  Features:', newValue.map(id => {
+      const feature = allFeatures.value.find(f => f.id === id)
+      return feature ? `${feature.feature_name} (${id})` : `Unknown (${id})`
+    }))
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  },
+  { deep: true }
+)
 
-  editModal.loading = true
+watch(
+  () => editModal.value.selectedPermissions,
+  (newValue) => {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🔵 [EDIT MODAL] Permissions Changed:')
+    console.log('  Count:', newValue.length)
+    console.log('  IDs:', JSON.stringify(newValue))
+    console.log('  Features:', newValue.map(id => {
+      const feature = allFeatures.value.find(f => f.id === id)
+      return feature ? `${feature.feature_name} (${id})` : `Unknown (${id})`
+    }))
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  },
+  { deep: true }
+)
+
+const saveEditPermissions = async () => {
+  if (!editModal.value.user) return
+
+   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('💾 [SAVE EDIT] Starting save process...')
+  console.log('User:', {
+    id: editModal.value.user.id,
+    username: editModal.value.user.username
+  })
+  console.log('Selected Permissions:', JSON.stringify(editModal.value.selectedPermissions))
+
+
+  editModal.value.loading = true
   try {
-    console.log('Updating permissions:', {
-      userId: editModal.user.id,
-      permissions: editModal.selectedPermissions
+    // const permissionsData = editModal.selectedPermissions.map(featureId => ({
+    //   user_id: editModal.user!.id,
+    //   feature_id: featureId,
+    //   can_access: 1
+    // }))
+    // ✅ ตรวจสอบค่าที่จะส่ง
+    // ✅ ใช้ selectedPermissions โดยตรง (ไม่ต้อง map)
+    const featureIds = [...new Set(editModal.value.selectedPermissions)].sort((a, b) => a - b)
+
+    console.log('Feature IDs (cleaned):', featureIds)
+    console.log('Feature Details:', featureIds.map(id => {
+      const feature = allFeatures.value.find(f => f.id === id)
+      return {
+        id,
+        name: feature?.feature_name || 'Unknown'
+      }
+    }))
+
+    console.log('🚀 Calling API with:', {
+      userId: editModal.value.user.id,
+      featureIds,
+      count: featureIds.length
     })
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    const userIndex = userPermissionsData.value.findIndex(up => up.user.id === editModal.user!.id)
-
-    if (userIndex !== -1) {
-      // ✅ สร้าง permissions ใหม่ทั้งหมด
-      const newPermissions = editModal.selectedPermissions.map(featureId => ({
-        user_id: editModal.user!.id,
-        feature_id: featureId,
-        can_access: 1,
-        feature: mockFeatures.find(f => f.id === featureId)!
-      }))
-
-      // ✅ สร้าง user permission object ใหม่ทั้งหมด
-      const updatedUserPermission = {
-        ...userPermissionsData.value[userIndex],
-        permissions: newPermissions
-      }
-
-      // ✅ สร้าง array ใหม่ทั้งหมดด้วย spread operator
-      const newArray = [...userPermissionsData.value]
-      newArray[userIndex] = updatedUserPermission
-
-      // ✅ อัปเดตด้วยการ assign ใหม่ทั้งหมด
-      userPermissionsData.value = newArray
-
-      console.log('Successfully updated permissions')
-    }
+    await permissionStore.assignPermissions(editModal.value.user.id, featureIds)
 
     closeEditModal()
+    await refreshUsers()
     alert('ແກ້ໄຂສິດທິສຳເລັດ!')
-    refreshUsers()
 
   } catch (error) {
     console.error('Error updating permissions:', error)
     alert('ເກີດຂໍ້ຜິດພາດການແກ້ໄຂສິດທິ')
   } finally {
-    editModal.loading = false
+    editModal.value.loading = false
   }
 }
 
 // Delete all permissions
-const deleteAllPermissions = (userId: number) => {
+const deleteAllPermissions = async (userId: number) => {
   if (confirm('ຕ້ອງການລຶບສິດທິທັງໝົດຂອງຜູ້ໃຊ້ນີ້ບໍ?')) {
-    const userIndex = userPermissionsData.value.findIndex(up => up.user.id === userId)
-    if (userIndex !== -1) {
-      userPermissionsData.value.splice(userIndex, 1)
+    try {
+      await permissionStore.deleteAllUserPermissions(userId)
+      await refreshUsers()
       alert('ລຶບສິດທິສຳເລັດ!')
-
-      refreshUsers()
+    } catch (error) {
+      console.error('Error deleting permissions:', error)
+      alert('ເກີດຂໍ້ຜິດພາດການລຶບສິດທິ')
     }
   }
 }
 
-// Close dropdowns when clicking outside
-// Close dropdown when clicking outside (เหมือน ChangePassword)
+// Close dropdown when clicking outside
 const handleClickOutside = (event: MouseEvent) => {
   const comboBox = document.querySelector('[data-combo-box]')
   if (comboBox && !comboBox.contains(event.target as Node)) {
-    addModal.showDropdown = false
+    addModal.value.showDropdown = false
   }
 }
 
-watch(() => addModal.showDropdown, (newVal) => {
+watch(() => addModal.value.showDropdown, (newVal) => {
   if (newVal) {
     document.addEventListener('click', handleClickOutside)
   } else {

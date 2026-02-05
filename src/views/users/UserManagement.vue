@@ -13,6 +13,3 @@
 import ListUsers from '@/components/users/ListUsers.vue'
 </script>
 
-<style scoped>
-
-</style>

@@ -11,7 +11,7 @@
         @click="openAddProductTypeModal"
         class="btn btn-gradient btn-primary whitespace-nowrap"
       >
-        <span class="icon-[tabler--plus] size-5 mr-1"></span>
+        <span class="icon-[tabler--category-plus] size-5 mr-1"></span>
         ເພີ່ມປະເພດໃໝ່
       </button>
     </div>
@@ -201,64 +201,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useProductTypeStore } from '@/stores/productType'
 
-// Types based on your DB schema (without partner_id)
-interface ProductType {
-  id: number
+// Types
+interface ProductTypeForm {
   type_name: string
   description: string | null
   is_active: number
-  created_at: string
 }
 
-// Reactive state
-const isLoading = ref(false)
+// Store
+const productTypeStore = useProductTypeStore()
+
+// Modal state
 const showModal = ref(false)
 const editingProductType = ref<ProductType | null>(null)
-const currentPage = ref(1)
-const pageSize = ref(10)
 
-// Mock product types data (without partner_id)
-const mockProductTypes: ProductType[] = [
-  {
-    id: 1,
-    type_name: 'ເຄື່ອງໃຊ້ໄຟຟ້າ',
-    description: 'ສິນຄ້າເຄື່ອງໃຊ້ໄຟຟ້າທັງໝົດ',
-    is_active: 1,
-    created_at: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    type_name: 'ເຄື່ອງນຸ່ງ',
-    description: 'ເຄື່ອງນຸ່ງຜູ້ໃຫຍ່',
-    is_active: 1,
-    created_at: '2024-02-20T14:15:00Z'
-  },
-  {
-    id: 3,
-    type_name: 'ອາຫານ',
-    description: 'ອາຫານແລະເຄື່ອງດື່ມ',
-    is_active: 0,
-    created_at: '2024-03-10T09:45:00Z'
-  },
-  {
-    id: 4,
-    type_name: 'ຄວາມງາມ',
-    description: 'ເຄື່ອງສຳອາງ ແລະ ການດູແລຕົນເອງ',
-    is_active: 1,
-    created_at: '2024-03-25T11:20:00Z'
-  },
-  {
-    id: 5,
-    type_name: 'ບ້ານ',
-    description: 'ເຄື່ອງໃຊ້ໃນບ້ານ',
-    is_active: 1,
-    created_at: '2024-04-05T16:30:00Z'
-  }
-]
-
-// Form state (matches DB schema without partner_id)
+// Form state
 const form = reactive({
   type_name: '',
   description: '',
@@ -269,30 +229,25 @@ const errors = reactive({
   type_name: ''
 })
 
-// Computed properties
-const filteredProductTypes = computed(() => mockProductTypes)
-const displayedProductTypes = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredProductTypes.value.slice(start, end)
-})
-
-const totalProductTypes = computed(() => filteredProductTypes.value.length)
-const totalPages = computed(() => Math.ceil(totalProductTypes.value / pageSize.value) || 1)
-const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
-const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalProductTypes.value))
-const hasPreviousPage = computed(() => currentPage.value > 1)
-const hasNextPage = computed(() => currentPage.value < totalPages.value)
+// Computed properties (get from store)
+const isLoading = computed(() => productTypeStore.isLoading)
+const displayedProductTypes = computed(() => productTypeStore.displayedProductTypes)
+const totalProductTypes = computed(() => productTypeStore.total)
+const totalPages = computed(() => productTypeStore.totalPages)
+const startIndex = computed(() => productTypeStore.startIndex)
+const endIndex = computed(() => productTypeStore.endIndex)
+const hasPreviousPage = computed(() => productTypeStore.hasPreviousPage)
+const hasNextPage = computed(() => productTypeStore.hasNextPage)
+const currentPage = computed(() => productTypeStore.currentPage)
+const pageSize = computed(() => productTypeStore.pageSize)
 
 // Validation
 const validateForm = (): boolean => {
   errors.type_name = ''
-
   if (!form.type_name.trim()) {
     errors.type_name = 'ກະລຸນາປ້ອນຊື່ປະເພດສິນຄ້າ'
     return false
   }
-
   return true
 }
 
@@ -324,55 +279,42 @@ const resetForm = () => {
 
 // Save product type
 const saveProductType = async () => {
-  if (!validateForm()) {
-    return
-  }
+  if (!validateForm()) return
 
-  isLoading.value = true
   try {
     if (editingProductType.value) {
       // Edit mode
-      const index = mockProductTypes.findIndex(pt => pt.id === editingProductType.value!.id)
-      if (index !== -1) {
-        mockProductTypes[index] = {
-          ...editingProductType.value,
-          type_name: form.type_name,
-          description: form.description || null,
-          is_active: form.is_active,
-          created_at: editingProductType.value.created_at
-        }
-      }
+      await productTypeStore.updateProductType(editingProductType.value.id, {
+        type_name: form.type_name,
+        description: form.description || null,
+        is_active: form.is_active
+      })
       alert('ແກ້ໄຂປະເພດສິນຄ້າສຳເລັດ!')
     } else {
       // Create mode
-      const newProductType: ProductType = {
-        id: mockProductTypes.length + 1,
+      await productTypeStore.createProductType({
         type_name: form.type_name,
         description: form.description || null,
-        is_active: form.is_active,
-        created_at: new Date().toISOString()
-      }
-      mockProductTypes.unshift(newProductType)
+        is_active: form.is_active
+      })
       alert('ເພີ່ມປະເພດສິນຄ້າສຳເລັດ!')
     }
-
     closeModal()
-
   } catch (error) {
     console.error('Error saving product type:', error)
     alert('ເກີດຂໍ້ຜິດພາດການບັນທຶກປະເພດສິນຄ້າ')
-  } finally {
-    isLoading.value = false
   }
 }
 
 // Delete product type
-const deleteProductType = (productTypeId: number) => {
+const deleteProductType = async (productTypeId: number) => {
   if (confirm('ຕ້ອງການລຶບປະເພດສິນຄ້ານີ້ບໍ?')) {
-    const index = mockProductTypes.findIndex(pt => pt.id === productTypeId)
-    if (index !== -1) {
-      mockProductTypes.splice(index, 1)
+    try {
+      await productTypeStore.deleteProductType(productTypeId)
       alert('ລຶບປະເພດສິນຄ້າສຳເລັດ!')
+    } catch (error) {
+      console.error('Error deleting product type:', error)
+      alert('ເກີດຂໍ້ຜິດພາດການລຶບປະເພດສິນຄ້າ')
     }
   }
 }
@@ -380,17 +322,22 @@ const deleteProductType = (productTypeId: number) => {
 // Pagination methods
 const previousPage = () => {
   if (hasPreviousPage.value) {
-    currentPage.value--
+    productTypeStore.changePage(currentPage.value - 1)
   }
 }
 
 const nextPage = () => {
   if (hasNextPage.value) {
-    currentPage.value++
+    productTypeStore.changePage(currentPage.value + 1)
   }
 }
 
-watch(pageSize, () => {
-  currentPage.value = 1
+const handlePageSizeChange = (newSize: number) => {
+  productTypeStore.changePageSize(newSize)
+}
+
+// Initial fetch
+onMounted(() => {
+  productTypeStore.fetchProductTypes()
 })
 </script>

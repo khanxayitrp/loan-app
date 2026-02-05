@@ -3,8 +3,9 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axio
 import { useAuthStore } from '@/stores/auth'
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:15520/api',
   timeout: 10000,
+   withCredentials: true, // ⭐ สำคัญมาก! ส่ง cookies ไปทุก request
   headers: {
     'Content-Type': 'application/json'
   }

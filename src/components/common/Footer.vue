@@ -3,7 +3,7 @@
   <div class="w-full">
     <footer class="footer text-bg-neutral items-center px-6 py-4">
       <aside class="grid-flow-col items-center">
-        <p>&copy;2026 <a class="link link-hover  text-amber-50 font-medium" href="#">ອິນຊີ HUB</a></p>
+        <p>&copy;2026 <a class="link link-hover  text-amber-50 font-medium" href="#">ອິນຊີ Loan</a></p>
       </aside>
       <nav class="text-neutral-content grid-flow-col gap-4 md:place-self-center md:justify-self-end">
         <a class="link link-hover text-amber-50" href="#">License</a>
