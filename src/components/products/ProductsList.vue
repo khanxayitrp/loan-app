@@ -50,7 +50,7 @@
           :key="type.id"
           :value="type.id.toString()"
         >
-          {{ type.name }}
+          {{ type.type_name }}
         </option>
       </select>
     </div>
@@ -277,8 +277,8 @@
                     <p class="text-sm font-medium">ຂໍ້ມູນໄຟລ໌:</p>
                     <div v-if="form.image_url" class="text-sm text-gray-600 dark:text-gray-400">
                       <p>✓ ອັບໂຫຼດສຳເລັດ</p>
-                      <p>ປະເພດ: {{ imageFileInfo.type }}</p>
-                      <p>ຂະໜາດ: {{ formatFileSize(imageFileInfo.size) }}</p>
+                      <p>ປະເພດ: {{ imageFileInfo?.type || '-' }}</p>
+                      <p>ຂະໜາດ: {{ formatFileSize(imageFileInfo?.size || 0) }}</p>
                       <button
                         type="button"
                         class="text-error text-sm mt-2 hover:underline"
@@ -330,7 +330,7 @@
                   :key="type.id"
                   :value="type.id"
                 >
-                  {{ type.name }}
+                  {{ type.type_name }}
                 </option>
               </select>
               <label v-if="errors.productType_id" class="label text-error">
@@ -469,44 +469,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useProductStore } from '@/stores/product'
 
-// Types based on your DB schema (without partner_id)
-interface Product {
-  id: number
-  productType_id: number
-  product_name: string
-  price: number
-  interest_rate: number
-  image_url: string | null
-  gallery: string[] | null
-  is_active: number
-  created_at: string
-  updated_at: string | null
-}
-
-interface ProductType {
-  id: number
+// ในส่วน types
+interface ImageFileInfo {
   name: string
+  type: string
+  size: number
 }
+// Store
+const productStore = useProductStore()
 
-// Mock data for product types
-const productTypes = ref<ProductType[]>([
-  { id: 1, name: 'ເຄື່ອງໃຊ້ໄຟຟ້າ' },
-  { id: 2, name: 'ເຄື່ອງນຸ່ງ' },
-  { id: 3, name: 'ອາຫານ' },
-  { id: 4, name: 'ຄວາມງາມ' },
-  { id: 5, name: 'ບ້ານ' }
-])
-
-// Reactive state
-const isLoading = ref(false)
+// Modal state
 const showModal = ref(false)
 const showStatusModal = ref(false)
 const editingProduct = ref<Product | null>(null)
 const productToToggle = ref<Product | null>(null)
-const currentPage = ref(1)
-const pageSize = ref(10)
 const fileInput = ref<HTMLInputElement | null>(null)
 const galleryInput = ref<HTMLInputElement | null>(null)
 
@@ -515,61 +494,7 @@ const searchQuery = ref('')
 const statusFilter = ref('')
 const typeFilter = ref('')
 
-// Debounce search
-let debounceTimer: NodeJS.Timeout | null = null
-const debouncedSearch = ref('')
-
-const debounceSearch = () => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-  }
-  debounceTimer = setTimeout(() => {
-    debouncedSearch.value = searchQuery.value
-    currentPage.value = 1
-  }, 300)
-}
-
-// Mock products data (without partner_id)
-const mockProducts: Product[] = [
-  {
-    id: 1,
-    productType_id: 1,
-    product_name: 'ໂທລະສັບມືຖື iPhone 15',
-    price: 15000000,
-    interest_rate: 5.50,
-    image_url: null,
-    gallery: null,
-    is_active: 1,
-    created_at: '2024-01-15T10:30:00Z',
-    updated_at: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    productType_id: 2,
-    product_name: 'ເສື້ອຍືນ Levi\'s',
-    price: 350000,
-    interest_rate: 3.25,
-    image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDIyQzYuNDc3IDEyIDAgOS40NjQgMCA3VjVjMC0xLjEgLjk0NC0yIDItdDJWN2MwIDEuNjU3IDMuMTY3IDQgOCA0czggMi4zNDMgOCA0djJjLTEuMTAwIDAtMiAuOTQ0LTIgMnMtLjg5OSAyLTIgMnoiIGZpbGw9IiM0RjdGRkYiLz4KPC9zdmc+',
-    gallery: ['data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDIyQzYuNDc3IDEyIDAgOS40NjQgMCA3VjVjMC0xLjEgLjk0NC0yIDItdDJWN2MwIDEuNjU3IDMuMTY3IDQgOCA0czggMi4zNDMgOCA0djJjLTEuMTAwIDAtMiAuOTQ0LTIgMnMtLjg5OSAyLTIgMnoiIGZpbGw9IiM0RjdGRkYiLz4KPC9zdmc+'],
-    is_active: 1,
-    created_at: '2024-02-20T14:15:00Z',
-    updated_at: '2024-02-20T14:15:00Z'
-  },
-  {
-    id: 3,
-    productType_id: 3,
-    product_name: 'ນ້ຳຕານອົດ',
-    price: 25000,
-    interest_rate: 2.00,
-    image_url: null,
-    gallery: null,
-    is_active: 0,
-    created_at: '2024-03-10T09:45:00Z',
-    updated_at: '2024-03-10T09:45:00Z'
-  }
-]
-
-// Form state (matches DB schema without partner_id)
+// Form state
 const form = reactive({
   product_name: '',
   productType_id: 0,
@@ -580,12 +505,6 @@ const form = reactive({
   is_active: 1
 })
 
-const imageFileInfo = reactive({
-  name: '',
-  type: '',
-  size: 0
-})
-
 const errors = reactive({
   product_name: '',
   productType_id: '',
@@ -593,50 +512,30 @@ const errors = reactive({
   interest_rate: ''
 })
 
-// Filtered products
-const filteredProducts = computed(() => {
-  let filtered = mockProducts
-
-  // Search filter
-  if (debouncedSearch.value) {
-    const query = debouncedSearch.value.toLowerCase()
-    filtered = filtered.filter(product =>
-      product.product_name.toLowerCase().includes(query)
-    )
-  }
-
-  // Status filter
-  if (statusFilter.value !== '') {
-    const status = parseInt(statusFilter.value)
-    filtered = filtered.filter(product => product.is_active === status)
-  }
-
-  // Type filter
-  if (typeFilter.value !== '') {
-    const typeId = parseInt(typeFilter.value)
-    filtered = filtered.filter(product => product.productType_id === typeId)
-  }
-
-  return filtered
+// ✅ เพิ่มบรรทัดนี้: ประกาศ imageFileInfo ให้เป็น reactive
+const imageFileInfo = reactive<ImageFileInfo>({
+  name: '',
+  type: '',
+  size: 0
 })
 
-const displayedProducts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredProducts.value.slice(start, end)
-})
-
-const totalProducts = computed(() => filteredProducts.value.length)
-const totalPages = computed(() => Math.ceil(totalProducts.value / pageSize.value) || 1)
-const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
-const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalProducts.value))
-const hasPreviousPage = computed(() => currentPage.value > 1)
-const hasNextPage = computed(() => currentPage.value < totalPages.value)
+// Computed properties (get from store)
+const isLoading = computed(() => productStore.isLoading)
+const displayedProducts = computed(() => productStore.displayedProducts)
+const totalProducts = computed(() => productStore.total)
+const totalPages = computed(() => productStore.totalPages)
+const startIndex = computed(() => productStore.startIndex)
+const endIndex = computed(() => productStore.endIndex)
+const hasPreviousPage = computed(() => productStore.hasPreviousPage)
+const hasNextPage = computed(() => productStore.hasNextPage)
+const currentPage = computed(() => productStore.currentPage)
+const pageSize = computed(() => productStore.pageSize)
+const productTypes = computed(() => productStore.productTypes)
 
 // Utility functions
 const getProductTypeName = (productTypeId: number): string => {
   const type = productTypes.value.find(t => t.id === productTypeId)
-  return type ? type.name : `Type ID: ${productTypeId}`
+  return type ? type.type_name : `Type ID: ${productTypeId}`
 }
 
 const formatPrice = (price: number): string => {
@@ -717,16 +616,9 @@ const resetForm = () => {
   form.image_url = ''
   form.gallery = []
   form.is_active = 1
-  imageFileInfo.name = ''
-  imageFileInfo.type = ''
-  imageFileInfo.size = 0
 
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-  if (galleryInput.value) {
-    galleryInput.value.value = ''
-  }
+  if (fileInput.value) fileInput.value.value = ''
+  if (galleryInput.value) galleryInput.value.value = ''
 }
 
 // Status toggle functions
@@ -735,31 +627,33 @@ const toggleProductStatus = (product: Product) => {
   showStatusModal.value = true
 }
 
-const confirmToggleStatus = () => {
+const confirmToggleStatus = async () => {
   if (productToToggle.value) {
-    // Update mock data
-    const index = mockProducts.findIndex(p => p.id === productToToggle.value!.id)
-    if (index !== -1) {
-      mockProducts[index].is_active = productToToggle.value!.is_active === 1 ? 0 : 1
+    try {
+      await productStore.toggleProductStatus(
+        productToToggle.value.id,
+        productToToggle.value.is_active === 0
+      )
       alert('ປ່ຽນສະຖານະສຳເລັດ!')
+    } catch (error) {
+      alert('ເກີດຂໍ້ຜິດພາດການປ່ຽນສະຖານະ')
     }
   }
-
   showStatusModal.value = false
   productToToggle.value = null
 }
 
 // File upload handlers
 const triggerFileInput = () => {
-  if (fileInput.value) {
-    fileInput.value.click()
-  }
+  if (fileInput.value) fileInput.value.click()
 }
 
-const handleFileUpload = (event: Event) => {
+const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-
+  imageFileInfo.name = file.name  // ✅ ต้องมีการประกาศก่อนใช้
+  imageFileInfo.type = file.type
+  imageFileInfo.size = file.size
   if (file) {
     if (file.size > 2 * 1024 * 1024) {
       alert('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 2MB')
@@ -771,40 +665,35 @@ const handleFileUpload = (event: Event) => {
       return
     }
 
-    imageFileInfo.name = file.name
-    imageFileInfo.type = file.type
-    imageFileInfo.size = file.size
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      form.image_url = e.target?.result as string
+    try {
+      // แสดง preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        form.image_url = e.target?.result as string
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('Error reading file:', error)
     }
-    reader.readAsDataURL(file)
   }
 }
 
 const removeImage = () => {
   form.image_url = ''
-  imageFileInfo.name = ''
+    imageFileInfo.name = ''  // ✅ ต้องมีการประกาศก่อนใช้
   imageFileInfo.type = ''
   imageFileInfo.size = 0
-
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
+  if (fileInput.value) fileInput.value.value = ''
 }
 
-// Gallery handlers (Drag & Drop)
+// Gallery handlers
 const triggerGalleryInput = () => {
-  if (galleryInput.value) {
-    galleryInput.value.click()
-  }
+  if (galleryInput.value) galleryInput.value.click()
 }
 
 const handleGalleryUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const files = Array.from(target.files || [])
-
   await processGalleryFiles(files)
 }
 
@@ -817,7 +706,6 @@ const processGalleryFiles = async (files: File[]) => {
   const validImages: string[] = []
 
   for (const file of files) {
-    // Validate file
     if (file.size > 2 * 1024 * 1024) {
       alert(`ໄຟລ໌ ${file.name} ຂະໜາດໃຫຍ່ກວ່າ 2MB`)
       continue
@@ -828,22 +716,15 @@ const processGalleryFiles = async (files: File[]) => {
       continue
     }
 
-    // Convert to base64
-    const base64 = await readFileAsBase64(file)
+    const reader = new FileReader()
+    const base64 = await new Promise<string>((resolve) => {
+      reader.onload = () => resolve(reader.result as string)
+      reader.readAsDataURL(file)
+    })
     validImages.push(base64)
   }
 
-  // Add to gallery
   form.gallery.push(...validImages)
-}
-
-const readFileAsBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
 }
 
 const removeGalleryImage = (index: number) => {
@@ -852,82 +733,230 @@ const removeGalleryImage = (index: number) => {
 
 // Save product
 const saveProduct = async () => {
-  if (!validateForm()) {
-    return
-  }
+  if (!validateForm()) return
 
-  isLoading.value = true
   try {
+    let productId: number
     if (editingProduct.value) {
       // Edit mode
-      const index = mockProducts.findIndex(p => p.id === editingProduct.value!.id)
-      if (index !== -1) {
-        mockProducts[index] = {
-          ...editingProduct.value,
-          product_name: form.product_name,
-          productType_id: form.productType_id,
-          price: form.price,
-          interest_rate: form.interest_rate,
-          image_url: form.image_url || null,
-          gallery: form.gallery.length > 0 ? form.gallery : null,
-          is_active: form.is_active,
-          updated_at: new Date().toISOString()
-        }
-      }
-      alert('ແກ້ໄຂສິນຄ້າສຳເລັດ!')
-    } else {
-      // Create mode
-      const newProduct: Product = {
-        id: mockProducts.length + 1,
+      await productStore.updateProduct(editingProduct.value.id, {
         product_name: form.product_name,
         productType_id: form.productType_id,
         price: form.price,
         interest_rate: form.interest_rate,
-        image_url: form.image_url || null,
-        gallery: form.gallery.length > 0 ? form.gallery : null,
-        is_active: form.is_active,
-        created_at: new Date().toISOString(),
-        updated_at: null
-      }
-      mockProducts.unshift(newProduct)
-      alert('ເພີ່ມສິນຄ້າສຳເລັດ!')
+        is_active: form.is_active
+      })
+
+      productId = editingProduct.value.id
+
+    } else {
+      // Create mode
+      const newProduct = await productStore.createProduct({
+        product_name: form.product_name,
+        productType_id: form.productType_id,
+        price: form.price,
+        interest_rate: form.interest_rate,
+        is_active: form.is_active
+      })
+      productId = newProduct.data.id
+
     }
 
+     // 2. Handle main image upload
+    if (form.image_url && !form.image_url.startsWith('http')) {
+      try {
+        const base64Response = await fetch(form.image_url)
+        const blob = await base64Response.blob()
+        const file = new File([blob], 'main-image.jpg', { type: 'image/jpeg' })
+
+        const uploadResp = await productStore.uploadProductImage(productId, file)
+
+        if (uploadResp.success && uploadResp.data?.file_url) {
+          await productStore.updateProduct(productId, {
+            image_url: uploadResp.data.file_url
+          })
+        }
+      } catch (error) {
+        console.error('Error uploading main image:', error)
+      }
+    }
+
+    //   // Handle gallery uploads
+    //   const newGalleryImages = form.gallery.filter(img => !img.startsWith('http'))
+    //   if (newGalleryImages.length > 0) {
+    //     const galleryFiles = await Promise.all(
+    //       newGalleryImages.map(async (img) => {
+    //         const response = await fetch(img)
+    //         const blob = await response.blob()
+    //         return new File([blob], 'gallery-image.jpg', { type: 'image/jpeg' })
+    //       })
+    //     )
+    //     const uploadGalleryResp = await productStore.uploadProductGallery(productId, galleryFiles)
+
+    //     if (uploadGalleryResp.success && uploadGalleryResp.data.uploaded.length > 0) {
+    //     // 2. ເອົາລາຍການ URL ທັງໝົດ ໄປບັນທຶກລົງ Table product_gallery (Bulk Insert)
+    //     // ໝາຍເຫດ: ຄວນສົ່ງທັງຮູບເກົ່າ (http) ແລະ ຮູບໃໝ່ທີ່ຫາກໍ່ອັບສຳເລັດໄປພ້ອມກັນ
+    //     const allGalleryUrls = [
+    //       ...form.gallery.filter(img => img.startsWith('http')), // ຮູບເກົ່າທີ່ບໍ່ໄດ້ປ່ຽນ
+    //       ...uploadGalleryResp.data.uploaded.map(img => img.file_url) // ຮູບໃໝ່
+    //     ].map(url => ({ file_url: url }))
+
+    //     await productStore.syncProductGallery(productId, allGalleryUrls)
+    //   }
+    //   }
+
+    //   alert(editingProduct.value ? 'ແກ້ໄຂສິນຄ້າສຳເລັດ!' : 'ເພີ້ມສິນຄ້າສຳເລັດ!')
+
+    // closeModal()
+    // 3. Handle gallery uploads
+    const newGalleryImages = form.gallery.filter(img => !img.startsWith('http'))
+
+    if (newGalleryImages.length > 0) {
+      try {
+        console.log('📤 Processing new gallery images:', newGalleryImages.length)
+
+        // Convert base64 to File objects with unique names
+        const galleryFiles = await Promise.all(
+          newGalleryImages.map(async (img, index) => {
+            const response = await fetch(img)
+            const blob = await response.blob()
+
+            // Generate unique filename
+            const timestamp = Date.now()
+            const filename = `gallery-${timestamp}-${index}.jpg`
+
+            return new File([blob], filename, { type: 'image/jpeg' })
+          })
+        )
+
+        console.log('📤 Uploading', galleryFiles.length, 'gallery files')
+
+        // Upload gallery images
+        const uploadGalleryResp = await productStore.uploadProductGallery(productId, galleryFiles)
+
+        console.log('📥 Gallery upload response:', uploadGalleryResp)
+
+        // ✅ Check if upload was successful
+        if (uploadGalleryResp.success) {
+
+          // Get uploaded file URLs
+          const uploadedUrls = uploadGalleryResp.data.uploaded || []
+
+          console.log('✅ Uploaded:', uploadedUrls.length, 'files')
+
+          // Show failed uploads if any
+          if (uploadGalleryResp.data.failed && uploadGalleryResp.data.failed.length > 0) {
+            console.warn('⚠️ Failed uploads:', uploadGalleryResp.data.failed)
+            alert(`คำเตือน: ${uploadGalleryResp.data.failed.length} ไฟล์อัพโหลดไม่สำเร็จ\n${uploadGalleryResp.data.failed.join('\n')}`)
+          }
+
+          // Combine old and new gallery URLs
+          if (uploadedUrls.length > 0) {
+            // Get existing gallery URLs (URLs that start with http/https)
+            const existingUrls = form.gallery.filter(img => img.startsWith('http'))
+
+            console.log('🔄 Existing gallery URLs:', existingUrls.length)
+            console.log('🔄 New gallery URLs:', uploadedUrls.length)
+
+            // Combine all gallery URLs
+            const allGalleryUrls = [
+              ...existingUrls.map(url => ({ file_url: url })),
+              ...uploadedUrls.map(img => ({ file_url: img.file_url }))
+            ]
+
+            console.log('🔄 Syncing total:', allGalleryUrls.length, 'gallery images')
+
+            // save to product_gallery table
+            await productStore.addProductGallery(productId, uploadGalleryResp)
+
+            console.log('✅ save Gallery completed')
+          }
+        } else {
+          console.error('❌ Gallery upload failed:', uploadGalleryResp)
+          alert('เกิดข้อผิดพลาดในการอัพโหลดรูปแกลเลอรี่')
+        }
+
+      } catch (error: any) {
+        console.error('❌ Error in gallery upload:', error)
+        alert(`เกิดข้อผิดพลาด: ${error.message || 'ไม่สามารถอัพโหลดรูปแกลเลอรี่ได้'}`)
+      }
+    } else if (form.gallery.length > 0) {
+      // ถ้าไม่มีรูปใหม่ แต่มีรูปเก่าอยู่ (กรณีแก้ไขแล้วไม่ได้เพิ่มรูปใหม่)
+      try {
+        const existingUrls = form.gallery
+          .filter(img => img.startsWith('http'))
+          .map(url => ({ file_url: url }))
+
+        if (existingUrls.length > 0) {
+          console.log('🔄 Syncing existing gallery:', existingUrls.length, 'images')
+          await productStore.addProductGallery(productId, existingUrls)
+        }
+      } catch (error) {
+        console.error('Error syncing existing gallery:', error)
+      }
+    }
+
+    // Success message
+    const message = editingProduct.value
+      ? 'ແກ້ໄຂສິນຄ້າສຳເລັດ!'
+      : 'ເພີ້ມສິນຄ້າສຳເລັດ!'
+
+    alert(message)
     closeModal()
 
   } catch (error) {
     console.error('Error saving product:', error)
     alert('ເກີດຂໍ້ຜິດພາດການບັນທຶກສິນຄ້າ')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Delete product (not used anymore, but kept for reference)
-const deleteProduct = (productId: number) => {
-  if (confirm('ຕ້ອງການລຶບສິນຄ້ານີ້ບໍ?')) {
-    const index = mockProducts.findIndex(p => p.id === productId)
-    if (index !== -1) {
-      mockProducts.splice(index, 1)
-      alert('ລຶບສິນຄ້າສຳເລັດ!')
-    }
   }
 }
 
 // Pagination methods
 const previousPage = () => {
   if (hasPreviousPage.value) {
-    currentPage.value--
+    productStore.changePage(currentPage.value - 1)
   }
 }
 
 const nextPage = () => {
   if (hasNextPage.value) {
-    currentPage.value++
+    productStore.changePage(currentPage.value + 1)
   }
 }
 
-watch(pageSize, () => {
-  currentPage.value = 1
+const handlePageSizeChange = (newSize: number) => {
+  productStore.changePageSize(newSize)
+}
+
+// Search debounce
+let debounceTimer: NodeJS.Timeout | null = null
+const debounceSearch = () => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    productStore.fetchProducts({
+      search: searchQuery.value,
+      status: statusFilter.value,
+      type: typeFilter.value
+    })
+  }, 300)
+}
+
+// Watch filters
+watch([searchQuery, statusFilter, typeFilter], () => {
+  debounceSearch()
+})
+
+// Initial fetch
+onMounted(async () => {
+  try {
+    if (!imageFileInfo) {
+    console.error('imageFileInfo is not defined!')
+  }
+    await Promise.all([
+      productStore.fetchProducts(),
+      productStore.fetchProductTypes()
+    ])
+  } catch (error) {
+    console.error('Error initializing product page:', error)
+  }
 })
 </script>

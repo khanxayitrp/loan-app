@@ -14,14 +14,16 @@ export const useProductTypeStore = defineStore('productType', {
     isLoading: false,
     currentPage: 1,
     pageSize: 10,
-    total: 0
+    total: 0,
+    error: null as string | null
   }),
 
   getters: {
     displayedProductTypes: (state) => {
+      const data = Array.isArray(state.productTypes) ? state.productTypes : []
       const start = (state.currentPage - 1) * state.pageSize
       const end = start + state.pageSize
-      return state.productTypes.slice(start, end)
+      return data.slice(start, end)
     },
 
     totalPages: (state) => Math.ceil(state.total / state.pageSize),
@@ -37,17 +39,25 @@ export const useProductTypeStore = defineStore('productType', {
      */
     async fetchProductTypes(page: number = 1, limit: number = 10) {
       this.isLoading = true
+      this.error = null
       try {
         this.currentPage = page
         this.pageSize = limit
 
         const response = await fetchProductTypes({ page, limit })
-        this.productTypes = response.data
-        this.total = response.total
+        console.log('get all productType', response)
+        // ✅ ตรวจสอบว่าเป็น array
+        this.productTypes = Array.isArray(response.data) ? response.data : []
+        this.total = response.total || response.data.length || 0
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch product types:', error)
+        // ✅ ตั้งค่า default เมื่อ error
+        this.error = error.message || 'Failed to fetch product types'
+        this.productTypes = []
+        this.total = 0
         throw error
+
       } finally {
         this.isLoading = false
       }

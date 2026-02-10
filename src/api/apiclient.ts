@@ -42,3 +42,18 @@ apiClient.interceptors.response.use(
 )
 
 export default apiClient
+
+// Utility function to handle API errors in components
+export const handleApiError = (error: any, fallbackMessage = 'ເກີດຂໍ້ຜິດພາດ') => {
+  if (error?.message) {
+    return error.message
+  }
+
+  if (error?.errors) {
+    // Return first validation error
+    const firstError = Object.values(error.errors)[0]
+    return Array.isArray(firstError) ? firstError[0] : firstError
+  }
+
+  return fallbackMessage
+}

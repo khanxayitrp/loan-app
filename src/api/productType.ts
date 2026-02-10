@@ -3,6 +3,7 @@
 import apiClient from '@/api/apiclient'
 import type { ProductType, ProductTypeForm } from '@/types/productType'
 
+
 /**
  * ดึงรายการประเภทสินค้าทั้งหมด
  */
@@ -13,9 +14,20 @@ export const fetchProductTypes = async (params?: {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', params.page.toString())
   if (params?.limit) searchParams.set('limit', params.limit.toString())
+  try {
+    const response = await apiClient.get(`/productTypes?${searchParams}`)
 
-  const response = await apiClient.get(`/productTypes?${searchParams}`)
-  return response.data
+    // ✅ ตรวจสอบโครงสร้าง response ทุกกรณี
+    console.log('API Response:', response.data)
+    // ✅ โครงสร้าง response จริง: { productTypes: { data: [...], total: 1, ... } }
+    const productTypesData = response.data.productTypes
+
+    return productTypesData
+  } catch (error) {
+    console.error('API Error in fetchProductTypes:', error)
+    throw error
+  }
+
 }
 
 /**
@@ -23,7 +35,8 @@ export const fetchProductTypes = async (params?: {
  */
 export const createProductType = async (data: ProductTypeForm): Promise<ProductType> => {
   const response = await apiClient.post('/productTypes', data)
-  return response.data
+  console.log('after save is ', response.data)
+  return response.data.data
 }
 
 /**
@@ -31,7 +44,8 @@ export const createProductType = async (data: ProductTypeForm): Promise<ProductT
  */
 export const updateProductType = async (id: number, data: ProductTypeForm): Promise<ProductType> => {
   const response = await apiClient.put(`/productTypes/${id}`, data)
-  return response.data
+  console.log('after save is ', response.data)
+  return response.data.data
 }
 
 /**
