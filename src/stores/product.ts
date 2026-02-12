@@ -1,5 +1,6 @@
 // src/stores/product.ts
 import { defineStore } from 'pinia'
+import { getFullImageUrl } from '@/utils/url'
 import {
   getProducts,
   createProduct,
@@ -35,6 +36,31 @@ export const useProductStore = defineStore('product', {
       const start = (state.currentPage - 1) * state.pageSize
       const end = start + state.pageSize
       return state.products.slice(start, end)
+    },
+     // ✅ เพิ่ม: แปลงรูปภาพเป็นลิงก์เต็มสำหรับสินค้าที่แสดง
+    displayedProductsWithFullUrls: (state) => {
+      const start = (state.currentPage - 1) * state.pageSize
+      const end = start + state.pageSize
+      const products = state.products.slice(start, end)
+
+      return products.map(product => ({
+        ...product,
+        image_url: getFullImageUrl(product.image_url),
+        gallery: Array.isArray(product.gallery)
+          ? product.gallery.map(url => getFullImageUrl(url))
+          : []
+      }))
+    },
+
+    // ✅ เพิ่ม: แปลงรูปภาพเป็นลิงก์เต็มสำหรับสินค้าทั้งหมด
+    productsWithFullUrls: (state) => {
+      return state.products.map(product => ({
+        ...product,
+        image_url: getFullImageUrl(product.image_url),
+        gallery: Array.isArray(product.gallery)
+          ? product.gallery.map(url => getFullImageUrl(url))
+          : []
+      }))
     },
 
     totalPages: (state) => Math.ceil(state.total / state.pageSize),
@@ -116,7 +142,9 @@ export const useProductStore = defineStore('product', {
         const updatedProduct = await updateProduct(id, data)
         const index = this.products.findIndex(p => p.id === id)
         if (index !== -1) {
-          this.products[index] = updatedProduct
+          // this.products[index] = updatedProduct
+          // ใช้ spread operator เพื่ออัปเดตข้อมูลทั้งหมด
+      this.products[index] = { ...this.products[index], ...updatedProduct }
         }
         return updatedProduct
       } catch (error) {
@@ -133,7 +161,9 @@ export const useProductStore = defineStore('product', {
         const updatedProduct = await toggleProductStatus(id, isActive)
         const index = this.products.findIndex(p => p.id === id)
         if (index !== -1) {
-          this.products[index] = updatedProduct
+          // this.products[index] = updatedProduct
+          // ใช้ spread operator เพื่ออัปเดตข้อมูลทั้งหมด
+      this.products[index] = { ...this.products[index], ...updatedProduct.product }
         }
         return updatedProduct
       } catch (error) {

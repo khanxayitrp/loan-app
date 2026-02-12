@@ -23,32 +23,64 @@
         </label>
         <div class="flex flex-col sm:flex-row gap-6">
           <!-- Upload Area -->
-          <label
+           <label
+        for="shop-logo-input"
+        class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 w-full sm:w-64 h-48 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+
+        <!-- ✅ เพิ่ม id ให้ input -->
+        <input
+          id="shop-logo-input"
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          class="hidden"
+          @change="handleFileUpload"
+        />
+          <!-- <label
             class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 w-full sm:w-64 h-48 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
             @click="triggerFileInput">
-            <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
+            <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileUpload" /> -->
 
-            <div v-if="!form.shop_logo_url" class="text-center">
+            <!-- ✅ แสดงคำแนะนำเมื่อไม่มีรูป -->
+            <div v-if="!previewImageUrl" class="text-center">
               <span class="icon-[tabler--photo] size-8 text-gray-400 mb-2"></span>
               <p class="text-sm text-gray-500">ຄລິກເພື່ອອັບໂຫຼດ</p>
               <p class="text-xs text-gray-400 mt-1">JPG, PNG, GIF (ສູງສຸດ 2MB)</p>
             </div>
 
-            <img v-else :src="form.shop_logo_url" alt="Logo preview" class="w-full h-full object-contain rounded" />
+            <!-- ✅ แสดงรูป preview -->
+            <img v-else :src="previewImageUrl" alt="Logo preview" class="w-full h-full object-contain rounded"
+              @error="handleImageError" />
           </label>
 
           <!-- Preview Info -->
           <div class="flex-1">
             <div class="space-y-2">
               <p class="text-sm font-medium">ຂໍ້ມູນໄຟລ໌:</p>
-              <div v-if="form.logo" class="text-sm text-gray-600 dark:text-gray-400">
-                <p>✓ ອັບໂຫຼດສຳເລັດ</p>
-                <p>ປະເພດ: {{ logoFileInfo.type }}</p>
-                <p>ຂະໜາດ: {{ formatFileSize(logoFileInfo.size) }}</p>
+
+              <div v-if="previewImageUrl" class="text-sm text-gray-600 dark:text-gray-400">
+                <p v-if="form.logo">✓ ອັບໂຫຼດສຳເລັດ (ຕົວຢ່າງ)</p>
+                <p v-else-if="form.shop_logo_url">✓ ມີໂລໂກ້ຢູ່ແລ້ວ</p>
+
+                <p v-if="logoFileInfo.name">ຊື່ໄຟລ໌: {{ logoFileInfo.name }}</p>
+                <p v-else-if="form.shop_logo_url">
+                  ລິ້ງ: {{ extractFileName(form.shop_logo_url) }}
+                </p>
+
+                <p v-if="logoFileInfo.type">
+                  ປະເພດ: {{ logoFileInfo.type.split('/')[1]?.toUpperCase() }}
+                </p>
+
+                <p v-if="logoFileInfo.size > 0">
+                  ຂະໜາດ: {{ formatFileSize(logoFileInfo.size) }}
+                </p>
+                <p v-else-if="form.shop_logo_url">ຂະໜາດ: ບໍ່ສາມາດກວດສອບໄດ້</p>
+
                 <button type="button" class="text-error text-sm mt-2 hover:underline" @click="removeLogo">
                   ລຶບອອກ
                 </button>
               </div>
+
               <p v-else class="text-sm text-gray-500">
                 ບໍ່ມີໄຟລ໌ໂລໂກ້
               </p>
@@ -234,10 +266,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useShopStore } from '@/stores/shop'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/apiClient'
+import { getFullImageUrl } from '@/utils/url'
 
 interface Shop {
   id: number
@@ -246,12 +279,12 @@ interface Shop {
   shop_owner: string
   contact_number: string
   address: string
-  // province: string
-  // district: string
-  // village: string | null
+
   business_type: string
   is_active: number
   logo: string | null
+  shop_logo?: string
+  shop_logo_url?: string
   created_at: string
 }
 
@@ -273,6 +306,21 @@ const fileInput = ref<HTMLInputElement | null>(null)
 // ✅ Computed property สำหรับโหมด
 const isEditMode = computed(() => !!props.initialData)
 
+// ✅ เพิ่ม computed property สำหรับ preview
+const previewImageUrl = computed(() => {
+  // ถ้ามีรูปใหม่ที่อัพโหลด (Base64) → ใช้เลย
+  if (form.logo) {
+    return form.logo
+  }
+
+  // ถ้ามีรูปเก่าจาก URL → ใช้ getFullImageUrl
+  if (form.shop_logo_url) {
+    return getFullImageUrl(form.shop_logo_url)
+  }
+
+  return ''
+})
+
 // Form state
 const form = reactive({
   shop_name: '',
@@ -285,7 +333,8 @@ const form = reactive({
   // village: '',
   business_type: '',
   is_active: 1,
-  logo: '' // Base64 string for logo
+  logo: '', // Base64 string for logo
+  shop_logo_url: ''   // URL รูปปัจจุบันจากฐานข้อมูล
 })
 
 const logoFileInfo = reactive({
@@ -305,25 +354,125 @@ const errors = reactive({
   business_type: ''
 })
 
-
-
 const resetForm = () => {
-  Object.keys(form).forEach(key => {
-    if (key === 'is_active') {
-      form[key as keyof typeof form] = 1
-    } else {
-      form[key as keyof typeof form] = ''
-    }
-  })
+  form.shop_name = ''
+  form.shop_id = ''
+  form.shop_owner = ''
+  form.contact_number = ''
+  form.address = ''
+  form.business_type = ''
+  form.is_active = 1
+  form.logo = ''
+  form.shop_logo_url = ''
+
+  logoFileInfo.name = ''
+  logoFileInfo.type = ''
+  logoFileInfo.size = 0
 }
 
+// ✅ ฟังก์ชันดึงชื่อไฟล์จาก URL
+const extractFileName = (url: string): string => {
+  const parts = url.split('/')
+  const fileName = parts[parts.length - 1]
+  return fileName.length > 30 ? fileName.substring(0, 30) + '...' : fileName
+}
+// const resetForm = () => {
+//   Object.keys(form).forEach(key => {
+//     if (key === 'is_active') {
+//       form[key as keyof typeof form] = 1
+//     } else {
+//       form[key as keyof typeof form] = ''
+//     }
+//   })
+// }
+
 // ✅ Initialize form when props change
+// watch(() => props.initialData, (newData) => {
+//   if (newData) {
+//     // Edit mode
+//     Object.assign(form, newData)
+//     // รีเซ็ตฟิลด์ base64 (เพราะกำลังแก้ไขร้านค้าที่มีอยู่)
+//     form.logo = ''
+//   } else {
+//     // Create mode
+//     resetForm()
+//   }
+// }, { immediate: true })
+// ✅ Initialize form when props change
+// watch(() => props.initialData, (newData) => {
+//   if (newData) {
+//     // Edit mode
+//     Object.assign(form, newData)
+
+//     // ✅ ตั้งค่าข้อมูลไฟล์จากรูปปัจจุบัน (ถ้ามี)
+//     if (newData.shop_logo_url) {
+//       form.shop_logo_url = newData.shop_logo_url
+
+//       // ดึงชื่อไฟล์จาก URL
+//       const urlParts = newData.shop_logo_url.split('/')
+//       logoFileInfo.name = urlParts[urlParts.length - 1] || 'logo.jpg'
+//       logoFileInfo.type = newData.shop_logo_url.toLowerCase().endsWith('.png')
+//         ? 'image/png'
+//         : newData.shop_logo_url.toLowerCase().endsWith('.webp')
+//           ? 'image/webp'
+//           : 'image/jpeg'
+//       logoFileInfo.size = 0 // ไม่ทราบขนาดจริงจาก URL
+//     } else {
+//       // ไม่มีรูป → รีเซ็ตข้อมูลไฟล์
+//       logoFileInfo.name = ''
+//       logoFileInfo.type = ''
+//       logoFileInfo.size = 0
+//     }
+
+//     // รีเซ็ตฟิลด์ base64 (เพราะกำลังแก้ไขร้านค้าที่มีอยู่)
+//     form.logo = ''
+//   } else {
+//     // Create mode
+//     resetForm()
+//   }
+// }, { immediate: true })
+// ✅ ตรวจสอบว่าฟิลด์ชื่อตรงกัน (สำคัญมาก!)
+// ✅ แก้ไข watch เพื่อป้องกันการ loop
+// ✅ แก้ไข watch ให้ไม่ loop
 watch(() => props.initialData, (newData) => {
   if (newData) {
-    // Edit mode
-    Object.assign(form, newData)
+    console.log('🔍 Loading shop data:', newData)
+
+    // กำหนดค่าทีละฟิลด์
+    form.shop_name = newData.shop_name || ''
+    form.shop_id = newData.shop_id || ''
+    form.shop_owner = newData.shop_owner || ''
+    form.contact_number = newData.contact_number || ''
+    form.address = newData.address || ''
+    form.business_type = newData.business_type || ''
+    form.is_active = newData.is_active ?? 1
+
+    // รีเซ็ต logo ใหม่
+    form.logo = ''
+
+    // ✅ ตรวจสอบฟิลด์ logo ทุกแบบ
+    const logoUrl = newData.shop_logo_url || newData.shop_logo || newData.logo || ''
+    form.shop_logo_url = logoUrl
+
+    console.log('✅ Logo URL:', logoUrl)
+
+    // ตั้งค่าข้อมูลไฟล์
+    if (logoUrl) {
+      const urlParts = logoUrl.split('/')
+      logoFileInfo.name = urlParts[urlParts.length - 1] || 'logo.jpg'
+
+      const extension = logoUrl.toLowerCase().split('.').pop() || ''
+      logoFileInfo.type = extension === 'png' ? 'image/png'
+        : extension === 'webp' ? 'image/webp'
+          : extension === 'gif' ? 'image/gif'
+            : 'image/jpeg'
+      logoFileInfo.size = 0
+    } else {
+      logoFileInfo.name = ''
+      logoFileInfo.type = ''
+      logoFileInfo.size = 0
+    }
   } else {
-    // Create mode
     resetForm()
   }
 }, { immediate: true })
@@ -384,40 +533,64 @@ const validateForm = (): boolean => {
 }
 
 // File upload handlers
-const triggerFileUpload = () => {
-  if (fileInput.value) {
-    fileInput.value.click()
-  }
+// const triggerFileInput = () => {
+//   fileInput.value?.click()
+// }
+
+const handleImageError = (e: Event) => {
+  const target = e.target as HTMLImageElement
+  target.src = '/images/placeholder-shop.png'
+  console.warn('❌ Failed to load image')
 }
 
 const handleFileUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
 
-  if (file) {
-    if (file.size > 2 * 1024 * 1024) {
-      alert('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 2MB')
-      return
-    }
+  if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      alert('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບເທົ່ານັ້ນ')
-      return
-    }
-
-    logoFileInfo.name = file.name
-    logoFileInfo.type = file.type
-    logoFileInfo.size = file.size
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      form.logo = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
+  if (file.size > 2 * 1024 * 1024) {
+    alert('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 2MB')
+    return
   }
+
+  if (!file.type.startsWith('image/')) {
+    alert('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບເທົ່ານັ້ນ')
+    return
+  }
+
+  logoFileInfo.name = file.name
+  logoFileInfo.type = file.type
+  logoFileInfo.size = file.size
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    form.logo = e.target?.result as string
+  }
+  reader.onerror = () => {
+    console.error('❌ Failed to read file')
+    alert('ບໍ່ສາມາດອ່ານໄຟລ໌ໄດ້')
+  }
+  reader.readAsDataURL(file)
 }
 
 const removeLogo = () => {
+  if (isEditMode.value && form.shop_logo_url) {
+    if (!confirm('ທ່ານຕ້ອງການລຶບໂລໂກ້ຮ້ານອອກຈາກລະບົບ?')) {
+      return
+    }
+
+    // ลบจากเซิร์ฟเวอร์
+    if (props.initialData?.id) {
+      shopStore.updateShop(props.initialData.id, { shop_logo_url: null })
+        .then(() => {
+          form.shop_logo_url = ''
+          console.log('✅ Logo removed from server')
+        })
+        .catch(err => console.error('❌ Failed to remove logo:', err))
+    }
+  }
+
   form.logo = ''
   logoFileInfo.name = ''
   logoFileInfo.type = ''
@@ -460,10 +633,10 @@ const handleSubmit = async () => {
         business_type: form.business_type,
         is_active: form.is_active
       })
-
+      console.log('Update Shop ', response)
       // Handle logo upload
       if (form.logo) {
-        await uploadLogo(response.shop.id)
+        await uploadLogo(response.id)
       }
 
     } else {
@@ -484,7 +657,7 @@ const handleSubmit = async () => {
       console.log('this response is', response)
       // Handle logo upload
       if (form.logo) {
-        await uploadLogo(response.shop.id)
+        await uploadLogo(response.id)
       }
     }
     // ✅ ตรวจสอบว่า store มี currentShop แล้ว
@@ -538,6 +711,7 @@ const uploadLogo = async (partner_id: number) => {
     const newLogoUrl = response.data?.data?.file_url;
 
     if (newLogoUrl) {
+      form.shop_logo_url = newLogoUrl
       console.log('this id is', partner_id)
       await shopStore.updateShop(partner_id, { shop_logo_url: newLogoUrl });
       // ถ้ามี preview URL สร้างจาก createObjectURL อยู่ → revoke ได้ที่นี่
@@ -546,7 +720,7 @@ const uploadLogo = async (partner_id: number) => {
       console.warn('No file_url returned from server');
     }
 
-   // return newLogoUrl; // optional: return url ใหม่ให้ใช้ต่อ
+    // return newLogoUrl; // optional: return url ใหม่ให้ใช้ต่อ
 
   } catch (error) {
     console.error('Failed to upload logo:', error)

@@ -219,9 +219,12 @@ router.beforeEach(async (to, from, next) => {
   if (to.path === '/login' && authStore.isAuthenticated) {
     const user = authStore.currentUser
 
-    if (user?.role === 'admin' || user?.role === 'staff') {
+    if (user?.role === 'admin') {
       next({ name: 'UserManagement' })
-    } else if (user?.role === 'partner') {
+    } else if ( user?.role === 'staff') {
+      next({ name: 'LoanList' })
+    }
+    else if (user?.role === 'partner') {
       next({ name: 'Stores' })
     } else {
       next({ name: 'PendingLoans' })

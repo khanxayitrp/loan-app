@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import CreateLoan from '@/components/loans/form/CreateLoan.vue'
+import CreateLoan from '@/components/loans/form/CreateDraftLoan.vue'
 </script>
 
 <style scoped>

@@ -8,7 +8,37 @@ import type { shopType, shopTypeForm } from '@/types/shop'
 export const getCurrentShop = async (): Promise<shopType | null> => {
   try {
     const response = await apiClient.get(`/shops/current`)
-    return response.data as shopType
+    // return response.data as shopType
+    // ตรวจสอบโครงสร้างข้อมูล
+    if (response.data?.shop) {
+      return response.data.shop
+    }
+    if (response.data?.data) {
+      return response.data.data
+    }
+    return response.data
+  } catch (error: any) {
+    // ✅ จัดการกรณี 404 (ไม่มีร้านค้า)
+    if (error.response?.status === 404) {
+      return null
+    }
+    // ✅ จัดการกรณีอื่นๆ
+    throw error
+  }
+}
+
+export const getAllShop = async (): Promise<shopType[] | null> => {
+  try {
+    const response = await apiClient.get(`/shops/all`)
+    // return response.data as shopType
+    // ตรวจสอบโครงสร้างข้อมูล
+    if (response.data?.shop) {
+      return response.data.shop
+    }
+    if (response.data?.data) {
+      return response.data.data
+    }
+    return response.data
   } catch (error: any) {
     // ✅ จัดการกรณี 404 (ไม่มีร้านค้า)
     if (error.response?.status === 404) {
@@ -23,21 +53,21 @@ export const getCurrentShop = async (): Promise<shopType | null> => {
  * อัปเดตข้อมูลร้านค้า
  */
 export const updateShop = async (id: number, data: Partial<shopTypeForm>): Promise<shopType> => {
-
+try {
   console.log('get this id:', id)
   const response = await apiClient.put(`/shops/${id}`, data)
-  if (response.data && response.data.data) {
-    // กรณี: { data: {  { ... } } }
-    return response.data.data as shopType
-  } else if (response.data && response.data.shop) {
-    // กรณี: { data: { shop: { ... } } }
-    return response.data.shop as shopType
-  } else if (response.data) {
-    // กรณี: {  { ... } }
-    return response.data as shopType
-  } else {
-    // กรณี: { ... }
-    return response as unknown as shopType
+   console.log('[API] Shop updated:', response.data)
+
+    if (response.data?.shop) {
+      return response.data.shop
+    }
+    if (response.data?.data) {
+      return response.data.data
+    }
+    return response.data
+     } catch (error: any) {
+    console.error('[API] Error updating shop:', error)
+    throw error
   }
 }
 
@@ -47,10 +77,15 @@ export const createShop = async (shopData: shopTypeForm): Promise<shopType> => {
     const response = await apiClient.post('/shops', shopData)
 
 
-    console.log('createShop is ', response);
+     console.log('[API] Shop created:', response.data)
     // ✅ ตรวจสอบโครงสร้าง response และ extract ข้อมูลที่ถูกต้อง
 
-    // console.log('REGISTER → Response:', response.data)
+     if (response.data?.shop) {
+      return response.data.shop
+    }
+    if (response.data?.data) {
+      return response.data.data
+    }
     return response.data
   } catch (error: any) {
     console.error('REGISTER -> error caught', {
@@ -70,8 +105,14 @@ export const createShop = async (shopData: shopTypeForm): Promise<shopType> => {
 }
 
 export const changeStatus = async (partnerId: number, isActive: boolean): Promise<{ message: string; shop: shopType }> => {
+  try {
   const response = await apiClient.put<{ message: string; shop: shopType }>(`/shops/status/${partnerId}`, {
     is_active: isActive ? 1 : 0
   })
-  return response.data
+  console.log('[API] Shop status changed:', response.data)
+    return response.data
+  } catch (error: any) {
+    console.error('[API] Error changing shop status:', error)
+    throw error
+  }
 }

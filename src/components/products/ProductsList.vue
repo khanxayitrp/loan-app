@@ -9,18 +9,14 @@
 
       <div class="flex gap-3 w-full sm:w-auto">
         <!-- Search Input -->
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ..."
-          class="input input-bordered w-full max-w-xs"
-          @input="debounceSearch"
-        />
-
-        <button
-          @click="openAddProductModal"
-          class="btn btn-gradient btn-primary whitespace-nowrap"
-        >
+        <input v-model="searchQuery" type="text" placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ..."
+          class="input input-bordered w-full max-w-xs" @input="debounceSearch" />
+        <!-- ✅ เพิ่ม: ปุ่มล้างการค้นหา -->
+        <button v-if="searchQuery" @click="clearSearch" class="btn btn-circle btn-ghost btn-sm"
+          aria-label="ล้างการค้นหา">
+          <span class="icon-[tabler--x] size-4"></span>
+        </button>
+        <button @click="openAddProductModal" class="btn btn-gradient btn-primary whitespace-nowrap">
           <span class="icon-[tabler--shopping-bag-plus] size-5 mr-1"></span>
           ເພີ່ມສິນຄ້າໃໝ່
         </button>
@@ -30,26 +26,16 @@
     <!-- Filter Section -->
     <div class="flex flex-wrap gap-3 mb-6">
       <!-- Status Filter -->
-      <select
-        v-model="statusFilter"
-        class="select select-bordered w-full sm:w-auto"
-      >
+      <select v-model="statusFilter" class="select select-bordered w-full sm:w-auto">
         <option value="">ທັງໝົດສະຖານະ</option>
         <option value="1">Active</option>
         <option value="0">Inactive</option>
       </select>
 
       <!-- Product Type Filter -->
-      <select
-        v-model="typeFilter"
-        class="select select-bordered w-full sm:w-auto"
-      >
+      <select v-model="typeFilter" class="select select-bordered w-full sm:w-auto">
         <option value="">ທັງໝົດປະເພດ</option>
-        <option
-          v-for="type in productTypes"
-          :key="type.id"
-          :value="type.id.toString()"
-        >
+        <option v-for="type in productTypes" :key="type.id" :value="type.id.toString()">
           {{ type.type_name }}
         </option>
       </select>
@@ -78,20 +64,11 @@
           <tr v-for="product in displayedProducts" :key="product.id">
             <!-- Image -->
             <td class="text-center">
-              <div
-                v-if="product.image_url"
-                class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden"
-              >
-                <img
-                  :src="product.image_url"
-                  alt="Product image"
-                  class="w-full h-full object-contain"
-                />
+              <div v-if="product.image_url"
+                class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                <img :src="product.image_url" alt="Product image" class="w-full h-full object-contain" />
               </div>
-              <div
-                v-else
-                class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
-              >
+              <div v-else class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                 <span class="icon-[tabler--box] size-6 text-gray-400"></span>
               </div>
             </td>
@@ -114,10 +91,7 @@
 
             <!-- Status -->
             <td>
-              <span
-                class="badge badge-soft"
-                :class="product.is_active ? 'badge-success' : 'badge-error'"
-              >
+              <span class="badge badge-soft" :class="product.is_active ? 'badge-success' : 'badge-error'">
                 {{ product.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
@@ -125,24 +99,16 @@
             <!-- Actions -->
             <td>
               <div class="flex gap-2">
-                <button
-                  class="btn btn-circle btn-text btn-sm"
-                  @click="openEditProductModal(product)"
-                  aria-label="Edit product"
-                >
+                <button class="btn btn-circle btn-text btn-sm" @click="openEditProductModal(product)"
+                  aria-label="Edit product">
                   <span class="icon-[tabler--edit] size-4"></span>
                 </button>
                 <!-- Toggle Status Button -->
-                <button
-                  class="btn btn-circle btn-text btn-sm"
-                  :class="product.is_active ? 'text-error' : 'text-success'"
-                  @click="toggleProductStatus(product)"
-                  aria-label="Toggle status"
-                >
-                  <span
-                    :class="product.is_active ? 'icon-[tabler--toggle-left]' : 'icon-[tabler--toggle-right]'"
-                    class="size-4"
-                  ></span>
+                <button class="btn btn-circle btn-text btn-sm"
+                  :class="product.is_active ? 'text-error' : 'text-success'" @click="toggleProductStatus(product)"
+                  aria-label="Toggle status">
+                  <span :class="product.is_active ? 'icon-[tabler--toggle-left]' : 'icon-[tabler--toggle-right]'"
+                    class="size-4"></span>
                 </button>
               </div>
             </td>
@@ -164,20 +130,13 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <select
-          v-model.number="pageSize"
-          class="select select-sm select-bordered"
-        >
+        <select v-model.number="pageSize" class="select select-sm select-bordered">
           <option :value="10">10 ຕໍ່ໜ້າ</option>
           <option :value="25">25 ຕໍ່ໜ້າ</option>
           <option :value="50">50 ຕໍ່ໜ້າ</option>
         </select>
 
-        <button
-          class="btn btn-sm"
-          :disabled="!hasPreviousPage"
-          @click="previousPage"
-        >
+        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">
           ກ່ອນໜ້າ
         </button>
 
@@ -185,11 +144,7 @@
           ໜ້າ {{ currentPage }} / {{ totalPages }}
         </span>
 
-        <button
-          class="btn btn-sm"
-          :disabled="!hasNextPage"
-          @click="nextPage"
-        >
+        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">
           ຖັດໄປ
         </button>
       </div>
@@ -200,26 +155,20 @@
       <div v-if="showStatusModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4">
-            {{ productToToggle?.is_active === 1 ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+            {{ productToToggle?.is_active === true ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
           </h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
             ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການ
-            {{ productToToggle?.is_active === 1 ? 'ປິດ' : 'ເປີດ' }}
+            {{ productToToggle?.is_active === true ? 'ປິດ' : 'ເປີດ' }}
             ການຂາຍ "{{ productToToggle?.product_name }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
-            <button
-              class="btn btn-soft btn-secondary"
-              @click="showStatusModal = false"
-            >
+            <button class="btn btn-soft btn-secondary" @click="showStatusModal = false">
               ຍົກເລີກ
             </button>
-            <button
-              class="btn"
-              :class="productToToggle?.is_active === 1 ? 'btn-error' : 'btn-success'"
-              @click="confirmToggleStatus"
-            >
-              {{ productToToggle?.is_active === 1 ? 'ປິດການຂາຍ' : 'ເປີດການຂາຍ' }}
+            <button class="btn" :class="productToToggle?.is_active === true ? 'btn-error' : 'btn-success'"
+              @click="confirmToggleStatus">
+              {{ productToToggle?.is_active === true ? 'ປິດການຂາຍ' : 'ເປີດການຂາຍ' }}
             </button>
           </div>
         </div>
@@ -229,7 +178,8 @@
     <!-- Add/Edit Product Modal -->
     <teleport to="body">
       <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-bold">
               {{ editingProduct ? 'ແກ້ໄຂສິນຄ້າ' : 'ເພີ່ມສິນຄ້າໃໝ່' }}
@@ -248,15 +198,8 @@
               <div class="flex flex-col sm:flex-row gap-6">
                 <div
                   class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 w-full sm:w-48 h-48 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                  @click="triggerFileInput"
-                >
-                  <input
-                    ref="fileInput"
-                    type="file"
-                    accept="image/*"
-                    class="hidden"
-                    @change="handleFileUpload"
-                  />
+                  @click="triggerFileInput">
+                  <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
 
                   <div v-if="!form.image_url" class="text-center">
                     <span class="icon-[tabler--photo] size-8 text-gray-400 mb-2"></span>
@@ -264,12 +207,8 @@
                     <p class="text-xs text-gray-400 mt-1">JPG, PNG (ສູງສຸດ 2MB)</p>
                   </div>
 
-                  <img
-                    v-else
-                    :src="form.image_url"
-                    alt="Product preview"
-                    class="w-full h-full object-contain rounded"
-                  />
+                  <img v-else :src="form.image_url" alt="Product preview"
+                    class="w-full h-full object-contain rounded" />
                 </div>
 
                 <div class="flex-1">
@@ -279,11 +218,7 @@
                       <p>✓ ອັບໂຫຼດສຳເລັດ</p>
                       <p>ປະເພດ: {{ imageFileInfo?.type || '-' }}</p>
                       <p>ຂະໜາດ: {{ formatFileSize(imageFileInfo?.size || 0) }}</p>
-                      <button
-                        type="button"
-                        class="text-error text-sm mt-2 hover:underline"
-                        @click="removeImage"
-                      >
+                      <button type="button" class="text-error text-sm mt-2 hover:underline" @click="removeImage">
                         ລຶບອອກ
                       </button>
                     </div>
@@ -300,14 +235,8 @@
               <label class="label">
                 <span class="label-text font-medium">ຊື່ສິນຄ້າ *</span>
               </label>
-              <input
-                v-model="form.product_name"
-                type="text"
-                placeholder="ປ້ອນຊື່ສິນຄ້າ"
-                class="input input-bordered w-full"
-                :class="{ 'input-error': errors.product_name }"
-                required
-              />
+              <input v-model="form.product_name" type="text" placeholder="ປ້ອນຊື່ສິນຄ້າ"
+                class="input input-bordered w-full" :class="{ 'input-error': errors.product_name }" required />
               <label v-if="errors.product_name" class="label text-error">
                 <span class="label-text-alt">{{ errors.product_name }}</span>
               </label>
@@ -318,18 +247,10 @@
               <label class="label">
                 <span class="label-text font-medium">ປະເພດສິນຄ້າ *</span>
               </label>
-              <select
-                v-model="form.productType_id"
-                class="select select-bordered w-full"
-                :class="{ 'select-error': errors.productType_id }"
-                required
-              >
+              <select v-model="form.productType_id" class="select select-bordered w-full"
+                :class="{ 'select-error': errors.productType_id }" required>
                 <option value="" disabled selected>ເລືອກປະເພດສິນຄ້າ</option>
-                <option
-                  v-for="type in productTypes"
-                  :key="type.id"
-                  :value="type.id"
-                >
+                <option v-for="type in productTypes" :key="type.id" :value="type.id">
                   {{ type.type_name }}
                 </option>
               </select>
@@ -343,16 +264,9 @@
               <label class="label">
                 <span class="label-text font-medium">ລາຄາ (ກີບ) *</span>
               </label>
-              <input
-                v-model.number="form.price"
-                type="number"
-                placeholder="ປ້ອນລາຄາ"
-                class="input input-bordered w-full"
-                :class="{ 'input-error': errors.price }"
-                min="0"
-                step="0.01"
-                required
-              />
+              <input v-model.number="form.price" type="number" placeholder="ປ້ອນລາຄາ"
+                class="input input-bordered w-full" :class="{ 'input-error': errors.price }" min="0" step="0.01"
+                required />
               <label v-if="errors.price" class="label text-error">
                 <span class="label-text-alt">{{ errors.price }}</span>
               </label>
@@ -363,17 +277,9 @@
               <label class="label">
                 <span class="label-text font-medium">ດອກເບ້ຍ (%) *</span>
               </label>
-              <input
-                v-model.number="form.interest_rate"
-                type="number"
-                placeholder="ປ້ອນດອກເບ້ຍ"
-                class="input input-bordered w-full"
-                :class="{ 'input-error': errors.interest_rate }"
-                min="0"
-                max="100"
-                step="0.01"
-                required
-              />
+              <input v-model.number="form.interest_rate" type="number" placeholder="ປ້ອນດອກເບ້ຍ"
+                class="input input-bordered w-full" :class="{ 'input-error': errors.interest_rate }" min="0" max="100"
+                step="0.01" required />
               <label v-if="errors.interest_rate" class="label text-error">
                 <span class="label-text-alt">{{ errors.interest_rate }}</span>
               </label>
@@ -388,19 +294,9 @@
               <!-- Drag & Drop Area -->
               <div
                 class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 min-h-32 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                @dragover.prevent
-                @dragenter.prevent
-                @drop.prevent="handleGalleryDrop"
-                @click="triggerGalleryInput"
-              >
-                <input
-                  ref="galleryInput"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  class="hidden"
-                  @change="handleGalleryUpload"
-                />
+                @dragover.prevent @dragenter.prevent @drop.prevent="handleGalleryDrop" @click="triggerGalleryInput">
+                <input ref="galleryInput" type="file" accept="image/*" multiple class="hidden"
+                  @change="handleGalleryUpload" />
 
                 <div class="text-center">
                   <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
@@ -412,17 +308,13 @@
               <!-- Gallery Preview -->
               <div v-if="form.gallery.length > 0" class="mt-4">
                 <div class="flex flex-wrap gap-3">
-                  <div
-                    v-for="(image, index) in form.gallery"
-                    :key="index"
-                    class="relative w-24 h-24 rounded border border-gray-300 overflow-hidden group"
-                  >
-                    <img :src="image" alt="Gallery image" class="w-full h-full object-cover">
-                    <button
-                      type="button"
+                  <div v-for="(image, index) in form.gallery" :key="index"
+                    class="relative w-24 h-24 rounded border border-gray-300 overflow-hidden group">
+                    <img :src="getGalleryImageUrl(image)" :alt="`Gallery ${index + 1}`"
+                      class="w-full h-full object-cover" @error="handleImageError">
+                    <button type="button"
                       class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      @click="removeGalleryImage(index)"
-                    >
+                      @click="removeGalleryImage(index)">
                       ×
                     </button>
                   </div>
@@ -433,30 +325,17 @@
             <!-- Status -->
             <div class="form-control">
               <label class="label cursor-pointer justify-start gap-4">
-                <input
-                  type="checkbox"
-                  v-model="form.is_active"
-                  :true-value="1"
-                  :false-value="0"
-                  class="toggle toggle-primary"
-                />
+                <input type="checkbox" v-model="form.is_active" :true-value="1" :false-value="0"
+                  class="toggle toggle-primary" />
                 <span class="label-text font-medium">ສະຖານະສິນຄ້າ (Active/Inactive)</span>
               </label>
             </div>
 
             <div class="flex justify-end gap-3">
-              <button
-                type="button"
-                @click="closeModal"
-                class="btn btn-soft btn-secondary"
-              >
+              <button type="button" @click="closeModal" class="btn btn-soft btn-secondary">
                 ຍົກເລີກ
               </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                :disabled="loading"
-              >
+              <button type="submit" class="btn btn-primary" :disabled="loading">
                 <span v-if="loading" class="loading loading-spinner loading-xs"></span>
                 <span v-else>{{ editingProduct ? 'ບັນທຶກການແກ້ໄຂ' : 'ເພີ່ມສິນຄ້າ' }}</span>
               </button>
@@ -471,6 +350,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useProductStore } from '@/stores/product'
+// เพิ่มในส่วน import
+import { getFullImageUrl } from '@/utils/url'
 
 // ในส่วน types
 interface ImageFileInfo {
@@ -521,7 +402,7 @@ const imageFileInfo = reactive<ImageFileInfo>({
 
 // Computed properties (get from store)
 const isLoading = computed(() => productStore.isLoading)
-const displayedProducts = computed(() => productStore.displayedProducts)
+const displayedProducts = computed(() => productStore.displayedProductsWithFullUrls)
 const totalProducts = computed(() => productStore.total)
 const totalPages = computed(() => productStore.totalPages)
 const startIndex = computed(() => productStore.startIndex)
@@ -531,6 +412,44 @@ const hasNextPage = computed(() => productStore.hasNextPage)
 const currentPage = computed(() => productStore.currentPage)
 const pageSize = computed(() => productStore.pageSize)
 const productTypes = computed(() => productStore.productTypes)
+// ✅ เพิ่ม: ฟังก์ชันตรวจสอบว่าเป็นรูปแบบไหน
+const isBase64 = (str: string): boolean => {
+  return str.startsWith('data:') || str.startsWith('data:image/')
+}
+
+// ✅ แก้ไข: ฟังก์ชันแสดงรูปภาพ
+const getGalleryImageUrl = (url: string): string => {
+  // ถ้าเป็นรูปแบบที่ไม่มีค่า ให้ส่งคืนค่าว่าง
+  if (!url) return ''
+
+  // ถ้าเป็นรูปแบบฐาน64 ให้แสดงตรงๆ
+  if (isBase64(url)) {
+    return url
+  }
+
+  // ถ้าเป็นลิงก์เต็มแล้ว ให้แสดงตรงๆ
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+
+  // ถ้าเป็นลิงก์สั้น ให้แปลงเป็นลิงก์เต็ม
+  return getFullImageUrl(url)
+}
+
+
+// ✅ แก้ไข: จัดการกรณีรูปภาพโหลดไม่ได้
+const handleImageError = (e: Event) => {
+  const target = e.target as HTMLImageElement
+
+  // ตรวจสอบว่าเป็นรูปแบบฐาน64 หรือไม่
+  if (isBase64(target.src)) {
+    // รูปแบบฐาน64 ไม่ควรเกิดข้อผิดพลาด
+    console.warn('Base64 image failed to load')
+  } else {
+    // รูปแบบลิงก์ ให้แสดงรูปสำรอง
+    target.src = '/images/placeholder.png'
+  }
+}
 
 // Utility functions
 const getProductTypeName = (productTypeId: number): string => {
@@ -591,15 +510,37 @@ const openAddProductModal = () => {
   showModal.value = true
 }
 
-const openEditProductModal = (product: Product) => {
+const openEditProductModal = async (product: Product) => {
   editingProduct.value = product
-  form.product_name = product.product_name
-  form.productType_id = product.productType_id
-  form.price = product.price
-  form.interest_rate = product.interest_rate
-  form.image_url = product.image_url || ''
-  form.gallery = product.gallery || []
-  form.is_active = product.is_active
+  // ✅ โหลดข้อมูล gallery จากฐานข้อมูล
+  try {
+    const gallery = await productStore.fetchProductGallery(product.id)
+
+    console.log('📸 Gallery loaded:', gallery)
+
+    // เติมข้อมูลฟอร์ม
+    form.product_name = product.product_name
+    form.productType_id = product.productType_id
+    form.price = product.price
+    form.interest_rate = product.interest_rate
+    form.image_url = product.image_url || ''
+    form.gallery = gallery.map((item: any) => item.image_url) || [] // ✅ ใช้ข้อมูลจาก API
+    form.is_active = product.is_active
+
+    console.log('📸 Form gallery:', form.gallery)
+  } catch (error) {
+    console.error('❌ Error loading gallery:', error)
+
+    // ถ้าโหลดไม่ได้ ให้ใช้ค่าเริ่มต้น
+    form.product_name = product.product_name
+    form.productType_id = product.productType_id
+    form.price = product.price
+    form.interest_rate = product.interest_rate
+    form.image_url = product.image_url || ''
+    form.gallery = product.gallery || []
+    form.is_active = product.is_active
+  }
+
   showModal.value = true
 }
 
@@ -630,11 +571,24 @@ const toggleProductStatus = (product: Product) => {
 const confirmToggleStatus = async () => {
   if (productToToggle.value) {
     try {
+      // ✅ เปลี่ยนจาก '=== 0' เป็น '=== 1'
+      console.log("before change ", productToToggle.value.is_active)
+      const newStatus = productToToggle.value.is_active === true ? 0 : 1
+      console.log("after change ", newStatus)
       await productStore.toggleProductStatus(
         productToToggle.value.id,
-        productToToggle.value.is_active === 0
+        newStatus
       )
+
+      // ✅ เพิ่ม: ดึงข้อมูลใหม่หลังจากเปลี่ยนสถานะ
+      await productStore.fetchProducts({
+        page: currentPage.value,
+        limit: pageSize.value
+      })
+
       alert('ປ່ຽນສະຖານະສຳເລັດ!')
+      // ✅ อัปเดตสถานะในหน้าจอ
+      productToToggle.value.is_active = newStatus
     } catch (error) {
       alert('ເກີດຂໍ້ຜິດພາດການປ່ຽນສະຖານະ')
     }
@@ -680,7 +634,7 @@ const handleFileUpload = async (event: Event) => {
 
 const removeImage = () => {
   form.image_url = ''
-    imageFileInfo.name = ''  // ✅ ต้องมีการประกาศก่อนใช้
+  imageFileInfo.name = ''  // ✅ ต้องมีการประกาศก่อนใช้
   imageFileInfo.type = ''
   imageFileInfo.size = 0
   if (fileInput.value) fileInput.value.value = ''
@@ -739,14 +693,14 @@ const saveProduct = async () => {
     let productId: number
     if (editingProduct.value) {
       // Edit mode
-      await productStore.updateProduct(editingProduct.value.id, {
+      const updatedOldProduct = await productStore.updateProduct(editingProduct.value.id, {
         product_name: form.product_name,
         productType_id: form.productType_id,
         price: form.price,
         interest_rate: form.interest_rate,
         is_active: form.is_active
       })
-
+      console.log("update product ", updatedOldProduct)
       productId = editingProduct.value.id
 
     } else {
@@ -758,11 +712,13 @@ const saveProduct = async () => {
         interest_rate: form.interest_rate,
         is_active: form.is_active
       })
-      productId = newProduct.data.id
+
+      console.log('save new product', newProduct)
+      productId = newProduct.id
 
     }
 
-     // 2. Handle main image upload
+    // 2. Handle main image upload
     if (form.image_url && !form.image_url.startsWith('http')) {
       try {
         const base64Response = await fetch(form.image_url)
@@ -867,7 +823,7 @@ const saveProduct = async () => {
             console.log('🔄 Syncing total:', allGalleryUrls.length, 'gallery images')
 
             // save to product_gallery table
-            await productStore.addProductGallery(productId, uploadGalleryResp)
+            await productStore.addProductGallery(productId, allGalleryUrls)
 
             console.log('✅ save Gallery completed')
           }
@@ -895,6 +851,12 @@ const saveProduct = async () => {
         console.error('Error syncing existing gallery:', error)
       }
     }
+    // ✅ เพิ่ม: ดึงข้อมูลใหม่หลังจากบันทึกสำเร็จ
+    await productStore.fetchProducts({
+      page: currentPage.value,
+      limit: pageSize.value
+    })
+
 
     // Success message
     const message = editingProduct.value
@@ -927,21 +889,37 @@ const handlePageSizeChange = (newSize: number) => {
   productStore.changePageSize(newSize)
 }
 
+// ✅ เพิ่ม: ฟังก์ชันล้างการค้นหา
+const clearSearch = () => {
+  searchQuery.value = ''
+  productStore.fetchProducts({
+    page: 1,
+    limit: pageSize.value,
+    status: statusFilter.value,
+    type: typeFilter.value
+  })
+}
 // Search debounce
 let debounceTimer: NodeJS.Timeout | null = null
 const debounceSearch = () => {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
+    // ✅ เพิ่ม: รีเซ็ตหน้ากลับไปหน้า 1 เมื่อค้นหาใหม่
+    productStore.changePage(1)
+
+    // ✅ ส่งค่าค้นหาไปยัง fetchProducts
     productStore.fetchProducts({
       search: searchQuery.value,
       status: statusFilter.value,
-      type: typeFilter.value
+      type: typeFilter.value,
+      page: 1, // เริ่มจากหน้า 1
+      limit: pageSize.value
     })
   }, 300)
 }
 
 // Watch filters
-watch([searchQuery, statusFilter, typeFilter], () => {
+watch([searchQuery, statusFilter, typeFilter, pageSize], () => {
   debounceSearch()
 })
 
@@ -949,8 +927,8 @@ watch([searchQuery, statusFilter, typeFilter], () => {
 onMounted(async () => {
   try {
     if (!imageFileInfo) {
-    console.error('imageFileInfo is not defined!')
-  }
+      console.error('imageFileInfo is not defined!')
+    }
     await Promise.all([
       productStore.fetchProducts(),
       productStore.fetchProductTypes()

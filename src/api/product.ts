@@ -38,8 +38,15 @@ export const getProducts = async (params?: GetProductsParams) => {
 export const getProductById = async (id: number) => {
   try {
     const response = await apiClient.get(`/products/${id}`)
-    console.log('getProductById is ', response)
-    return response.data.product || response.data
+    console.log('[API] Product by ID response:', response.data)
+
+    if (response.data?.product) {
+      return response.data.product
+    }
+    if (response.data?.data) {
+      return response.data.data
+    }
+    return response.data
   } catch (error: any) {
     console.error(`Error fetching product ${id}:`, error)
     throw error
@@ -52,10 +59,32 @@ export const getProductById = async (id: number) => {
 export const createProduct = async (data: CreateProductDto) => {
   try {
     const response = await apiClient.post('/products', data)
+    console.log('[API] Product created:', response.data)
 
-    console.log('createProduct is ', response)
+    // ✅ ตรวจสอบโครงสร้างและส่งคืนในรูปแบบมาตรฐาน { id: number, ... }
+    let productData = null
 
-    return response.data.product || response.data
+    // กรณี 1: มี .product wrapper
+    if (response.data?.product) {
+      productData = response.data.product
+    }
+    // กรณี 2: มี .data wrapper
+    else if (response.data?.data) {
+      productData = response.data.data
+    }
+    // กรณี 3: ส่งคืนตรงๆ
+    else {
+      productData = response.data
+    }
+
+    // ✅ ตรวจสอบว่ามี id
+    if (!productData?.id) {
+      console.warn('⚠️ Product ID not found in response. Full response:', response.data)
+      throw new Error('ไม่พบ ID สินค้าในข้อมูลที่ได้รับจากเซิร์ฟเวอร์')
+    }
+
+    console.log('✅ Created product:', productData)
+    return productData
   } catch (error: any) {
     console.error('Error creating product:', error)
     throw error
@@ -69,9 +98,15 @@ export const updateProduct = async (id: number, data: UpdateProductDto) => {
   try {
     const response = await apiClient.put(`/products/${id}`, data)
 
-    console.log('updateProduct is ', response)
+    console.log('[API] Product updated:', response.data)
 
-    return response.data.product || response.data
+    if (response.data?.product) {
+      return response.data.product
+    }
+    if (response.data?.data) {
+      return response.data.data
+    }
+    return response.data
   } catch (error: any) {
     console.error(`Error updating product ${id}:`, error)
     throw error
@@ -133,12 +168,20 @@ export const saveProductGallery = async (productId: number, images: { file_url: 
     // ອ້າງອີງຕາມ Route Backend: router.post('/:productId/gallery', product_galleryController.saveImageToGallery)
     // ໝາຍເຫດ: ຕ້ອງກວດສອບວ່າ Base path ຂອງ Router ແມ່ນຫຍັງ (ສົມມຸດວ່າແມ່ນ /products)
     const response = await apiClient.post(`/images/${productId}/gallery`, {
-      uploaded: images
+      uploadResult: {
+        success: true,
+        data: {
+          uploaded: images,
+          failed: []
+        }
+      }
     })
 
+    console.log('📥 [API] Save gallery response:', response.data)
     return response.data
   } catch (error: any) {
-    console.error(`Error syncing product gallery:`, error)
+    console.error(`❌ [API] Error syncing product gallery:`, error)
+    console.error('Error details:', error.response?.data)
     throw error
   }
 }
@@ -161,15 +204,36 @@ export const getProductGallery = async (productId: number) => {
  */
 export const toggleProductStatus = async (id: number, isActive: boolean) => {
   try {
-    const response = await apiClient.put(`/products/${id}/status`, {
+    console.log('🔄 Toggling product status:', { id, isActive });
+
+    // ✅ แก้ไข: ใช้ () แทน template literal ``
+    const response = await apiClient.patch(`/products/${id}`, {
       is_active: isActive ? 1 : 0
-    })
-    return response.data.product || response.data
+    });
+
+    console.log('✅ Toggle response:', response.data);
+
+    // ✅ ตรวจสอบโครงสร้าง response ให้ชัดเจน
+    if (response.data.product) {
+      return {
+        success: response.data.success ?? true,
+        message: response.data.message ?? (isActive ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
+        product: response.data.product
+      }
+    }
+
+    return {
+      success: response.data.success ?? true,
+      message: response.data.message ?? (isActive ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
+      product: response.data.product || response.data
+    };
   } catch (error: any) {
-    console.error(`Error toggling product status ${id}:`, error)
-    throw error
+    const errMsg = error.response?.data?.message || 'ປ່ຽນສະຖານະມີບັນຫາ';
+    console.error(`❌ Toggle product ${id} failed:`, errMsg, error);
+    throw new Error(errMsg);
   }
-}
+};
+
 
 /**
  * ดึงประเภทสินค้าทั้งหมด
@@ -177,8 +241,15 @@ export const toggleProductStatus = async (id: number, isActive: boolean) => {
 export const getProductTypes = async () => {
   try {
     const response = await apiClient.get('/productTypes')
-    console.log('getProductTypes is ', response.data)
-    return response.data.productTypes || response.data || []
+    console.log('[API] Product types response:', response.data)
+
+    if (response.data?.productTypes) {
+      return response.data.productTypes
+    }
+    if (response.data?.data) {
+      return response.data.data
+    }
+    return response.data
   } catch (error: any) {
     console.error('Error fetching product types:', error)
     throw error

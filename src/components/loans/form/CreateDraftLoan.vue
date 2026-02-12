@@ -116,7 +116,7 @@
           <input
             v-model="productSearch"
             type="text"
-            placeholder="ພິມຊື່ສິນຄ້າ ຫຼື ລະຫັດ..."
+            placeholder="ພິມຊື່ສິນຄ້າ ຫຼື ລະຫັດ…"
             class="input input-bordered w-full pl-10 pr-10"
             :disabled="!selectedShop"
             @input="debounceProductSearch"
@@ -169,35 +169,151 @@
       </div>
 
       <!-- Loan Details (shown when product is selected) -->
-      <div v-if="selectedProduct" class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-        <h3 class="font-medium mb-3">ລາຍລະອຽດສິນເຊື່ອ</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="text-sm text-gray-500">ສິນຄ້າ</label>
-            <p class="font-medium">{{ selectedProduct.product_name }}</p>
-          </div>
-          <div>
-            <label class="text-sm text-gray-500">ປະເພດ</label>
-            <p>{{ selectedProduct.type_name }}</p>
-          </div>
-          <div>
-            <label class="text-sm text-gray-500">ຈຳນວນເງິນ</label>
-            <p class="font-medium text-primary">{{ formatPrice(selectedProduct.price) }}</p>
-          </div>
-          <div>
-            <label class="text-sm text-gray-500">ດອກເບ້ຍ</label>
-            <p>{{ selectedProduct.interest_rate }}%</p>
-          </div>
-          <div>
-            <label class="text-sm text-gray-500">ໄລຍະເວລາ</label>
-            <p>{{ selectedProduct.term }} ເດືອນ</p>
-          </div>
-          <div>
-            <label class="text-sm text-gray-500">ການຈ່າຍຕໍ່ເດືອນ</label>
-            <p class="font-medium">{{ formatPrice(calculateMonthlyPayment()) }}</p>
-          </div>
+      <div v-if="selectedProduct" class="mb-6">
+  <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-4">ລາຍລະອຽດສິນເຊື່ອ</h3>
+
+  <!-- Product Info (Read-only) -->
+  <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="text-sm text-gray-500">ສຶນຄ້າ</label>
+        <p class="font-medium">{{ selectedProduct.product_name }}</p>
+      </div>
+      <div>
+        <label class="text-sm text-gray-500">ປະເພດ</label>
+        <p>{{ selectedProduct.type_name }}</p>
+      </div>
+      <div>
+        <label class="text-sm text-gray-500">ລາຄາສິນຄ້າ</label>
+        <p class="font-medium text-primary">{{ formatPrice(selectedProduct.price) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editable Loan Details -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Down Payment -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">ເງີນດາວ (ກີບ)</span>
+      </label>
+      <input
+        v-model.number="loanDetails.downPayment"
+        type="number"
+        placeholder="ປ້ອນເງີນດາວ"
+        class="input input-bordered w-full"
+        :class="{ 'input-error': loanErrors.downPayment }"
+        min="0"
+        :max="selectedProduct.price"
+        @input="handleDownPaymentChange"
+      />
+      <label v-if="loanErrors.downPayment" class="label text-error">
+        <span class="label-text-alt">{{ loanErrors.downPayment }}</span>
+      </label>
+      <div class="text-xs text-gray-500 mt-1">
+        <div>ເງີນດາວ (ກີບ): {{ formatPrice(loanDetails.downPayment) }}</div>
+        <div class="text-primary font-medium">
+          ເງິນກູ້: {{ formatPrice(loanDetails.totalAmount - loanDetails.downPayment) }}
         </div>
       </div>
+    </div>
+
+    <!-- Term Months -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span>
+      </label>
+      <input
+        v-model.number="loanDetails.termMonths"
+        type="number"
+        placeholder="ຈຳນວນງວດ"
+        class="input input-bordered w-full"
+        :class="{ 'input-error': loanErrors.termMonths }"
+        min="1"
+        max="60"
+        @input="handleTermMonthsChange"
+      />
+      <label v-if="loanErrors.termMonths" class="label text-error">
+        <span class="label-text-alt">{{ loanErrors.termMonths }}</span>
+      </label>
+      <div class="text-xs text-gray-500 mt-1">
+        ໄລຍະເວລາ: {{ loanDetails.termMonths }} ເດືອນ
+      </div>
+    </div>
+
+    <!-- Interest Rate (Read-only or editable) -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">ດອກເບ້ຍ (%) *</span>
+      </label>
+      <input
+        v-model.number="loanDetails.interestRate"
+        type="number"
+        placeholder="ດອກເບ້ຍຕໍ່ປີ"
+        class="input input-bordered w-full"
+        :class="{ 'input-error': loanErrors.interestRate }"
+        min="0"
+        max="100"
+        step="0.01"
+        @input="handleInterestRateChange"
+      />
+      <label v-if="loanErrors.interestRate" class="label text-error">
+        <span class="label-text-alt">{{ loanErrors.interestRate }}</span>
+      </label>
+    </div>
+
+    <!-- Monthly Payment (Auto-calculated) -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">ຄ່າງວດຕໍ່ເດືອນ (ກີບ)</span>
+      </label>
+      <input
+        :value="formatPrice(loanDetails.monthlyPayment)"
+        type="text"
+        class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
+        readonly
+      />
+      <div class="text-xs text-gray-500 mt-1">
+        ຄ່າງວດ: {{ formatPrice(loanDetails.monthlyPayment) }}/ເດືອນ
+      </div>
+    </div>
+  </div>
+
+  <!-- Loan Summary -->
+  <div class="mt-6 p-4 bg-primary/5 dark:bg-primary/10 rounded-lg">
+    <h4 class="font-medium text-gray-800 dark:text-white mb-3">ສະຫຼຸບການຜ່ອນ</h4>
+    <div class="space-y-2">
+      <div class="flex justify-between">
+        <span class="text-gray-600 dark:text-gray-400">ລາຄາສິນຄ້າ:</span>
+        <span class="font-medium">{{ formatPrice(loanDetails.totalAmount) }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-600 dark:text-gray-400">ເງີນດາວ:</span>
+        <span class="font-medium text-success">-{{ formatPrice(loanDetails.downPayment) }}</span>
+      </div>
+      <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
+        <span class="font-medium">ເງິນກູ້:</span>
+        <span class="font-medium text-primary">{{ formatPrice(loanDetails.totalAmount - loanDetails.downPayment) }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-600 dark:text-gray-400">ດອກເບ້ຍທັງໝົດ ({{ loanDetails.interestRate }}%):</span>
+        <span class="font-medium text-error">{{ formatPrice(calculateTotalInterest()) }}</span>
+      </div>
+      <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
+        <span class="font-medium">ຍອດຊຳລະທັງໝົດ:</span>
+        <span class="font-medium text-primary">{{ formatPrice(calculateTotalPayment()) }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-600 dark:text-gray-400">ຄ່າງວດຕໍ່ເດືອນ:</span>
+        <span class="font-medium text-primary">{{ formatPrice(loanDetails.monthlyPayment) }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-600 dark:text-gray-400">ຈຳນວນງວດ:</span>
+        <span class="font-medium">{{ loanDetails.termMonths }} ເດືອນ</span>
+      </div>
+    </div>
+  </div>
+</div>
 
       <!-- Customer Information -->
       <div class="space-y-6">
@@ -582,8 +698,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useShopStore } from '@/stores/shop'
+import { useProductStore } from '@/stores/product'
 
 // Types
 interface Shop {
@@ -621,6 +739,10 @@ interface Document {
   preview: string | null
 }
 
+// Stores
+const shopStore = useShopStore()
+const productStore = useProductStore()
+
 // Reactive state
 const router = useRouter()
 const activeTab = ref<'application' | 'documents'>('application')
@@ -630,6 +752,112 @@ const canAccessDocuments = ref(false)
 
 // Loan number (auto-generated)
 const loanNumber = ref('LN' + Date.now().toString().slice(-6))
+
+// เพิ่มในส่วนของ reactive state
+const loanDetails = reactive({
+  totalAmount: 0,        // ราคาสินค้า (อ่านอย่างเดียว)
+  downPayment: 0,        // เงินดาวน์ (แก้ไขได้)
+  interestRate: 0,       // ดอกเบี้ย (%) (แก้ไขได้)
+  termMonths: 0,         // จำนวนงวด (แก้ไขได้)
+  monthlyPayment: 0      // ค่างวดต่อเดือน (คำนวณอัตโนมัติ)
+})
+
+const loanErrors = reactive({
+  downPayment: '',
+  interestRate: '',
+  termMonths: ''
+})
+
+// คำนวณค่าเริ่มต้นเมื่อเลือกสินค้า
+const calculateInitialLoanDetails = () => {
+  if (!selectedProduct.value) return
+
+  const { price, interest_rate, term } = selectedProduct.value
+
+  loanDetails.totalAmount = price
+  loanDetails.interestRate = interest_rate
+  loanDetails.termMonths = term
+  loanDetails.downPayment = 0
+  loanDetails.monthlyPayment = calculateMonthlyPayment()
+}
+
+// คำนวณค่างวดต่อเดือน
+const calculateMonthlyPayment = (): number => {
+  const { totalAmount, downPayment, interestRate, termMonths } = loanDetails
+
+  if (!totalAmount || !interestRate || !termMonths) return 0
+
+  const loanAmount = totalAmount - downPayment
+  const monthlyRate = interestRate / 100 / 12
+
+  // สูตรคำนวณผ่อนชำระ: P * r * (1+r)^n / ((1+r)^n - 1)
+  const monthlyPayment = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
+                         (Math.pow(1 + monthlyRate, termMonths) - 1)
+
+  return Math.round(monthlyPayment)
+}
+
+// คำนวณยอดชำระทั้งหมด
+const calculateTotalPayment = (): number => {
+  return loanDetails.monthlyPayment * loanDetails.termMonths
+}
+
+// คำนวณดอกเบี้ยทั้งหมด
+const calculateTotalInterest = (): number => {
+  const totalPayment = calculateTotalPayment()
+  const loanAmount = loanDetails.totalAmount - loanDetails.downPayment
+  return totalPayment - loanAmount
+}
+
+// ตรวจสอบความถูกต้องของข้อมูล
+const validateLoanDetails = (): boolean => {
+  Object.keys(loanErrors).forEach(key => {
+    loanErrors[key as keyof typeof loanErrors] = ''
+  })
+
+  let isValid = true
+
+  if (loanDetails.downPayment < 0) {
+    loanErrors.downPayment = 'เงินดาวน์ต้องไม่ติดลบ'
+    isValid = false
+  }
+
+  if (loanDetails.downPayment > loanDetails.totalAmount) {
+    loanErrors.downPayment = 'เงินดาวน์ต้องน้อยกว่าราคาสินค้า'
+    isValid = false
+  }
+
+  if (loanDetails.interestRate < 0 || loanDetails.interestRate > 100) {
+    loanErrors.interestRate = 'ดอกเบี้ยต้องอยู่ระหว่าง 0-100%'
+    isValid = false
+  }
+
+  if (loanDetails.termMonths < 1 || loanDetails.termMonths > 60) {
+    loanErrors.termMonths = 'จำนวนงวดต้องอยู่ระหว่าง 1-60 เดือน'
+    isValid = false
+  }
+
+  return isValid
+}
+
+// จัดการเมื่อเปลี่ยนเงินดาวน์
+const handleDownPaymentChange = () => {
+  validateLoanDetails()
+  loanDetails.monthlyPayment = calculateMonthlyPayment()
+}
+
+// จัดการเมื่อเปลี่ยนจำนวนงวด
+const handleTermMonthsChange = () => {
+  validateLoanDetails()
+  loanDetails.monthlyPayment = calculateMonthlyPayment()
+}
+
+// จัดการเมื่อเปลี่ยนดอกเบี้ย
+const handleInterestRateChange = () => {
+  validateLoanDetails()
+  loanDetails.monthlyPayment = calculateMonthlyPayment()
+}
+
 
 // Shop selection
 const shopSearch = ref('')
@@ -641,19 +869,18 @@ const productSearch = ref('')
 const showProductDropdown = ref(false)
 const selectedProduct = ref<Product | null>(null)
 
-// Mock data
-const mockShops: Shop[] = [
-  { id: 1, shop_name: 'ຮ້ານ A', owner_name: 'ສົມຊາຍ ພົນສຸກ' },
-  { id: 2, shop_name: 'ຮ້ານ B', owner_name: 'ສົມສິງ ດຳດີ' },
-  { id: 3, shop_name: 'ຮ້ານ C', owner_name: 'ອຸດົມ ສີສົມບັດ' }
-]
 
-const mockProducts: Product[] = [
-  { id: 1, product_name: 'ໂທລະສັບມືຖື iPhone 15', type_name: 'ເຄື່ອງໃຊ້ໄຟຟ້າ', price: 15000000, interest_rate: 5.5, term: 12, shop_id: 1 },
-  { id: 2, product_name: 'ເສື້ອຍືນ Levi\'s', type_name: 'ເຄື່ອງນຸ່ງ', price: 350000, interest_rate: 3.25, term: 6, shop_id: 2 },
-  { id: 3, product_name: 'ທີວີ Samsung 55"', type_name: 'ເຄື່ອງໃຊ້ໄຟຟ້າ', price: 8000000, interest_rate: 4.75, term: 24, shop_id: 1 },
-  { id: 4, product_name: 'ເຄື່ອງຊັກຜ້າ LG', type_name: 'ເຄື່ອງໃຊ້ໄຟຟ້າ', price: 6000000, interest_rate: 4.5, term: 18, shop_id: 3 }
-]
+// อัปเดตค่าอัตโนมัติเมื่อมีการเปลี่ยนแปลง
+watch(() => [loanDetails.downPayment, loanDetails.interestRate, loanDetails.termMonths], () => {
+  loanDetails.monthlyPayment = calculateMonthlyPayment()
+})
+
+// ตั้งค่าเริ่มต้นเมื่อเลือกสินค้า
+watch(selectedProduct, () => {
+  if (selectedProduct.value) {
+    calculateInitialLoanDetails()
+  }
+})
 
 // Customer form
 const customerForm = reactive({
@@ -698,29 +925,54 @@ let otpTimer: NodeJS.Timeout | null = null
 
 // Computed properties
 const filteredShops = computed(() => {
-  if (!shopSearch.value) return mockShops
+  // ตรวจสอบว่า shops เป็น Array หรือไม่
+  let shopsArray = shopStore.shops
 
+  // ถ้าเป็น Object → แปลงเป็น Array
+  if (shopsArray && typeof shopsArray === 'object' && !Array.isArray(shopsArray)) {
+    console.warn('[CreateLoan] Converting shops object to array')
+    shopsArray = Object.values(shopsArray)
+  }
+
+  // ถ้าไม่มี search query → return ทั้งหมด
+  if (!shopSearch.value) {
+    return Array.isArray(shopsArray) ? shopsArray : []
+  }
+
+  // ค้นหาร้าน
   const query = shopSearch.value.toLowerCase()
-  return mockShops.filter(shop =>
-    shop.shop_name.toLowerCase().includes(query) ||
-    shop.owner_name.toLowerCase().includes(query)
-  )
+  return Array.isArray(shopsArray)
+    ? shopsArray.filter(shop =>
+        shop.shop_name?.toLowerCase().includes(query) ||
+        shop.shop_owner?.toLowerCase().includes(query)
+      )
+    : []
 })
 
+// ✅ แก้ไข computed property สำหรับ products
 const filteredProducts = computed(() => {
-  if (!selectedShop.value || !productSearch.value) {
-    return selectedShop.value
-      ? mockProducts.filter(p => p.shop_id === selectedShop.value!.id)
-      : []
+  if (!selectedShop.value) return []
+
+  // ตรวจสอบว่า products เป็น Array
+  let productsArray = productStore.products
+
+  if (productsArray && typeof productsArray === 'object' && !Array.isArray(productsArray)) {
+    console.warn('[CreateLoan] Converting products object to array')
+    productsArray = Object.values(productsArray)
+  }
+
+  if (!productSearch.value) {
+    return Array.isArray(productsArray) ? productsArray : []
   }
 
   const query = productSearch.value.toLowerCase()
-  return mockProducts.filter(product =>
-    product.shop_id === selectedShop.value!.id &&
-    (product.product_name.toLowerCase().includes(query) ||
-     product.type_name.toLowerCase().includes(query) ||
-     product.id.toString().includes(query))
-  )
+  return Array.isArray(productsArray)
+    ? productsArray.filter(product =>
+        product.product_name?.toLowerCase().includes(query) ||
+        product.type_name?.toLowerCase().includes(query) ||
+        product.id?.toString().includes(query)
+      )
+    : []
 })
 
 const allRequiredDocumentsUploaded = computed(() => {
@@ -733,15 +985,6 @@ const formatPrice = (price: number): string => {
     style: 'currency',
     currency: 'LAK'
   }).format(price)
-}
-
-const calculateMonthlyPayment = (): number => {
-  if (!selectedProduct.value) return 0
-
-  const { price, interest_rate, term } = selectedProduct.value
-  const monthlyRate = interest_rate / 100 / 12
-  const monthlyPayment = (price * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -term))
-  return Math.round(monthlyPayment)
 }
 
 const maskPhone = (phone: string): string => {
@@ -794,6 +1037,8 @@ const selectShop = (shop: Shop) => {
   // Clear product selection when shop changes
   selectedProduct.value = null
   productSearch.value = ''
+  // Load products for selected shop
+  productStore.fetchProducts({ shop_id: shop.id })
 }
 
 const clearShopSelection = () => {
@@ -814,6 +1059,9 @@ const selectProduct = (product: Product) => {
   selectedProduct.value = product
   productSearch.value = product.product_name
   showProductDropdown.value = false
+
+  // ✅ ตั้งค่าเริ่มต้นสำหรับการผ่อนชำระ
+  calculateInitialLoanDetails()
 }
 
 const clearProductSelection = () => {
@@ -945,11 +1193,27 @@ const verifyAndSubmit = async () => {
 
 // Submit loan application
 const submitLoanApplication = async () => {
+  // ตรวจสอบข้อมูลสินเชื่อ
+  if (!validateLoanDetails()) {
+    alert('กรุณาตรวจสอบข้อมูลสินเชื่อ')
+    return
+  }
+
   const loanApplication = {
     loan_number: loanNumber.value,
     shop: selectedShop.value,
     product: selectedProduct.value,
-    customer: { ...customerForm }
+    customer: { ...customerForm },
+    loan_details: {
+      product_price: loanDetails.totalAmount,
+      down_payment: loanDetails.downPayment,
+      loan_amount: loanDetails.totalAmount - loanDetails.downPayment,
+      interest_rate: loanDetails.interestRate,
+      term_months: loanDetails.termMonths,
+      monthly_payment: loanDetails.monthlyPayment,
+      total_payment: calculateTotalPayment(),
+      total_interest: calculateTotalInterest()
+    }
   }
 
   console.log('Submitting loan application:', loanApplication)
@@ -1032,6 +1296,11 @@ const submitDocuments = async () => {
     isSubmitting.value = false
   }
 }
+
+// Load data on mount
+onMounted(async () => {
+  await shopStore.fetchAllShop()
+})
 
 // Cleanup timer on unmount
 onUnmounted(() => {
