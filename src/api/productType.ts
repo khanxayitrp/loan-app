@@ -30,6 +30,24 @@ export const fetchProductTypes = async (params?: {
 
 }
 
+export const getProductTypesByID = async (id: number): Promise<ProductType> => {
+
+  try {
+    const response = await apiClient.get(`/productTypes/${id}`)
+
+    // ✅ ตรวจสอบโครงสร้าง response ทุกกรณี
+    console.log('API Response:', response.data)
+    // ✅ โครงสร้าง response จริง: { productTypes: { data: [...], total: 1, ... } }
+    const productTypesData = response.data.productTypes
+
+    return productTypesData
+  } catch (error) {
+    console.error('API Error in fetchProductTypes:', error)
+    throw error
+  }
+
+}
+
 /**
  * สร้างประเภทสินค้าใหม่
  */

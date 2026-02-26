@@ -28,7 +28,8 @@ export const useProductStore = defineStore('product', {
     currentPage: 1,
     pageSize: 10,
     total: 0,
-    error: null as string | null
+    error: null as string | null,
+    currentShopId: null as number | null // ✅ เพิ่ม: เก็บ shop_id ปัจจุบัน
   }),
 
   getters: {
@@ -51,6 +52,12 @@ export const useProductStore = defineStore('product', {
           : []
       }))
     },
+    productTypeMap: (state) => {
+    return state.productTypes.reduce((map, type) => {
+      map[type.id] = type.type_name;
+      return map;
+    }, {} as Record<number, string>);
+  },
 
     // ✅ เพิ่ม: แปลงรูปภาพเป็นลิงก์เต็มสำหรับสินค้าทั้งหมด
     productsWithFullUrls: (state) => {
@@ -81,9 +88,27 @@ export const useProductStore = defineStore('product', {
       try {
         const page = params.page || this.currentPage
         const limit = params.limit || this.pageSize
+        const shopId = params.shop_id
 
         this.currentPage = page
         this.pageSize = limit
+
+        // ✅ ถ้าเปลี่ยนร้าน → Clear products เก่า
+        if (shopId !== undefined && shopId !== this.currentShopId) {
+          console.log('🔄 [ProductStore] Shop changed, clearing old products')
+          console.log('  Old shop:', this.currentShopId)
+          console.log('  New shop:', shopId)
+
+          this.products = []
+          this.total = 0
+          this.currentShopId = shopId
+        }
+
+        console.log('📡 [ProductStore] Fetching products:', {
+          shop_id: shopId,
+          page,
+          limit
+        })
 
         const response = await getProducts({
           ...params,
@@ -91,11 +116,44 @@ export const useProductStore = defineStore('product', {
           limit
         })
 
-        this.products = response.products
-        this.total = response.total
+        console.log('📥 [ProductStore] API response:', response)
+
+        // ✅ API มี normalize แล้ว ใช้ตรง ๆ
+        const productsArray = Array.isArray(response.products)
+          ? response.products
+          : []
+
+        const totalCount = response.total || productsArray.length
+
+        console.log('📦 [ProductStore] Loaded products:', {
+          count: productsArray.length,
+          total: totalCount,
+          shop_id: shopId
+        })
+
+        // ✅ ตรวจสอบว่ามี productType_id
+        if (productsArray.length > 0) {
+          const sample = productsArray[0]
+          console.log('🔍 [ProductStore] First product:', {
+            id: sample.id,
+            name: sample.product_name,
+            has_productType_id: 'productType_id' in sample,
+            productType_id: sample.productType_id,
+            keys: Object.keys(sample)
+          })
+        }
+
+        // ✅ อัปเดต state
+        this.products = productsArray
+        this.total = totalCount
+
+        console.log('✅ [ProductStore] Products updated:', {
+          count: this.products.length,
+          total: this.total
+        })
 
       } catch (error: any) {
-        console.error('Failed to fetch products:', error)
+        console.error('❌ [ProductStore] Failed to fetch products:', error)
         this.error = error.message || 'Failed to fetch products'
         this.products = []
         this.total = 0
@@ -106,15 +164,25 @@ export const useProductStore = defineStore('product', {
     },
 
     /**
+     * ✅ เพิ่ม action สำหรับ clear products
+     */
+    clearProducts() {
+      console.log('🗑️ [ProductStore] Clearing products')
+      this.products = []
+      this.total = 0
+      this.currentShopId = null
+    },
+
+    /**
      * โหลดประเภทสินค้า
      */
     async fetchProductTypes() {
       try {
         const response = await getProductTypes()
-        console.log('fetch type is', response.data)
+        console.log('📦 [ProductStore] Product types:', response.data)
         this.productTypes = response.data
       } catch (error: any) {
-        console.error('Failed to fetch product types:', error)
+        console.error('❌ [ProductStore] Failed to fetch product types:', error)
         throw error
       }
     },
@@ -177,6 +245,13 @@ export const useProductStore = defineStore('product', {
      */
     async uploadProductImage(productId: number, file: File) {
       try {
+
+        console.log('📤 Uploading product image:', {
+        productId,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      })
         const response = await uploadProductImage(productId, file)
         // อัปเดตรูปภาพใน store
         const index = this.products.findIndex(p => p.id === productId)
@@ -200,6 +275,11 @@ async uploadProductGallery(productId: number, files: File[]) {
     console.log('📤 [Store] Files count:', files.length)
     console.log('📤 [Store] Files:', files.map(f => ({ name: f.name, size: f.size, type: f.type })))
 
+     console.log('📤 Uploading gallery:', {
+        productId,
+        fileCount: files.length,
+        totalSize: files.reduce((sum, f) => sum + f.size, 0)
+      })
     // Validate files
     if (!files || files.length === 0) {
       throw new Error('ບໍ່ມີໄຟລ໌ທີ່ຈະອັບໂຫຼດ')

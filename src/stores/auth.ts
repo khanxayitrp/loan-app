@@ -17,7 +17,8 @@ export const useAuthStore = defineStore('auth', {
     user: null as SignInResponse['user'] | null,
     permissions: [] as string[],
     loading: false,
-    expiresAt: null as number | null
+    expiresAt: null as number | null,
+    isLoggingOut: false
   }),
 
   // 👁️ GETTERS
@@ -68,6 +69,9 @@ export const useAuthStore = defineStore('auth', {
      * ออกจากระบบ
      */
     async signOut(): Promise<void> {
+      if (this.isLoggingOut) return
+      this.isLoggingOut = true
+
       try {
         // เรียก API logout เพื่อ revoke token และลบ cookies
         await apiSignOut()
@@ -78,6 +82,7 @@ export const useAuthStore = defineStore('auth', {
         this.user = null
         this.permissions = []
         this.expiresAt = null
+        this.isLoggingOut = false
 
         const permissionStore = usePermissionStore()
         permissionStore.clearPermissions()

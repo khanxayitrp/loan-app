@@ -4,13 +4,15 @@ import {
   fetchProductTypes,
   createProductType,
   updateProductType,
-  deleteProductType
+  deleteProductType,
+  getProductTypesByID
 } from '@/api/productType'
 import type { ProductType, ProductTypeForm } from '@/types/productType'
 
 export const useProductTypeStore = defineStore('productType', {
   state: () => ({
     productTypes: [] as ProductType[],
+    productType: null as ProductType | null,
     isLoading: false,
     currentPage: 1,
     pageSize: 10,
@@ -56,6 +58,32 @@ export const useProductTypeStore = defineStore('productType', {
         this.error = error.message || 'Failed to fetch product types'
         this.productTypes = []
         this.total = 0
+        throw error
+
+      } finally {
+        this.isLoading = false
+      }
+    },
+     /**
+     * โหลดรายการประเภทสินค้า
+     */
+    async fetchProductTypeById(productTypeId: number) {
+      this.isLoading = true
+      this.error = null
+      try {
+
+
+        const response = await getProductTypesByID(productTypeId)
+        console.log('get all productType', response)
+        // ✅ ตรวจสอบว่าเป็น array
+        this.productType = response.data || response
+
+
+      } catch (error: any) {
+        console.error('Failed to fetch product types:', error)
+        // ✅ ตั้งค่า default เมื่อ error
+        this.error = error.message || 'Failed to fetch product types'
+        this.productType = null
         throw error
 
       } finally {

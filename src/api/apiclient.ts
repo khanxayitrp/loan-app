@@ -28,6 +28,11 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // ✅ Prevent infinite loop if logout request itself fails
+      if (error.config?.url?.includes('/auth/logout')) {
+        return Promise.reject(error)
+      }
+
       // Token หมดอายุ → logout
       const authStore = useAuthStore()
       authStore.signOut()

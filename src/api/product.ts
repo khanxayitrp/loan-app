@@ -130,9 +130,22 @@ export const uploadProductImage = async (productId: number, file: File) => {
     )
     return response.data
   } catch (error: any) {
-    console.error(`Error uploading product image:`, error)
-    throw error
-  }
+     console.error('❌ Upload product image error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      })
+
+      // ✅ ตรวจสอบว่าเป็น HTML Error
+      if (error.response?.data instanceof Blob) {
+        const contentType = error.response.headers['content-type']
+        if (contentType?.includes('text/html')) {
+          throw new Error('เซิร์ฟเวอร์คืนค่า HTML Error Page แทน JSON')
+        }
+      }
+
+      throw error
+    }
 }
 
 /**
@@ -141,9 +154,14 @@ export const uploadProductImage = async (productId: number, file: File) => {
 export const uploadProductGallery = async (productId: number, files: File[]) => {
   try {
     const formData = new FormData()
-    files.forEach(file => {
-      formData.append('files', file)
-    })
+    files.forEach((file, index) => {
+        formData.append('files', file)
+        console.log(`📤 Adding file ${index}:`, {
+          name: file.name,
+          size: file.size,
+          type: file.type
+        })
+      })
 
     const response = await apiClient.post(
       `/upload/product/${productId}/gallery`,
@@ -154,9 +172,22 @@ export const uploadProductGallery = async (productId: number, files: File[]) => 
     )
     return response.data
   } catch (error: any) {
-    console.error(`Error uploading product gallery:`, error)
-    throw error
-  }
+    console.error('❌ Upload gallery error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      })
+
+      // ✅ ตรวจสอบว่าเป็น HTML Error
+      if (error.response?.data instanceof Blob) {
+        const contentType = error.response.headers['content-type']
+        if (contentType?.includes('text/html')) {
+          throw new Error('เซิร์ฟเวอร์คืนค่า HTML Error Page แทน JSON')
+        }
+      }
+
+      throw error
+    }
 }
 /**
  * Sync ຂໍ້ມູນ Gallery (ບັນທຶກ URL ລົງຖານຂໍ້ມູນ)

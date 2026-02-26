@@ -11,7 +11,7 @@
         <!-- Search Input -->
         <input v-model="searchQuery" type="text" placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ..."
           class="input input-bordered w-full max-w-xs" @input="debounceSearch" />
-        <!-- ✅ เพิ่ม: ปุ่มล้างการค้นหา -->
+        <!-- ✅ ปุ่มล้างการค้นหา -->
         <button v-if="searchQuery" @click="clearSearch" class="btn btn-circle btn-ghost btn-sm"
           aria-label="ล้างการค้นหา">
           <span class="icon-[tabler--x] size-4"></span>
@@ -26,18 +26,25 @@
     <!-- Filter Section -->
     <div class="flex flex-wrap gap-3 mb-6">
       <!-- Status Filter -->
-      <select v-model="statusFilter" class="select select-bordered w-full sm:w-auto">
+      <select v-model="statusFilter" class="select select-bordered w-full sm:w-auto" @change="applyFilters">
         <option value="">ທັງໝົດສະຖານະ</option>
         <option value="1">Active</option>
         <option value="0">Inactive</option>
       </select>
 
       <!-- Product Type Filter -->
-      <select v-model="typeFilter" class="select select-bordered w-full sm:w-auto">
+      <select v-model="typeFilter" class="select select-bordered w-full sm:w-auto" @change="applyFilters">
         <option value="">ທັງໝົດປະເພດ</option>
         <option v-for="type in productTypes" :key="type.id" :value="type.id.toString()">
           {{ type.type_name }}
         </option>
+      </select>
+
+      <!-- ✅ Page Size Selector -->
+      <select v-model.number="localPageSize" class="select select-bordered w-full sm:w-auto" @change="changePageSize">
+        <option :value="10">10 ຕໍ່ໜ້າ</option>
+        <option :value="25">25 ຕໍ່ໜ້າ</option>
+        <option :value="50">50 ຕໍ່ໜ້າ</option>
       </select>
     </div>
 
@@ -130,12 +137,6 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered">
-          <option :value="10">10 ຕໍ່ໜ້າ</option>
-          <option :value="25">25 ຕໍ່ໜ້າ</option>
-          <option :value="50">50 ຕໍ່ໜ້າ</option>
-        </select>
-
         <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">
           ກ່ອນໜ້າ
         </button>
@@ -199,7 +200,8 @@
                 <div
                   class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 w-full sm:w-48 h-48 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
                   @click="triggerFileInput">
-                  <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
+                  <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"
+                    class="hidden" @change="handleFileUpload" />
 
                   <div v-if="!form.image_url" class="text-center">
                     <span class="icon-[tabler--photo] size-8 text-gray-400 mb-2"></span>
@@ -214,10 +216,10 @@
                 <div class="flex-1">
                   <div class="space-y-2">
                     <p class="text-sm font-medium">ຂໍ້ມູນໄຟລ໌:</p>
-                    <div v-if="form.image_url" class="text-sm text-gray-600 dark:text-gray-400">
+                    <div v-if="imageFileInfo.name" class="text-sm text-gray-600 dark:text-gray-400">
                       <p>✓ ອັບໂຫຼດສຳເລັດ</p>
-                      <p>ປະເພດ: {{ imageFileInfo?.type || '-' }}</p>
-                      <p>ຂະໜາດ: {{ formatFileSize(imageFileInfo?.size || 0) }}</p>
+                      <p>ປະເພດ: {{ imageFileInfo.type || '-' }}</p>
+                      <p>ຂະໜາດ: {{ formatFileSize(imageFileInfo.size || 0) }}</p>
                       <button type="button" class="text-error text-sm mt-2 hover:underline" @click="removeImage">
                         ລຶບອອກ
                       </button>
@@ -259,6 +261,33 @@
               </label>
             </div>
 
+            <!-- Brand & Model -->
+            <div class="form-control">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex-1 space-y-2">
+                  <label class="label">
+                    <span class="label-text font-medium">ຍີ່ຫໍ້ *</span>
+                  </label>
+                  <input v-model="form.product_brand" type="text" placeholder="ປ້ອນຊື່ຍີ່ຫໍ້"
+                    class="input input-bordered w-full" :class="{ 'input-error': errors.product_brand }" required />
+                  <label v-if="errors.product_brand" class="label text-error">
+                    <span class="label-text-alt">{{ errors.product_brand }}</span>
+                  </label>
+                </div>
+
+                <div class="flex-1 space-y-2">
+                  <label class="label">
+                    <span class="label-text font-medium">ລຸ້ນສິນຄ້າ *</span>
+                  </label>
+                  <input v-model="form.product_model" type="text" placeholder="ປ້ອນລຸ້ນສິນຄ້າ"
+                    class="input input-bordered w-full" :class="{ 'input-error': errors.product_model }" required />
+                  <label v-if="errors.product_model" class="label text-error">
+                    <span class="label-text-alt">{{ errors.product_model }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <!-- Price -->
             <div class="form-control">
               <label class="label">
@@ -295,7 +324,7 @@
               <div
                 class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 min-h-32 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
                 @dragover.prevent @dragenter.prevent @drop.prevent="handleGalleryDrop" @click="triggerGalleryInput">
-                <input ref="galleryInput" type="file" accept="image/*" multiple class="hidden"
+                <input ref="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden"
                   @change="handleGalleryUpload" />
 
                 <div class="text-center">
@@ -350,15 +379,33 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useProductStore } from '@/stores/product'
-// เพิ่มในส่วน import
 import { getFullImageUrl } from '@/utils/url'
 
-// ในส่วน types
+// ✅ เพิ่ม Type Import
+interface Product {
+  id: number
+  product_name: string
+  brand: string
+  model: string
+  productType_id: number
+  price: number
+  interest_rate: number
+  image_url: string
+  is_active: boolean | number
+  gallery?: string[]
+}
+
+interface ProductType {
+  id: number
+  type_name: string
+}
+
 interface ImageFileInfo {
   name: string
   type: string
   size: number
 }
+
 // Store
 const productStore = useProductStore()
 
@@ -374,10 +421,13 @@ const galleryInput = ref<HTMLInputElement | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref('')
 const typeFilter = ref('')
+const localPageSize = ref(10) // ✅ เปลี่ยนจาก computed เป็น ref
 
 // Form state
 const form = reactive({
   product_name: '',
+  product_brand: '',
+  product_model: '',
   productType_id: 0,
   price: 0,
   interest_rate: 0,
@@ -388,17 +438,22 @@ const form = reactive({
 
 const errors = reactive({
   product_name: '',
+  product_brand: '',
+  product_model: '',
   productType_id: '',
   price: '',
   interest_rate: ''
 })
 
-// ✅ เพิ่มบรรทัดนี้: ประกาศ imageFileInfo ให้เป็น reactive
+// ✅ Image File Info
 const imageFileInfo = reactive<ImageFileInfo>({
   name: '',
   type: '',
   size: 0
 })
+
+// Loading state
+const loading = ref(false)
 
 // Computed properties (get from store)
 const isLoading = computed(() => productStore.isLoading)
@@ -412,41 +467,24 @@ const hasNextPage = computed(() => productStore.hasNextPage)
 const currentPage = computed(() => productStore.currentPage)
 const pageSize = computed(() => productStore.pageSize)
 const productTypes = computed(() => productStore.productTypes)
-// ✅ เพิ่ม: ฟังก์ชันตรวจสอบว่าเป็นรูปแบบไหน
+
+// ✅ ตรวจสอบ Base64
 const isBase64 = (str: string): boolean => {
   return str.startsWith('data:') || str.startsWith('data:image/')
 }
 
-// ✅ แก้ไข: ฟังก์ชันแสดงรูปภาพ
+// ✅ แสดงรูปภาพ Gallery
 const getGalleryImageUrl = (url: string): string => {
-  // ถ้าเป็นรูปแบบที่ไม่มีค่า ให้ส่งคืนค่าว่าง
   if (!url) return ''
-
-  // ถ้าเป็นรูปแบบฐาน64 ให้แสดงตรงๆ
-  if (isBase64(url)) {
-    return url
-  }
-
-  // ถ้าเป็นลิงก์เต็มแล้ว ให้แสดงตรงๆ
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url
-  }
-
-  // ถ้าเป็นลิงก์สั้น ให้แปลงเป็นลิงก์เต็ม
+  if (isBase64(url)) return url
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
   return getFullImageUrl(url)
 }
 
-
-// ✅ แก้ไข: จัดการกรณีรูปภาพโหลดไม่ได้
+// ✅ จัดการรูปภาพ Error
 const handleImageError = (e: Event) => {
   const target = e.target as HTMLImageElement
-
-  // ตรวจสอบว่าเป็นรูปแบบฐาน64 หรือไม่
-  if (isBase64(target.src)) {
-    // รูปแบบฐาน64 ไม่ควรเกิดข้อผิดพลาด
-    console.warn('Base64 image failed to load')
-  } else {
-    // รูปแบบลิงก์ ให้แสดงรูปสำรอง
+  if (!isBase64(target.src)) {
     target.src = '/images/placeholder.png'
   }
 }
@@ -485,6 +523,16 @@ const validateForm = (): boolean => {
     isValid = false
   }
 
+  if (!form.product_brand.trim()) {
+    errors.product_brand = 'ກະລຸນາປ້ອນຊື່ຍີ່ຫໍ້'
+    isValid = false
+  }
+
+  if (!form.product_model.trim()) {
+    errors.product_model = 'ກະລຸນາປ້ອນລຸ້ນສິນຄ້າ'
+    isValid = false
+  }
+
   if (form.productType_id <= 0) {
     errors.productType_id = 'ກະລຸນາເລືອກປະເພດສິນຄ້າ'
     isValid = false
@@ -512,27 +560,31 @@ const openAddProductModal = () => {
 
 const openEditProductModal = async (product: Product) => {
   editingProduct.value = product
-  // ✅ โหลดข้อมูล gallery จากฐานข้อมูล
   try {
     const gallery = await productStore.fetchProductGallery(product.id)
-
     console.log('📸 Gallery loaded:', gallery)
 
-    // เติมข้อมูลฟอร์ม
     form.product_name = product.product_name
+    form.product_brand = product.brand
+    form.product_model = product.model
     form.productType_id = product.productType_id
     form.price = product.price
     form.interest_rate = product.interest_rate
     form.image_url = product.image_url || ''
-    form.gallery = gallery.map((item: any) => item.image_url) || [] // ✅ ใช้ข้อมูลจาก API
+    form.gallery = gallery.map((item: any) => item.image_url) || []
     form.is_active = product.is_active
 
-    console.log('📸 Form gallery:', form.gallery)
+    // ✅ ตั้งค่า imageFileInfo ถ้ามีรูป
+    if (product.image_url) {
+      imageFileInfo.name = 'product-image.jpg'
+      imageFileInfo.type = 'image/jpeg'
+      imageFileInfo.size = 0
+    }
   } catch (error) {
     console.error('❌ Error loading gallery:', error)
-
-    // ถ้าโหลดไม่ได้ ให้ใช้ค่าเริ่มต้น
     form.product_name = product.product_name
+    form.product_brand = product.brand
+    form.product_model = product.model
     form.productType_id = product.productType_id
     form.price = product.price
     form.interest_rate = product.interest_rate
@@ -551,12 +603,19 @@ const closeModal = () => {
 
 const resetForm = () => {
   form.product_name = ''
+  form.product_brand = ''
+  form.product_model = ''
   form.productType_id = 0
   form.price = 0
   form.interest_rate = 0
   form.image_url = ''
   form.gallery = []
   form.is_active = 1
+
+  // ✅ Reset imageFileInfo
+  imageFileInfo.name = ''
+  imageFileInfo.type = ''
+  imageFileInfo.size = 0
 
   if (fileInput.value) fileInput.value.value = ''
   if (galleryInput.value) galleryInput.value.value = ''
@@ -571,23 +630,21 @@ const toggleProductStatus = (product: Product) => {
 const confirmToggleStatus = async () => {
   if (productToToggle.value) {
     try {
-      // ✅ เปลี่ยนจาก '=== 0' เป็น '=== 1'
       console.log("before change ", productToToggle.value.is_active)
-      const newStatus = productToToggle.value.is_active === true ? 0 : 1
+      const newStatus = productToToggle.value.is_active === true || productToToggle.value.is_active === 1 ? 0 : 1
       console.log("after change ", newStatus)
+
       await productStore.toggleProductStatus(
         productToToggle.value.id,
         newStatus
       )
 
-      // ✅ เพิ่ม: ดึงข้อมูลใหม่หลังจากเปลี่ยนสถานะ
       await productStore.fetchProducts({
         page: currentPage.value,
         limit: pageSize.value
       })
 
       alert('ປ່ຽນສະຖານະສຳເລັດ!')
-      // ✅ อัปเดตสถานะในหน้าจอ
       productToToggle.value.is_active = newStatus
     } catch (error) {
       alert('ເກີດຂໍ້ຜິດພາດການປ່ຽນສະຖານະ')
@@ -605,36 +662,74 @@ const triggerFileInput = () => {
 const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  imageFileInfo.name = file.name  // ✅ ต้องมีการประกาศก่อนใช้
-  imageFileInfo.type = file.type
-  imageFileInfo.size = file.size
+
   if (file) {
+    // ✅ ตั้งค่า imageFileInfo
+
+    // ✅ 1. ตรวจสอบขนาดไฟล์ (สูงสุด 2MB)
     if (file.size > 2 * 1024 * 1024) {
       alert('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 2MB')
+      target.value = '' // ✅ รีเซ็ต input
       return
     }
 
+    // ✅ 2. ตรวจสอบ MIME Type
     if (!file.type.startsWith('image/')) {
       alert('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບເທົ່ານັ້ນ')
+      target.value = '' // ✅ รีเซ็ต input
       return
     }
 
+    // ✅ 3. ตรวจสอบขนาดไฟล์ขั้นต่ำ (ต้องมากกว่า 1KB)
+    if (file.size < 1024) {
+      alert('ໄຟລ໌ມີຂະໜາດນ້ອຍເກີນໄປ ອາດເປັນໄຟລ໌ເສຍ')
+      target.value = '' // ✅ รีเซ็ต input
+      return
+    }
+    // ✅ 4. อ่านไฟล์ด้วย FileReader
     try {
-      // แสดง preview
       const reader = new FileReader()
+
       reader.onload = (e) => {
-        form.image_url = e.target?.result as string
+        const result = e.target?.result as string
+
+        // ✅ 5. ตรวจสอบว่าเป็น Base64 Image จริง
+        if (!result.startsWith('data:image/')) {
+          alert('ໄຟລ໌ບໍ່ແມ່ນຮູບພາບທີ່ຖືກຕ້ອງ')
+          target.value = ''
+          return
+        }
+
+        // ✅ 6. ตั้งค่า form และ imageFileInfo
+        form.image_url = result
+        imageFileInfo.name = file.name
+        imageFileInfo.type = file.type
+        imageFileInfo.size = file.size
+
+        console.log('✅ Image loaded successfully:', {
+          name: file.name,
+          type: file.type,
+          size: file.size
+        })
       }
+
+      reader.onerror = () => {
+        alert('ເກີດຂໍ້ຜິດພາດໃນການອ່ານໄຟລ໌')
+        target.value = ''
+      }
+
       reader.readAsDataURL(file)
     } catch (error) {
       console.error('Error reading file:', error)
+      alert('ເກີດຂໍ້ຜິດພາດໃນການອ່ານໄຟລ໌')
+      target.value = ''
     }
   }
 }
 
 const removeImage = () => {
   form.image_url = ''
-  imageFileInfo.name = ''  // ✅ ต้องมีการประกาศก่อนใช้
+  imageFileInfo.name = ''
   imageFileInfo.type = ''
   imageFileInfo.size = 0
   if (fileInput.value) fileInput.value.value = ''
@@ -670,52 +765,99 @@ const processGalleryFiles = async (files: File[]) => {
       continue
     }
 
-    const reader = new FileReader()
-    const base64 = await new Promise<string>((resolve) => {
-      reader.onload = () => resolve(reader.result as string)
-      reader.readAsDataURL(file)
-    })
-    validImages.push(base64)
+    // ✅ 4. อ่านไฟล์
+    try {
+      const reader = new FileReader()
+
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string
+
+          // ✅ 5. ตรวจสอบว่าเป็น Base64 Image จริง
+          if (!result.startsWith('data:image/')) {
+            reject(new Error('Not a valid image'))
+            return
+          }
+
+          resolve(result)
+        }
+
+        reader.onerror = () => {
+          reject(new Error('Error reading file'))
+        }
+
+        reader.readAsDataURL(file)
+      })
+
+      validImages.push(base64)
+      console.log('✅ Gallery image added:', file.name)
+    } catch (error) {
+      console.error('Error processing gallery image:', file.name, error)
+      alert(`ໄຟລ໌ ${file.name} ບໍ່ສາມາດອ່ານໄດ້`)
+    }
   }
 
   form.gallery.push(...validImages)
+
+  // ✅ รีเซ็ต input หลังประมวลผล
+  if (galleryInput.value) {
+    galleryInput.value.value = ''
+  }
 }
 
 const removeGalleryImage = (index: number) => {
   form.gallery.splice(index, 1)
 }
 
+// ✅ Apply Filters
+const applyFilters = () => {
+  productStore.fetchProducts({
+    page: 1,
+    limit: localPageSize.value,
+    search: searchQuery.value,
+    status: statusFilter.value,
+    type: typeFilter.value
+  })
+}
+
+// ✅ Change Page Size
+const changePageSize = () => {
+  productStore.changePageSize(localPageSize.value)
+}
+
 // Save product
 const saveProduct = async () => {
   if (!validateForm()) return
 
+  loading.value = true
+
   try {
     let productId: number
+
     if (editingProduct.value) {
       // Edit mode
-      const updatedOldProduct = await productStore.updateProduct(editingProduct.value.id, {
+      await productStore.updateProduct(editingProduct.value.id, {
         product_name: form.product_name,
+        brand: form.product_brand,
+        model: form.product_model,
         productType_id: form.productType_id,
         price: form.price,
         interest_rate: form.interest_rate,
         is_active: form.is_active
       })
-      console.log("update product ", updatedOldProduct)
       productId = editingProduct.value.id
-
     } else {
       // Create mode
       const newProduct = await productStore.createProduct({
         product_name: form.product_name,
+        brand: form.product_brand,
+        model: form.product_model,
         productType_id: form.productType_id,
         price: form.price,
         interest_rate: form.interest_rate,
         is_active: form.is_active
       })
-
-      console.log('save new product', newProduct)
       productId = newProduct.id
-
     }
 
     // 2. Handle main image upload
@@ -723,6 +865,10 @@ const saveProduct = async () => {
       try {
         const base64Response = await fetch(form.image_url)
         const blob = await base64Response.blob()
+        // ✅ ตรวจสอบ Blob Size
+        if (blob.size < 1024) {
+          throw new Error('Image file too small')
+        }
         const file = new File([blob], 'main-image.jpg', { type: 'image/jpeg' })
 
         const uploadResp = await productStore.uploadProductImage(productId, file)
@@ -731,39 +877,14 @@ const saveProduct = async () => {
           await productStore.updateProduct(productId, {
             image_url: uploadResp.data.file_url
           })
+        } else {
+          console.warn('⚠️ Image upload failed:', uploadResp)
         }
       } catch (error) {
         console.error('Error uploading main image:', error)
       }
     }
 
-    //   // Handle gallery uploads
-    //   const newGalleryImages = form.gallery.filter(img => !img.startsWith('http'))
-    //   if (newGalleryImages.length > 0) {
-    //     const galleryFiles = await Promise.all(
-    //       newGalleryImages.map(async (img) => {
-    //         const response = await fetch(img)
-    //         const blob = await response.blob()
-    //         return new File([blob], 'gallery-image.jpg', { type: 'image/jpeg' })
-    //       })
-    //     )
-    //     const uploadGalleryResp = await productStore.uploadProductGallery(productId, galleryFiles)
-
-    //     if (uploadGalleryResp.success && uploadGalleryResp.data.uploaded.length > 0) {
-    //     // 2. ເອົາລາຍການ URL ທັງໝົດ ໄປບັນທຶກລົງ Table product_gallery (Bulk Insert)
-    //     // ໝາຍເຫດ: ຄວນສົ່ງທັງຮູບເກົ່າ (http) ແລະ ຮູບໃໝ່ທີ່ຫາກໍ່ອັບສຳເລັດໄປພ້ອມກັນ
-    //     const allGalleryUrls = [
-    //       ...form.gallery.filter(img => img.startsWith('http')), // ຮູບເກົ່າທີ່ບໍ່ໄດ້ປ່ຽນ
-    //       ...uploadGalleryResp.data.uploaded.map(img => img.file_url) // ຮູບໃໝ່
-    //     ].map(url => ({ file_url: url }))
-
-    //     await productStore.syncProductGallery(productId, allGalleryUrls)
-    //   }
-    //   }
-
-    //   alert(editingProduct.value ? 'ແກ້ໄຂສິນຄ້າສຳເລັດ!' : 'ເພີ້ມສິນຄ້າສຳເລັດ!')
-
-    // closeModal()
     // 3. Handle gallery uploads
     const newGalleryImages = form.gallery.filter(img => !img.startsWith('http'))
 
@@ -771,60 +892,47 @@ const saveProduct = async () => {
       try {
         console.log('📤 Processing new gallery images:', newGalleryImages.length)
 
-        // Convert base64 to File objects with unique names
         const galleryFiles = await Promise.all(
           newGalleryImages.map(async (img, index) => {
             const response = await fetch(img)
             const blob = await response.blob()
 
-            // Generate unique filename
+            // ✅ ตรวจสอบ Blob Size
+            if (blob.size < 1024) {
+              throw new Error(`Image ${index} too small`)
+            }
             const timestamp = Date.now()
             const filename = `gallery-${timestamp}-${index}.jpg`
-
             return new File([blob], filename, { type: 'image/jpeg' })
           })
         )
 
         console.log('📤 Uploading', galleryFiles.length, 'gallery files')
 
-        // Upload gallery images
         const uploadGalleryResp = await productStore.uploadProductGallery(productId, galleryFiles)
 
         console.log('📥 Gallery upload response:', uploadGalleryResp)
 
-        // ✅ Check if upload was successful
         if (uploadGalleryResp.success) {
-
-          // Get uploaded file URLs
           const uploadedUrls = uploadGalleryResp.data.uploaded || []
 
           console.log('✅ Uploaded:', uploadedUrls.length, 'files')
 
-          // Show failed uploads if any
           if (uploadGalleryResp.data.failed && uploadGalleryResp.data.failed.length > 0) {
             console.warn('⚠️ Failed uploads:', uploadGalleryResp.data.failed)
-            alert(`คำเตือน: ${uploadGalleryResp.data.failed.length} ไฟล์อัพโหลดไม่สำเร็จ\n${uploadGalleryResp.data.failed.join('\n')}`)
+            alert(`คำเตือน: ${uploadGalleryResp.data.failed.length} ไฟล์อัพโหลดไม่สำเร็จ`)
           }
 
-          // Combine old and new gallery URLs
           if (uploadedUrls.length > 0) {
-            // Get existing gallery URLs (URLs that start with http/https)
             const existingUrls = form.gallery.filter(img => img.startsWith('http'))
 
-            console.log('🔄 Existing gallery URLs:', existingUrls.length)
-            console.log('🔄 New gallery URLs:', uploadedUrls.length)
-
-            // Combine all gallery URLs
             const allGalleryUrls = [
               ...existingUrls.map(url => ({ file_url: url })),
               ...uploadedUrls.map(img => ({ file_url: img.file_url }))
             ]
 
             console.log('🔄 Syncing total:', allGalleryUrls.length, 'gallery images')
-
-            // save to product_gallery table
             await productStore.addProductGallery(productId, allGalleryUrls)
-
             console.log('✅ save Gallery completed')
           }
         } else {
@@ -837,7 +945,7 @@ const saveProduct = async () => {
         alert(`เกิดข้อผิดพลาด: ${error.message || 'ไม่สามารถอัพโหลดรูปแกลเลอรี่ได้'}`)
       }
     } else if (form.gallery.length > 0) {
-      // ถ้าไม่มีรูปใหม่ แต่มีรูปเก่าอยู่ (กรณีแก้ไขแล้วไม่ได้เพิ่มรูปใหม่)
+      // ถ้าไม่มีรูปใหม่ แต่มีรูปเก่าอยู่
       try {
         const existingUrls = form.gallery
           .filter(img => img.startsWith('http'))
@@ -851,14 +959,16 @@ const saveProduct = async () => {
         console.error('Error syncing existing gallery:', error)
       }
     }
-    // ✅ เพิ่ม: ดึงข้อมูลใหม่หลังจากบันทึกสำเร็จ
+
+    // ✅ ดึงข้อมูลใหม่หลังจากบันทึกสำเร็จ
     await productStore.fetchProducts({
-      page: currentPage.value,
-      limit: pageSize.value
+      page: 1,
+      limit: localPageSize.value,
+      search: searchQuery.value,
+      status: statusFilter.value,
+      type: typeFilter.value
     })
 
-
-    // Success message
     const message = editingProduct.value
       ? 'ແກ້ໄຂສິນຄ້າສຳເລັດ!'
       : 'ເພີ້ມສິນຄ້າສຳເລັດ!'
@@ -869,6 +979,8 @@ const saveProduct = async () => {
   } catch (error) {
     console.error('Error saving product:', error)
     alert('ເກີດຂໍ້ຜິດພາດການບັນທຶກສິນຄ້າ')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -885,50 +997,41 @@ const nextPage = () => {
   }
 }
 
-const handlePageSizeChange = (newSize: number) => {
-  productStore.changePageSize(newSize)
-}
-
-// ✅ เพิ่ม: ฟังก์ชันล้างการค้นหา
+// ✅ ล้างการค้นหา
 const clearSearch = () => {
   searchQuery.value = ''
   productStore.fetchProducts({
     page: 1,
-    limit: pageSize.value,
+    limit: localPageSize.value,
     status: statusFilter.value,
     type: typeFilter.value
   })
 }
+
 // Search debounce
 let debounceTimer: NodeJS.Timeout | null = null
 const debounceSearch = () => {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    // ✅ เพิ่ม: รีเซ็ตหน้ากลับไปหน้า 1 เมื่อค้นหาใหม่
     productStore.changePage(1)
-
-    // ✅ ส่งค่าค้นหาไปยัง fetchProducts
     productStore.fetchProducts({
       search: searchQuery.value,
       status: statusFilter.value,
       type: typeFilter.value,
-      page: 1, // เริ่มจากหน้า 1
-      limit: pageSize.value
+      page: 1,
+      limit: localPageSize.value
     })
   }, 300)
 }
 
 // Watch filters
-watch([searchQuery, statusFilter, typeFilter, pageSize], () => {
+watch([searchQuery, statusFilter, typeFilter], () => {
   debounceSearch()
 })
 
 // Initial fetch
 onMounted(async () => {
   try {
-    if (!imageFileInfo) {
-      console.error('imageFileInfo is not defined!')
-    }
     await Promise.all([
       productStore.fetchProducts(),
       productStore.fetchProductTypes()

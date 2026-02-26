@@ -4,13 +4,19 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ການຈັດການສິນເຊື່ອ</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">ຕິດຕາມ ແລະ ຈັດການຄຳຂໍສິນເຊື່ອຂອງລູກຄ້າທັງໝົດ</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          ຕິດຕາມ ແລະ ຈັດການຄຳຂໍສິນເຊື່ອຂອງລູກຄ້າທັງໝົດ
+          <span v-if="totalLoans > 0" class="ml-2 text-primary">
+            ({{ totalLoans }} ລາຍການ)
+          </span>
+        </p>
       </div>
 
       <!-- Export Button -->
       <button
         @click="exportToCSV"
         class="btn btn-outline btn-sm whitespace-nowrap"
+        :disabled="isLoading || displayedLoans.length === 0"
       >
         <span class="icon-[tabler--file-export] size-4 mr-1"></span>
         Export CSV
@@ -44,10 +50,11 @@
         >
           <option value="">ທັງໝົດສະຖານະ</option>
           <option value="pending">ລໍຖ້າການອະນຸມັດ</option>
-          <option value="approved">ອະນຸມັດ既แล้ว</option>
+          <option value="verifying">ກຳລັງກວດສອບ</option>
+          <option value="approved">ອະນຸມັດແລ້ວ</option>
           <option value="rejected">ປະຕິເສດ</option>
-          <option value="disbursed">ຈ່າຍເງິນ既แล้ว</option>
-          <option value="closed">ປິດສິນເຊື່ອ</option>
+          <option value="completed">ສຳເລັດ</option>
+          <option value="draft">ຮ່າງ</option>
         </select>
       </div>
 
@@ -75,7 +82,13 @@
 
     <!-- Loading State -->
     <div v-if="isLoading" class="text-center py-8">
-      <div class="loading loading-spinner"></div>
+      <div class="loading loading-spinner loading-lg text-primary"></div>
+      <p class="mt-2 text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
+    </div>
+
+    <!-- Saving State -->
+    <div v-if="isSaving" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+      <div class="loading loading-spinner loading-lg"></div>
     </div>
 
     <!-- Table -->
@@ -96,24 +109,33 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="loan in displayedLoans" :key="loan.id">
+          <tr
+            v-for="loan in displayedLoans"
+            :key="loan.id"
+            @click="viewLoanDetails(loan)"
+            class="cursor-pointer hover:bg-base-200"
+          >
             <!-- Loan Number -->
-            <td class="font-mono text-gray-600 dark:text-gray-400">{{ loan.loan_number }}</td>
+            <td class="font-mono text-gray-600 dark:text-gray-400">
+              {{ loan.loan_id || '-' }}
+            </td>
 
             <!-- Customer Name -->
-            <td class="font-medium">{{ loan.customer_name }}</td>
+            <td class="font-medium">
+              {{ getCustomerFullName(loan) }}
+            </td>
 
             <!-- Phone -->
-            <td>{{ loan.phone }}</td>
+            <td>{{ getCustomerPhone(loan) }}</td>
 
             <!-- Amount -->
-            <td class="font-medium">{{ formatPrice(loan.amount) }}</td>
+            <td class="font-medium">{{ formatPrice(loan.total_amount) }}</td>
 
             <!-- Interest Rate -->
-            <td>{{ loan.interest_rate }}%</td>
+            <td>{{ loan.interest_rate_at_apply || '-' }}%</td>
 
             <!-- Term -->
-            <td>{{ loan.term }} ເດືອນ</td>
+            <td>{{ loan.loan_period || '-' }} ເດືອນ</td>
 
             <!-- Status -->
             <td>
@@ -127,22 +149,57 @@
 
             <!-- Approved By -->
             <td>
-              <span v-if="loan.approved_by">
-                {{ loan.approved_by }}
+              <span v-if="loan.approver?.name">
+                {{ loan.approver.name }} 
               </span>
               <span v-else class="text-gray-400">-</span>
             </td>
 
             <!-- Created At -->
-            <td>{{ formatDate(loan.created_at) }}</td>
+            <td>{{ formatDate(loan.createdAt) }}</td>
 
             <!-- Actions -->
-            
+            <!-- <td @click.stop>
+              <div class="dropdown dropdown-end">
+                <label tabindex="0" class="btn btn-ghost btn-xs">
+                  <span class="icon-[tabler--dots-vertical] size-4"></span>
+                </label>
+                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40">
+                  <li>
+                    <a @click="viewLoanDetails(loan)">
+                      <span class="icon-[tabler--eye] size-4"></span>
+                      ເບິ່ງລາຍລະອຽດ
+                    </a>
+                  </li>
+                  <li v-if="loan.status === 'pending'">
+                    <a @click="approveLoan(loan)" class="text-success">
+                      <span class="icon-[tabler--check] size-4"></span>
+                      ອະນຸມັດ
+                    </a>
+                  </li>
+                  <li v-if="loan.status === 'pending'">
+                    <a @click="rejectLoan(loan)" class="text-error">
+                      <span class="icon-[tabler--x] size-4"></span>
+                      ປະຕິເສດ
+                    </a>
+                  </li>
+                  <li v-if="loan.status === 'approved'">
+                    <a @click="disburseLoan(loan)" class="text-primary">
+                      <span class="icon-[tabler--cash] size-4"></span>
+                      ຈ່າຍເງິນ
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </td> -->
           </tr>
 
           <tr v-if="displayedLoans.length === 0">
             <td colspan="10" class="text-center py-8 text-base-content/60">
-              ບໍ່ພົບຂໍ້ມູນການຂໍສິນເຊື່ອ
+              <div class="flex flex-col items-center gap-2">
+                <span class="icon-[tabler--database-off] size-8"></span>
+                <p>ບໍ່ພົບຂໍ້ມູນການຂໍສິນເຊື່ອ</p>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -203,7 +260,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="text-sm font-medium text-gray-500">ເລກທີ່ສິນເຊື່ອ</label>
-                <p class="font-mono">{{ selectedLoan.loan_number }}</p>
+                <p class="font-mono">{{ selectedLoan.loan_id || '-' }}</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ສະຖານະ</label>
@@ -216,40 +273,55 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຊື່ລູກຄ້າ</label>
-                <p>{{ selectedLoan.customer_name }}</p>
+                <p>{{ getCustomerFullName(selectedLoan) }}</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ເບີໂທ</label>
-                <p>{{ selectedLoan.phone }}</p>
+                <p>{{ getCustomerPhone(selectedLoan) }}</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຈຳນວນເງິນ</label>
-                <p class="font-medium">{{ formatPrice(selectedLoan.amount) }}</p>
+                <p class="font-medium">{{ formatPrice(selectedLoan.total_amount) }}</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ດອກເບ້ຍ</label>
-                <p>{{ selectedLoan.interest_rate }}%</p>
+                <p>{{ selectedLoan.interest_rate_at_apply || '-' }}%</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ໄລຍະເວລາ</label>
-                <p>{{ selectedLoan.term }} ເດືອນ</p>
+                <p>{{ selectedLoan.loan_period || '-' }} ເດືອນ</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຜູ້ອະນຸມັດ</label>
-                <p>{{ selectedLoan.approved_by || '-' }}</p>
+                <p>{{ selectedLoan.approver?.name || '-' }}</p>
               </div>
             </div>
 
-            <!-- Address -->
-            <div>
+            <!-- Customer Address -->
+            <div v-if="selectedLoan.customer?.address">
               <label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label>
-              <p class="whitespace-pre-line">{{ selectedLoan.address }}</p>
+              <p class="whitespace-pre-line">{{ selectedLoan.customer.address }}</p>
             </div>
 
-            <!-- Notes -->
-            <div v-if="selectedLoan.notes">
+            <!-- Remarks/Notes -->
+            <div v-if="selectedLoan.remarks">
               <label class="text-sm font-medium text-gray-500">ໝາຍເຫດ</label>
-              <p>{{ selectedLoan.notes }}</p>
+              <p>{{ selectedLoan.remarks }}</p>
+            </div>
+
+            <!-- Documents -->
+            <div v-if="currentDocuments.length > 0">
+              <label class="text-sm font-medium text-gray-500 mb-2 block">ເອກະສານ</label>
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="doc in currentDocuments"
+                  :key="doc.id"
+                  class="badge badge-outline gap-1"
+                >
+                  <span class="icon-[tabler--file-text] size-3"></span>
+                  {{ doc.document_type || 'ເອກະສານ' }}
+                </div>
+              </div>
             </div>
 
             <!-- Timestamps -->
@@ -262,9 +334,9 @@
                 <label class="text-sm font-medium text-gray-500">ອະນຸມັດເມື່ອ</label>
                 <p>{{ formatDate(selectedLoan.approved_at) }}</p>
               </div>
-              <div v-if="selectedLoan.disbursed_at">
-                <label class="text-sm font-medium text-gray-500">ຈ່າຍເງິນເມື່ອ</label>
-                <p>{{ formatDate(selectedLoan.disbursed_at) }}</p>
+              <div v-if="selectedLoan.completed_at">
+                <label class="text-sm font-medium text-gray-500">ສຳເລັດເມື່ອ</label>
+                <p>{{ formatDate(selectedLoan.completed_at) }}</p>
               </div>
             </div>
           </div>
@@ -276,20 +348,40 @@
             >
               ປິດ
             </button>
+            <button
+              v-if="selectedLoan.status === 'pending'"
+              class="btn btn-success"
+              @click="approveLoan(selectedLoan)"
+            >
+              ອະນຸມັດ
+            </button>
+            <button
+              v-if="selectedLoan.status === 'pending'"
+              class="btn btn-error"
+              @click="rejectLoan(selectedLoan)"
+            >
+              ປະຕິເສດ
+            </button>
+            <button
+              v-if="selectedLoan.status === 'approved'"
+              class="btn btn-primary"
+              @click="disburseLoan(selectedLoan)"
+            >
+              ຈ່າຍເງິນ
+            </button>
           </div>
         </div>
       </div>
     </teleport>
 
-    <!-- Action Confirmation Modals -->
-
-    <!-- Approve Modal -->
+    <!-- Action Confirmation Modals (Approve, Reject, Disburse) -->
+    <!-- ใช้โครงสร้างเดิมจากโค้ดก่อนหน้า -->
     <teleport to="body">
       <div v-if="showApproveModal && loanToAction" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4 text-success">ອະນຸມັດສິນເຊື່ອ</h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການອະນຸມັດສິນເຊື່ອຂອງ "{{ loanToAction.customer_name }}" ?
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການອະນຸມັດສິນເຊື່ອຂອງ "{{ getCustomerFullName(loanToAction) }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
             <button
@@ -301,7 +393,9 @@
             <button
               class="btn btn-success"
               @click="confirmApproveLoan"
+              :disabled="isSaving"
             >
+              <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
               ອະນຸມັດ
             </button>
           </div>
@@ -309,13 +403,12 @@
       </div>
     </teleport>
 
-    <!-- Reject Modal -->
     <teleport to="body">
       <div v-if="showRejectModal && loanToAction" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4 text-error">ປະຕິເສດສິນເຊື່ອ</h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການປະຕິເສດສິນເຊື່ອຂອງ "{{ loanToAction.customer_name }}" ?
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການປະຕິເສດສິນເຊື່ອຂອງ "{{ getCustomerFullName(loanToAction) }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
             <button
@@ -327,7 +420,9 @@
             <button
               class="btn btn-error"
               @click="confirmRejectLoan"
+              :disabled="isSaving"
             >
+              <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
               ປະຕິເສດ
             </button>
           </div>
@@ -335,13 +430,12 @@
       </div>
     </teleport>
 
-    <!-- Disburse Modal -->
     <teleport to="body">
       <div v-if="showDisburseModal && loanToAction" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4 text-primary">ຈ່າຍເງິນສິນເຊື່ອ</h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຈ່າຍເງິນສິນເຊື່ອ {{ formatPrice(loanToAction.amount) }} ໃຫ້ "{{ loanToAction.customer_name }}" ?
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຈ່າຍເງິນສິນເຊື່ອ {{ formatPrice(loanToAction.total_amount) }} ໃຫ້ "{{ getCustomerFullName(loanToAction) }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
             <button
@@ -353,7 +447,9 @@
             <button
               class="btn btn-primary"
               @click="confirmDisburseLoan"
+              :disabled="isSaving"
             >
+              <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
               ຈ່າຍເງິນ
             </button>
           </div>
@@ -364,170 +460,103 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import Papa from 'papaparse'
+import { useLoanApplicationStore } from '@/stores/loanApplication'
+import type { LoanApplication, LoanApplicationStatus, LoanApplicationFilters } from '@/types/loanApplication'
 
-// Types
-interface Loan {
-  id: number
-  loan_number: string
-  customer_name: string
-  phone: string
-  address: string
-  amount: number
-  interest_rate: number
-  term: number
-  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'closed'
-  approved_by: string | null
-  approved_at: string | null
-  disbursed_at: string | null
-  notes: string | null
-  created_at: string
-}
+// 📦 ใช้ Pinia Store
+const loanStore = useLoanApplicationStore()
+const {
+  loanApplications,
+  currentLoanApplication,
+  isLoading,
+  isSaving,
+  currentDocuments,
+  customer
+} = storeToRefs(loanStore)
 
-// Reactive state
-const isLoading = ref(false)
+// 🔍 Reactive state สำหรับ UI
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchQuery = ref('')
-const statusFilter = ref('')
+const statusFilter = ref<LoanApplicationStatus | ''>('')
 const dateFrom = ref('')
 const dateTo = ref('')
 
-// Modal states
+// 💰 Amount filter
+const amountMin = ref<number | undefined>(undefined)
+const amountMax = ref<number | undefined>(undefined)
+
+// 🪟 Modal states
 const showDetailsModal = ref(false)
 const showApproveModal = ref(false)
 const showRejectModal = ref(false)
 const showDisburseModal = ref(false)
-const selectedLoan = ref<Loan | null>(null)
-const loanToAction = ref<Loan | null>(null)
+const selectedLoan = ref<LoanApplication | null>(null)
+const loanToAction = ref<LoanApplication | null>(null)
 
-// Mock data
-const mockLoans: Loan[] = [
-  {
-    id: 1,
-    loan_number: 'LN2024001',
-    customer_name: 'ສົມຊາຍ ພົນສຸກ',
-    phone: '020 1234 5678',
-    address: 'ບ້ານ ນາມວົງ, ເມືອງ ໄຊເຊດຖາ, ນະຄອນຫຼວງວຽງຈັນ',
-    amount: 5000000,
-    interest_rate: 5.5,
-    term: 12,
-    status: 'pending',
-    approved_by: null,
-    approved_at: null,
-    disbursed_at: null,
-    notes: 'ລູກຄ້າໃໝ່, ຕ້ອງການກວດສອບເພີ່ມເຕີມ',
-    created_at: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    loan_number: 'LN2024002',
-    customer_name: 'ສົມສິງ ດຳດີ',
-    phone: '020 8765 4321',
-    address: 'ບ້ານ ສີໂມກ, ເມືອງ ປາກເຊ, ຈຳປາສັກ',
-    amount: 10000000,
-    interest_rate: 4.75,
-    term: 24,
-    status: 'approved',
-    approved_by: 'ອຸດົມ ສີສົມບັດ',
-    approved_at: '2024-01-20T14:15:00Z',
-    disbursed_at: null,
-    notes: 'ອະນຸມັດໂດຍຜູ້ຈັດການ',
-    created_at: '2024-01-18T09:45:00Z'
-  },
-  {
-    id: 3,
-    loan_number: 'LN2024003',
-    customer_name: 'ອຸດົມ ສີສົມບັດ',
-    phone: '020 1122 3344',
-    address: 'ບ້ານ ກະສີ, ເມືອງ ສະຫວັນນະເຂດ, ສະຫວັນນະເຂດ',
-    amount: 3000000,
-    interest_rate: 6.0,
-    term: 6,
-    status: 'disbursed',
-    approved_by: 'ບຸນເຊີຍ ສຸກສົມ',
-    approved_at: '2024-01-25T11:20:00Z',
-    disbursed_at: '2024-01-26T16:30:00Z',
-    notes: 'ຈ່າຍເງິນແລ້ວ',
-    created_at: '2024-01-22T13:10:00Z'
-  },
-  {
-    id: 4,
-    loan_number: 'LN2024004',
-    customer_name: 'ຈັນດາ ວົງສີ',
-    phone: '020 5566 7788',
-    address: 'ບ້ານ ນາມວົງ, ເມືອງ ໄຊເຊດຖາ, ນະຄອນຫຼວງວຽງຈັນ',
-    amount: 2000000,
-    interest_rate: 5.25,
-    term: 12,
-    status: 'rejected',
-    approved_by: 'ສົມບຸນ ພົນສຸກ',
-    approved_at: '2024-01-30T10:45:00Z',
-    disbursed_at: null,
-    notes: 'ບໍ່ຜ່ານການກວດສອບຄວາມສາມາດການຈ່າຍຄືນ',
-    created_at: '2024-01-28T15:30:00Z'
-  },
-  {
-    id: 5,
-    loan_number: 'LN2024005',
-    customer_name: 'ບຸນເຊີຍ ສຸກສົມ',
-    phone: '020 9988 7766',
-    address: 'ບ້ານ ນາມວົງ, ເມືອງ ໄຊເຊດຖາ, ນະຄອນຫຼວງວຽງຈັນ',
-    amount: 7500000,
-    interest_rate: 4.5,
-    term: 18,
-    status: 'closed',
-    approved_by: 'ອຸດົມ ສີສົມບັດ',
-    approved_at: '2024-02-05T09:15:00Z',
-    disbursed_at: '2024-02-06T14:20:00Z',
-    notes: 'ປິດສິນເຊື່ອແລ້ວ',
-    created_at: '2024-02-01T11:45:00Z'
-  }
-]
-
-// Debounce search
-let debounceTimer: NodeJS.Timeout | null = null
+// 📄 Pagination
 const debouncedSearch = ref('')
+let debounceTimer: NodeJS.Timeout | null = null
 
+// ⏱️ Debounce search
 const debounceSearch = () => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-  }
+  if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
     debouncedSearch.value = searchQuery.value
     currentPage.value = 1
+    fetchLoans()
   }, 300)
 }
 
-// Apply date filter
+// 📅 Apply date filter
 const applyDateFilter = () => {
   currentPage.value = 1
+  fetchLoans()
 }
 
-// Filtered loans
-const filteredLoans = computed(() => {
-  let filtered = mockLoans
+// 🔄 Fetch Loans จาก Store
+const fetchLoans = async () => {
+  try {
+    const filters: LoanApplicationFilters = {
+      is_confirmed: 1,
+      status: statusFilter.value || undefined,
+      min: amountMin.value,
+      max: amountMax.value,
+      // ✅ เพิ่ม CustomerId ถ้ามีการค้นหา
+      CustomerId: customer.value?.id || undefined
+    }
 
-  // Search filter
+    await loanStore.fetchLoanApplications(filters)
+  } catch (error) {
+    console.error('Failed to fetch loans:', error)
+  }
+}
+
+// 📊 Filtered loans (ใช้ข้อมูลจาก Store)
+const filteredLoans = computed(() => {
+  let filtered = loanApplications.value
+
+  // 🔍 Search filter (client-side สำหรับ search ทั่วไป)
   if (debouncedSearch.value) {
     const query = debouncedSearch.value.toLowerCase()
-    filtered = filtered.filter(loan =>
-      loan.customer_name.toLowerCase().includes(query) ||
-      loan.phone.includes(query) ||
-      loan.loan_number.toLowerCase().includes(query)
-    )
+    filtered = filtered.filter(loan => {
+      const customerName = `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.toLowerCase()
+      const phone = loan.customer?.phone || ''
+      const loanId = loan.loan_id || ''
+
+      return customerName.includes(query) ||
+             phone.includes(query) ||
+             loanId.toLowerCase().includes(query)
+    })
   }
 
-  // Status filter
-  if (statusFilter.value) {
-    filtered = filtered.filter(loan => loan.status === statusFilter.value)
-  }
-
-  // Date filter
+  // 📅 Date filter (client-side)
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
-      const loanDate = new Date(loan.created_at).toISOString().split('T')[0]
+      const loanDate = loan.created_at ? new Date(loan.created_at).toISOString().split('T')[0] : ''
       const fromDate = dateFrom.value || '1970-01-01'
       const toDate = dateTo.value || '9999-12-31'
       return loanDate >= fromDate && loanDate <= toDate
@@ -537,14 +566,14 @@ const filteredLoans = computed(() => {
   return filtered
 })
 
-// Paginated loans
+// 📄 Paginated loans
 const displayedLoans = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
   return filteredLoans.value.slice(start, end)
 })
 
-// Pagination computed
+// 📈 Pagination computed
 const totalLoans = computed(() => filteredLoans.value.length)
 const totalPages = computed(() => Math.ceil(totalLoans.value / pageSize.value) || 1)
 const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
@@ -552,43 +581,82 @@ const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, tot
 const hasPreviousPage = computed(() => currentPage.value > 1)
 const hasNextPage = computed(() => currentPage.value < totalPages.value)
 
-// Utility functions
+// 🏷️ Status Badge Class
 const getStatusBadgeClass = (status: string): string => {
-  switch (status) {
-    case 'pending': return 'badge-warning'
-    case 'approved': return 'badge-info'
-    case 'rejected': return 'badge-error'
-    case 'disbursed': return 'badge-success'
-    case 'closed': return 'badge-neutral'
-    default: return 'badge-neutral'
+  const map: Record<string, string> = {
+    'pending': 'badge-warning',
+    'verifying': 'badge-info',
+    'approved': 'badge-success',
+    'rejected': 'badge-error',
+    'completed': 'badge-neutral',
+    'draft': 'badge-ghost'
   }
+  return map[status] || 'badge-neutral'
 }
 
+// 📝 Status Text (Lao)
 const getStatusText = (status: string): string => {
-  const statusMap: Record<string, string> = {
+  const map: Record<string, string> = {
     'pending': 'ລໍຖ້າການອະນຸມັດ',
+    'verifying': 'ກຳລັງກວດສອບ',
     'approved': 'ອະນຸມັດແລ້ວ',
     'rejected': 'ປະຕິເສດ',
-    'disbursed': 'ຈ່າຍເງິນແລ້ວ',
-    'closed': 'ປິດສິນເຊື່ອ'
+    'completed': 'ສຳເລັດ',
+    'draft': 'ຮ່າງ'
   }
-  return statusMap[status] || status
+  return map[status] || status
 }
 
-const formatPrice = (price: number): string => {
+// 💰 Format Price
+const formatPrice = (price: number | undefined): string => {
+  if (!price) return '0 ₭'
   return new Intl.NumberFormat('lo-LA', {
     style: 'currency',
-    currency: 'LAK'
+    currency: 'LAK',
+    minimumFractionDigits: 0
   }).format(price)
 }
 
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('lo-LA')
+// 📅 Format Date
+const formatDate = (dateString: string | undefined): string => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString('lo-LA', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
-// Action handlers
-const viewLoanDetails = (loan: Loan) => {
-  selectedLoan.value = loan
+// 👤 Get Customer Full Name
+const getCustomerFullName = (loan: LoanApplication): string => {
+  if (loan.customer) {
+    return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim() || 'ไม່ຮູ້ຊື່'
+  }
+  return 'ไม່ຮູ້ຊື່'
+}
+
+// 📞 Get Customer Phone
+const getCustomerPhone = (loan: LoanApplication): string => {
+  return loan.customer?.phone || '-'
+}
+
+// 🎯 Action Handlers
+
+// 📋 View Details
+const viewLoanDetails = async (loan: LoanApplication) => {
+  try {
+    selectedLoan.value = loan
+    await loanStore.fetchLoanApplicationById(loan.id)
+    if (loanStore.currentLoanApplication) {
+      selectedLoan.value = loanStore.currentLoanApplication
+      // 📄 Fetch documents
+      await loanStore.fetchDocuments(loan.id)
+    }
+  } catch (error) {
+    console.error('Failed to load loan details:', error)
+  }
   showDetailsModal.value = true
 }
 
@@ -597,81 +665,91 @@ const closeDetailsModal = () => {
   selectedLoan.value = null
 }
 
-const approveLoan = (loan: Loan) => {
+// ✅ Approve
+const approveLoan = (loan: LoanApplication) => {
   loanToAction.value = loan
   showApproveModal.value = true
 }
 
 const confirmApproveLoan = async () => {
-  if (loanToAction.value) {
-    // Update mock data
-    const index = mockLoans.findIndex(l => l.id === loanToAction.value!.id)
-    if (index !== -1) {
-      mockLoans[index].status = 'approved'
-      mockLoans[index].approved_by = 'ຜູ້ໃຊ້ປັດຈຸບັນ'
-      mockLoans[index].approved_at = new Date().toISOString()
-    }
-    alert('ອະນຸມັດສິນເຊື່ອສຳເລັດ!')
-  }
+  if (!loanToAction.value) return
 
-  showApproveModal.value = false
-  loanToAction.value = null
+  try {
+    await loanStore.changeStatus(loanToAction.value.id, {
+      status: 'approved',
+      remarks: 'ອະນຸມັດໂດຍຜູ້ໃຊ້'
+    })
+    alert('ອະນຸມັດສິນເຊື່ອສຳເລັດ!')
+    await fetchLoans()
+  } catch (error: any) {
+    alert('ອະນຸມັດລົ້ມເຫຼວ: ' + (error.message || 'Unknown error'))
+  } finally {
+    showApproveModal.value = false
+    loanToAction.value = null
+  }
 }
 
-const rejectLoan = (loan: Loan) => {
+// ❌ Reject
+const rejectLoan = (loan: LoanApplication) => {
   loanToAction.value = loan
   showRejectModal.value = true
 }
 
 const confirmRejectLoan = async () => {
-  if (loanToAction.value) {
-    // Update mock data
-    const index = mockLoans.findIndex(l => l.id === loanToAction.value!.id)
-    if (index !== -1) {
-      mockLoans[index].status = 'rejected'
-      mockLoans[index].approved_by = 'ຜູ້ໃຊ້ປັດຈຸບັນ'
-      mockLoans[index].approved_at = new Date().toISOString()
-    }
-    alert('ປະຕິເສດສິນເຊື່ອສຳເລັດ!')
-  }
+  if (!loanToAction.value) return
 
-  showRejectModal.value = false
-  loanToAction.value = null
+  try {
+    await loanStore.changeStatus(loanToAction.value.id, {
+      status: 'rejected',
+      remarks: 'ປະຕິເສດໂດຍຜູ້ໃຊ້'
+    })
+    alert('ປະຕິເສດສິນເຊື່ອສຳເລັດ!')
+    await fetchLoans()
+  } catch (error: any) {
+    alert('ປະຕິເສດລົ້ມເຫຼວ: ' + (error.message || 'Unknown error'))
+  } finally {
+    showRejectModal.value = false
+    loanToAction.value = null
+  }
 }
 
-const disburseLoan = (loan: Loan) => {
+// 💸 Disburse
+const disburseLoan = (loan: LoanApplication) => {
   loanToAction.value = loan
   showDisburseModal.value = true
 }
 
 const confirmDisburseLoan = async () => {
-  if (loanToAction.value) {
-    // Update mock data
-    const index = mockLoans.findIndex(l => l.id === loanToAction.value!.id)
-    if (index !== -1) {
-      mockLoans[index].status = 'disbursed'
-      mockLoans[index].disbursed_at = new Date().toISOString()
-    }
-    alert('ຈ່າຍເງິນສິນເຊື່ອສຳເລັດ!')
-  }
+  if (!loanToAction.value) return
 
-  showDisburseModal.value = false
-  loanToAction.value = null
+  try {
+    await loanStore.changeStatus(loanToAction.value.id, {
+      status: 'completed',
+      remarks: 'ຈ່າຍເງິນແລ້ວ'
+    })
+    alert('ຈ່າຍເງິນສິນເຊື່ອສຳເລັດ!')
+    await fetchLoans()
+  } catch (error: any) {
+    alert('ຈ່າຍເງິນລົ້ມເຫຼວ: ' + (error.message || 'Unknown error'))
+  } finally {
+    showDisburseModal.value = false
+    loanToAction.value = null
+  }
 }
 
-// Export CSV
+// 📥 Export CSV
 const exportToCSV = () => {
   if (!displayedLoans.value.length) return
 
   const csvData = displayedLoans.value.map(loan => ({
-    'ເລກທີ່ສິນເຊື່ອ': loan.loan_number,
-    'ຊື່ລູກຄ້າ': loan.customer_name,
-    'ເບີໂທ': loan.phone,
-    'ຈຳນວນເງິນ': formatPrice(loan.amount),
-    'ດອກເບ້ຍ (%)': loan.interest_rate,
-    'ໄລຍະເວລາ (ເດືອນ)': loan.term,
+    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
+    'ຊື່ລູກຄ້າ': getCustomerFullName(loan),
+    'ເບີໂທ': getCustomerPhone(loan),
+    'ຈຳນວນເງິນ': formatPrice(loan.total_amount),
+    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply || '-',
+    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '-',
     'ສະຖານະ': getStatusText(loan.status),
-    'ຜູ້ອະນຸມັດ': loan.approved_by || '-',
+    'ຜູ້ອະນຸມັດ': loan.approver?.name || '-',
     'ວັນທີ່ສ້າງ': formatDate(loan.created_at)
   }))
 
@@ -683,7 +761,7 @@ const exportToCSV = () => {
   link.click()
 }
 
-// Pagination methods
+// 📄 Pagination
 const previousPage = () => {
   if (hasPreviousPage.value) {
     currentPage.value--
@@ -696,7 +774,32 @@ const nextPage = () => {
   }
 }
 
+// 🔍 Search Customer by Phone (ใช้ Store)
+const searchCustomer = async (phone: string) => {
+  if (!phone || phone.length < 9) return
+
+  try {
+    await loanStore.fetchCustomerByPhone(phone)
+    if (loanStore.customer) {
+      console.log('Customer found:', loanStore.customer)
+    }
+  } catch (error) {
+    console.error('Customer not found:', error)
+  }
+}
+
+// 🔄 Watchers
 watch(pageSize, () => {
   currentPage.value = 1
+})
+
+watch(statusFilter, () => {
+  currentPage.value = 1
+  fetchLoans()
+})
+
+// 🚀 Load on mount
+onMounted(() => {
+  fetchLoans()
 })
 </script>
