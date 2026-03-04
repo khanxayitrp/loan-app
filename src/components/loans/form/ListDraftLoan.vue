@@ -104,7 +104,7 @@
                   @click="deleteDraft(draft.id)" aria-label="Delete draft">
                   <span class="icon-[tabler--trash] size-4"></span>
                 </button>
-                <!-- ✅ แสดงปุ่มส่งเฉพาะ draft -->
+                <!-- ✅ แสดงปุ่มສົ່ງเฉพาะ draft -->
                 <button v-if="isDraft(draft)" class="btn btn-circle btn-text btn-sm text-success"
                   @click="confirmSubmitDraft(draft)" aria-label="Submit draft">
                   <span class="icon-[tabler--check] size-4"></span>
@@ -251,7 +251,7 @@
                 <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
                 <p>{{ selectedDraft.createdAt ? formatDate(selectedDraft.createdAt) : '-' }}</p>
               </div>
-              <!-- ✅ แสดง Customer Info ถ้ามี -->
+              <!-- ✅ แสดง Customer Info ถ้าມີ -->
               <div v-if="selectedDraft.customer" class="border-t pt-4 mt-4">
                 <h4 class="font-medium mb-3">ຂໍ້ມູນລູກຄ້າ</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -273,7 +273,7 @@
                   </div>
                 </div>
               </div>
-              <!-- ✅ แสดง Product Info ถ้ามี -->
+              <!-- ✅ แสดง Product Info ถ้าມີ -->
               <div v-if="selectedDraft.product" class="border-t pt-4 mt-4">
                 <h4 class="font-medium mb-3">ຂໍ້ມູນສິນຄ້າ</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -325,7 +325,7 @@
                       <span class="icon-[tabler--x] size-4"></span>
                     </button>
                   </div>
-                  <!-- แสดงข้อความเมื่อไม่มีร้านค้า -->
+                  <!-- แสดงข้อความเมื่อไม่มີຮ้านຄ້າ -->
                   <div v-if="!modalShopId" class="text-xs text-warning mt-1">
                     ⚠️ ບໍ່ພົບຂໍ້ມູນຮ້ານຄ້າສຳລັບດຶງລາຍການສິນຄ້າ
                   </div>
@@ -644,9 +644,14 @@
           </div>
           <!-- ✅ Add the new LoanContractForm component -->
           <div v-else-if="activeTab === 'loanContract'" class="space-y-6">
-            <LoanContractForm :loan-contract-id="selectedDraft?.id" :loan-contract="selectedDraft"
-              :is-editing="isEditingInModal" @cancel-edit="isEditingInModal = false"
-              @enable-edit="isEditingInModal = true" />
+            <LoanContractForm
+            :loan-contract-id="selectedDraft?.id"
+             :loan-application="selectedDraft"
+             :loan-contract="selectedContract"
+              :is-editing="isEditingInModal"
+              @cancel-edit="isEditingInModal = false"
+              @enable-edit="isEditingInModal = true"
+              @save-form="handleSaveContract" />
           </div>
           <!-- Modal Actions -->
           <div class="flex justify-end gap-3 mt-6">
@@ -743,7 +748,9 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useProductStore } from '@/stores/product'
+import { useLoanContractStore } from '@/stores/loanContract'
 import type { LoanApplication, ConfirmDraftDto, CustomerLocation } from '@/types/loanApplication'
+import type { CreateLoanContractRequest } from '@/types/loanContract'
 import { requestOtpForCustomer } from '@/api/customer'
 import Papa from 'papaparse'
 import { getConfirmedStyle } from '@/utils/formatters'
@@ -754,6 +761,7 @@ import LoanContractForm from '@/components/loans/form/LoanContractForm.vue'
 // ✅ Use Store
 const loanApplicationStore = useLoanApplicationStore()
 const productStore = useProductStore()
+const loanContractStore = useLoanContractStore()
 // Reactive state
 const isLoading = computed(() => loanApplicationStore.isLoading)
 const isSaving = computed(() => loanApplicationStore.isSaving)
@@ -841,6 +849,9 @@ const modalFormErrors = reactive({
   loan_period: '',
   income_per_month: ''
 })
+
+
+
 // ✅ Helper functions
 const isImage = (url: string) => /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url.toLowerCase())
 const getDocumentTypeName = (type: string): string => {
@@ -1114,12 +1125,22 @@ const debounceSearch = () => {
 const applyDateFilter = () => {
   currentPage.value = 1
 }
+
+const selectedContract = ref<any | null>(null)
 // Action handlers
 const viewDraftDetails = async (draft: LoanApplication) => {
   selectedDraft.value = draft
   // ✅ โหลดเอกสาร
   if (draft.id) {
     await loanApplicationStore.fetchDocuments(draft.id)
+
+    try {
+      // เรียกฟังก์ชันจาก loanContractStore (อาจจะต้องตั้ง error แบบเงียบๆ ถ้าไม่เจอ)
+      selectedContract.value = await loanContractStore.fetchContract(draft.id)
+    } catch (e) {
+      console.log('Contract not found or error fetching:', e)
+      // ถ้าไม่เจอ ไม่ต้องทำอะไร ให้เป็น null ต่อไป เพื่อให้มัน fallback ไปใช้ draft แทน
+    }
   }
   // ✅ โหลด locations
   if (draft.customer_id) {
@@ -1227,7 +1248,7 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
     }
 
     // ✅ แยกชื่อ-นามสกุลอย่างปลอดภัย
-    // ✅ แยกชื่อ-นามสกุลอย่างปลอดภัย
+    // ✅ แยกชื่อ-นามສກົນ
     const { first_name, last_name } = parseName(formData.customer.fullname)
 
     console.log('📝 Parsed name:', { first_name, last_name })
@@ -1251,9 +1272,12 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       identity_number: formData.guarantor?.idCard || '',
       occupation: formData.guarantor?.occupation || '',
       relationship: formData.guarantor?.relationship || '',
-      Guarantorphone: FormData.quarantor?.phone || '',
+      Guarantorphone: formData.guarantor.phone || '',
+      GuarantorDOB: formData.guarantor.dob || '',
       Guarantoraddress: formatAddress(formData.guarantor?.address),
       work_company_name: formData.guarantor?.work?.companyName || '',
+      work_location: formatAddress(formData.guarantor?.work_address),
+      work_phone: formData.guarantor.work.phone || '',
       work_position: formData.guarantor?.work?.position || '',
       work_salary: String(formData.guarantor?.work?.salary || '0'),
 
@@ -1316,6 +1340,120 @@ const handleRequestFormUpdated = (updatedData: any) => {
     // ... sync fields อื่นๆ ถ้าจำเป็น
   })
 }
+
+// ✅ Handle Save Loan Contract
+const handleSaveContract = async (customerId: number, formData: any) => {
+  if (!selectedDraft.value) return
+
+  try {
+    const formatAddress = (addr: any) => {
+      if (!addr) return ''
+      return [addr.village, addr.district, addr.province].filter(Boolean).join(', ')
+    }
+
+    const contractData: CreateLoanContractRequest = {
+      loanId: selectedDraft.value.id,
+
+      // Customer Info
+      cusFullName: formData.customer.fullname,
+      cusSex: formData.customer.gender,
+      cusDateOfBirth: formData.customer.dob,
+      cusPhone: formData.customer.phone,
+      cusMaritalStatus: formData.customer.maritalStatus,
+      cusIdPassNumber: formData.customer.idCard,
+      cusIdPassDate: formData.customer.idCardIssueDate,
+      cusCensusNumber: formData.customer.censusBook,
+      cusCensusCreated: null, // Not in form
+      cusCensusAuthorizeBy: formData.customer.idCardPlace,
+      cusHouseNumber: formData.customer.houseNumber,
+      cusUnit: Number(formData.customer.unit) || 0,
+      cusAddress: formatAddress(formData.customer.address),
+      cusLivedYear: Number(formData.customer.residenceYears) || 0,
+      cusLivedWith: formData.customer.liveWith,
+      cusLivedSituation: formData.customer.residenceStatus,
+
+      // Customer Work
+      cusCompanyName: formData.work.companyName,
+      cusCompanyBusinessType: formData.work.businessType,
+      cusCompanyLocation: formatAddress(formData.work.address),
+      cusCompanyWorkYear: Number(formData.work.workYears) || 0,
+      cusPosition: formData.work.position,
+      cusIncome: Number(formData.work.salary) || 0,
+      cusPayrollDate: String(formData.work.salaryDay || ''),
+      cusCompanyEmpNumber: Number(formData.work.totalEmployees) || 0,
+      cusIncomeOther: Number(formData.work.otherIncome) || 0,
+      cusIncomeOtherSource: formData.work.otherIncomeSource,
+
+      // Product Info
+      productDetail: formData.product.description,
+      producttypeId: selectedDraft.value.product?.productType_id || null,
+      productBrand: formData.product.brand,
+      productModel: formData.product.model,
+      productPrice: Number(formData.product.price) || 0,
+      productDownPayment: Number(formData.product.downPayment) || 0,
+      totalAmount: Number(formData.product.approvedAmount) || 0,
+      interestRateAtApply: Number(formData.product.interestRate) || 0,
+      loanPeriod: Number(formData.product.loanTerm) || 0,
+      totalInterest: Number(formData.product.totalInterest) || 0,
+      fee: Number(formData.product.fee) || 0,
+      monthlyPay: Number(formData.product.monthlyPayment) || 0,
+      firstInstallmentAmount: Number(formData.product.firstInstallment) || 0,
+      paymentDay: Number(formData.product.paymentDay) || 0,
+
+      // Motorcycle Specific
+      motorId: formData.product.motorcycle?.engineNo || '',
+      motorColor: formData.product.motorcycle?.color || '',
+      tankNumber: formData.product.motorcycle?.chassisNo || '',
+      motorWarranty: Number(formData.product.motorcycle?.insurance) || 0,
+
+      // Shop Info
+      partnerId: selectedDraft.value.partner_id || null,
+      shopBranch: formData.shop.branch,
+      shopId: formData.shop.code, // Assuming code maps to shopId string
+
+      // Guarantor / Reference
+      refName: formData.guarantor.fullname,
+      refDateOfBirth: formData.guarantor.dob,
+      refPhone: formData.guarantor.phone,
+      refSex: formData.guarantor.gender,
+      refMaritalStatus: '', // Missing in form
+      refIdPassNumber: formData.guarantor.idCard,
+      refIdPassDate: formData.guarantor.idCardIssueDate,
+      refCensusNumber: formData.guarantor.censusBook,
+      refCensusCreated: formData.guarantor.censusBookIssueDate,
+      refCensusAuthorizeBy: formData.guarantor.idCardPlace,
+      refHouseNumber: formData.guarantor.houseNumber,
+      refUnit: 0,
+      refAddress: formatAddress(formData.guarantor.address),
+      refLivedYear: Number(formData.guarantor.residenceYears) || 0,
+      refLivedWith: formData.guarantor.liveWith,
+      refLivedSituation: formData.guarantor.residenceStatus,
+      refOccupation: formData.guarantor.occupation,
+      refRelationship: formData.guarantor.relationship,
+
+      // Guarantor Work
+      refCompanyName: formData.guarantorWork.companyName,
+      refCompanyBusinessType: formData.guarantorWork.businessType,
+      refCompanyLocation: formatAddress(formData.guarantorWork.address),
+      refCompanyWorkYear: Number(formData.guarantorWork.workYears) || 0,
+      refPosition: formData.guarantorWork.position,
+      refIncome: Number(formData.guarantorWork.salary) || 0,
+      refPayrollDate: String(formData.guarantorWork.salaryDay || ''),
+      refCompanyEmpNumber: Number(formData.guarantorWork.totalEmployees) || 0,
+      refIncomeOther: Number(formData.guarantorWork.otherIncome) || 0,
+      refIncomeOtherSource: formData.guarantorWork.otherIncomeSource
+    }
+
+    await loanContractStore.createContract(selectedDraft.value.id, contractData)
+    alert('ບັນທຶກສັນຍາສຳເລັດ!')
+    isEditingInModal.value = false
+    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
+  } catch (error: any) {
+    console.error('Error saving contract:', error)
+    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+  }
+}
+
 const closeDetailsModal = () => {
   showDetailsModal.value = false
   selectedDraft.value = null

@@ -37,6 +37,14 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     // รายการ Loan Applications
     loanApplications: [] as LoanApplication[],
 
+    // ✅ เพิ่ม State สำหรับจัดการ Pagination
+    pagination: {
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1
+    },
+
     // Loan Application ปัจจุบัน
     currentLoanApplication: null as LoanApplication | null,
 
@@ -51,9 +59,12 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       productId: undefined as number | undefined,
       status: undefined as LoanApplicationStatus | undefined,
       min: undefined as number | undefined,
-      max: undefined as number | undefined
-    } as LoanApplicationFilters,
-        // ✅ เพิ่มสถานะสำหรับเอกสาร
+      max: undefined as number | undefined,
+      page: 1, // เพิ่ม page ไว้ใน filters
+      limit: 10 // เพิ่ม limit ไว้ใน filters
+    } as LoanApplicationFilters & { page?: number; limit?: number }, // อัปเดต Type ชั่วคราวถ้ายอม
+
+    // สถานะสำหรับเอกสาร
     currentDocuments: [] as any[], // เอกสารของ Loan Application ปัจจุบัน
     isUploadingDocuments: false,
     documentError: null as string | null,
@@ -70,7 +81,7 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     displayedLoanApplications: (state) => state.loanApplications,
 
     /**
-     * จำนวนทั้งหมด
+     * จำนวนทั้งหมดที่โหลดมาได้ในหน้านี้ (ไม่ใช่ทั้งหมดใน DB)
      */
     totalApplications: (state) => state.loanApplications.length,
 
@@ -100,36 +111,61 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
 
   actions: {
     /**
-     * ดึงรายการ Loan Applications
+     * ดึงรายการ Loan Applications (รองรับ Pagination)
      */
-    async fetchLoanApplications(filters: LoanApplicationFilters = {}) {
-      this.isLoading = true
-      this.error = null
+    async fetchLoanApplications(customFilters: Partial<LoanApplicationFilters & { page?: number; limit?: number }> = {}) {
+      this.isLoading = true;
+      this.error = null;
 
       try {
-        // ✅ ใช้ filters ที่ส่งเข้ามา หรือใช้จาก state
+        // ✅ ใช้ filters ปัจจุบัน ผสมกับที่ส่งมาใหม่
         const params = {
           ...this.filters,
-          ...filters
+          ...customFilters
+        };
+
+        // อัปเดต state filters ด้วย
+        this.filters = params;
+
+        console.log('[LoanApplicationStore] Fetching with params:', params);
+
+        // เรียก API ที่อัปเดตแล้ว (คืนค่าเป็น Object { loans, pagination })
+        const result = await fetchLoanApplications(params);
+
+        console.log('[LoanApplicationStore] Fetched:', result.loans.length, 'records');
+
+        // ✅ เก็บข้อมูลลง State แยกระหว่าง ข้อมูล (Array) กับ Pagination
+        this.loanApplications = result.loans;
+
+        if (result.pagination) {
+            this.pagination = result.pagination;
         }
 
-        console.log('[LoanApplicationStore] Fetching with params:', params)
-
-        const applications = await fetchLoanApplications(params)
-
-        console.log('[LoanApplicationStore] Fetched:', applications.length)
-
-        this.loanApplications = applications
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Fetch failed:', error)
-        this.error = error.message || 'Failed to fetch loan applications'
-        this.loanApplications = []
-        throw error
+        console.error('[LoanApplicationStore] Fetch failed:', error);
+        this.error = error.message || 'Failed to fetch loan applications';
+        this.loanApplications = [];
+        throw error;
 
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
+    },
+
+    /**
+     * เปลี่ยนหน้า (Pagination)
+     */
+    async changePage(page: number) {
+      if (page >= 1 && page <= this.pagination.totalPages) {
+        await this.fetchLoanApplications({ page });
+      }
+    },
+
+    /**
+     * เปลี่ยนจำนวนรายการต่อหน้า
+     */
+    async changeLimit(limit: number) {
+        await this.fetchLoanApplications({ limit, page: 1 }); // รีเซ็ตไปหน้า 1 เสมอเมื่อเปลี่ยนลิมิต
     },
 
     /**
@@ -452,33 +488,28 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
      * กรองตามสถานะ
      */
     async filterByStatus(status: LoanApplicationStatus | undefined) {
-      this.filters.status = status
-      await this.fetchLoanApplications()
+      await this.fetchLoanApplications({ status, page: 1 })
     },
 
     /**
      * กรองตาม Customer ID
      */
     async filterByCustomer(customerId: number | undefined) {
-      this.filters.CustomerId = customerId
-      await this.fetchLoanApplications()
+      await this.fetchLoanApplications({ CustomerId: customerId, page: 1 })
     },
 
     /**
      * กรองตาม Product ID
      */
     async filterByProduct(productId: number | undefined) {
-      this.filters.productId = productId
-      await this.fetchLoanApplications()
+      await this.fetchLoanApplications({ productId, page: 1 })
     },
 
     /**
      * กรองตาม Amount Range
      */
     async filterByAmountRange(min: number | undefined, max: number | undefined) {
-      this.filters.min = min
-      this.filters.max = max
-      await this.fetchLoanApplications()
+      await this.fetchLoanApplications({ min, max, page: 1 })
     },
 
     /**
@@ -491,7 +522,9 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
         productId: undefined,
         status: undefined,
         min: undefined,
-        max: undefined
+        max: undefined,
+        page: 1,
+        limit: 10
       }
       await this.fetchLoanApplications()
     },
@@ -681,6 +714,7 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
      * Refresh ข้อมูล
      */
     async refresh() {
+      // เรียกใช้โดยคง filter ไว้ แต่หน้าจะอยู่ที่เดิม
       await this.fetchLoanApplications()
     }
   }

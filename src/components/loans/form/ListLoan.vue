@@ -161,11 +161,23 @@
             <button class="tab" :class="{ 'tab-active': activeTab === 'documents' }" @click="activeTab = 'documents'">
               ເອກະສານ
             </button>
-            <!-- ✅ เพิ่ม Tab แผนที่ -->
+            <!-- ✅ เพิ่ม Tab ແຜນທີ່ -->
             <button class="tab" :class="{ 'tab-active': activeTab === 'map' }" @click="activeTab = 'map'"
               :disabled="!selectedLoan?.customer_id">
               <span class="icon-[tabler--map] size-4 mr-1"></span>
               ແຜນທີ່
+            </button>
+            <!-- ✅ เพิ่ม Tab RequestForm -->
+            <button class="tab" :class="{ 'tab-active': activeTab === 'requestForm' }"
+              @click="activeTab = 'requestForm'">
+              <span class="icon-[tabler--file-text] size-4 mr-1"></span>
+              ແບບຟອມຂໍກູ້
+            </button>
+            <!-- ✅ Add the new LoanContractForm tab button -->
+            <button class="tab" :class="{ 'tab-active': activeTab === 'loanContract' }"
+              @click="activeTab = 'loanContract'">
+              <span class="icon-[tabler--file-invoice] size-4 mr-1"></span>
+              ສັນຍາກູ້ຢືມ
             </button>
           </div>
 
@@ -294,7 +306,7 @@
                   </div>
                   <div class="flex justify-between">
                     <span class="text-gray-600 dark:text-gray-400">ດອກເບ້ຍ ({{ selectedLoan.interest_rate_at_apply
-                      }}%):</span>
+                    }}%):</span>
                     <span class="font-medium text-error">{{ formatPrice(calculateTotalInterest(selectedLoan)) }}</span>
                   </div>
                   <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
@@ -417,7 +429,7 @@
                       <span class="icon-[tabler--x] size-4"></span>
                     </button>
                   </div>
-                  <!-- แสดงข้อความเมื่อไม่มีร้านค้า -->
+                  <!-- แสดงข้อความเมื่อไม่มີຮ້ານຄ້າ -->
                   <div v-if="!modalShopId" class="text-xs text-warning mt-1">
                     ⚠️ ບໍ່ພົບຂໍ້ມູນຮ້ານຄ້າສຳລັບດຶງລາຍການສິນຄ້າ
                   </div>
@@ -752,7 +764,7 @@
 
           <!-- ✅ Map Tab -->
           <div v-else-if="activeTab === 'map'" class="space-y-6">
-            <!-- ✅ แสดงข้อความถ้าไม่มี customer_id -->
+            <!-- ✅ แสดงข้อความถ้าไม่มີ customer_id -->
             <div v-if="!selectedLoan?.customer_id" class="text-center py-12 text-gray-500">
               <div
                 class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -768,7 +780,28 @@
               @update-location="handleUpdateLocation" @delete-location="handleDeleteLocation"
               @set-primary="handleSetPrimary" />
           </div>
+          <div v-else-if="activeTab === 'requestForm'" class="space-y-6">
+            <LoanRequestForm
+              :loan-application-id="selectedLoan?.id"
+              :loan-application="selectedLoan"
+              :is-editing="isEditingInModal"
+              @save-form="handleRequestFormSave"
+              @form-updated="handleRequestFormUpdated"
+              @cancel-edit="isEditingInModal = false"
+            />
+          </div>
 
+          <div v-else-if="activeTab === 'loanContract'" class="space-y-6">
+            <LoanContractForm
+              :loan-contract-id="selectedLoan?.id"
+              :loan-application="selectedLoan"
+              :loan-contract="selectedContract"
+              :is-editing="isEditingInModal"
+              @cancel-edit="isEditingInModal = false"
+              @enable-edit="isEditingInModal = true"
+              @save-form="handleSaveContract"
+            />
+          </div>
           <!-- Modal Actions -->
           <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button class="btn btn-soft btn-secondary" @click="closeDetailsModal">
@@ -781,7 +814,8 @@
               ແກ້ໄຂ
             </button>
             <!-- Save button -->
-            <button v-else-if="isEditingInModal" class="btn btn-success" @click="saveLoanFromModal" :disabled="isSaving">
+            <button v-else-if="isEditingInModal" class="btn btn-success" @click="saveLoanFromModal"
+              :disabled="isSaving">
               <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
               <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span>
               <span v-if="!isSaving">ບັນທຶກການປ່ຽນແປງ</span>
@@ -803,10 +837,14 @@ import type { CustomerLocation } from '@/types/customer'
 import Papa from 'papaparse'
 import { getFullImageUrl } from '@/utils/url'
 import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue'
+import LoanRequestForm from '@/components/loans/form/RequestForm.vue'
+import LoanContractForm from '@/components/loans/form/LoanContractForm.vue'
+import { useLoanContractStore } from '@/stores/loanContract'
 
 // ✅ Stores
 const loanApplicationStore = useLoanApplicationStore()
 const productStore = useProductStore()
+const loanContractStore = useLoanContractStore()
 const router = useRouter()
 
 // Reactive state
@@ -822,8 +860,9 @@ const dateTo = ref('')
 // Modal states
 const showDetailsModal = ref(false)
 const selectedLoan = ref<LoanApplication | null>(null)
+const selectedContract = ref<any | null>(null)
 const isEditingInModal = ref(false)
-const activeTab = ref<'details' | 'documents' | 'map'>('details')
+const activeTab = ref<'details' | 'documents' | 'map' | 'requestForm' | 'loanContract'>('details')
 
 // ✅ Product Search in Modal
 const modalProductSearch = ref('')
@@ -904,11 +943,11 @@ const filteredLoans = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(loan =>
-      (loan.customer?.first_name?.toLowerCase().includes(query) ||
-        loan.customer?.last_name?.toLowerCase().includes(query) ||
-        loan.customer?.full_name?.toLowerCase().includes(query) ||
-        loan.customer?.phone?.includes(query) ||
-        loan.loan_id?.toLowerCase().includes(query))
+    (loan.customer?.first_name?.toLowerCase().includes(query) ||
+      loan.customer?.last_name?.toLowerCase().includes(query) ||
+      loan.customer?.full_name?.toLowerCase().includes(query) ||
+      loan.customer?.phone?.includes(query) ||
+      loan.loan_id?.toLowerCase().includes(query))
     )
   }
   // Status filter
@@ -1045,6 +1084,245 @@ const calculateMonthlyPayment = (): number => {
   const monthlyPayment = (total_amount * monthlyRate * Math.pow(1 + monthlyRate, loan_period)) /
     (Math.pow(1 + monthlyRate, loan_period) - 1)
   return Math.round(monthlyPayment)
+}
+
+// ສຳລັບ Request Form
+const handleRequestFormSave = async (customerId: number, formData: any) => {
+  if (!selectedLoan.value) return
+  try {
+    console.log('📥 Received customerId:', customerId)
+    console.log('📥 Received formData:', formData)
+    // ✅ แปลง Address จาก Object เป็น String
+    // ✅ ตรวจสอบว่า formData มีค่าหรือไม่
+    if (!formData || !formData.customer) {
+      throw new Error('ข้อมูลฟอร์มไม่ถูกต้อง')
+    }
+
+    // ✅ Helper Function - แปลง Address จาก Object เป็น String (ปลอดภัย)
+    const formatAddress = (addr: any): string => {
+      if (!addr || typeof addr !== 'object') return ''
+      const parts = [addr.village, addr.district, addr.province]
+        .filter((p: any) => p && typeof p === 'string' && p.trim())
+      return parts.join(', ')
+    }
+
+    // ✅ Helper Function - แยกชื่อ-นามสกุล (ปลอดภัย)
+    const parseName = (fullName: any) => {
+      // ตรวจสอบว่า fullName เป็น string และไม่ empty
+      if (!fullName || typeof fullName !== 'string') {
+        return { first_name: '', last_name: '' }
+      }
+      const trimmed = fullName.trim()
+      if (!trimmed) {
+        return { first_name: '', last_name: '' }
+      }
+      const parts = trimmed.split(/\s+/)
+      return {
+        first_name: parts[0] || '',
+        last_name: parts.slice(1).join(' ') || ''
+      }
+    }
+
+    // ✅ แยกชื่อ-นามสกุลอย่างปลอดภัย
+    // ✅ แยกชื่อ-นามສກົນ
+    const { first_name, last_name } = parseName(formData.customer.fullname)
+
+    console.log('📝 Parsed name:', { first_name, last_name })
+    console.log('📝 All formData:', formData)
+    // ✅ Map formData จาก RequestForm ไปยัง backend format (คล้ายกับ saveDraftFromModal)
+    const updateData = {
+      // ຂໍ້ມູນວຽກ (Work Info)
+      company_name: formData.work?.companyName || '',
+      address: formatAddress(formData.customer.address),
+      phone: formData.customer.phone || '',
+      business_type: formData.work?.businessType || '',
+      business_details: formData.work?.businessDetail || '',
+      duration_years: formData.work?.durationYears || 0,
+      duration_months: formData.work?.durationMonths || 0,
+      department: formData.work?.department || '',
+      position: formData.work?.position || '',
+      salary: Number(formData.work?.salary) || 0,
+
+      // ຂໍ້ມູນຜູ້ຄ້ຳປະກັນ (Guarantor) - ຖ້າມີ
+      name: formData.guarantor?.name || '',
+      identity_number: formData.guarantor?.idCard || '',
+      occupation: formData.guarantor?.occupation || '',
+      relationship: formData.guarantor?.relationship || '',
+      Guarantorphone: formData.guarantor.phone || '',
+      GuarantorDOB: formData.guarantor.dob || '',
+      Guarantoraddress: formatAddress(formData.guarantor?.address),
+      work_company_name: formData.guarantor?.work?.companyName || '',
+      work_location: formatAddress(formData.guarantor?.work_address),
+      work_phone: formData.guarantor.work.phone || '',
+      work_position: formData.guarantor?.work?.position || '',
+      work_salary: String(formData.guarantor?.work?.salary || '0'),
+
+      // ຂໍ້ມູນເພີ່ມເຕີມທີ່ໃຊ້ໃນການຄິດໄລ່
+      first_name: first_name,
+      last_name: last_name,
+      identity_card: formData.customer.idCard // ເພີ່ມໃຫ້ຄົບ
+    }
+
+    const CustLoanData = {
+      customer_id: selectedLoan.value.customer_id,
+      identity_number: formData.customer.idCard,
+      census_number: formData.customer.censusNo,
+      first_name: first_name,
+      last_name: last_name,
+      phone: formData.customer.phone,
+      address: formatAddress(formData.customer.address),
+      date_of_birth: formData.customer.dob,
+      age: formData.customer.age,
+      occupation: formData.customer.occupation,
+      income_per_month: selectedLoan.value.customer.income_per_month,
+      unit: formData.customer.unit,
+      issue_place: formData.customer.issuePlace,
+      issue_date: formData.customer.issueDate,
+
+      product_id: selectedLoan.value.product_id,
+      total_amount: formData.product.price,
+      interest_rate_at_apply: formData.product.interestRate,
+      // status: loan_status,
+      monthly_pay: formData.product.monthlyPayment,
+      loan_period: formData.product.loanTerm,
+      down_payment: formData.product.downPayment,
+      fee: formData.product.fee,
+      first_intstallment_amount: formData.product.firstInstallment || null,
+      payment_day: formData.product.paymentDay,
+      borrower_signature_date: formData.signatures.borrowerDate || null,
+      guarantor_signature_date: formData.signatures.guarantorDate || null,
+      staff_signature_date: formData.signatures.staffDate || null
+    }
+    console.log('fixed error ', updateData)
+    const { saveCustProposal } = await import('@/api/proposal')
+    await saveCustProposal(selectedLoan.value.customer_id, selectedLoan.value.id, updateData)
+    await loanApplicationStore.updateDraftLoanApplication(selectedLoan.value.id, CustLoanData)
+    alert('ບັນທຶກແບບຟອມຂໍກູ້ສຳເລັດ!')
+    // ✅ Refresh ข้อมูล selectedLoan
+    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
+    // ✅ หา draft ที่อัปเดตใหม่
+    selectedLoan.value = loanApplicationStore.loanApplications.find(d => d.id === selectedLoan.value?.id) || null
+  } catch (error: any) {
+    console.error('Error saving request form:', error)
+    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+  }
+}
+
+const handleRequestFormUpdated = (updatedData: any) => {
+  console.log('Request Form Updated:', updatedData)
+}
+
+// ສຳລັບ Loan Contract Form
+const handleSaveContract = async (customerId: number, formData: any) => {
+  if (!selectedLoan.value) return
+
+  try {
+    const formatAddress = (addr: any) => {
+      if (!addr) return ''
+      return [addr.village, addr.district, addr.province].filter(Boolean).join(', ')
+    }
+
+    const contractData: CreateLoanContractRequest = {
+      loanId: selectedLoan.value.id,
+
+      // Customer Info
+      cusFullName: formData.customer.fullname,
+      cusSex: formData.customer.gender,
+      cusDateOfBirth: formData.customer.dob,
+      cusPhone: formData.customer.phone,
+      cusMaritalStatus: formData.customer.maritalStatus,
+      cusIdPassNumber: formData.customer.idCard,
+      cusIdPassDate: formData.customer.idCardIssueDate,
+      cusCensusNumber: formData.customer.censusBook,
+      cusCensusCreated: null, // Not in form
+      cusCensusAuthorizeBy: formData.customer.idCardPlace,
+      cusHouseNumber: formData.customer.houseNumber,
+      cusUnit: Number(formData.customer.unit) || 0,
+      cusAddress: formatAddress(formData.customer.address),
+      cusLivedYear: Number(formData.customer.residenceYears) || 0,
+      cusLivedWith: formData.customer.liveWith,
+      cusLivedSituation: formData.customer.residenceStatus,
+
+      // Customer Work
+      cusCompanyName: formData.work.companyName,
+      cusCompanyBusinessType: formData.work.businessType,
+      cusCompanyLocation: formatAddress(formData.work.address),
+      cusCompanyWorkYear: Number(formData.work.workYears) || 0,
+      cusPosition: formData.work.position,
+      cusIncome: Number(formData.work.salary) || 0,
+      cusPayrollDate: String(formData.work.salaryDay || ''),
+      cusCompanyEmpNumber: Number(formData.work.totalEmployees) || 0,
+      cusIncomeOther: Number(formData.work.otherIncome) || 0,
+      cusIncomeOtherSource: formData.work.otherIncomeSource,
+
+      // Product Info
+      productDetail: formData.product.description,
+      producttypeId: selectedLoan.value.product?.productType_id || null,
+      productBrand: formData.product.brand,
+      productModel: formData.product.model,
+      productPrice: Number(formData.product.price) || 0,
+      productDownPayment: Number(formData.product.downPayment) || 0,
+      totalAmount: Number(formData.product.approvedAmount) || 0,
+      interestRateAtApply: Number(formData.product.interestRate) || 0,
+      loanPeriod: Number(formData.product.loanTerm) || 0,
+      totalInterest: Number(formData.product.totalInterest) || 0,
+      fee: Number(formData.product.fee) || 0,
+      monthlyPay: Number(formData.product.monthlyPayment) || 0,
+      firstInstallmentAmount: Number(formData.product.firstInstallment) || 0,
+      paymentDay: Number(formData.product.paymentDay) || 0,
+
+      // Motorcycle Specific
+      motorId: formData.product.motorcycle?.engineNo || '',
+      motorColor: formData.product.motorcycle?.color || '',
+      tankNumber: formData.product.motorcycle?.chassisNo || '',
+      motorWarranty: Number(formData.product.motorcycle?.insurance) || 0,
+
+      // Shop Info
+      partnerId: selectedLoan.value.partner_id || null,
+      shopBranch: formData.shop.branch,
+      shopId: formData.shop.code, // Assuming code maps to shopId string
+
+      // Guarantor / Reference
+      refName: formData.guarantor.fullname,
+      refDateOfBirth: formData.guarantor.dob,
+      refPhone: formData.guarantor.phone,
+      refSex: formData.guarantor.gender,
+      refMaritalStatus: '', // Missing in form
+      refIdPassNumber: formData.guarantor.idCard,
+      refIdPassDate: formData.guarantor.idCardIssueDate,
+      refCensusNumber: formData.guarantor.censusBook,
+      refCensusCreated: formData.guarantor.censusBookIssueDate,
+      refCensusAuthorizeBy: formData.guarantor.idCardPlace,
+      refHouseNumber: formData.guarantor.houseNumber,
+      refUnit: 0,
+      refAddress: formatAddress(formData.guarantor.address),
+      refLivedYear: Number(formData.guarantor.residenceYears) || 0,
+      refLivedWith: formData.guarantor.liveWith,
+      refLivedSituation: formData.guarantor.residenceStatus,
+      refOccupation: formData.guarantor.occupation,
+      refRelationship: formData.guarantor.relationship,
+
+      // Guarantor Work
+      refCompanyName: formData.guarantorWork.companyName,
+      refCompanyBusinessType: formData.guarantorWork.businessType,
+      refCompanyLocation: formatAddress(formData.guarantorWork.address),
+      refCompanyWorkYear: Number(formData.guarantorWork.workYears) || 0,
+      refPosition: formData.guarantorWork.position,
+      refIncome: Number(formData.guarantorWork.salary) || 0,
+      refPayrollDate: String(formData.guarantorWork.salaryDay || ''),
+      refCompanyEmpNumber: Number(formData.guarantorWork.totalEmployees) || 0,
+      refIncomeOther: Number(formData.guarantorWork.otherIncome) || 0,
+      refIncomeOtherSource: formData.guarantorWork.otherIncomeSource
+    }
+
+    await loanContractStore.createContract(selectedLoan.value.id, contractData)
+    alert('ບັນທຶກສັນຍາສຳເລັດ!')
+    isEditingInModal.value = false
+    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
+  } catch (error: any) {
+    console.error('Error saving contract:', error)
+    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+  }
 }
 
 // ✅ Watch สำหรับคำนวณอัตโนมัติ
@@ -1252,6 +1530,7 @@ const viewLoanDetails = async (loan: LoanApplication) => {
   try {
     const fullLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id)
     selectedLoan.value = fullLoan
+
     // ✅ ดึงเอกสารของสินเชื่อนี้
     if (fullLoan.id) {
       await loanApplicationStore.fetchDocuments(fullLoan.id)
@@ -1277,7 +1556,18 @@ const viewLoanDetails = async (loan: LoanApplication) => {
           }
         })
       }
+
+      // Fetch the existing loan contract if it exists
+      selectedContract.value = null // Reset previous
+      try {
+        const contract = await loanContractStore.fetchContract(fullLoan.id)
+        selectedContract.value = contract
+      } catch (error) {
+        console.warn(`No existing contract found for loan ${fullLoan.id}, using loan data.`)
+        selectedContract.value = null
+      }
     }
+
     if (fullLoan.customer_id) {
       await loadCustomerLocations(fullLoan.customer_id)
     }
@@ -1302,6 +1592,7 @@ const editLoan = (loan: LoanApplication) => {
 const closeDetailsModal = () => {
   showDetailsModal.value = false
   selectedLoan.value = null
+  selectedContract.value = null
   isEditingInModal.value = false
   isSaving.value = false
   activeTab.value = 'details'
@@ -1352,7 +1643,7 @@ const startEditInModal = async () => {
       console.error('❌ Failed to load products:', error)
     }
   }
-  // แยกชื่อ-นามสกุล
+  // แยกชื่อ-นามສกุล
   const fullName = getCustomerName(selectedLoan.value).trim()
   // ตั้งค่าฟอร์ม
   modalLoanForm.customer_name = fullName

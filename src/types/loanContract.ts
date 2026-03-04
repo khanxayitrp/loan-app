@@ -87,3 +87,5 @@ export interface LoanContract {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type CreateLoanContractRequest = Omit<LoanContract, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;

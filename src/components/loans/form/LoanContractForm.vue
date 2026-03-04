@@ -7,9 +7,14 @@
 
     <div v-else class="loan-contract-form">
       <div class="print-button-container">
-        <button @click="printForm" class="btn btn-primary btn-sm gap-2 shadow-md">
+        <!-- <button @click="printForm" class="btn btn-primary btn-sm gap-2 shadow-md">
           <span class="icon-[tabler--printer] size-4"></span>
           ພິມສັນຍາ
+        </button> -->
+        <button @click="printForm" class="btn btn-primary btn-sm gap-2 shadow-md" :disabled="isGeneratingPDF">
+          <span v-if="isGeneratingPDF" class="loading loading-spinner loading-xs"></span>
+          <span v-else class="icon-[tabler--printer] size-4"></span>
+          {{ isGeneratingPDF ? 'ກຳລັງສ້າງ...' : 'ພິມສັນຍາ / Preview' }}
         </button>
       </div>
 
@@ -101,19 +106,26 @@
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ສະຖານະພາບ:</span></label>
-              <input v-model="formData.customer.maritalStatus" type="text" :readonly="!isEditing"
-                class="input input-sm input-bordered w-full" />
+              <!-- <input v-model="formData.customer.maritalStatus" type="text" :readonly="!isEditing"
+                class="input input-sm input-bordered w-full" /> -->
+              <select v-model="formData.customer.maritalStatus" :disabled="!isEditing"
+                class="select select-sm select-bordered w-full">
+                <option value="">ເລືອກ</option>
+                <option value="single">ໂສດ</option>
+                <option value="married">ແຕ່ງງານແລ້ວ</option>
+                <option value="divorced">ຢ່າຮ້າງ</option>
+              </select>
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ອາຊີບ:</span></label>
               <input v-model="formData.customer.occupation" type="text" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
             </div>
-            <div class="form-control">
+            <!-- <div class="form-control">
               <label class="label"><span class="label-text font-bold">ສາຍພົວພັນ:</span></label>
               <input v-model="formData.customer.relationship" type="text" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
-            </div>
+            </div> -->
 
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ບັດປະຈຳຕົວ/Passport:</span></label>
@@ -139,9 +151,14 @@
             <div class="form-control lg:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-3 rounded mt-2">
               <div class="md:col-span-2">
                 <label class="label"><span class="label-text font-bold">ສະຖານທີ່ອອກເອກະສານ:</span></label>
-                <input v-model="formData.customer.idCardPlace" type="text" :readonly="!isEditing"
+                <input v-model="formData.customer.censusAuthorizeBy" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
+              <!-- <div class="md:col-span-2">
+                <label class="label"><span class="label-text font-bold">ຜູ້ອະນຸມັດປຶ້ມສຳມະໂນຄົວ:</span></label>
+                <input v-model="formData.customer.censusAuthorizeBy" type="text" :readonly="!isEditing"
+                  class="input input-sm input-bordered w-full" />
+              </div> -->
               <div>
                 <label class="label"><span class="label-text font-bold">ເຮືອນເລກທີ:</span></label>
                 <input v-model="formData.customer.houseNumber" type="text" :readonly="!isEditing"
@@ -270,8 +287,15 @@
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ປະເພດສິນຄ້າ:</span></label>
-              <input v-model="formData.product.type" type="text" :readonly="!isEditing"
-                class="input input-sm input-bordered w-full" />
+              <!-- <input v-model="formData.product.type" type="text" :readonly="!isEditing"
+                class="input input-sm input-bordered w-full" /> -->
+              <select v-model="formData.product.type" :disabled="!isEditing"
+                class="select select-sm select-bordered w-full">
+                <option value="">ເລືອກ</option>
+                <option value="ສິນຄ້າຄຳ">ສິນຄ້າຄຳ</option>
+                <option value="ສິນຄ້າທົ່ວໄປ">ສິນຄ້າທົ່ວໄປ</option>
+                <option value="ສິນຄ້າລົດຈັກ">ສິນຄ້າລົດຈັກ</option>
+              </select>
             </div>
 
             <div class="form-control">
@@ -343,22 +367,27 @@
             <template v-if="formData.productType.motorcycle">
               <div class="form-control">
                 <label class="label"><span class="label-text font-bold">ເລກຈັກ (ລົດຈັກ):</span></label>
-                <input v-model="formData.product.motorcycle.engineNo" type="text" :readonly="!isEditing"
+                <input v-model="formData.product.motorcycle.motorId" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
               <div class="form-control">
                 <label class="label"><span class="label-text font-bold">ສີລົດ (ລົດຈັກ):</span></label>
-                <input v-model="formData.product.motorcycle.color" type="text" :readonly="!isEditing"
+                <input v-model="formData.product.motorcycle.motorColor" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
               <div class="form-control">
                 <label class="label"><span class="label-text font-bold">ເລກຖັງ (ລົດຈັກ):</span></label>
-                <input v-model="formData.product.motorcycle.chassisNo" type="text" :readonly="!isEditing"
+                <input v-model="formData.product.motorcycle.tankNumber" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
-              <div class="form-control">
+              <!-- <div class="form-control">
                 <label class="label"><span class="label-text font-bold">ຄ່າປະກັນໄພ ລົດຈັກ (ກີບ):</span></label>
                 <input v-model.number="formData.product.motorcycle.insurance" type="number" :readonly="!isEditing"
+                  class="input input-sm input-bordered w-full" />
+              </div> -->
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold">ໄລຍະຮັບປະກັນລົດ (ເດືອນ):</span></label>
+                <input v-model.number="formData.product.motorcycle.motorWarranty" type="number" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
             </template>
@@ -430,11 +459,23 @@
               </select>
             </div>
             <div class="form-control">
+              <label class="label"><span class="label-text font-bold">ສະຖານະພາບ:</span></label>
+              <!-- <input v-model="formData.guarantor.maritalStatus" type="text" :readonly="!isEditing"
+                class="input input-sm input-bordered w-full bg-white" /> -->
+              <select v-model="formData.guarantor.maritalStatus" :disabled="!isEditing"
+                class="select select-sm select-bordered w-full">
+                <option value="">ເລືອກ</option>
+                <option value="single">ໂສດ</option>
+                <option value="married">ແຕ່ງງານແລ້ວ</option>
+                <option value="divorced">ຢ່າຮ້າງ</option>
+              </select>
+            </div>
+            <div class="form-control">
               <label class="label"><span class="label-text font-bold">ອາຊີບ:</span></label>
               <input v-model="formData.guarantor.occupation" type="text" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full bg-white" />
             </div>
-            <div class="form-control lg:col-span-2">
+            <div class="form-control">
               <label class="label"><span class="label-text font-bold">ສາຍພົວພັນ:</span></label>
               <input v-model="formData.guarantor.relationship" type="text" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full bg-white" />
@@ -465,12 +506,22 @@
               class="form-control lg:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-3 rounded mt-2 border">
               <div class="md:col-span-2">
                 <label class="label"><span class="label-text font-bold">ສະຖານທີ່ອອກເອກະສານ:</span></label>
-                <input v-model="formData.guarantor.idCardPlace" type="text" :readonly="!isEditing"
+                <input v-model="formData.guarantor.censusAuthorizeBy" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
+              <!-- <div class="md:col-span-2">
+                <label class="label"><span class="label-text font-bold">ຜູ້ອະນຸມັດປຶ້ມສຳມະໂນຄົວ:</span></label>
+                <input v-model="formData.guarantor.censusAuthorizeBy" type="text" :readonly="!isEditing"
+                  class="input input-sm input-bordered w-full" />
+              </div> -->
               <div>
                 <label class="label"><span class="label-text font-bold">ເຮືອນເລກທີ:</span></label>
                 <input v-model="formData.guarantor.houseNumber" type="text" :readonly="!isEditing"
+                  class="input input-sm input-bordered w-full" />
+              </div>
+              <div>
+                <label class="label"><span class="label-text font-bold">ໜ່ວຍ:</span></label>
+                <input v-model="formData.guarantor.unit" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
               <div>
@@ -500,8 +551,13 @@
               </div>
               <div class="md:col-span-2">
                 <label class="label"><span class="label-text font-bold">ສະຖານະການຢູ່ອາໄສ:</span></label>
-                <input v-model="formData.guarantor.residenceStatus" type="text" :readonly="!isEditing"
-                  class="input input-sm input-bordered w-full" />
+                <select v-model="formData.guarantor.residenceStatus" :disabled="!isEditing"
+                  class="select select-sm select-bordered w-full">
+                  <option value="">ເລືອກ</option>
+                  <option value="own">ເຮືອນຕົວເອງ</option>
+                  <option value="rent">ເຊົ່າ</option>
+                  <option value="family">ຢູ່ກັບຄອບຄົວ</option>
+                </select>
               </div>
             </div>
           </div>
@@ -589,6 +645,43 @@
       </form>
     </div>
   </div>
+  <teleport to="body">
+      <div v-if="isGeneratingPDF" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
+        <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
+        <h2 class="text-xl font-bold tracking-wide">ກຳລັງສ້າງເອກະສານ PDF...</h2>
+        <p class="text-sm mt-2 opacity-80">ກະລຸນາລໍຖ້າຈັກໜ້ອຍ ລະບົບກຳລັງປະມວນຜົນຂໍ້ມູນ</p>
+      </div>
+    </teleport>
+
+    <teleport to="body">
+      <div v-if="showPdfPreview" class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+            <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-white">
+              <span class="icon-[tabler--file-type-pdf] text-error size-6"></span>
+              ຕົວຢ່າງສັນຍາກູ້ຢືມ
+            </h3>
+            <div class="flex gap-3">
+              <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm">
+                <span class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ
+              </button>
+              <button @click="closePdfPreview" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10">
+                <span class="icon-[tabler--x] size-5"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex-1 w-full bg-gray-300 dark:bg-gray-800 relative">
+            <iframe
+              v-if="pdfPreviewUrl"
+              :src="pdfPreviewUrl"
+              class="w-full h-full border-none"
+              title="PDF Preview"
+            ></iframe>
+          </div>
+        </div>
+      </div>
+    </teleport>
 </template>
 
 <script setup lang="ts">
@@ -597,6 +690,7 @@ import apiClient from '@/api/apiclient'
 
 const props = defineProps<{
   loanContractId?: number
+  loanApplication?: any | null
   loanContract?: any | null
   isEditing?: boolean
 }>()
@@ -619,7 +713,7 @@ const formData = reactive({
   customer: {
     fullname: '', dob: '', phone: '', gender: '', maritalStatus: '',
     idCard: '', idCardIssueDate: '', idCardExpiryDate: '', idCardPlace: '',
-    censusBook: '', houseNumber: '', unit: '',
+    censusBook: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
     address: { village: '', district: '', province: '' },
     residenceYears: null as number | null, liveWith: '', residenceStatus: '',
     occupation: '', relationship: ''
@@ -638,14 +732,14 @@ const formData = reactive({
     loanTerm: null as number | null, totalInterest: null as number | null,
     fee: 20000, monthlyPayment: null as number | null,
     firstInstallment: null as number | null, paymentDay: null as number | null,
-    motorcycle: { engineNo: '', chassisNo: '', color: '', insurance: null as number | null }
+    motorcycle: { motorId: '', tankNumber: '', motorColor: '', insurance: null as number | null, motorWarranty: null as number | null }
   },
   shop: { name: '', branch: '', code: '' },
   hasGuarantor: false,
   hasReference: false,
   guarantor: {
-    fullname: '', dob: '', phone: '', gender: '', idCard: '', idCardIssueDate: '',
-    censusBook: '', censusBookIssueDate: '', idCardPlace: '', houseNumber: '',
+    fullname: '', dob: '', phone: '', gender: '', maritalStatus: '', idCard: '', idCardIssueDate: '',
+    censusBook: '', censusBookIssueDate: '', idCardPlace: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
     address: { village: '', district: '', province: '' },
     residenceYears: null as number | null, liveWith: '', residenceStatus: '',
     occupation: '', relationship: ''
@@ -669,41 +763,91 @@ const calculateLoanDetails = () => {
 
   if (formData.product.approvedAmount > 0 && loanTerm > 0) {
     const loanAmount = formData.product.approvedAmount
-
-    // 1. ຄິດໄລ່ດອກເບ້ຍລວມ (Flat Rate)
     const theoreticalTotalInterest = loanAmount * (interestRate / 100) * (loanTerm / 12)
-
-    // 2. ຄິດໄລ່ຄ່າງວດຕໍ່ເດືອນ
     const monthlyPayment = (loanAmount + theoreticalTotalInterest) / loanTerm
     formData.product.monthlyPayment = Math.round(monthlyPayment)
-
-    // 3. ຄິດໄລ່ດອກເບ້ຍຕົວຈິງຈາກຍອດຊຳລະລວມ
     const totalPayment = formData.product.monthlyPayment * loanTerm
     formData.product.totalInterest = totalPayment - loanAmount
-
     formData.product.firstInstallment = formData.product.monthlyPayment + (formData.product.fee || 0)
   }
 }
+const isGeneratingPDF = ref(false)
+const showPdfPreview = ref(false)
+const pdfPreviewUrl = ref('')
 
+// 🟢 ແກ້ໄຂ Function printForm ໃໝ່
 const printForm = async () => {
+  if (isGeneratingPDF.value) return; // ປ້ອງກັນການກົດຊ້ຳ
+
+  isGeneratingPDF.value = true; // ເປີດໜ້າຕ່າງ Loading
+
   try {
     const response = await apiClient.post('/pdf/generate-loan-contract', {
       formData: formData,
-      contractId: props.loanContract?.id || props.loanContractId
+      contractId: props.loanContract?.id || props.loanContractId || props.loanApplication?.id
     }, { timeout: 60000, responseType: 'blob' })
 
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `contract-${props.loanContract?.id || 'draft'}.pdf`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(url)
+    // ສ້າງ URL ຈາກ Blob (PDF Data)
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    pdfPreviewUrl.value = window.URL.createObjectURL(blob);
+
+    // ເປີດ Modal Preview
+    showPdfPreview.value = true;
+
   } catch (error: any) {
+    console.error('PDF Generation Error:', error);
     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message))
+  } finally {
+    isGeneratingPDF.value = false; // ປິດໜ້າຕ່າງ Loading
   }
 }
+
+// 🟢 ເພີ່ມ Function ສຳລັບການດາວໂຫຼດຈາກໜ້າ Preview
+const downloadPdf = () => {
+  if (!pdfPreviewUrl.value) return;
+
+  const link = document.createElement('a');
+  link.href = pdfPreviewUrl.value;
+
+  const fileId = props.loanContract?.id || props.loanContractId || props.loanApplication?.id || 'draft';
+  link.setAttribute('download', `contract-${fileId}.pdf`);
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+// 🟢 ເພີ່ມ Function ສຳລັບປິດໜ້າ Preview ແລະ ຄືນຄ່າໜ່ວຍຄວາມຈຳ (Memory)
+const closePdfPreview = () => {
+  showPdfPreview.value = false;
+
+  // ລຶບ Object URL ເພື່ອບໍ່ໃຫ້ກິນ Memory ຂອງ Browser
+  if (pdfPreviewUrl.value) {
+    setTimeout(() => {
+      window.URL.revokeObjectURL(pdfPreviewUrl.value);
+      pdfPreviewUrl.value = '';
+    }, 100);
+  }
+}
+// const printForm = async () => {
+//   try {
+//     const response = await apiClient.post('/pdf/generate-loan-contract', {
+//       formData: formData,
+//       contractId: props.loanContract?.id || props.loanContractId || props.loanApplication?.id
+//     }, { timeout: 60000, responseType: 'blob' })
+
+//     const url = window.URL.createObjectURL(new Blob([response.data]))
+//     const link = document.createElement('a')
+//     link.href = url
+//     link.setAttribute('download', `contract-${props.loanContract?.id || 'draft'}.pdf`)
+//     document.body.appendChild(link)
+//     link.click()
+//     link.remove()
+//     window.URL.revokeObjectURL(url)
+//   } catch (error: any) {
+//     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message))
+//   }
+// }
 
 const enableEdit = () => {
   isEditing.value = true
@@ -711,11 +855,17 @@ const enableEdit = () => {
 }
 
 const saveForm = async () => {
-  if (!props.loanContract?.customer_id) return alert('ບໍ່ພົບຂໍ້ມູນລູກຄ້າ')
+  // หา customer_id ตัวล่าสุดไม่ว่าจะมาจากไหน
+  const customerId = props.loanContract?.customer_id
+    || props.loanContract?.data?.customer_id
+    || props.loanApplication?.customer_id;
+
+  if (!customerId) return alert('ບໍ່ພົບຂໍ້ມູນລູກຄ້າ')
+
   isSaving.value = true
   try {
-    emit('save-form', props.loanContract.customer_id, formData)
-  } catch (error) {
+    emit('save-form', customerId, formData)
+  } catch (error: any) {
     alert('ເກີດຂໍ້ຜິດພາດ: ' + error)
   } finally {
     isSaving.value = false
@@ -728,81 +878,280 @@ const cancelEdit = () => {
   loadDataFromProps()
 }
 
+const parseAddress = (addressStr: string) => {
+  if (!addressStr || typeof addressStr !== 'string') {
+    return { village: '', district: '', province: '' }
+  }
+  const parts = addressStr.split(',').map(p => p.trim())
+  return {
+    village: parts[0] || '',
+    district: parts[1] || '',
+    province: parts[2] || ''
+  }
+}
+
+// -----------------------------------------------------
+// ฟังก์ชันหลัก: โหลดข้อมูล (พิจารณา Contract ก่อน Application)
+// -----------------------------------------------------
 const loadDataFromProps = () => {
-  if (!props.loanContract) return
-  const contract = props.loanContract
+  console.log('🔄 [LoanContractForm] Checking Props...', {
+    loanContract: props.loanContract,
+    loanApplication: props.loanApplication
+  });
 
-  // Load Contract Info
-  formData.contractNumber = contract.contract_number || ''
-  if (contract.contract_date) {
-    const date = new Date(contract.contract_date)
-    formData.contractDate.day = date.getDate().toString().padStart(2, '0')
-    formData.contractDate.month = (date.getMonth() + 1).toString().padStart(2, '0')
-    formData.contractDate.year = date.getFullYear().toString()
-  }
+  // 1. เช็คเชิงลึกว่า loanContract มีข้อมูลจริงไหม (หา property 'id')
+  let contractData = null;
+  let hasRealContract = false;
 
-  // Load Customer
-  if (contract.customer) {
-    formData.customer.fullname = `${contract.customer.first_name || ''} ${contract.customer.last_name || ''}`.trim()
-    formData.customer.dob = contract.customer.date_of_birth || ''
-    formData.customer.phone = contract.customer.phone || ''
-    formData.customer.idCard = contract.customer.identity_number || ''
-    formData.customer.address.village = contract.customer.village || ''
-    formData.customer.address.district = contract.customer.district || ''
-    formData.customer.address.province = contract.customer.province || ''
-    formData.customer.occupation = contract.customer.occupation || ''
-    formData.customer.gender = contract.customer.gender || ''
-    formData.customer.maritalStatus = contract.customer.marital_status || ''
-  }
-
-  // Load Work
-  if (contract.work) {
-    formData.work.companyName = contract.work.company_name || ''
-    formData.work.businessType = contract.work.business_type || ''
-    formData.work.position = contract.work.position || ''
-    formData.work.salary = parseFloat(contract.work.salary) || null
-    formData.work.address.village = contract.work.village || ''
-    formData.work.address.district = contract.work.district || ''
-    formData.work.address.province = contract.work.province || ''
-  }
-
-  // Load Product
-  if (contract.product) {
-    formData.product.description = contract.product.description || ''
-    formData.product.type = contract.product.type || ''
-    formData.product.brand = contract.product.brand || ''
-    formData.product.model = contract.product.model || ''
-    formData.product.price = parseFloat(contract.product.price) || null
-    formData.product.downPayment = parseFloat(contract.down_payment) || null
-    formData.product.loanTerm = contract.loan_period || null
-    formData.product.interestRate = parseFloat(contract.interest_rate) || null
-    formData.product.fee = parseFloat(contract.fee) || 20000
-    formData.product.paymentDay = contract.payment_day || null
-  }
-
-  // Load Shop
-  if (contract.shop) {
-    formData.shop.name = contract.shop.name || ''
-    formData.shop.branch = contract.shop.branch || ''
-    formData.shop.code = contract.shop.code || ''
-  }
-
-  // Load Guarantor
-  if (contract.guarantor) {
-    formData.hasGuarantor = true
-    formData.guarantor.fullname = contract.guarantor.name || ''
-    formData.guarantor.phone = contract.guarantor.phone || ''
-    formData.guarantor.idCard = contract.guarantor.identity_number || ''
-    formData.guarantor.relationship = contract.guarantor.relationship || ''
-    if (contract.guarantor.work) {
-      formData.guarantorWork.companyName = contract.guarantor.work.company_name || ''
+  if (props.loanContract) {
+    if (props.loanContract.data?.data?.id) {
+      contractData = props.loanContract.data.data;
+      hasRealContract = true;
+    } else if (props.loanContract.data?.id) {
+      contractData = props.loanContract.data;
+      hasRealContract = true;
+    } else if (props.loanContract.id) {
+      contractData = props.loanContract;
+      hasRealContract = true;
     }
+  }
+
+  // 2. ตัดสินใจว่าจะใช้ Source ไหน
+  const isFromContract = hasRealContract;
+  const sourceData = isFromContract ? contractData : props.loanApplication;
+
+  if (!sourceData) {
+    console.warn('⚠️ [LoanContractForm] ບໍ່ພົບຂໍ້ມູນທັງ Contract ແລະ Application');
+    return;
+  }
+
+  console.log(`✅ [Decision] ດຶງຂໍ້ມູນຈາກ: ${isFromContract ? 'LoanContract (ມີສັນຍາແລ້ວ)' : 'LoanApplication (ໃຊ້ໃບຄຳຂໍແທນ)'}`);
+  console.log('📦 [Source Data]:', sourceData);
+
+  // -----------------------------------------------------
+  // กรณี 1: ดึงจาก Loan Contract (ฐานข้อมูลสัญญากู้)
+  // -----------------------------------------------------
+  if (isFromContract) {
+    formData.contractNumber = sourceData.loan_contract_number || sourceData.contract_number || ''
+    const sDate = sourceData.contract_date || sourceData.createdAt || sourceData.created_at
+    if (sDate) {
+      const d = new Date(sDate)
+      formData.contractDate.day = d.getDate().toString().padStart(2, '0')
+      formData.contractDate.month = (d.getMonth() + 1).toString().padStart(2, '0')
+      formData.contractDate.year = d.getFullYear().toString()
+    }
+
+    formData.customer.fullname = sourceData.cus_full_name || ''
+    formData.customer.gender = sourceData.cus_sex || ''
+    formData.customer.dob = sourceData.cus_date_of_birth || ''
+    formData.customer.phone = sourceData.cus_phone || ''
+    formData.customer.maritalStatus = sourceData.cus_marital_status || ''
+    formData.customer.idCard = sourceData.cus_id_pass_number || ''
+    formData.customer.idCardIssueDate = sourceData.cus_id_pass_date || ''
+    formData.customer.censusBook = sourceData.cus_census_number || ''
+    formData.customer.censusAuthorizeBy = sourceData.cus_census_authorize_by || ''
+    formData.customer.houseNumber = sourceData.cus_house_number || ''
+    formData.customer.unit = sourceData.cus_unit || ''
+    formData.customer.residenceYears = sourceData.cus_lived_year || null
+    formData.customer.liveWith = sourceData.cus_lived_with || ''
+    formData.customer.residenceStatus = sourceData.cus_lived_situation || ''
+
+    const addr = parseAddress(sourceData.cus_address)
+    formData.customer.address.village = addr.village
+    formData.customer.address.district = addr.district
+    formData.customer.address.province = addr.province
+
+    formData.work.companyName = sourceData.cus_company_name || ''
+    formData.work.businessType = sourceData.cus_company_businessType || ''
+    formData.work.workYears = sourceData.cus_company_workYear || null
+    formData.work.position = sourceData.cus_position || ''
+    formData.work.salary = sourceData.cus_income || null
+    formData.work.salaryDay = sourceData.cus_payroll_date || null
+    formData.work.totalEmployees = sourceData.cus_company_emp_number || null
+    formData.work.otherIncome = sourceData.cus_income_other || null
+    formData.work.otherIncomeSource = sourceData.cus_income_other_source || ''
+
+    const workAddr = parseAddress(sourceData.cus_company_location)
+    formData.work.address.village = workAddr.village
+    formData.work.address.district = workAddr.district
+    formData.work.address.province = workAddr.province
+
+    formData.product.description = sourceData.product_detail || ''
+    formData.product.brand = sourceData.product_brand || ''
+    formData.product.model = sourceData.product_model || ''
+    formData.product.price = parseFloat(sourceData.product_price) || null
+    formData.product.downPayment = parseFloat(sourceData.product_down_payment) || null
+    formData.product.approvedAmount = parseFloat(sourceData.total_amount) || null
+    formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply) || null
+    formData.product.loanTerm = sourceData.loan_period || null
+    formData.product.totalInterest = parseFloat(sourceData.total_interest) || null
+    formData.product.fee = parseFloat(sourceData.fee) || null
+    formData.product.monthlyPayment = parseFloat(sourceData.monthly_pay) || null
+    formData.product.firstInstallment = parseFloat(sourceData.first_installment_amount) || null
+    formData.product.paymentDay = sourceData.payment_day || null
+
+    formData.shop.branch = sourceData.shop_branch || ''
+    formData.shop.code = sourceData.shop_id || ''
+
+    if (sourceData.ref_name) {
+      formData.hasGuarantor = true
+      formData.guarantor.fullname = sourceData.ref_name || ''
+      formData.guarantor.dob = sourceData.ref_date_of_birth || ''
+      formData.guarantor.phone = sourceData.ref_phone || ''
+      formData.guarantor.gender = sourceData.ref_sex || ''
+      formData.guarantor.maritalStatus = sourceData.ref_marital_status || ''
+      formData.guarantor.idCard = sourceData.ref_id_pass_number || ''
+      formData.guarantor.idCardIssueDate = sourceData.ref_id_pass_date || ''
+      formData.guarantor.censusBook = sourceData.ref_census_number || ''
+      formData.guarantor.censusBookIssueDate = sourceData.ref_census_created || ''
+      formData.guarantor.censusAuthorizeBy = sourceData.ref_census_authorize_by || ''
+      formData.guarantor.houseNumber = sourceData.ref_house_number || ''
+      formData.guarantor.unit = sourceData.ref_unit || ''
+      formData.guarantor.residenceYears = sourceData.ref_lived_year || null
+      formData.guarantor.liveWith = sourceData.ref_lived_with || ''
+      formData.guarantor.residenceStatus = sourceData.ref_lived_situation || ''
+      formData.guarantor.occupation = sourceData.ref_occupation || ''
+      formData.guarantor.relationship = sourceData.ref_relationship || ''
+
+      const refAddr = parseAddress(sourceData.ref_address)
+      formData.guarantor.address.village = refAddr.village
+      formData.guarantor.address.district = refAddr.district
+      formData.guarantor.address.province = refAddr.province
+
+      formData.guarantorWork.companyName = sourceData.ref_company_name || ''
+      formData.guarantorWork.businessType = sourceData.ref_company_businessType || ''
+      formData.guarantorWork.workYears = sourceData.ref_company_workYear || null
+      formData.guarantorWork.position = sourceData.ref_position || ''
+      formData.guarantorWork.salary = sourceData.ref_income || null
+      formData.guarantorWork.salaryDay = sourceData.ref_payroll_date || null
+      formData.guarantorWork.totalEmployees = sourceData.ref_company_emp_number || null
+      formData.guarantorWork.otherIncome = sourceData.ref_income_other || null
+      formData.guarantorWork.otherIncomeSource = sourceData.ref_income_other_source || ''
+
+      const refWorkAddr = parseAddress(sourceData.ref_company_location)
+      formData.guarantorWork.address.village = refWorkAddr.village
+      formData.guarantorWork.address.district = refWorkAddr.district
+      formData.guarantorWork.address.province = refWorkAddr.province
+    }
+  }
+  // -----------------------------------------------------
+  // กรณี 2: Fallback ดึงจาก Loan Application
+  // -----------------------------------------------------
+  else {
+    formData.contractNumber = sourceData.loan_id || ''
+    const sDate = sourceData.createdAt || sourceData.created_at
+    if (sDate) {
+      const d = new Date(sDate)
+      formData.contractDate.day = d.getDate().toString().padStart(2, '0')
+      formData.contractDate.month = (d.getMonth() + 1).toString().padStart(2, '0')
+      formData.contractDate.year = d.getFullYear().toString()
+    }
+
+    if (sourceData.customer) {
+      formData.customer.fullname = `${sourceData.customer.first_name || ''} ${sourceData.customer.last_name || ''}`.trim()
+      formData.customer.dob = sourceData.customer.date_of_birth || ''
+      formData.customer.phone = sourceData.customer.phone || ''
+      formData.customer.idCard = sourceData.customer.identity_number || ''
+      formData.customer.censusBook = sourceData.customer.census_number || ''
+      formData.customer.idCardPlace = sourceData.customer.issue_place || ''
+      formData.customer.idCardIssueDate = sourceData.customer.issue_date || ''
+      formData.customer.occupation = sourceData.customer.occupation || ''
+      formData.customer.unit = sourceData.customer.unit || ''
+
+      const addr = parseAddress(sourceData.customer.address)
+      formData.customer.address.village = addr.village
+      formData.customer.address.district = addr.district
+      formData.customer.address.province = addr.province
+
+      const workInfo = sourceData.customer.customer_work_infos?.[0];
+      if (workInfo) {
+        formData.work.companyName = workInfo.company_name || ''
+        formData.work.businessType = workInfo.business_type || ''
+        formData.work.position = workInfo.position || ''
+        formData.work.salary = parseFloat(workInfo.salary) || null
+        formData.work.workYears = workInfo.duration_years || null
+
+        const workAddr = parseAddress(workInfo.address)
+        formData.work.address.village = workAddr.village
+        formData.work.address.district = workAddr.district
+        formData.work.address.province = workAddr.province
+      }
+    }
+
+    if (sourceData.product) {
+      formData.product.description = sourceData.product.product_name || ''
+      formData.product.brand = sourceData.product.brand || ''
+      formData.product.model = sourceData.product.model || ''
+      formData.product.price = parseFloat(sourceData.product.price) || null
+      formData.product.interestRate = parseFloat(sourceData.product.interest_rate || sourceData.interest_rate_at_apply) || null
+
+      if (sourceData.product.partner) {
+        formData.shop.name = sourceData.product.partner.shop_name || ''
+        formData.shop.branch = sourceData.product.partner.address || ''
+        formData.shop.code = sourceData.product.partner.shop_id || ''
+      }
+    }
+
+    // ดึงค่าอื่นๆ ที่อยู่ในระดับ Application โดยตรง
+    formData.product.downPayment = parseFloat(sourceData.down_payment) || 0
+    formData.product.approvedAmount = parseFloat(sourceData.total_amount) || 0
+    formData.product.loanTerm = sourceData.loan_period || 1
+    formData.product.monthlyPayment = parseFloat(sourceData.monthly_pay) || 0
+    formData.product.fee = parseFloat(sourceData.fee) || 20000
+    formData.product.paymentDay = sourceData.payment_day || 1
+
+    const guarantor = sourceData.loan_guarantors?.[0]
+    if (guarantor) {
+      formData.hasGuarantor = true
+      formData.guarantor.fullname = guarantor.name || ''
+      formData.guarantor.phone = guarantor.phone || ''
+      formData.guarantor.idCard = guarantor.identity_number || ''
+      formData.guarantor.occupation = guarantor.occupation || ''
+      formData.guarantor.relationship = guarantor.relationship || ''
+
+      const gAddr = parseAddress(guarantor.address)
+      formData.guarantor.address.village = gAddr.village
+      formData.guarantor.address.district = gAddr.district
+      formData.guarantor.address.province = gAddr.province
+
+      formData.guarantorWork.companyName = guarantor.work_company_name || ''
+      formData.guarantorWork.position = guarantor.work_position || ''
+      formData.guarantorWork.salary = parseFloat(guarantor.work_salary) || null
+
+      const gWorkAddr = parseAddress(guarantor.work_location)
+      formData.guarantorWork.address.village = gWorkAddr.village
+      formData.guarantorWork.address.district = gWorkAddr.district
+      formData.guarantorWork.address.province = gWorkAddr.province
+    }
+  }
+
+  // -----------------------------------------------------
+  // เช็คประเภทรถมอเตอร์ไซค์
+  // -----------------------------------------------------
+  formData.product.motorcycle.motorId = sourceData.motorId || sourceData.motor_id || ''
+  formData.product.motorcycle.motorColor = sourceData.motorColor || sourceData.motor_color || ''
+  formData.product.motorcycle.tankNumber = sourceData.tankNumber || sourceData.tank_number || ''
+  formData.product.motorcycle.motorWarranty = sourceData.motorWarranty || sourceData.motor_warranty || null
+
+  if (formData.product.motorcycle.motorId || formData.product.motorcycle.tankNumber) {
+    formData.productType.motorcycle = true;
+    formData.productType.gold = false;
+    formData.productType.general = false;
+  } else {
+    formData.productType.general = true;
   }
 
   calculateLoanDetails()
 }
 
-watch(() => props.loanContract, (newVal) => { if (newVal) loadDataFromProps() }, { deep: true })
+watch(
+  () => [props.loanContract, props.loanApplication],
+  () => {
+    loadDataFromProps()
+  },
+  { deep: true, immediate: true }
+)
+
 watch(() => props.isEditing, (newVal) => { isEditing.value = newVal })
 
 onMounted(() => { loadDataFromProps() })
@@ -824,7 +1173,6 @@ onMounted(() => { loadDataFromProps() })
   border: 1px solid #e5e7eb;
 }
 
-/* Print Button Layout Restored */
 .print-button-container {
   position: fixed;
   top: 80px;
@@ -832,7 +1180,6 @@ onMounted(() => { loadDataFromProps() })
   z-index: 100;
 }
 
-/* Edit Button Layout Restored */
 .edit-button-container {
   position: fixed;
   top: 130px;

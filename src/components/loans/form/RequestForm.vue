@@ -467,15 +467,53 @@
         </div>
       </form>
     </div>
+
+    <teleport to="body">
+      <div v-if="isGeneratingPDF" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
+        <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
+        <h2 class="text-xl font-bold tracking-wide">ກຳລັງສ້າງເອກະສານ PDF...</h2>
+        <p class="text-sm mt-2 opacity-80">ກະລຸນາລໍຖ້າຈັກໜ້ອຍ ລະບົບກຳລັງປະມວນຜົນຂໍ້ມູນ</p>
+      </div>
+    </teleport>
+
+    <teleport to="body">
+      <div v-if="showPdfPreview" class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+            <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-white">
+              <span class="icon-[tabler--file-type-pdf] text-error size-6"></span>
+              ຕົວຢ່າງແບບຟອມຂໍກູ້
+            </h3>
+            <div class="flex gap-3">
+              <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm">
+                <span class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ
+              </button>
+              <button @click="closePdfPreview" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10">
+                <span class="icon-[tabler--x] size-5"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex-1 w-full bg-gray-300 dark:bg-gray-800 relative">
+            <iframe
+              v-if="pdfPreviewUrl"
+              :src="pdfPreviewUrl"
+              class="w-full h-full border-none"
+              title="PDF Preview"
+            ></iframe>
+          </div>
+        </div>
+      </div>
+    </teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, computed, h, createApp } from 'vue'
 import type { LoanApplication } from '@/types/loanApplication'
-import RequestPrintTemplate from './RequestPrintTemplate.vue' // ✅ Import template
+// import RequestPrintTemplate from './RequestPrintTemplate.vue' // ✅ Import template
 // import { createApp, h } from 'vue' // ✅ สำหรับสร้าง print window
-import html2pdf from 'html2pdf.js'
+// import html2pdf from 'html2pdf.js'
 import apiClient from '@/api/apiclient'
 
 // Props
@@ -532,33 +570,91 @@ const isEditing = ref(props.isEditing || false)
 // }
 // RequestForm.vue
 
+// 🟢 ຕົວແປສຳລັບຄວບຄຸມ UI Preview PDF
+const isGeneratingPDF = ref(false)
+const showPdfPreview = ref(false)
+const pdfPreviewUrl = ref('')
+
+// const printForm = async () => {
+//   try {
+//     const response = await apiClient.post('/pdf/generate-loan-pdf', {
+//       formData: formData,
+//       loanId: props.loanApplication?.loan_id || props.loanApplication?.id
+//     }, {
+//       timeout: 60000,
+//       responseType: 'blob' // ✅ สำคัญ: รับเป็น blob
+//     });
+
+//     // ✅ ดาวน์โหลด PDF
+//     const url = window.URL.createObjectURL(new Blob([response.data]));
+//     const link = document.createElement('a');
+//     link.href = url;
+//     link.setAttribute('download', `loan-${props.loanApplication?.loan_id || 'draft'}.pdf`);
+//     document.body.appendChild(link);
+//     link.click();
+//     link.remove();
+//     window.URL.revokeObjectURL(url);
+
+//   } catch (error: any) {
+//     console.error('❌ Error generating PDF:', error);
+//     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message));
+//   }
+// };
+
+// ✅ ປັບປຸງ: Print form with Preview Modal
 const printForm = async () => {
+  if (isGeneratingPDF.value) return; // ປ້ອງກັນການກົດຊ້ຳ
+
+  isGeneratingPDF.value = true; // ເປີດໜ້າຕ່າງ Loading
+
   try {
     const response = await apiClient.post('/pdf/generate-loan-pdf', {
       formData: formData,
       loanId: props.loanApplication?.loan_id || props.loanApplication?.id
     }, {
       timeout: 60000,
-      responseType: 'blob' // ✅ สำคัญ: รับเป็น blob
+      responseType: 'blob'
     });
 
-    // ✅ ดาวน์โหลด PDF
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `loan-${props.loanApplication?.loan_id || 'draft'}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    // ສ້າງ URL ຈາກ Blob (PDF Data)
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    pdfPreviewUrl.value = window.URL.createObjectURL(blob);
+
+    // ເປີດ Modal Preview
+    showPdfPreview.value = true;
 
   } catch (error: any) {
     console.error('❌ Error generating PDF:', error);
     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message));
+  } finally {
+    isGeneratingPDF.value = false; // ປິດໜ້າຕ່າງ Loading
   }
 };
 
+// 🟢 ດາວໂຫຼດ PDF ຈາກໜ້າ Preview
+const downloadPdf = () => {
+  if (!pdfPreviewUrl.value) return;
 
+  const link = document.createElement('a');
+  link.href = pdfPreviewUrl.value;
+  link.setAttribute('download', `loan-request-${props.loanApplication?.loan_id || 'draft'}.pdf`);
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+// 🟢 ປິດໜ້າ Preview ແລະ ທຳລາຍ Object URL
+const closePdfPreview = () => {
+  showPdfPreview.value = false;
+
+  if (pdfPreviewUrl.value) {
+    setTimeout(() => {
+      window.URL.revokeObjectURL(pdfPreviewUrl.value);
+      pdfPreviewUrl.value = '';
+    }, 100);
+  }
+}
 
 // const printForm = async () => {
 //   try {
@@ -788,7 +884,7 @@ const loadDataFromProps = () => {
 
     formData.product.type = loan.product.product_name || ''
     formData.product.price = parseFloat(loan.product.price) || parseFloat(loan.total_amount) || null
-    formData.product.store = loan.product.partner_id?.toString() || ''
+    formData.product.store = loan.product.partner?.shop_name.toString() || ''
     formData.product.brand = loan.product.brand || ''
     formData.product.model = loan.product.model || ''
   }

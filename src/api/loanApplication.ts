@@ -11,39 +11,72 @@ import type {
   ConfirmDraftDto,
   LoanApplicationFilters,
   GetAllLoanResponse,
+  PaginationMeta,
   GetLoanByIdResponse
 } from '@/types/loanApplication'
 
 /**
  * ดึงรายการ Loan Applications (ใช้ POST แทน GET เพราะ backend ใช้ body)
  */
+
 export const fetchLoanApplications = async (
   filters: LoanApplicationFilters = {}
-): Promise<LoanApplication[]> => {
+): Promise<{ loans: LoanApplication[]; pagination?: PaginationMeta }> => {
   try {
     console.log('[LoanApplication API] Fetching with filters:', filters)
 
-    // ✅ Backend ใช้ GET แต่รับ filters ผ่าน body (แปลก แต่ต้องทำตาม)
-    const response = await apiClient.get<GetAllLoanResponse>('/loan-application', { params: filters})
+    // เรียก GET และบอก TypeScript ว่า Response จะออกมาเป็นโครงสร้าง GetAllLoanResponse
+    const response = await apiClient.get<GetAllLoanResponse>('/loan-application', { params: filters })
 
     console.log('[LoanApplication API] Fetch response:', response.data)
 
     if (response.data.success && response.data.data) {
-      // แปลง Object → Array ถ้าจำเป็น
       let loans = response.data.data
       if (loans && typeof loans === 'object' && !Array.isArray(loans)) {
         loans = Object.values(loans) as LoanApplication[]
       }
-      return Array.isArray(loans) ? loans : []
+
+      // ส่งกลับคืนไปทั้ง array ข้อมูล และ pagination
+      return {
+        loans: Array.isArray(loans) ? loans : [],
+        pagination: response.data.pagination
+      }
     }
 
-    return []
+    return { loans: [] }
 
   } catch (error: any) {
     console.error('[LoanApplication API] Fetch failed:', error)
     throw new Error(error.response?.data?.message || 'Failed to fetch loan applications')
   }
 }
+// export const fetchLoanApplications = async (
+//   filters: LoanApplicationFilters = {}
+// ): Promise<LoanApplication[]> => {
+//   try {
+//     console.log('[LoanApplication API] Fetching with filters:', filters)
+
+//     // ✅ Backend ใช้ GET แต่รับ filters ผ่าน body (แปลก แต่ต้องทำตาม)
+//     const response = await apiClient.get<GetAllLoanResponse>('/loan-application', { params: filters})
+
+//     console.log('[LoanApplication API] Fetch response:', response.data)
+
+//     if (response.data.success && response.data.data) {
+//       // แปลง Object → Array ถ้าจำเป็น
+//       let loans = response.data.data
+//       if (loans && typeof loans === 'object' && !Array.isArray(loans)) {
+//         loans = Object.values(loans) as LoanApplication[]
+//       }
+//       return Array.isArray(loans) ? loans : []
+//     }
+
+//     return []
+
+//   } catch (error: any) {
+//     console.error('[LoanApplication API] Fetch failed:', error)
+//     throw new Error(error.response?.data?.message || 'Failed to fetch loan applications')
+//   }
+// }
 
 /**
  * ดึง Loan Application ตาม ID

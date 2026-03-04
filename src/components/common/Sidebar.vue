@@ -243,7 +243,7 @@ const menuItems = [
     ]
   },
   {
-    label: 'Loans',
+    label: 'Manage Loans',
     icon: 'icon-[tabler--report-money]',
     permission: 'loan_view_all',
     children: [
@@ -265,6 +265,15 @@ const menuItems = [
         to: '/approvedLoans',
         permission: 'loan_approve'
       },
+
+    ]
+  },
+  {
+    label: 'Draft Contract Loans',
+    icon: 'icon-[tabler--apps-filled]',
+    permission: 'loan_view_all',
+    children: [
+
       {
         label: 'Create Draft',
         icon: 'icon-[tabler--clipboard-plus]',
