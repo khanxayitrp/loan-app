@@ -10,7 +10,8 @@
         <input v-model="searchQuery" type="text" placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ..."
           class="input input-bordered w-full max-w-xs pr-10" @input="debounceSearch" />
 
-        <button v-if="searchQuery" @click="clearSearch" class="btn btn-circle btn-ghost btn-sm absolute right-[140px] top-1/2 transform -translate-y-1/2"
+        <button v-if="searchQuery" @click="clearSearch"
+          class="btn btn-circle btn-ghost btn-sm absolute right-[140px] top-1/2 transform -translate-y-1/2"
           aria-label="ລ້າງການຄົ້ນຫາ">
           <span class="icon-[tabler--x] size-4"></span>
         </button>
@@ -158,7 +159,7 @@
       </div>
 
       <div v-if="selectedRows.length > 0" class="text-primary font-medium">
-        </div>
+      </div>
     </div>
 
     <teleport to="body">
@@ -377,6 +378,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useProductStore } from '@/stores/product'
+import { useShopStore } from '@/stores/shop'
 import { getFullImageUrl } from '@/utils/url'
 import { alert } from '@/utils/alert'
 
@@ -404,8 +406,9 @@ interface ImageFileInfo {
   size: number
 }
 
-// Store
+// Stores
 const productStore = useProductStore()
+const shopStore = useShopStore()
 
 // Modal state
 const showModal = ref(false)
@@ -944,12 +947,35 @@ const removeGalleryImage = (index: number) => {
 
 onMounted(async () => {
   try {
+    // ✅ ขั้น 1: โหลดข้อมูลร้านค้าปัจจุบันก่อน
+    await shopStore.fetchCurrentShop()
+
+    const currentShop = shopStore.currentShop
+
+    if (!currentShop || !currentShop.id) {
+      alert.error('ບໍ່ພົບຂໍ້ມູນຮ້ານຄ້າ', 'ກະລຸນາເລືອກຮ້ານຄ້າກ່ອນ')
+      console.error('❌ No current shop available')
+      return
+    }
+
+    console.log('✅ Current shop loaded:', {
+      id: currentShop.id,
+      name: currentShop.shop_name
+    })
+
+    // ✅ ขั้น 2: โหลดสินค้าของร้านค้านั้น โดยใช้ shop_id
     await Promise.all([
-      productStore.fetchProducts(),
+      productStore.fetchProducts({
+        shop_id: currentShop.id,
+        page: 1,
+        limit: localPageSize.value
+      }),
       productStore.fetchProductTypes()
     ])
+
   } catch (error) {
     console.error('Error initializing product page:', error)
+    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດບໍໂຫຼດຂໍ້ມູນໄດ້')
   }
 })
 </script>
