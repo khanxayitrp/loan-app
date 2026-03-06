@@ -244,7 +244,7 @@
             <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
               <span class="font-medium">ເງິນກູ້:</span>
               <span class="font-medium text-primary">{{ formatPrice(loanDetails.totalAmount - loanDetails.downPayment)
-                }}</span>
+              }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-400">ດອກເບ້ຍທັງໝົດ ({{ loanDetails.interestRate }}%):</span>
@@ -669,6 +669,7 @@ import { useProductStore } from '@/stores/product'
 import { useProductTypeStore } from '@/stores/productType' // ✅ เพิ่ม import
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { requestOtpForCustomer } from '@/api/customer'; // Import function จาก api/customer
+import { alert } from '@/utils/alert'
 import type { CreateWithCustomerDto } from '@/types/loanApplication'
 // Types
 interface Shop {
@@ -1492,12 +1493,12 @@ const handleFileSelect = (index: number, event: Event) => {
 
   if (file) {
     if (file.size > 5 * 1024 * 1024) {
-      alert('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 5MB')
+      alert.error('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 5MB')
       return
     }
 
     if (!file.type.match(/^(image\/.*|application\/pdf)$/)) {
-      alert('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ ຫຼື PDF')
+      alert.error('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ ຫຼື PDF')
       return
     }
 
@@ -1532,7 +1533,7 @@ const removeDocument = (index: number) => {
 // Submit documents
 const submitDocuments = async () => {
   if (!allRequiredDocumentsUploaded.value) {
-    alert('ກະລຸນາອັບໂຫຼດເອກະສານທີ່ຕ້ອງການທັງໝົດ')
+    alert.error('ກະລຸນາອັບໂຫຼດເອກະສານທີ່ຕ້ອງການທັງໝົດ')
     return
   }
 
@@ -1542,7 +1543,7 @@ const submitDocuments = async () => {
   console.log('this currentLoan is ', currentLoan)
   if (!currentLoan || !currentLoan.id) {
     console.error('❌ No current loan application found')
-    alert('ບໍ່ພົບຂໍ້ມູນຄຳຂໍສິນເຊື່ອ. ກະລຸນາສ້າງຄຳຂໍໃໝ່.')
+    alert.error('ບໍ່ພົບຂໍ້ມູນຄຳຂໍສິນເຊື່ອ', 'ກະລຸນາສ້າງຄຳຂໍໃໝ່.')
     return
   }
 
@@ -1575,7 +1576,7 @@ const submitDocuments = async () => {
 
     console.log('✅ Documents submitted successfully for loan ID:', currentLoan.id)
 
-    alert('ບັນທຶກເອກະສານສຳເລັດ!')
+    alert.success('ບັນທຶກເອກະສານສຳເລັດ!')
 
     // ✅ ดึงข้อมูลเอกสารใหม่จาก store
     await loanApplicationStore.fetchDocuments(currentLoan.id)
@@ -1587,7 +1588,7 @@ const submitDocuments = async () => {
 
   } catch (error) {
     console.error('Failed to submit documents:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ')
+    alert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ')
   } finally {
     isSubmitting.value = false
   }

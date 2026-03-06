@@ -306,7 +306,7 @@
                   </div>
                   <div class="flex justify-between">
                     <span class="text-gray-600 dark:text-gray-400">ດອກເບ້ຍ ({{ selectedLoan.interest_rate_at_apply
-                    }}%):</span>
+                      }}%):</span>
                     <span class="font-medium text-error">{{ formatPrice(calculateTotalInterest(selectedLoan)) }}</span>
                   </div>
                   <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
@@ -781,26 +781,15 @@
               @set-primary="handleSetPrimary" />
           </div>
           <div v-else-if="activeTab === 'requestForm'" class="space-y-6">
-            <LoanRequestForm
-              :loan-application-id="selectedLoan?.id"
-              :loan-application="selectedLoan"
-              :is-editing="isEditingInModal"
-              @save-form="handleRequestFormSave"
-              @form-updated="handleRequestFormUpdated"
-              @cancel-edit="isEditingInModal = false"
-            />
+            <LoanRequestForm :loan-application-id="selectedLoan?.id" :loan-application="selectedLoan"
+              :is-editing="isEditingInModal" @save-form="handleRequestFormSave" @form-updated="handleRequestFormUpdated"
+              @cancel-edit="isEditingInModal = false" />
           </div>
 
           <div v-else-if="activeTab === 'loanContract'" class="space-y-6">
-            <LoanContractForm
-              :loan-contract-id="selectedLoan?.id"
-              :loan-application="selectedLoan"
-              :loan-contract="selectedContract"
-              :is-editing="isEditingInModal"
-              @cancel-edit="isEditingInModal = false"
-              @enable-edit="isEditingInModal = true"
-              @save-form="handleSaveContract"
-            />
+            <LoanContractForm :loan-contract-id="selectedLoan?.id" :loan-application="selectedLoan"
+              :loan-contract="selectedContract" :is-editing="isEditingInModal" @cancel-edit="isEditingInModal = false"
+              @enable-edit="isEditingInModal = true" @save-form="handleSaveContract" />
           </div>
           <!-- Modal Actions -->
           <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -840,6 +829,7 @@ import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue
 import LoanRequestForm from '@/components/loans/form/RequestForm.vue'
 import LoanContractForm from '@/components/loans/form/LoanContractForm.vue'
 import { useLoanContractStore } from '@/stores/loanContract'
+import { alert } from '@/utils/alert'
 
 // ✅ Stores
 const loanApplicationStore = useLoanApplicationStore()
@@ -1197,14 +1187,14 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
     const { saveCustProposal } = await import('@/api/proposal')
     await saveCustProposal(selectedLoan.value.customer_id, selectedLoan.value.id, updateData)
     await loanApplicationStore.updateDraftLoanApplication(selectedLoan.value.id, CustLoanData)
-    alert('ບັນທຶກແບບຟອມຂໍກູ້ສຳເລັດ!')
+    alert.success('ບັນທຶກແບບຟອມຂໍກູ້ສຳເລັດ!')
     // ✅ Refresh ข้อมูล selectedLoan
     await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
     // ✅ หา draft ที่อัปเดตใหม่
     selectedLoan.value = loanApplicationStore.loanApplications.find(d => d.id === selectedLoan.value?.id) || null
   } catch (error: any) {
     console.error('Error saving request form:', error)
-    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
   }
 }
 
@@ -1316,12 +1306,12 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     }
 
     await loanContractStore.createContract(selectedLoan.value.id, contractData)
-    alert('ບັນທຶກສັນຍາສຳເລັດ!')
+    alert.success('ບັນທຶກສັນຍາສຳເລັດ!')
     isEditingInModal.value = false
     await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
   } catch (error: any) {
     console.error('Error saving contract:', error)
-    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
   }
 }
 
@@ -1476,10 +1466,10 @@ const handleAddLocation = async (locationData: Omit<CustomerLocation, 'id'>) => 
   try {
     const { createCustomerLocation } = await import('@/api/customer')
     await createCustomerLocation(locationData.customer_id, locationData)
-    alert('ເພີ່ມທີ່ຢູ່ສຳເລັດ!')
+    alert.success('ເພີ່ມທີ່ຢູ່ສຳເລັດ!')
     await loadCustomerLocations(locationData.customer_id)
   } catch (error: any) {
-    alert('ເພີ່ມທີ່ຢູ່ລົ້ມເຫຼວ: ' + error.message)
+    alert.error('ເພີ່ມທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
   }
 }
 
@@ -1488,12 +1478,12 @@ const handleUpdateLocation = async (id: number, locationData: Partial<CustomerLo
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
     await updateCustomerLocation(id, locationData)
-    alert('ແກ້ໄຂທີ່ຢູ່ສຳເລັດ!')
+    alert.success('ແກ້ໄຂທີ່ຢູ່ສຳເລັດ!')
     if (selectedLoan.value?.customer_id) {
       await loadCustomerLocations(selectedLoan.value.customer_id)
     }
   } catch (error: any) {
-    alert('ແກ້ໄຂທີ່ຢູ່ລົ້ມເຫຼວ: ' + error.message)
+    alert.error('ແກ້ໄຂທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
   }
 }
 
@@ -1502,12 +1492,12 @@ const handleDeleteLocation = async (id: number) => {
   try {
     const { deleteCustomerLocation } = await import('@/api/customer')
     await deleteCustomerLocation(id)
-    alert('ລຶບທີ່ຢູ່ສຳເລັດ!')
+    alert.success('ລຶບທີ່ຢູ່ສຳເລັດ!')
     if (selectedLoan.value?.customer_id) {
       await loadCustomerLocations(selectedLoan.value.customer_id)
     }
   } catch (error: any) {
-    alert('ລຶບທີ່ຢູ່ລົ້ມເຫຼວ: ' + error.message)
+    alert.error('ລຶບທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
   }
 }
 
@@ -1516,12 +1506,12 @@ const handleSetPrimary = async (id: number) => {
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
     await updateCustomerLocation(id, { is_primary: true })
-    alert('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກສຳເລັດ!')
+    alert.success('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກສຳເລັດ!')
     if (selectedLoan.value?.customer_id) {
       await loadCustomerLocations(selectedLoan.value.customer_id)
     }
   } catch (error: any) {
-    alert('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກລົ້ມເຫຼວ: ' + error.message)
+    alert.error('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກລົ້ມເຫຼວ', error.message)
   }
 }
 
@@ -1671,12 +1661,12 @@ const saveLoanFromModal = async () => {
   if (!selectedLoan.value) return
   if (!validateModalForm()) {
     console.warn('⚠️ Form validation failed')
-    alert('ກະລຸນາກວດສອບຂໍ້ມູນທີ່ປ້ອນ')
+    alert.error('ກະລຸນາກວດສອບຂໍ້ມູນທີ່ປ້ອນ')
     return
   }
   // ✅ ตรวจสอบเอกสารที่จำเป็น
   if (!allRequiredDocumentsUploaded.value) {
-    alert('ກະລຸນາອັບໂຫຼດເອກະສານທີ່ຕ້ອງການທັງໝົດກ່ອນບັນທຶກ')
+    alert.error('ກະລຸນາອັບໂຫຼດເອກະສານທີ່ຕ້ອງການທັງໝົດກ່ອນບັນທຶກ')
     return
   }
   isSaving.value = true
@@ -1722,7 +1712,7 @@ const saveLoanFromModal = async () => {
       await loanApplicationStore.fetchDocuments(selectedLoan.value.id)
       isUploadingDocuments.value = false
     }
-    alert('ບັນທຶກການປ່ຽນແປງສຳເລັດ!')
+    alert.success('ບັນທຶກການປ່ຽນແປງສຳເລັດ!')
     isEditingInModal.value = false
     await loanApplicationStore.fetchLoanApplications({
       status: 'pending',
@@ -1740,7 +1730,7 @@ const saveLoanFromModal = async () => {
     } else if (error.message) {
       errorMessage = error.message
     }
-    alert(`ເກີດຂໍ້ຜິດພາດ: ${errorMessage}`)
+    alert.error('ເກີດຂໍ້ຜິດພາດ', errorMessage)
   } finally {
     isSaving.value = false
   }
@@ -1753,13 +1743,13 @@ const handleDocumentUpload = (index: number, event: Event) => {
   if (!file) return
   // ✅ ตรวจสอบขนาดไฟล์
   if (file.size > 5 * 1024 * 1024) {
-    alert('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 5MB')
+    alert.error('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 5MB')
     target.value = '' // ล้างค่า input
     return
   }
   // ✅ ตรวจสอบประเภทไฟล์
   if (!file.type.match(/^(image\/.*|application\/pdf)$/)) {
-    alert('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ ຫຼື PDF ເທົ່ານັ້ນ')
+    alert.error('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ ຫຼື PDF ເທົ່ານັ້ນ')
     target.value = '' // ล้างค่า input
     return
   }
@@ -1813,7 +1803,7 @@ const formatFileSize = (size: number | string): string => {
 // Export CSV
 const exportToCSV = () => {
   if (!displayedLoans.value.length) {
-    alert('ບໍ່ມີຂໍ້ມູນສຳລັບສົ່ງອອກ')
+    alert.info('ບໍ່ມີຂໍ້ມູນສຳລັບສົ່ງອອກ')
     return
   }
   const csvData = displayedLoans.value.map(loan => ({
@@ -1866,7 +1856,7 @@ onMounted(async () => {
     console.log('✅ Loaded loans:', loanApplicationStore.loanApplications.length)
   } catch (error) {
     console.error('❌ Failed to load loans:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນສິນເຊື່ອ')
+    alert.error('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນສິນເຊື່ອ')
   }
 })
 </script>

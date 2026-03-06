@@ -644,14 +644,9 @@
           </div>
           <!-- ✅ Add the new LoanContractForm component -->
           <div v-else-if="activeTab === 'loanContract'" class="space-y-6">
-            <LoanContractForm
-            :loan-contract-id="selectedDraft?.id"
-             :loan-application="selectedDraft"
-             :loan-contract="selectedContract"
-              :is-editing="isEditingInModal"
-              @cancel-edit="isEditingInModal = false"
-              @enable-edit="isEditingInModal = true"
-              @save-form="handleSaveContract" />
+            <LoanContractForm :loan-contract-id="selectedDraft?.id" :loan-application="selectedDraft"
+              :loan-contract="selectedContract" :is-editing="isEditingInModal" @cancel-edit="isEditingInModal = false"
+              @enable-edit="isEditingInModal = true" @save-form="handleSaveContract" />
           </div>
           <!-- Modal Actions -->
           <div class="flex justify-end gap-3 mt-6">
@@ -758,6 +753,7 @@ import { getFullImageUrl } from '@/utils/url'
 import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue'
 import LoanRequestForm from '@/components/loans/form/RequestForm.vue'  // ✅ Import the new component
 import LoanContractForm from '@/components/loans/form/LoanContractForm.vue'
+import { alert } from '@/utils/alert'
 // ✅ Use Store
 const loanApplicationStore = useLoanApplicationStore()
 const productStore = useProductStore()
@@ -1129,9 +1125,19 @@ const applyDateFilter = () => {
 const selectedContract = ref<any | null>(null)
 // Action handlers
 const viewDraftDetails = async (draft: LoanApplication) => {
+  if (!draft.id) return
+  // Show modal immediately with existing data for responsiveness
   selectedDraft.value = draft
-  // ✅ โหลดเอกสาร
-  if (draft.id) {
+  showDetailsModal.value = true
+  isEditingInModal.value = false
+  activeTab.value = 'details'
+
+  try {
+    // Fetch the full, updated details from the API
+    const fullDetails = await loanApplicationStore.fetchLoanApplicationById(draft.id)
+    selectedDraft.value = fullDetails // Replace with fresh data
+
+    // ✅ โหลดเอกสาร
     await loanApplicationStore.fetchDocuments(draft.id)
 
     try {
@@ -1141,15 +1147,17 @@ const viewDraftDetails = async (draft: LoanApplication) => {
       console.log('Contract not found or error fetching:', e)
       // ถ้าไม่เจอ ไม่ต้องทำอะไร ให้เป็น null ต่อไป เพื่อให้มัน fallback ไปใช้ draft แทน
     }
+
+    // ✅ โหลด locations
+    if (fullDetails.customer_id) {
+      await loadCustomerLocations(fullDetails.customer_id)
+    }
+  } catch (error) {
+    console.error('Failed to fetch full draft details:', error)
+    // Optionally, show an error message to the user
+    alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຮ່າງສິນເຊື່ອແບບເຕັມໄດ້.')
+    closeDetailsModal() // Close modal if fetch fails
   }
-  // ✅ โหลด locations
-  if (draft.customer_id) {
-    await loadCustomerLocations(draft.customer_id)
-  }
-  // ✅ โหลดข้อมูลสำหรับ RequestForm ถ้าจำเป็น (component จะ handle เอง)
-  showDetailsModal.value = true
-  isEditingInModal.value = false
-  activeTab.value = 'details'
 }
 // ✅ ฟังก์ชันโหลด Customer Locations
 const loadCustomerLocations = async (customerId: number) => {
@@ -1171,10 +1179,10 @@ const handleAddLocation = async (locationData: Omit<CustomerLocation, 'id'>) => 
   try {
     const { createCustomerLocation } = await import('@/api/customer')
     await createCustomerLocation(locationData.customer_id, locationData)
-    alert('ເພີ່ມທີ່ຢູ່ສຳເລັດ!')
+    alert.success('ເພີ່ມທີ່ຢູ່ສຳເລັດ!')
     await loadCustomerLocations(locationData.customer_id)
   } catch (error: any) {
-    alert('ເພີ່ມທີ່ຢູ່ລົ້ມເຫຼວ: ' + error.message)
+    alert.error('ເພີ່ມທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
   }
 }
 // ✅ Handle Update Location
@@ -1182,10 +1190,10 @@ const handleUpdateLocation = async (id: number, locationData: Partial<CustomerLo
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
     await updateCustomerLocation(id, locationData)
-    alert('ແກ້ໄຂທີ່ຢູ່ສຳເລັດ!')
+    alert.success('ແກ້ໄຂທີ່ຢູ່ສຳເລັດ!')
     await loadCustomerLocations(props.customerId)
   } catch (error: any) {
-    alert('ແກ້ໄຂທີ່ຢູ່ລົ້ມເຫຼວ: ' + error.message)
+    alert.error('ແກ້ໄຂທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
   }
 }
 // ✅ Handle Delete Location
@@ -1193,10 +1201,10 @@ const handleDeleteLocation = async (id: number) => {
   try {
     const { deleteCustomerLocation } = await import('@/api/customer')
     await deleteCustomerLocation(id)
-    alert('ລຶບທີ່ຢູ່ສຳເລັດ!')
+    alert.success('ລຶບທີ່ຢູ່ສຳເລັດ!')
     await loadCustomerLocations(props.customerId)
   } catch (error: any) {
-    alert('ລຶບທີ່ຢູ່ລົ້ມເຫຼວ: ' + error.message)
+    alert.error('ລຶບທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
   }
 }
 // ✅ Handle Set Primary
@@ -1204,10 +1212,10 @@ const handleSetPrimary = async (id: number) => {
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
     await updateCustomerLocation(id, { is_primary: true })
-    alert('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກສຳເລັດ!')
+    alert.success('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກສຳເລັດ!')
     await loadCustomerLocations(props.customerId)
   } catch (error: any) {
-    alert('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກລົ້ມເຫຼວ: ' + error.message)
+    alert.error('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກລົ້ມເຫຼວ', error.message)
   }
 }
 // ✅ Handle RequestForm Save (เรียกเมื่อ component emit save-form)
@@ -1321,14 +1329,14 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
     const { saveCustProposal } = await import('@/api/proposal')
     await saveCustProposal(selectedDraft.value.customer_id, selectedDraft.value.id, updateData)
     await loanApplicationStore.updateDraftLoanApplication(selectedDraft.value.id, CustLoanData)
-    alert('ບັນທຶກແບບຟອມຂໍກູ້ສຳເລັດ!')
+    alert.success('ບັນທຶກແບບຟອມຂໍກູ້ສຳເລັດ!')
     // ✅ Refresh ข้อมูล selectedDraft
     await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
     // ✅ หา draft ที่อัปเดตใหม่
     selectedDraft.value = loanApplicationStore.loanApplications.find(d => d.id === selectedDraft.value?.id) || null
   } catch (error: any) {
     console.error('Error saving request form:', error)
-    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
   }
 }
 // ✅ Handle RequestForm Updated (emit เมื่อ form มีการเปลี่ยนแปลง ถ้าต้องการ sync กับ modal อื่นๆ)
@@ -1445,12 +1453,12 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     }
 
     await loanContractStore.createContract(selectedDraft.value.id, contractData)
-    alert('ບັນທຶກສັນຍາສຳເລັດ!')
+    alert.success('ບັນທຶກສັນຍາສຳເລັດ!')
     isEditingInModal.value = false
     await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
   } catch (error: any) {
     console.error('Error saving contract:', error)
-    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
   }
 }
 
@@ -1535,7 +1543,7 @@ const startEditInModal = async () => {
 const saveDraftFromModal = async () => {
   if (!selectedDraft.value) return
   if (!validateModalForm()) {
-    alert('ກະລຸນາກວດສອບຂໍ້ມູນທີ່ປ້ອນ')
+    alert.error('ກະລຸນາກວດສອບຂໍ້ມູນທີ່ປ້ອນ')
     return
   }
   try {
@@ -1577,26 +1585,26 @@ const saveDraftFromModal = async () => {
       await loanApplicationStore.fetchDocuments(selectedDraft.value.id)
       isUploadingDocuments.value = false
     }
-    alert('ບັນທຶກການປ່ຽນແປງສຳເລັດ!')
+    alert.success('ບັນທຶກການປ່ຽນແປງສຳເລັດ!')
     isEditingInModal.value = false
     await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
   } catch (error: any) {
     console.error('Error saving draft:', error)
-    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
   }
 }
 const deleteDraft = async (draftId: number) => {
-  if (!confirm('ຕ້ອງການລຶບຮ່າງສິນເຊື່ອນີ້ບໍ?')) return
+  if (!await alert.confirm('ຕ້ອງການລຶບຮ່າງສິນເຊື່ອນີ້ບໍ?')) return
   try {
     await loanApplicationStore.updateLoanApplication(draftId, { status: 'rejected', remarks: 'ລຶບຮ່າງ' })
-    alert('ລຶບຮ່າງສິນເຊື່ອສຳເລັດ!')
+    alert.success('ລຶບຮ່າງສິນເຊື່ອສຳເລັດ!')
     if (selectedDraft.value?.id === draftId) {
       closeDetailsModal()
     }
     await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
   } catch (error: any) {
     console.error('Error deleting draft:', error)
-    alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
+    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
   }
 }
 const confirmSubmitDraft = (draft: LoanApplication) => {
@@ -1611,14 +1619,14 @@ const submitDraft = async () => {
 }
 const requestOtp = async () => {
   if (!draftToSubmit.value?.customer?.phone) {
-    alert('ບໍ່ພົບເບີໂທລະສັບ')
+    alert.error('ບໍ່ພົບເບີໂທລະສັບ')
     return
   }
   try {
     await requestOtpForCustomer({ phone: draftToSubmit.value.customer.phone })
   } catch (error: any) {
     console.error('❌ Request OTP failed:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການສົ່ງ OTP: ' + error.message)
+    alert.error('ເກີດຂໍ້ຜິດພາດການສົ່ງ OTP', error.message)
   }
 }
 const verifyAndSubmitDraft = async () => {
@@ -1636,7 +1644,7 @@ const verifyAndSubmitDraft = async () => {
       is_confirmed: 1
     }
     await loanApplicationStore.ApplyDraft(draftToSubmit.value.id, confirmData)
-    alert('ສົ່ງຮ່າງສິນເຊື່ອສຳເລັດ!')
+    alert.success('ສົ່ງຮ່າງສິນເຊື່ອສຳເລັດ!')
     showOtpModal.value = false
     if (selectedDraft.value?.id === draftToSubmit.value.id) {
       closeDetailsModal()

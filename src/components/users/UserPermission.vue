@@ -182,33 +182,27 @@
             </label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">
               <label v-for="feature in allFeatures" :key="feature.id"
-                class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
-                >
-                <input
-                type="checkbox"
-                :checked="addModal.selectedPermissions.includes(feature.id)"
-                :value="feature.id"
-                @change="toggleAddPermission(feature.id)"
-                  class="checkbox checkbox-primary"
-                  />
+                class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">
+                <input type="checkbox" :checked="addModal.selectedPermissions.includes(feature.id)" :value="feature.id"
+                  @change="toggleAddPermission(feature.id)" class="checkbox checkbox-primary" />
                 <span class="text-sm">{{ getFeatureDisplayName(feature.feature_name) }}</span>
               </label>
             </div>
           </div>
 
           <!-- ✅ Debug Panel -->
-        <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
-          <div class="font-bold mb-2">🔍 Debug Info:</div>
-          <div>Selected User: {{ addModal.selectedUser?.username || 'None' }}</div>
-          <div>Selected Count: {{ addModal.selectedPermissions.length }}</div>
-          <div>Selected IDs: {{ addModal.selectedPermissions.join(', ') || 'None' }}</div>
-          <div class="mt-2">
-            <div class="font-semibold">Selected Features:</div>
-            <div v-for="id in addModal.selectedPermissions" :key="id" class="ml-2">
-              - {{ allFeatures.find(f => f.id === id)?.feature_name || `Unknown(${id})` }}
+          <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
+            <div class="font-bold mb-2">🔍 Debug Info:</div>
+            <div>Selected User: {{ addModal.selectedUser?.username || 'None' }}</div>
+            <div>Selected Count: {{ addModal.selectedPermissions.length }}</div>
+            <div>Selected IDs: {{ addModal.selectedPermissions.join(', ') || 'None' }}</div>
+            <div class="mt-2">
+              <div class="font-semibold">Selected Features:</div>
+              <div v-for="id in addModal.selectedPermissions" :key="id" class="ml-2">
+                - {{allFeatures.find(f => f.id === id)?.feature_name || `Unknown(${id})`}}
+              </div>
             </div>
           </div>
-        </div>
 
           <div class="flex justify-end gap-3">
             <button class="btn btn-soft btn-secondary" @click="closeAddModal">
@@ -256,32 +250,27 @@
             </label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">
               <label v-for="feature in allFeatures" :key="feature.id"
-                class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
-                >
-                <input
-                type="checkbox"
-                :checked="editModal.selectedPermissions.includes(feature.id)"
-                :value="feature.id"
-                @change="toggleEditPermission(feature.id)"
-                  class="checkbox checkbox-primary" />
+                class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">
+                <input type="checkbox" :checked="editModal.selectedPermissions.includes(feature.id)" :value="feature.id"
+                  @change="toggleEditPermission(feature.id)" class="checkbox checkbox-primary" />
                 <span class="text-sm">{{ getFeatureDisplayName(feature.feature_name) }}</span>
               </label>
             </div>
           </div>
 
           <!-- ✅ Debug Panel -->
-        <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
-          <div class="font-bold mb-2">🔍 Debug Info:</div>
-          <div>User: {{ editModal.user?.username || 'None' }}</div>
-          <div>Selected Count: {{ editModal.selectedPermissions.length }}</div>
-          <div>Selected IDs: {{ editModal.selectedPermissions.join(', ') || 'None' }}</div>
-          <div class="mt-2">
-            <div class="font-semibold">Selected Features:</div>
-            <div v-for="id in editModal.selectedPermissions" :key="id" class="ml-2">
-              - {{ allFeatures.find(f => f.id === id)?.feature_name || `Unknown(${id})` }}
+          <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
+            <div class="font-bold mb-2">🔍 Debug Info:</div>
+            <div>User: {{ editModal.user?.username || 'None' }}</div>
+            <div>Selected Count: {{ editModal.selectedPermissions.length }}</div>
+            <div>Selected IDs: {{ editModal.selectedPermissions.join(', ') || 'None' }}</div>
+            <div class="mt-2">
+              <div class="font-semibold">Selected Features:</div>
+              <div v-for="id in editModal.selectedPermissions" :key="id" class="ml-2">
+                - {{allFeatures.find(f => f.id === id)?.feature_name || `Unknown(${id})`}}
+              </div>
             </div>
           </div>
-        </div>
 
           <div class="flex justify-end gap-3">
             <button class="btn btn-soft btn-secondary" @click="closeEditModal">
@@ -302,6 +291,7 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
+import { alert } from '@/utils/alert'
 
 // Types
 interface User {
@@ -570,7 +560,7 @@ onMounted(async () => {
     ])
   } catch (error) {
     console.error('Error fetching data:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນ')
+    alert.error('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນ')
   } finally {
     isLoading.value = false
   }
@@ -732,11 +722,11 @@ const saveAddPermissions = async () => {
 
     closeAddModal()
     await refreshUsers()
-    alert('ເພີ່ມສິດທິສຳເລັດ!')
+    alert.success('ເພີ່ມສິດທິສຳເລັດ!')
 
   } catch (error) {
     console.error('Error adding permissions:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການເພີ່ມສິດທິ')
+    alert.error('ເກີດຂໍ້ຜິດພາດການເພີ່ມສິດທິ')
   } finally {
     addModal.value.loading = false
   }
@@ -818,7 +808,7 @@ watch(
 const saveEditPermissions = async () => {
   if (!editModal.value.user) return
 
-   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('💾 [SAVE EDIT] Starting save process...')
   console.log('User:', {
     id: editModal.value.user.id,
@@ -857,11 +847,11 @@ const saveEditPermissions = async () => {
 
     closeEditModal()
     await refreshUsers()
-    alert('ແກ້ໄຂສິດທິສຳເລັດ!')
+    alert.success('ແກ້ໄຂສິດທິສຳເລັດ!')
 
   } catch (error) {
     console.error('Error updating permissions:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການແກ້ໄຂສິດທິ')
+    alert.error('ເກີດຂໍ້ຜິດພາດການແກ້ໄຂສິດທິ')
   } finally {
     editModal.value.loading = false
   }
@@ -869,14 +859,14 @@ const saveEditPermissions = async () => {
 
 // Delete all permissions
 const deleteAllPermissions = async (userId: number) => {
-  if (confirm('ຕ້ອງການລຶບສິດທິທັງໝົດຂອງຜູ້ໃຊ້ນີ້ບໍ?')) {
+  if (await alert.confirm('ຕ້ອງການລຶບສິດທິທັງໝົດຂອງຜູ້ໃຊ້ນີ້ບໍ?')) {
     try {
       await permissionStore.deleteAllUserPermissions(userId)
       await refreshUsers()
-      alert('ລຶບສິດທິສຳເລັດ!')
+      alert.success('ລຶບສິດທິສຳເລັດ!')
     } catch (error) {
       console.error('Error deleting permissions:', error)
-      alert('ເກີດຂໍ້ຜິດພາດການລຶບສິດທິ')
+      alert.error('ເກີດຂໍ້ຜິດພາດການລຶບສິດທິ')
     }
   }
 }

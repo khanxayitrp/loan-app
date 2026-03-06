@@ -130,22 +130,22 @@ export const uploadProductImage = async (productId: number, file: File) => {
     )
     return response.data
   } catch (error: any) {
-     console.error('❌ Upload product image error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      })
+    console.error('❌ Upload product image error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    })
 
-      // ✅ ตรวจสอบว่าเป็น HTML Error
-      if (error.response?.data instanceof Blob) {
-        const contentType = error.response.headers['content-type']
-        if (contentType?.includes('text/html')) {
-          throw new Error('เซิร์ฟเวอร์คืนค่า HTML Error Page แทน JSON')
-        }
+    // ✅ ตรวจสอบว่าเป็น HTML Error
+    if (error.response?.data instanceof Blob) {
+      const contentType = error.response.headers['content-type']
+      if (contentType?.includes('text/html')) {
+        throw new Error('เซิร์ฟเวอร์คืนค่า HTML Error Page แทน JSON')
       }
-
-      throw error
     }
+
+    throw error
+  }
 }
 
 /**
@@ -155,13 +155,13 @@ export const uploadProductGallery = async (productId: number, files: File[]) => 
   try {
     const formData = new FormData()
     files.forEach((file, index) => {
-        formData.append('files', file)
-        console.log(`📤 Adding file ${index}:`, {
-          name: file.name,
-          size: file.size,
-          type: file.type
-        })
+      formData.append('files', file)
+      console.log(`📤 Adding file ${index}:`, {
+        name: file.name,
+        size: file.size,
+        type: file.type
       })
+    })
 
     const response = await apiClient.post(
       `/upload/product/${productId}/gallery`,
@@ -173,21 +173,21 @@ export const uploadProductGallery = async (productId: number, files: File[]) => 
     return response.data
   } catch (error: any) {
     console.error('❌ Upload gallery error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      })
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    })
 
-      // ✅ ตรวจสอบว่าเป็น HTML Error
-      if (error.response?.data instanceof Blob) {
-        const contentType = error.response.headers['content-type']
-        if (contentType?.includes('text/html')) {
-          throw new Error('เซิร์ฟเวอร์คืนค่า HTML Error Page แทน JSON')
-        }
+    // ✅ ตรวจสอบว่าเป็น HTML Error
+    if (error.response?.data instanceof Blob) {
+      const contentType = error.response.headers['content-type']
+      if (contentType?.includes('text/html')) {
+        throw new Error('เซิร์ฟเวอร์คืนค่า HTML Error Page แทน JSON')
       }
-
-      throw error
     }
+
+    throw error
+  }
 }
 /**
  * Sync ຂໍ້ມູນ Gallery (ບັນທຶກ URL ລົງຖານຂໍ້ມູນ)
@@ -265,7 +265,34 @@ export const toggleProductStatus = async (id: number, isActive: boolean) => {
   }
 };
 
+/**
+ * 🟢 ປ່ຽນສະຖານະສິນຄ້າແບບຫຼາຍລາຍການພ້ອມກັນ (Bulk Toggle)
+ * @param productIds - Array ຂອງ ID ສິນຄ້າທີ່ຕ້ອງການປ່ຽນສະຖານະ [1, 2, 3]
+ * @param isActive - ສະຖານະໃໝ່ (true = 1 (Active), false = 0 (Inactive))
+ */
+export const toggleMultipleProductStatus = async (productIds: number[], isActive: boolean) => {
+  try {
+    console.log('🔄 Bulk toggling product status:', { productIds, isActive });
 
+    // ສົ່ງ Request ໄປຫາ Endpoint ໃໝ່ທີ່ເຮົາສ້າງໃນ Backend (ສົມມຸດວ່າຕັ້ງຊື່ /bulk-status)
+    const response = await apiClient.patch('/products/bulk-status', {
+      productIds: productIds,
+      is_active: isActive ? 1 : 0
+    });
+
+    console.log('✅ Bulk toggle response:', response.data);
+
+    return {
+      success: response.data.success ?? true,
+      message: response.data.message ?? `ອັບເດດສະຖານະສຳເລັດ ${response.data.updatedCount || 0} ລາຍການ`,
+      updatedCount: response.data.updatedCount || 0
+    };
+  } catch (error: any) {
+    const errMsg = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການປ່ຽນສະຖານະຫຼາຍລາຍການ';
+    console.error(`❌ Bulk toggle products failed:`, errMsg, error);
+    throw new Error(errMsg);
+  }
+};
 /**
  * ดึงประเภทสินค้าทั้งหมด
  */

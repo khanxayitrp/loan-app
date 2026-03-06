@@ -125,6 +125,12 @@
               </a>
             </li>
             <li>
+              <a class="dropdown-item" href="/changeMyPassword">
+                <span class="icon-[tabler--password-user]"></span>
+                Change My Password
+              </a>
+            </li>
+            <li>
               <a class="dropdown-item" href="#">
                 <span class="icon-[tabler--settings]"></span>
                 Settings

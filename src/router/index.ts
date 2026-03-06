@@ -57,6 +57,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/changeMyPassword',
+    name: 'ChangeMyPassword',
+    component: () => import('@/views/auth/ChangeMyPass.vue'),
+    meta: {
+      requiresAuth: true,           // ต้อง login
+      // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+      permission: 'user_manage'
+    }
+  },
+  {
     path: '/PermissionManagement',
     name: 'PermissionManagement',
     component: () => import('@/views/auth/PermissionManagement.vue'),

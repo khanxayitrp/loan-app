@@ -707,9 +707,10 @@
                     <div class="grid grid-cols-2 gap-4 mt-2">
 
                       <div class="border rounded-lg overflow-hidden relative bg-base-200" style="height: 150px;">
-                        <div v-if="visit.photo_url_1 || visit.photo_1_preview" class="w-full h-full relative group">
+                        <div v-if="visit.photo_url_1 || visit.photo_1_preview"
+                          class="w-full h-full relative group bg-base-300 flex items-center justify-center">
                           <img :src="visit.photo_1_preview || getFullImageUrl(visit.photo_url_1)"
-                            class="w-full h-full object-cover" />
+                            class="max-w-full max-h-full object-contain" />
                           <div
                             class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                             <button type="button" class="btn btn-error btn-sm btn-circle"
@@ -728,9 +729,10 @@
                       </div>
 
                       <div class="border rounded-lg overflow-hidden relative bg-base-200" style="height: 150px;">
-                        <div v-if="visit.photo_url_2 || visit.photo_2_preview" class="w-full h-full relative group">
+                        <div v-if="visit.photo_url_2 || visit.photo_2_preview"
+                          class="w-full h-full relative group bg-base-300 flex items-center justify-center">
                           <img :src="visit.photo_2_preview || getFullImageUrl(visit.photo_url_2)"
-                            class="w-full h-full object-cover" />
+                            class="max-w-full max-h-full object-contain" />
                           <div
                             class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                             <button type="button" class="btn btn-error btn-sm btn-circle"
@@ -855,11 +857,11 @@ import { useLoanApplicationStore } from '@/stores/loanApplication'
 import type { LoanApplication, UpdateLoanApplicationDto } from '@/types/loanApplication'
 import apiClient from '@/api/apiclient'
 import { getFullImageUrl } from '@/utils/url'
-import { useChecklistStore } from '@/stores/checklist'; // ✅ Import Store ใหม่
-import { checklistApi } from '@/api/checklist'; // ✅ Import API
+import { useChecklistStore } from '@/stores/checklist';
+import { checklistApi } from '@/api/checklist';
+import { alert } from '@/utils/alert'
 
 const checklistStore = useChecklistStore();
-
 const loanApplicationStore = useLoanApplicationStore()
 
 // Reactive state
@@ -998,7 +1000,7 @@ const formBasic = reactive({
   verified_last_name: '',
   verified_dob: '',
   verified_address: '',
-  verified_product_type: '', // ✅ ຂໍ້ມູນສິນຄ້າ
+  verified_product_type: '',
   verified_price: 0,
   verified_down_payment: 0,
   verified_monthly_pay: 0,
@@ -1109,12 +1111,12 @@ const getCurrentLocation = (index: number) => {
       (error) => {
         let msg = "ເກີດຂໍ້ຜິດພາດໃນການດຶງທີ່ຕັ້ງ";
         if (error.code === 1) msg = "ກະລຸນາອະນຸຍາດການເຂົ້າເຖິງ Location (GPS) ໃນ Browser ກ່ອນ";
-        alert(msg);
+        alert.error(msg);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   } else {
-    alert("Browser ຂອງທ່ານບໍ່ຮອງຮັບລະບົບ GPS");
+    alert.error("Browser ຂອງທ່ານບໍ່ຮອງຮັບລະບົບ GPS");
   }
 }
 
@@ -1124,7 +1126,7 @@ const handleVisitImageUpload = (index: number, photoNum: 1 | 2, event: Event) =>
   if (!file) return;
 
   if (file.size > 5 * 1024 * 1024) {
-    alert('ຂະໜາດຮູບພາບຕ້ອງນ້ອຍກວ່າ 5MB');
+    alert.error('ຂະໜາດຮູບພາບຕ້ອງນ້ອຍກວ່າ 5MB');
     target.value = '';
     return;
   }
@@ -1177,16 +1179,7 @@ const fetchChecklistData = async (loanId: number) => {
 
     if (summaryData) {
       if (summaryData.basic_verification) {
-        console.log("Assigning Basic Verification Data:", summaryData.basic_verification);
         Object.assign(formBasic, summaryData.basic_verification);
-
-        // ✅ Force convert types for numbers/booleans to ensure UI reactivity
-        // formBasic.work_salary = Number(summaryData.basic_verification.work_salary || 0);
-        // formBasic.work_years = Number(summaryData.basic_verification.work_years || 0);
-        // formBasic.verified_price = Number(summaryData.basic_verification.verified_price || 0);
-        // formBasic.verified_down_payment = Number(summaryData.basic_verification.verified_down_payment || 0);
-        // formBasic.verified_monthly_pay = Number(summaryData.basic_verification.verified_monthly_pay || 0);
-
         formBasic.has_id_card = !!summaryData.basic_verification.has_id_card;
         formBasic.has_census_book = !!summaryData.basic_verification.has_census_book;
         formBasic.has_income_doc = !!summaryData.basic_verification.has_income_doc;
@@ -1244,56 +1237,44 @@ const openChecklistModal = async (loan: LoanApplication) => {
   selectedChecklistLoan.value = loan;
   checklistTab.value = 'basic';
 
-  // 1. ดึงข้อมูลจาก Store (API)
   await checklistStore.fetchSummary(loan.id);
-  // Pinia may expose refs or unwrapped values depending on setup; normalize both cases
   const raw = (checklistStore.summaryData as any);
   const dbData = raw && typeof raw === 'object' && 'value' in raw ? raw.value : raw;
-  console.log("Checklist Summary Data from Store:", dbData);
 
-  // ----------------------------------------
-  // 2. Mapping ข้อมูลแบบมี Fallback (Best Practice)
-  // ----------------------------------------
-
-  // 🟢 TAB 1: BASIC
   if (dbData?.basic_verification) {
-    // ถ้ามีใน DB เอามาทับ Form เลย
     Object.assign(formBasic, dbData.basic_verification);
-
-    // 🚨 2. ແກ້ບັນຫາ Checkbox ບໍ່ສະແດງ: ແປງຄ່າ 0/1 ຈາກ Database ໃຫ້ເປັນ true/false ສຳລັບ Vue
     formBasic.has_id_card = Boolean(dbData.basic_verification.has_id_card);
     formBasic.has_census_book = Boolean(dbData.basic_verification.has_census_book);
     formBasic.has_income_doc = Boolean(dbData.basic_verification.has_income_doc);
     formBasic.has_other_doc = Boolean(dbData.basic_verification.has_other_doc);
 
-    // 3. Fallback: ຖ້າຂໍ້ມູນບາງຕົວໃນ DB ເປັນ null ໃຫ້ດຶງຈາກ loan ມາໃສ່ແທນ
     const workInfo = loan.customer?.customer_work_infos?.[0];
-
-    // ຂໍ້ມູນລູກຄ້າ
     formBasic.verified_first_name = formBasic.verified_first_name || loan.customer?.first_name || '';
     formBasic.verified_last_name = formBasic.verified_last_name || loan.customer?.last_name || '';
     formBasic.verified_dob = formBasic.verified_dob || (loan.customer?.date_of_birth ? new Date(loan.customer.date_of_birth).toISOString().slice(0, 10) : '');
     formBasic.verified_address = formBasic.verified_address || loan.customer?.address || '';
-
-    // ຂໍ້ມູນສິນຄ້າ
     formBasic.verified_product_type = formBasic.verified_product_type || loan.product?.product_name || '';
     formBasic.verified_price = formBasic.verified_price || Number(loan.total_amount) || 0;
     formBasic.verified_down_payment = formBasic.verified_down_payment || Number(loan.down_payment) || 0;
     formBasic.verified_monthly_pay = formBasic.verified_monthly_pay || Number(loan.monthly_pay) || 0;
-
-    // ຂໍ້ມູນວຽກ
     formBasic.work_company_name = formBasic.work_company_name || workInfo?.company_name || '';
     formBasic.work_position = formBasic.work_position || workInfo?.position || '';
     formBasic.work_years = formBasic.work_years || workInfo?.duration_years || 0;
     formBasic.work_salary = formBasic.work_salary || Number(workInfo?.salary || 0);
+
   } else {
-    // ถ้าไม่มี (ร่างใหม่) ให้ดึงข้อมูลเบื้องต้นจาก Loan Application
-    const workInfo = loan.customer?.customer_work_infos?.[0];
+    let fullDetails: LoanApplication | null = null;
+    try {
+      fullDetails = await loanApplicationStore.fetchLoanApplicationById(loan.id)
+    } catch (error) {
+      console.error("Error fetching full loan details:", error);
+    }
+    const workInfo = fullDetails?.customer?.customer_work_infos?.[0];
     Object.assign(formBasic, {
       cus_contact_method: 'phone',
-      verified_first_name: loan.customer?.first_name || '',
-      verified_last_name: loan.customer?.last_name || '',
-      verified_dob: loan.customer?.date_of_birth ? new Date(loan.customer.date_of_birth).toISOString().slice(0, 10) : '',
+      verified_first_name: fullDetails?.customer?.first_name || '',
+      verified_last_name: fullDetails?.customer?.last_name || '',
+      verified_dob: fullDetails?.customer?.date_of_birth ? new Date(fullDetails.customer.date_of_birth).toISOString().slice(0, 10) : '',
       verified_address: loan.customer?.address || '',
       verified_product_type: loan.product?.product_name || '',
       verified_price: Number(loan.total_amount) || 0,
@@ -1303,50 +1284,37 @@ const openChecklistModal = async (loan: LoanApplication) => {
       work_position: workInfo?.position || '',
       work_years: workInfo?.duration_years || 0,
       work_salary: Number(workInfo?.salary || 0),
-      has_id_card: false,
-      has_census_book: false,
-      has_income_doc: false,
-      has_other_doc: false,
-      other_doc_detail: '',
-      cus_credibility_assessment: 'reliable',
-      workplace_assessment: 'good',
-      status: 'draft'
+      has_id_card: false, has_census_book: false, has_income_doc: false, has_other_doc: false,
+      other_doc_detail: '', cus_credibility_assessment: 'reliable', workplace_assessment: 'good', status: 'draft'
     });
   }
 
-  // 🟢 TAB 2: CALLS
   if (dbData?.call_verifications && dbData.call_verifications.length > 0) {
     formCalls.value = [...dbData.call_verifications];
   } else {
     formCalls.value = [];
-    addCallRecord(); // สร้าง 1 แถวว่างๆ รอล่วงหน้า
+    addCallRecord();
   }
 
-  // 🟢 TAB 3: CIB
   if (dbData?.cib_check) {
     Object.assign(formCIB, dbData.cib_check);
   } else {
     Object.assign(formCIB, {
-      good_history_count: 0, good_history_institutions: '',
-      bad_history_count: 0, bad_history_institutions: '',
+      good_history_count: 0, good_history_institutions: '', bad_history_count: 0, bad_history_institutions: '',
       is_existing_customer: false, existing_customer_status: 'normal', remark: ''
     });
   }
 
-  // 🟢 TAB 4: FIELD VISITS
   if (dbData?.field_visits && dbData.field_visits.length > 0) {
     formFieldVisits.value = dbData.field_visits.map((item: any) => ({
-      ...item,
-      visit_date: item.visit_date ? new Date(item.visit_date).toISOString().slice(0, 16) : '',
-      photo_1_file: null, photo_1_preview: null,
-      photo_2_file: null, photo_2_preview: null
+      ...item, visit_date: item.visit_date ? new Date(item.visit_date).toISOString().slice(0, 16) : '',
+      photo_1_file: null, photo_1_preview: null, photo_2_file: null, photo_2_preview: null
     }));
   } else {
     formFieldVisits.value = [];
     addFieldVisit();
   }
 
-  // 🟢 TAB 5: INCOME
   if (dbData?.income_assessment) {
     Object.assign(formIncome, dbData.income_assessment);
   } else {
@@ -1355,143 +1323,207 @@ const openChecklistModal = async (loan: LoanApplication) => {
       existing_debt_payments: Number(loan.customer?.other_debts || 0),
       proposed_installment: Number(loan.monthly_pay || 0),
       max_approved_amount: Number(loan.total_amount || 0),
-      other_verified_income: 0,
-      estimated_living_expenses: 0
+      other_verified_income: 0, estimated_living_expenses: 0
     });
   }
 
   showChecklistModal.value = true;
 };
-// const openChecklistModal = async (loan: LoanApplication) => {
-//   selectedChecklistLoan.value = loan
-//   checklistTab.value = 'basic'
-
-//   // 1. ດຶງຂໍ້ມູນຈາກ Database ມາກ່ອນ (ຖ້າມີ)
-//   await fetchChecklistData(loan.id)
-
-//   // 2. ຖ້າ Database ບໍ່ມີຂໍ້ມູນ (ເປັນ null ຫຼື ຫວ່າງເປົ່າ) ໃຫ້ດຶງຈາກ loan ມາໃສ່ (Pre-fill)
-
-//   // --- ຂໍ້ມູນ Income ---
-//   if (!formIncome.average_monthly_income) formIncome.average_monthly_income = Number(loan.customer?.income_per_month || 0)
-//   if (!formIncome.existing_debt_payments) formIncome.existing_debt_payments = Number(loan.customer?.other_debts || 0)
-//   if (!formIncome.proposed_installment) formIncome.proposed_installment = Number(loan.monthly_pay || 0)
-//   if (!formIncome.max_approved_amount) formIncome.max_approved_amount = Number(loan.total_amount || 0)
-
-//   // --- ຂໍ້ມູນ Basic (ລູກຄ້າ) ---
-//   if (!formBasic.verified_first_name) formBasic.verified_first_name = loan.customer?.first_name || ''
-//   if (!formBasic.verified_last_name) formBasic.verified_last_name = loan.customer?.last_name || ''
-//   if (!formBasic.verified_dob) formBasic.verified_dob = loan.customer?.date_of_birth ? new Date(loan.customer.date_of_birth).toISOString().slice(0, 10) : ''
-//   if (!formBasic.verified_address) formBasic.verified_address = loan.customer?.address || ''
-
-//         // formBasic.has_id_card = !!summaryData.basic_verification.has_id_card;
-//         // formBasic.has_census_book = !!summaryData.basic_verification.has_census_book;
-//         // formBasic.has_income_doc = !!summaryData.basic_verification.has_income_doc;
-//         // formBasic.has_other_doc = !!summaryData.basic_verification.has_other_doc;
-
-//   // --- ຂໍ້ມູນ Basic (ວຽກ) ---
-//   const workInfo = loan.customer?.customer_work_infos?.[0];
-//   if (!formBasic.work_company_name) formBasic.work_company_name = workInfo?.company_name || '';
-//   if (!formBasic.work_position) formBasic.work_position = workInfo?.position || '';
-//   if (!formBasic.work_years) formBasic.work_years = workInfo?.duration_years || 0;
-//   if (!formBasic.work_salary) formBasic.work_salary = Number(workInfo?.salary || 0);
-
-//   // ✅ --- ຂໍ້ມູນສິນຄ້າ ---
-//   if (!formBasic.verified_product_type) formBasic.verified_product_type = loan.product?.product_name || '';
-//   if (!formBasic.verified_price) formBasic.verified_price = Number(loan.total_amount) || 0;
-//   if (!formBasic.verified_down_payment) formBasic.verified_down_payment = Number(loan.down_payment) || 0;
-//   if (!formBasic.verified_monthly_pay) formBasic.verified_monthly_pay = Number(loan.monthly_pay) || 0;
-
-//   // 3. ເປີດ Modal
-//   showChecklistModal.value = true
-// }
 
 // ==========================================
-// ✅ อัปเดตฟังก์ชัน Save ให้ใช้ API ไฟล์ที่แยกไว้
+// 🟢 ຊຸດຟັງຊັນບັນທຶກຂໍ້ມູນແຕ່ລະ Tab
 // ==========================================
-const saveChecklist = async () => {
-  if (!selectedChecklistLoan.value) return;
-  const loanId = selectedChecklistLoan.value.id;
-  const customerId = selectedChecklistLoan.value.customer_id;
+const saveBasicInfo = async (loanId: number) => {
   isSavingChecklist.value = true;
-
+  const formData = {
+    ...formBasic,
+    full_name: `${formBasic.verified_first_name} ${formBasic.verified_last_name}`.trim()
+  }
   try {
-    if (checklistTab.value === 'basic') {
-      await checklistApi.saveBasic(loanId, formBasic);
-
-    } else if (checklistTab.value === 'call') {
-      await checklistApi.saveCalls(loanId, { calls: formCalls.value });
-
-    } else if (checklistTab.value === 'cib') {
-      await checklistApi.saveCIB(loanId, formCIB);
-
-    } else if (checklistTab.value === 'field') {
-      for (const visit of formFieldVisits.value) {
-        if (visit.photo_1_file || visit.photo_2_file) {
-          const imgFormData = new FormData();
-          if (visit.photo_1_file) imgFormData.append('files', visit.photo_1_file);
-          if (visit.photo_2_file) imgFormData.append('files', visit.photo_2_file);
-
-          try {
-            const uploadRes = await apiClient.post(`/upload/location/${customerId}/image`, imgFormData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            if (uploadRes.data?.data && uploadRes.data.data.length > 0) {
-              const urls = uploadRes.data.data;
-              if (visit.photo_1_file && urls.length > 0) {
-                visit.photo_url_1 = urls[0].fileUrl;
-                if (visit.photo_2_file && urls.length > 1) {
-                  visit.photo_url_2 = urls[1].fileUrl;
-                }
-              } else if (visit.photo_2_file && urls.length > 0) {
-                visit.photo_url_2 = urls[0].fileUrl;
-              }
-            }
-          } catch (e) {
-            console.error('Image upload failed', e);
-          }
-        }
-      }
-      await checklistApi.saveFieldVisits(loanId, { visits: formFieldVisits.value });
-
-    } else if (checklistTab.value === 'income') {
-      const payload = {
-        ...formIncome,
-        dsr_percentage: dsrPercentage.value,
-        total_verified_income: totalVerifiedIncome.value,
-      };
-      await checklistApi.saveIncome(loanId, payload);
-    }
-
-    alert(`ບັນທຶກຂໍ້ມູນ ${checklistTabTitle.value} ສຳເລັດແລ້ວ!`);
-
-    // โหลดข้อมูลล่าสุดมาเก็บใน Store ใหม่เพื่ออัปเดต UI ทันที
-    await checklistStore.fetchSummary(loanId);
-
-  } catch (error: any) {
-    console.error('Error saving checklist:', error);
-    alert('ເກີດຂໍ້ຜິດພາດ: ' + (error.response?.data?.message || error.message));
+    await checklistApi.saveBasicInfo(loanId, formData);
+    alert.success('ບັນທຶກຂໍ້ມູນສຳເລັດ', `ຂໍ້ມູນພື້ນຖານຂອງເລກທີ່ສິນເຊື່ອ ${selectedChecklistLoan.value?.loan_id || ''} ຖືກບັນທຶກແລ້ວ.`);
+  } catch (err) {
+    console.error("Failed to save Basic Info:", err);
+    alert.error('ບັນທຶກຂໍ້ມູນບໍ່ສຳເລັດ', 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.');
   } finally {
     isSavingChecklist.value = false;
   }
+}
+
+const saveCallRecords = async (loanId: number) => {
+  isSavingChecklist.value = true;
+  try {
+    const result = await checklistApi.saveCallRecords(loanId, { calls: formCalls.value });
+    alert.success('ບັນທຶກການໂທສຳເລັດ', `ບັນທຶກສຳເລັດແລ້ວ.`);
+    await fetchChecklistData(loanId);
+  } catch (err) {
+    console.error("Failed to save call records:", err);
+    alert.error('ບັນທຶກຂໍ້ມູນການໂທບໍ່ສຳເລັດ');
+  } finally {
+    isSavingChecklist.value = false;
+  }
+}
+
+const saveCIBInfo = async (loanId: number) => {
+  isSavingChecklist.value = true;
+  try {
+    await checklistApi.saveCIBInfo(loanId, formCIB);
+    alert.success('ບັນທຶກຂໍ້ມູນ CIB ສຳເລັດ');
+  } catch (err) {
+    console.error("Failed to save CIB info:", err);
+    alert.error('ບັນທຶກຂໍ້ມູນ CIB ບໍ່ສຳເລັດ');
+  } finally {
+    isSavingChecklist.value = false;
+  }
+}
+
+// 🟢 ✅ ອັບເດດ: ຟັງຊັນອັບໂຫຼດຮູບກ່ອນບັນທຶກ Field Visits ✅ 🟢
+const saveFieldVisits = async (loanId: number) => {
+  if (!selectedChecklistLoan.value) return;
+  const customerId = selectedChecklistLoan.value.customer_id; // ຕ້ອງການໃຊ້ເປັນ path
+  isSavingChecklist.value = true;
+
+  try {
+    // 1. ສ້າງ Array ໃໝ່ເພື່ອເກັບຂໍ້ມູນທີ່ຈະສົ່ງເຂົ້າຖານຂໍ້ມູນ (ບໍ່ເອົາ File)
+    const processedVisits = [];
+
+    for (const visit of formFieldVisits.value) {
+      let finalPhoto1 = visit.photo_url_1;
+      let finalPhoto2 = visit.photo_url_2;
+
+      // ຖ້າມີການເລືອກໄຟລ໌ໃໝ່ (photo_1 ຫຼື photo_2)
+      if (visit.photo_1_file || visit.photo_2_file) {
+        const imgFormData = new FormData();
+        const uploadedOrder = []; // ໃຊ້ຈື່ວ່າໄຟລ໌ໃດຖືກແນບກ່ອນ-ຫຼັງ ເພື່ອມາ map ຄືນ
+
+        if (visit.photo_1_file) {
+          imgFormData.append('files', visit.photo_1_file);
+          uploadedOrder.push('photo1');
+        }
+        if (visit.photo_2_file) {
+          imgFormData.append('files', visit.photo_2_file);
+          uploadedOrder.push('photo2');
+        }
+
+        // ສົ່ງຮູບໄປ API ທີ່ທ່ານຂຽນໄວ້: router.post('/location/:customer_id/image', ...)
+        const uploadRes = await apiClient.post(`/upload/location/${customerId}/image`, imgFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        console.log("Upload response:", uploadRes);
+        // ຮັບ URL ກັບຄືນມາ (ສົມມຸດວ່າ Backend ສົ່ງມາເປັນ array ຂອງ urls ໃນ .data ຫຼື .urls)
+        const uploadedUrls = uploadRes.data?.data.uploaded || uploadRes.data?.urls || [];
+
+        console.log("Uploaded URLs:", uploadedUrls, "Order:", uploadedOrder);
+
+        // Map URL ທີ່ໄດ້ຄືນໃສ່ຊ່ອງ photo ທີ່ຖືກຕ້ອງ
+        uploadedOrder.forEach((photoType, index) => {
+          if (uploadedUrls[index]) {
+            // ✅ ແກ້ໄຂ: ດຶງ file_url ຈາກ object ທີ່ Backend ສົ່ງມາ
+            const fileUrl = uploadedUrls[index].file_url;
+
+            if (photoType === 'photo1') {
+              finalPhoto1 = fileUrl;
+              visit.photo_url_1 = fileUrl; // ອັບເດດໃນຟອມເພື່ອສະແດງຜົນ
+            }
+            if (photoType === 'photo2') {
+              finalPhoto2 = fileUrl;
+              visit.photo_url_2 = fileUrl; // ອັບເດດໃນຟອມເພື່ອສະແດງຜົນ
+            }
+          }
+        });
+      }
+
+      // ປະກອບຂໍ້ມູນທີ່ພ້ອມບັນທຶກລົງ Database
+      processedVisits.push({
+        visit_type: visit.visit_type,
+        visit_date: visit.visit_date,
+        living_condition: visit.living_condition,
+        is_address_correct: visit.is_address_correct ? 1 : 0, // ບາງ Database ຕ້ອງການ 1/0
+        remarks: visit.remarks,
+        latitude: visit.latitude ? String(visit.latitude) : null,
+        longitude: visit.longitude ? String(visit.longitude) : null,
+        photo_url_1: finalPhoto1, // ✅ ຕອນນີ້ຈະມີ URL ແລ້ວ!
+        photo_url_2: finalPhoto2
+      });
+    }
+
+    // 2. ສົ່ງ Array ທີ່ປະກອບແລ້ວໄປບັນທຶກ
+    await checklistApi.saveFieldVisits(loanId, { visits: processedVisits });
+
+    alert.success('ບັນທຶກຂໍ້ມູນສຳເລັດ', 'ການລົງພື້ນທີ່ຈິງຖືກບັນທຶກແລ້ວ.');
+    await fetchChecklistData(loanId); // ໂຫຼດຂໍ້ມູນໃໝ່ເພື່ອອັບເດດໜ້າຈໍ
+
+  } catch (err: any) {
+    console.error("Failed to save Field Visit:", err);
+    alert.error('ບັນທຶກຂໍ້ມູນບໍ່ສຳເລັດ', err.message || 'ກະລຸນາກວດສອບການເຊື່ອມຕໍ່ແລ້ວລອງໃໝ່.');
+  } finally {
+    isSavingChecklist.value = false;
+  }
+}
+
+const saveIncomeAssessment = async (loanId: number) => {
+  isSavingChecklist.value = true;
+  try {
+    await checklistApi.saveIncomeAssessment(loanId, formIncome);
+    alert.success('ບັນທຶກຂໍ້ມູນປະເມີນລາຍຮັບສຳເລັດ');
+  } catch (err) {
+    console.error("Failed to save Income Assessment:", err);
+    alert.error('ບັນທຶກຂໍ້ມູນປະເມີນລາຍຮັບບໍ່ສຳເລັດ');
+  } finally {
+    isSavingChecklist.value = false;
+  }
+}
+
+// 🟢 ຟັງຊັນຫຼັກສຳລັບປຸ່ມບັນທຶກໃນ Modal
+const saveChecklist = async () => {
+  if (!selectedChecklistLoan.value) return;
+  const loanId = selectedChecklistLoan.value.id;
+
+  if (checklistTab.value === 'basic') {
+    await saveBasicInfo(loanId);
+  } else if (checklistTab.value === 'call') {
+    await saveCallRecords(loanId);
+  } else if (checklistTab.value === 'cib') {
+    await saveCIBInfo(loanId);
+  } else if (checklistTab.value === 'field') {
+    await saveFieldVisits(loanId);
+  } else if (checklistTab.value === 'income') {
+    await saveIncomeAssessment(loanId);
+  }
+
+  await checklistStore.fetchSummary(loanId);
 };
 
 const closeChecklistModal = () => {
   showChecklistModal.value = false;
   selectedChecklistLoan.value = null;
-  checklistStore.clearData(); // ล้างข้อมูลทิ้งเพื่อคืน Memory
+  checklistStore.clearData();
 };
 
 const getCustomerName = (loan: LoanApplication): string => {
-  if (!loan.customer) return loan.customer_name || '-'
+  if (!loan.customer) return '-'
   return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim()
 }
+
 const getCustomerPhone = (loan: LoanApplication): string => {
-  return loan.customer?.phone || loan.phone || '-'
+  return loan.customer?.phone || '-'
 }
 
-const viewLoanDetails = (loan: LoanApplication) => {
-  selectedLoan.value = loan
-  showDetailsModal.value = true
+const viewLoanDetails = async (loan: LoanApplication) => {
+  let fullDetails: LoanApplication | null = null;
+  try {
+    if (loan.id) {
+      fullDetails = await loanApplicationStore.fetchLoanApplicationById(loan.id);
+      selectedLoan.value = fullDetails;
+      showDetailsModal.value = true;
+    } else {
+      selectedLoan.value = loan;
+      showDetailsModal.value = true;
+    }
+  } catch (error: any) {
+    console.error("Error in viewLoanDetails:", error);
+    alert.error("ກະລຸນາກວດສອບຂໍ້ມູນ", "ເນື່ອງຈາກ: " + (error.response?.data?.message || error.message));
+  }
 }
 
 const closeDetailsModal = () => {
@@ -1500,63 +1532,47 @@ const closeDetailsModal = () => {
 }
 
 const openCreditScoreModal = async (loan: LoanApplication) => {
-  // 🟢 1. ດຶງຂໍ້ມູນ Checklist ທັງໝົດເພື່ອກວດສອບກ່ອນອະນຸຍາດໃຫ້ຄຳນວນ
   try {
-    isCalculating.value = true; // ໃຊ້ເປັນສະຖານະ Loading ຕອນດຶງຂໍ້ມູນ
+    isCalculating.value = true;
     const res = await apiClient.get(`/checklist/summary/${loan.id}`);
     const summaryData = res.data?.data;
 
-    let errorMsg = [];
+    const errorMsg = [];
 
     if (!summaryData) {
-      alert('ກະລຸນາກວດສອບຂໍ້ມູນ Checklist ທັງໝົດໃຫ້ຄົບຖ້ວນກ່ອນຄຳນວນຄະແນນ');
+      alert.error('ກະລຸນາກວດສອບຂໍ້ມູນ Checklist ທັງໝົດໃຫ້ຄົບຖ້ວນກ່ອນຄຳນວນຄະແນນ');
       isCalculating.value = false;
       return;
     }
 
-    // ກວດສອບ Basic Verification ຕ້ອງເປັນ Completed
     if (!summaryData.basic_verification) {
       errorMsg.push("- ຍັງບໍ່ໄດ້ບັນທຶກ 'ຂໍ້ມູນທົ່ວໄປ'");
     } else if (summaryData.basic_verification.status !== 'completed') {
       errorMsg.push("- ຂໍ້ມູນທົ່ວໄປຍັງເປັນ 'ບັນທຶກຮ່າງ (Draft)' ກະລຸນາປ່ຽນເປັນ 'ກວດສອບສຳເລັດ'");
     }
-
-    // ກວດສອບ Call
     if (!summaryData.call_verifications || summaryData.call_verifications.length === 0) {
       errorMsg.push("- ຍັງບໍ່ມີປະຫວັດ 'ການໂທຢືນຢັນ'");
     }
-
-    // ກວດສອບ CIB
     if (!summaryData.cib_check) {
       errorMsg.push("- ຍັງບໍ່ໄດ້ບັນທຶກຜົນ 'ກວດ CIB'");
     }
-
-    // ກວດສອບ Field Visits
     if (!summaryData.field_visits || summaryData.field_visits.length === 0) {
       errorMsg.push("- ຍັງບໍ່ມີປະຫວັດ 'ລົງພື້ນທີ່ຈິງ'");
     }
-
-    // ກວດສອບ Income Assessment
     if (!summaryData.income_assessment) {
       errorMsg.push("- ຍັງບໍ່ໄດ້ 'ປະເມີນລາຍຮັບ (DSR)'");
     }
 
-    // 🔴 ຖ້າມີ Error (ຂາດ Checklist ໃດໜຶ່ງ) ໃຫ້ແຈ້ງເຕືອນແລ້ວຢຸດທັນທີ
     if (errorMsg.length > 0) {
-      alert("ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້ ເນື່ອງຈາກ:\n" + errorMsg.join('\n'));
+      alert.error("ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້", "ເນື່ອງຈາກ:\n" + errorMsg.join('\n'));
       isCalculating.value = false;
       return;
     }
 
-    // 🟢 2. ຖ້າຜ່ານເງື່ອນໄຂທັງໝົດ, ໃຫ້ເປີດ Modal ແລະ ເອົາຂໍ້ມູນມາ Pre-fill
     loanForCreditScore.value = loan
-
-    // ໃຊ້ຂໍ້ມູນຈາກ Income Assessment ຖ້າມີ ເພາະເປັນຂໍ້ມູນທີ່ຢືນຢັນແລ້ວ
     const verifiedIncome = summaryData.income_assessment;
-
     creditScoreForm.monthly_income = verifiedIncome.average_monthly_income || loan.customer?.income_per_month || 0;
     creditScoreForm.other_debts = verifiedIncome.existing_debt_payments || loan.customer?.other_debts || 0;
-
     creditScoreForm.age = loan.customer?.age || 0
     creditScoreForm.employment_status = loan.customer?.occupation || ''
 
@@ -1570,7 +1586,7 @@ const openCreditScoreModal = async (loan: LoanApplication) => {
 
   } catch (error) {
     console.error("Error checking checklist validation", error);
-    alert('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບ Checklist');
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບ Checklist');
   } finally {
     isCalculating.value = false;
   }
@@ -1623,7 +1639,7 @@ const calculateCreditScore = async () => {
     }
   } catch (error) {
     console.error('Error calculating credit score:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການຄຳນວນຄະແນນສິນເຊື່ອ')
+    alert.error('ເກີດຂໍ້ຜິດພາດການຄຳນວນຄະແນນສິນເຊື່ອ')
   } finally {
     isCalculating.value = false
   }
@@ -1651,13 +1667,19 @@ const approveLoan = (loan: LoanApplication) => {
 }
 
 const confirmApproveLoan = async () => {
-  if (loanToAction.value) {
-    await loanApplicationStore.changeStatus(loanToAction.value.id, { status: 'approved' })
-    alert('ອະນຸມັດສິນເຊື່ອສຳເລັດ!')
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
+  if (!loanToAction.value) return
+  try {
+    const updateData: UpdateLoanApplicationDto = { status: 'approved' }
+    await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData)
+    alert.success('ອະນຸມັດສິນເຊື່ອສຳເລັດແລ້ວ!')
+    showApproveModal.value = false
+    loanApplicationStore.fetchLoanApplications({ status: 'pending' })
+  } catch (error) {
+    console.error("Error approving loan:", error)
+    alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!')
+  } finally {
+    loanToAction.value = null
   }
-  showApproveModal.value = false
-  loanToAction.value = null
 }
 
 const rejectLoan = (loan: LoanApplication) => {
@@ -1666,13 +1688,19 @@ const rejectLoan = (loan: LoanApplication) => {
 }
 
 const confirmRejectLoan = async () => {
-  if (loanToAction.value) {
-    await loanApplicationStore.changeStatus(loanToAction.value.id, { status: 'rejected' })
-    alert('ປະຕິເສດສິນເຊື່ອສຳເລັດ!')
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
+  if (!loanToAction.value) return
+  try {
+    const updateData: UpdateLoanApplicationDto = { status: 'rejected' }
+    await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData)
+    alert.success('ປະຕິເສດສິນເຊື່ອສຳເລັດແລ້ວ!')
+    showRejectModal.value = false
+    loanApplicationStore.fetchLoanApplications({ status: 'pending' })
+  } catch (error) {
+    console.error("Error rejecting loan:", error)
+    alert.error('ການປະຕິເສດສິນເຊື່ອຜິດພາດ!')
+  } finally {
+    loanToAction.value = null
   }
-  showRejectModal.value = false
-  loanToAction.value = null
 }
 
 const exportToCSV = () => {

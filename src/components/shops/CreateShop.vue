@@ -23,20 +23,13 @@
         </label>
         <div class="flex flex-col sm:flex-row gap-6">
           <!-- Upload Area -->
-           <label
-        for="shop-logo-input"
-        class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 w-full sm:w-64 h-48 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+          <label for="shop-logo-input"
+            class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 w-full sm:w-64 h-48 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
 
-        <!-- ✅ เพิ่ม id ให้ input -->
-        <input
-          id="shop-logo-input"
-          ref="fileInput"
-          type="file"
-          accept="image/*"
-          class="hidden"
-          @change="handleFileUpload"
-        />
-          <!-- <label
+            <!-- ✅ เพิ่ม id ให้ input -->
+            <input id="shop-logo-input" ref="fileInput" type="file" accept="image/*" class="hidden"
+              @change="handleFileUpload" />
+            <!-- <label
             class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 w-full sm:w-64 h-48 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
             @click="triggerFileInput">
             <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileUpload" /> -->
@@ -271,6 +264,7 @@ import { useShopStore } from '@/stores/shop'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/apiClient'
 import { getFullImageUrl } from '@/utils/url'
+import { alert } from '@/utils/alert'
 
 interface Shop {
   id: number
@@ -550,12 +544,12 @@ const handleFileUpload = (event: Event) => {
   if (!file) return
 
   if (file.size > 2 * 1024 * 1024) {
-    alert('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 2MB')
+    alert.error('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 2MB')
     return
   }
 
   if (!file.type.startsWith('image/')) {
-    alert('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບເທົ່ານັ້ນ')
+    alert.error('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບເທົ່ານັ້ນ')
     return
   }
 
@@ -569,14 +563,14 @@ const handleFileUpload = (event: Event) => {
   }
   reader.onerror = () => {
     console.error('❌ Failed to read file')
-    alert('ບໍ່ສາມາດອ່ານໄຟລ໌ໄດ້')
+    alert.error('ບໍ່ສາມາດອ່ານໄຟລ໌ໄດ້')
   }
   reader.readAsDataURL(file)
 }
 
-const removeLogo = () => {
+const removeLogo = async () => {
   if (isEditMode.value && form.shop_logo_url) {
-    if (!confirm('ທ່ານຕ້ອງການລຶບໂລໂກ້ຮ້ານອອກຈາກລະບົບ?')) {
+    if (!await alert.confirm('ທ່ານຕ້ອງການລຶບໂລໂກ້ຮ້ານອອກຈາກລະບົບ?')) {
       return
     }
 
@@ -663,7 +657,7 @@ const handleSubmit = async () => {
     // ✅ ตรวจสอบว่า store มี currentShop แล้ว
     console.log('After save - currentShop:', shopStore.currentShop)
 
-    alert(isEditMode.value ? 'ແກ້ໄຂຂໍ້ມູນສຳເລັດ!' : 'ສ້າງຮ້ານສຳເລັດ!')
+    alert.success(isEditMode.value ? 'ແກ້ໄຂຂໍ້ມູນສຳເລັດ!' : 'ສ້າງຮ້ານສຳເລັດ!')
     emit('save')
 
   } catch (error: any) {
@@ -680,7 +674,7 @@ const handleSubmit = async () => {
       // if (apiErrors.district) errors.district = apiErrors.district[0]
       if (apiErrors.business_type) errors.business_type = apiErrors.business_type[0]
     } else {
-      alert('ເກີດຂໍ້ຜິດພາດການບັນທຶກຂໍ້ມູນ. ກະລຸນາລອງໃໝ່.')
+      alert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກຂໍ້ມູນ. ກະລຸນາລອງໃໝ່.')
     }
   } finally {
     loading.value = false

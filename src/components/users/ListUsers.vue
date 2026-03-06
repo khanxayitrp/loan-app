@@ -174,6 +174,7 @@ import Papa from 'papaparse'
 import type { User } from '@/types/auth'
 import CreateUser from './CreateUser.vue'
 import { useAuthStore } from '@/stores/auth'
+import { alert } from '@/utils/alert'
 
 // ✅ ใช้ auth store
 const authStore = useAuthStore()
@@ -204,7 +205,7 @@ const fetchUsers = async () => {
     await authStore.fetchAllUsers()
   } catch (error) {
     console.error('Error fetching users:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນຜູ້ໃຊ້')
+    alert.error('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນຜູ້ໃຊ້')
   } finally {
     isLoading.value = false
   }
@@ -213,8 +214,8 @@ const fetchUsers = async () => {
 // ✅ เรียกครั้งแรกเมื่อ component mount
 onMounted(() => {
   fetchUsers()
- console.log('ListUsers component mounted, fetching users...', users.value)
- console.log('Current user from store:', useAuthStore.allUsers) // debug เพื่อดูข้อมูล users ที่ได้จาก store
+  console.log('ListUsers component mounted, fetching users...', users.value)
+  console.log('Current user from store:', useAuthStore.allUsers) // debug เพื่อดูข้อมูล users ที่ได้จาก store
 
 })
 
@@ -234,7 +235,7 @@ const confirmToggleStatus = async () => {
 
     // ✅ เรียก API update user status
     await authStore.updateUserStatus(userToToggle.value.id, newStatus)
-
+    alert.success('ປ່ຽນສະຖານະສຳເລັດ!')
     // ✅ Refresh data
     await fetchUsers()
 
@@ -242,7 +243,7 @@ const confirmToggleStatus = async () => {
     userToToggle.value = null
   } catch (error) {
     console.error('Error toggling user status:', error)
-    alert('ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ')
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ')
   }
 }
 
@@ -306,15 +307,16 @@ const handleSaveUser = async (userData: any) => {
 
     // ✅ Refresh data
     await fetchUsers()
-
+    alert.success('ບັນທຶກຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ!')
     // ปิดฟอร์ม
     isCreatingUser.value = false
     editingUser.value = null
 
     console.log('[ListUsers] User saved successfully')
+    alert.success('ບັນທຶກຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ!')
   } catch (error: any) {
     console.error('[ListUsers] Error saving user:', error)
-    alert(error.message || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ')
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ', error.message || '')
   } finally {
     isLoading.value = false
   }
@@ -481,20 +483,21 @@ const formatDate = (dateString: string | undefined) => {
 }
 
 const deleteUser = async (userId: number) => {
-  if (confirm('ຕ້ອງການລຶບຜູ້ໃຊ້ນີ້ບໍ?')) {
-    try {
-      // TODO: เรียก API delete user
-      // await authStore.deleteUser(userId)
+if (await alert.confirm('ຕ້ອງການລຶບຜູ້ໃຊ້ນີ້ບໍ?')) {
+  try {
+    // TODO: เรียก API delete user
+    // await authStore.deleteUser(userId)
+    alert.success('ລຶບຜູ້ໃຊ້ສຳເລັດແລ້ວ!')
+    // ✅ Refresh data
+    await fetchUsers()
 
-      // ✅ Refresh data
-      await fetchUsers()
-
-      selectedRows.value = selectedRows.value.filter(id => id !== userId)
-    } catch (error) {
-      console.error('Error deleting user:', error)
-      alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຜູ້ໃຊ້')
-    }
+    selectedRows.value = selectedRows.value.filter(id => id !== userId)
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    alert.errorle.error('Error deleting user:', error)
+    alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຜູ້ໃຊ້')
   }
+}
 }
 
 // Export CSV

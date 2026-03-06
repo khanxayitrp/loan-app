@@ -39,10 +39,10 @@
               class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
               @click="selectUser(user)">
               <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                {{ user.full_name.charAt(0).toUpperCase() }}
+                {{ (user.full_name || user.username).charAt(0).toUpperCase() }}
               </div>
               <div class="flex-1">
-                <div class="font-medium text-gray-800 dark:text-white">{{ user.full_name }}</div>
+                <div class="font-medium text-gray-800 dark:text-white">{{ user.full_name || user.username }}</div>
                 <div class="text-sm text-gray-500 dark:text-gray-400">@{{ user.username }}</div>
               </div>
               <span v-if="selectedUser?.id === user.id" class="icon-[tabler--check] text-primary size-4"></span>
@@ -62,33 +62,15 @@
         <!-- Selected User Display -->
         <div v-if="selectedUser" class="mt-2 flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-            {{ selectedUser.full_name.charAt(0).toUpperCase() }}
+            {{ (selectedUser.full_name || selectedUser.username).charAt(0).toUpperCase() }}
           </div>
           <div class="flex-1">
-            <div class="font-medium text-gray-800 dark:text-white">{{ selectedUser.full_name }}</div>
+            <div class="font-medium text-gray-800 dark:text-white">{{ selectedUser.full_name || selectedUser.username }}
+            </div>
             <div class="text-sm text-gray-500 dark:text-gray-400">@{{ selectedUser.username }}</div>
           </div>
           <button type="button" class="text-gray-400 hover:text-gray-600" @click="clearSelection">
             <span class="icon-[tabler--x] size-4"></span>
-          </button>
-        </div>
-      </div>
-
-
-      <!-- Current Password -->
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-medium">ລະຫັດຜ່ານປັດຈຸບັນ</span>
-        </label>
-        <div class="relative">
-          <input v-model="form.currentPassword" :type="showCurrentPassword ? 'text' : 'password'"
-            placeholder="ປ້ອນລະຫັດຜ່ານປັດຈຸບັນ" class="input input-bordered w-full pl-10 pr-12" required/>
-          <span class="icon-[tabler--lock] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
-          <button
-            type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            @click="showCurrentPassword = !showCurrentPassword">
-          <span v-if="showCurrentPassword" class="icon-[tabler--eye-off] size-5"></span>
-          <span v-else class="icon-[tabler--eye] size-5"></span>
           </button>
         </div>
       </div>
@@ -175,19 +157,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onUnmounted } from 'vue'
+import { ref, reactive, watch, onUnmounted, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
-// Types
-interface User {
-  id: number
-  full_name: string
-  username: string
-  role: string
-}
+import { useAuthStore } from '@/stores/auth'
+import type { User } from '@/types/auth' // Use real type
+import { alert } from '@/utils/alert'
 
 // Reactive state
 const router = useRouter()
+const authStore = useAuthStore()
 const loading = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
@@ -196,7 +174,6 @@ const showDropdown = ref(false)
 const selectedUser = ref<User | null>(null)
 
 const form = reactive({
-  currentPassword: '',
   newPassword: '',
   confirmPassword: ''
 })
@@ -206,17 +183,15 @@ const errors = reactive({
   confirmPassword: ''
 })
 
-// Mock users data (replace with API call)
-const mockUsers: User[] = [
-  { id: 1, full_name: 'ສົມຊາຍ ພົນສຸກ', username: 'somchai', role: 'admin' },
-  { id: 2, full_name: 'ສົມສິງ ດຳດີ', username: 'somsing', role: 'staff' },
-  { id: 3, full_name: 'ອຸດົມ ສີສົມບັດ', username: 'udom', role: 'partner' },
-  { id: 4, full_name: 'ຈັນດາ ວົງສີ', username: 'chanda', role: 'customer' },
-  { id: 5, full_name: 'ບຸນເຊີຍ ສຸກສົມ', username: 'bunsouy', role: 'staff' }
-]
-
 // Search results
 const searchResults = ref<User[]>([])
+
+// Load users on mount
+onMounted(async () => {
+  if (authStore.allUsers.length === 0) {
+    await authStore.fetchAllUsers()
+  }
+})
 
 // Debounce search
 let debounceTimer: NodeJS.Timeout | null = null
@@ -229,31 +204,16 @@ const debounceSearch = () => {
   }, 300)
 }
 
-// Perform search (replace with API call)
+// Perform search
 const performSearch = () => {
   if (!searchQuery.value.trim()) {
     searchResults.value = []
     return
   }
 
-  //   const performSearch = async () => {
-  //   if (!searchQuery.value.trim()) {
-  //     searchResults.value = []
-  //     return
-  //   }
-
-  //   try {
-  //     const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery.value)}`)
-  //     searchResults.value = await response.json()
-  //   } catch (error) {
-  //     console.error('Search failed:', error)
-  //     searchResults.value = []
-  //   }
-  // }
-
   const query = searchQuery.value.toLowerCase()
-  searchResults.value = mockUsers.filter(user =>
-    user.full_name.toLowerCase().includes(query) ||
+  searchResults.value = authStore.allUsers.filter(user =>
+    (user.full_name?.toLowerCase().includes(query) || false) ||
     user.username.toLowerCase().includes(query)
   )
 }
@@ -264,14 +224,15 @@ const handleFocus = () => {
   if (searchQuery.value) {
     performSearch()
   } else {
-    searchResults.value = mockUsers
+    // Show all users (limit to 20 for performance if list is long)
+    searchResults.value = authStore.allUsers.slice(0, 20)
   }
 }
 
 // Select user
 const selectUser = (user: User) => {
   selectedUser.value = user
-  searchQuery.value = user.full_name
+  searchQuery.value = user.full_name || user.username
   showDropdown.value = false
 }
 
@@ -296,7 +257,6 @@ const validateForm = (): boolean => {
   errors.confirmPassword = ''
 
   if (!selectedUser.value) {
-    // Can't happen due to button disabled, but just in case
     return false
   }
 
@@ -327,54 +287,26 @@ const validateForm = (): boolean => {
 
 // Submit handler
 const handleSubmit = async () => {
-  if (!validateForm()) {
+  if (!validateForm() || !selectedUser.value) {
     return
   }
 
   loading.value = true
   try {
-    // Replace with actual API call
-    console.log('Changing password for user:', selectedUser.value?.id, {
-      newPassword: '***'
+    // Call store action to update user password
+    await authStore.updateUser(selectedUser.value.id, {
+      password: form.newPassword
     })
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    alert('ປ່ຽນລະຫັດຜ່ານສຳເລັດ!')
+    alert.success('ສຳເລັດ', `ປ່ຽນລະຫັດຜ່ານຂອງຜູ້ໃຊ້ "${selectedUser.value.full_name || selectedUser.value.username}" ສຳເລັດ!`)
     router.back()
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error changing password:', error)
-    alert('ເກີດຂໍ້ຜິດພາດການປ່ຽນລະຫັດຜ່ານ. ກະລຸນາລອງໃໝ່.')
+    alert.error('ເກີດຂໍ້ຜິດພາດ', error.response?.data?.message || error.message || 'ບໍ່ສາມາດປ່ຽນລະຫັດຜ່ານໄດ້')
   } finally {
     loading.value = false
   }
-
-
-  // loading.value = true
-  // try {
-  //   const response = await fetch('/api/auth/change-password', {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({
-  //       userId: selectedUser.value.id,
-  //       newPassword: form.newPassword
-  //     })
-  //   })
-
-  //   if (response.ok) {
-  //     alert('ປ່ຽນລະຫັດຜ່ານສຳເລັດ!')
-  //     router.back()
-  //   } else {
-  //     throw new Error('Failed to change password')
-  //   }
-  // } catch (error) {
-  //   // error handling
-  // } finally {
-  //   loading.value = false
-  // }
-
 }
 
 // Watch for clicks outside

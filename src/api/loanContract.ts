@@ -15,6 +15,21 @@ export const getLoanContract = async (loanId: number): Promise<LoanContract> => 
   }
 }
 
+/**
+ * Fetch a list of loan contracts based on filters.
+ */
+export const getLoanContracts = async (filters: { status?: string } = {}): Promise<LoanContract[]> => {
+  try {
+    const response = await apiClient.get('/loan-contract', { params: filters });
+    if (response.data && response.data.success) {
+      return response.data.data;
+    }
+    return [];
+  } catch (error: any) {
+    console.error('❌ Error fetching loan contracts:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch loan contracts');
+  }
+}
 
 export const saveLoanContract = async (loanId: number, data: CreateLoanContractRequest): Promise<LoanContract> => {
   try {

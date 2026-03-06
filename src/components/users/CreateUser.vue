@@ -22,14 +22,8 @@
             <span class="label-text font-medium">ຊື່ ແລະ ນາມສະກຸນ</span>
           </label>
           <div class="relative">
-            <input
-              v-model="form.full_name"
-              type="text"
-              placeholder="ປ້ອນຊື່ ແລະ ນາມສະກຸນ"
-              class="input input-bordered w-full pl-10"
-              :class="{ 'input-error': errors.full_name }"
-              required
-            />
+            <input v-model="form.full_name" type="text" placeholder="ປ້ອນຊື່ ແລະ ນາມສະກຸນ"
+              class="input input-bordered w-full pl-10" :class="{ 'input-error': errors.full_name }" required />
             <span class="icon-[tabler--user] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
           </div>
           <label v-if="errors.full_name" class="label text-error">
@@ -43,14 +37,8 @@
             <span class="label-text font-medium">ຊື່ຜູ້ໃຊ້ (Username)</span>
           </label>
           <div class="relative">
-            <input
-              v-model="form.username"
-              type="text"
-              placeholder="ປ້ອນຊື່ຜູ້ໃຊ້"
-              class="input input-bordered w-full pl-10"
-              :class="{ 'input-error': errors.username }"
-              required
-            />
+            <input v-model="form.username" type="text" placeholder="ປ້ອນຊື່ຜູ້ໃຊ້"
+              class="input input-bordered w-full pl-10" :class="{ 'input-error': errors.username }" required />
             <span class="icon-[tabler--at] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
           </div>
           <label v-if="errors.username" class="label text-error">
@@ -64,20 +52,12 @@
             <span class="label-text font-medium">ລະຫັດຜ່ານ</span>
           </label>
           <div class="relative">
-            <input
-              v-model="form.password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="••••••••"
-              class="input input-bordered w-full pl-10"
-              :class="{ 'input-error': errors.password }"
-              :required="!isEditMode"
-            />
+            <input v-model="form.password" :type="showPassword ? 'text' : 'password'" placeholder="••••••••"
+              class="input input-bordered w-full pl-10" :class="{ 'input-error': errors.password }"
+              :required="!isEditMode" />
             <span class="icon-[tabler--lock] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
-            <button
-              type="button"
-              @click="showPassword = !showPassword"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
+            <button type="button" @click="showPassword = !showPassword"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
               <span :class="showPassword ? 'icon-[tabler--eye-off]' : 'icon-[tabler--eye]'"></span>
             </button>
           </div>
@@ -86,26 +66,22 @@
           </label>
         </div>
 
-         <!-- Role -->
+        <!-- Role -->
         <div class="form-control">
           <label class="label">
             <span class="label-text font-medium">ບົດບາດ (Role)</span>
           </label>
           <div class="relative">
-            <select
-              v-model="form.role"
-              class="select select-bordered w-full pl-10"
-              :class="{ 'select-error': errors.role }"
-              required
-              @change="handleRoleChange"
-            >
+            <select v-model="form.role" class="select select-bordered w-full pl-10"
+              :class="{ 'select-error': errors.role }" required @change="handleRoleChange">
               <option value="" disabled selected>ເລືອກບົດບາດ</option>
               <option value="admin">Admin</option>
               <option value="staff">Staff</option>
               <option value="partner">Partner</option>
               <option value="customer">Customer</option>
             </select>
-            <span class="icon-[tabler--shield-check] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
+            <span
+              class="icon-[tabler--shield-check] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
           </div>
           <label v-if="errors.role" class="label text-error">
             <span class="label-text-alt">{{ errors.role }}</span>
@@ -118,12 +94,8 @@
             <span class="label-text font-medium">ລະດັບພະນັກງານ</span>
           </label>
           <div class="relative">
-            <select
-              v-model="form.staff_level"
-              class="select select-bordered w-full pl-10"
-              :class="{ 'select-error': errors.staff_level }"
-              required
-            >
+            <select v-model="form.staff_level" class="select select-bordered w-full pl-10"
+              :class="{ 'select-error': errors.staff_level }" required>
               <option value="none">ທົ່ວໄປ</option>
               <option value="requester">ຜູ້ຮ້ອງຂໍ (Requester)</option>
               <option value="approver">ຜູ້ອະນຸມັດ (Approver)</option>
@@ -165,6 +137,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, computed } from 'vue'
 import type { User } from '@/types/auth'
+import { alert } from '@/utils/alert'
 
 const props = defineProps<{
   initialUser?: User | null
@@ -310,7 +283,7 @@ const handleSubmit = async () => {
       if (apiErrors.role) errors.role = apiErrors.role[0]
       if (apiErrors.staff_level) errors.staff_level = apiErrors.staff_level[0]
     } else {
-      alert(error.message || 'ເກີດຂໍ້ຜິດພາດການບັນທຶກຂໍ້ມູນຜູ້ໃຊ້')
+      alert.error('ເກີດຂໍ້ຜິດພາດ', error.message || 'ເກີດຂໍ້ຜິດພາດການບັນທຶກຂໍ້ມູນຜູ້ໃຊ້')
     }
   } finally {
     loading.value = false

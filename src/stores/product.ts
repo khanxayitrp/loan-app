@@ -6,6 +6,7 @@ import {
   createProduct,
   updateProduct,
   toggleProductStatus,
+  toggleMultipleProductStatus,
   getProductTypes,
   uploadProductImage,
   uploadProductGallery,
@@ -38,7 +39,7 @@ export const useProductStore = defineStore('product', {
       const end = start + state.pageSize
       return state.products.slice(start, end)
     },
-     // ✅ เพิ่ม: แปลงรูปภาพเป็นลิงก์เต็มสำหรับสินค้าที่แสดง
+    // ✅ เพิ่ม: แปลงรูปภาพเป็นลิงก์เต็มสำหรับสินค้าที่แสดง
     displayedProductsWithFullUrls: (state) => {
       const start = (state.currentPage - 1) * state.pageSize
       const end = start + state.pageSize
@@ -53,11 +54,11 @@ export const useProductStore = defineStore('product', {
       }))
     },
     productTypeMap: (state) => {
-    return state.productTypes.reduce((map, type) => {
-      map[type.id] = type.type_name;
-      return map;
-    }, {} as Record<number, string>);
-  },
+      return state.productTypes.reduce((map, type) => {
+        map[type.id] = type.type_name;
+        return map;
+      }, {} as Record<number, string>);
+    },
 
     // ✅ เพิ่ม: แปลงรูปภาพเป็นลิงก์เต็มสำหรับสินค้าทั้งหมด
     productsWithFullUrls: (state) => {
@@ -212,7 +213,7 @@ export const useProductStore = defineStore('product', {
         if (index !== -1) {
           // this.products[index] = updatedProduct
           // ใช้ spread operator เพื่ออัปเดตข้อมูลทั้งหมด
-      this.products[index] = { ...this.products[index], ...updatedProduct }
+          this.products[index] = { ...this.products[index], ...updatedProduct }
         }
         return updatedProduct
       } catch (error) {
@@ -231,12 +232,27 @@ export const useProductStore = defineStore('product', {
         if (index !== -1) {
           // this.products[index] = updatedProduct
           // ใช้ spread operator เพื่ออัปเดตข้อมูลทั้งหมด
-      this.products[index] = { ...this.products[index], ...updatedProduct.product }
+          this.products[index] = { ...this.products[index], ...updatedProduct.product }
         }
         return updatedProduct
       } catch (error) {
         console.error('Failed to toggle product status:', error)
         throw error
+      }
+    },
+
+    // ໃນສ່ວນ actions ຂອງ defineStore
+    async toggleMultipleStatus(productIds: number[], isActive: boolean) {
+      this.isLoading = true
+      this.error = null
+      try {
+        const result = await toggleMultipleProductStatus(productIds, isActive)
+        return result
+      } catch (error: any) {
+        this.error = error.message
+        throw error
+      } finally {
+        this.isLoading = false
       }
     },
 
@@ -247,11 +263,11 @@ export const useProductStore = defineStore('product', {
       try {
 
         console.log('📤 Uploading product image:', {
-        productId,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type
-      })
+          productId,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type
+        })
         const response = await uploadProductImage(productId, file)
         // อัปเดตรูปภาพใน store
         const index = this.products.findIndex(p => p.id === productId)
@@ -266,107 +282,107 @@ export const useProductStore = defineStore('product', {
     },
 
 
-/**
- * Upload multiple gallery images
- */
-async uploadProductGallery(productId: number, files: File[]) {
-  try {
-    console.log('📤 [Store] Uploading gallery images for product:', productId)
-    console.log('📤 [Store] Files count:', files.length)
-    console.log('📤 [Store] Files:', files.map(f => ({ name: f.name, size: f.size, type: f.type })))
+    /**
+     * Upload multiple gallery images
+     */
+    async uploadProductGallery(productId: number, files: File[]) {
+      try {
+        console.log('📤 [Store] Uploading gallery images for product:', productId)
+        console.log('📤 [Store] Files count:', files.length)
+        console.log('📤 [Store] Files:', files.map(f => ({ name: f.name, size: f.size, type: f.type })))
 
-     console.log('📤 Uploading gallery:', {
-        productId,
-        fileCount: files.length,
-        totalSize: files.reduce((sum, f) => sum + f.size, 0)
-      })
-    // Validate files
-    if (!files || files.length === 0) {
-      throw new Error('ບໍ່ມີໄຟລ໌ທີ່ຈະອັບໂຫຼດ')
-    }
+        console.log('📤 Uploading gallery:', {
+          productId,
+          fileCount: files.length,
+          totalSize: files.reduce((sum, f) => sum + f.size, 0)
+        })
+        // Validate files
+        if (!files || files.length === 0) {
+          throw new Error('ບໍ່ມີໄຟລ໌ທີ່ຈະອັບໂຫຼດ')
+        }
 
-    // Call upload service
-    const response = await uploadProductGallery(productId, files)
+        // Call upload service
+        const response = await uploadProductGallery(productId, files)
 
-    console.log('📥 [Store] Raw response:', response)
+        console.log('📥 [Store] Raw response:', response)
 
-    // ✅ Validate response structure
-    if (!response || typeof response !== 'object') {
-      throw new Error('Invalid response from server')
-    }
+        // ✅ Validate response structure
+        if (!response || typeof response !== 'object') {
+          throw new Error('Invalid response from server')
+        }
 
-    // ✅ Extract data based on actual backend response format
-    const success = response.success ?? false
-    const message = response.message || 'Upload completed'
+        // ✅ Extract data based on actual backend response format
+        const success = response.success ?? false
+        const message = response.message || 'Upload completed'
 
-    // Get uploaded and failed arrays
-    const uploadedArray = response.data?.uploaded || []
-    const failedArray = response.data?.failed || []
+        // Get uploaded and failed arrays
+        const uploadedArray = response.data?.uploaded || []
+        const failedArray = response.data?.failed || []
 
-    console.log('📥 [Store] Parsed response:', {
-      success,
-      message,
-      uploaded: uploadedArray.length,
-      failed: failedArray.length
-    })
+        console.log('📥 [Store] Parsed response:', {
+          success,
+          message,
+          uploaded: uploadedArray.length,
+          failed: failedArray.length
+        })
 
-    // ✅ Return in standardized format
-    return {
-      success: success,
-      message: message,
-      data: {
-        uploaded: uploadedArray,  // Array of { file_url, file_name }
-        failed: failedArray        // Array of error strings
+        // ✅ Return in standardized format
+        return {
+          success: success,
+          message: message,
+          data: {
+            uploaded: uploadedArray,  // Array of { file_url, file_name }
+            failed: failedArray        // Array of error strings
+          }
+        }
+
+      } catch (error: any) {
+        console.error('❌ [Store] Error uploading gallery images:', error)
+        console.error('❌ [Store] Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        })
+        throw error
       }
-    }
+    },
 
-  } catch (error: any) {
-    console.error('❌ [Store] Error uploading gallery images:', error)
-    console.error('❌ [Store] Error details:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    })
-    throw error
-  }
-},
+    /**
+     * Sync product gallery - replace all gallery images with new list
+     */
+    async addProductGallery(productId: number, images: Array<{ file_url: string }>) {
+      try {
+        console.log('🔄 [Store] Syncing gallery for product:', productId)
+        console.log('🔄 [Store] Images count:', images.length)
+        console.log('🔄 [Store] Images:', images)
 
-/**
- * Sync product gallery - replace all gallery images with new list
- */
-async addProductGallery(productId: number, images: Array<{ file_url: string }>) {
-  try {
-    console.log('🔄 [Store] Syncing gallery for product:', productId)
-    console.log('🔄 [Store] Images count:', images.length)
-    console.log('🔄 [Store] Images:', images)
+        // Validate images
+        if (!Array.isArray(images)) {
+          throw new Error('Images must be an array')
+        }
 
-    // Validate images
-    if (!Array.isArray(images)) {
-      throw new Error('Images must be an array')
-    }
+        // Call sync service
+        const response = await saveProductGallery(productId, images)
 
-    // Call sync service
-    const response = await saveProductGallery(productId, images)
+        console.log('✅ [Store] Sync response:', response)
 
-    console.log('✅ [Store] Sync response:', response)
+        // ✅ Validate response
+        if (!response || typeof response !== 'object') {
+          throw new Error('Invalid response from server')
+        }
 
-    // ✅ Validate response
-    if (!response || typeof response !== 'object') {
-      throw new Error('Invalid response from server')
-    }
+        // ✅ Return standardized format
+        return {
+          success: response.success ?? true,
+          message: response.message || 'Sync successful',
+          data: response.data || { synced_count: images.length }
+        }
 
-    // ✅ Return standardized format
-    return {
-      success: response.success ?? true,
-      message: response.message || 'Sync successful',
-      data: response.data || { synced_count: images.length }
-    }
-
-  } catch (error: any) {
-    console.error('❌ [Store] Error syncing gallery:', error)
-    throw error
-  }
-},
+      } catch (error: any) {
+        console.error('❌ [Store] Error syncing gallery:', error)
+        throw error
+      }
+    },
     /**
      * ໂຫລດຂໍ້ມູນ Gallery ມາໄວ້ໃນ Store
      */
@@ -387,18 +403,27 @@ async addProductGallery(productId: number, images: Array<{ file_url: string }>) 
       }
     },
 
-    /**
-     * เปลี่ยนหน้า
-     */
-    async changePage(page: number) {
-      await this.fetchProducts({ page, limit: this.pageSize })
-    },
+    // /**
+    //  * เปลี่ยนหน้า
+    //  */
+    // async changePage(page: number) {
+    //   await this.fetchProducts({ page, limit: this.pageSize })
+    // },
 
-    /**
-     * เปลี่ยนขนาดหน้า
-     */
-    async changePageSize(size: number) {
-      await this.fetchProducts({ page: 1, limit: size })
-    }
+    // /**
+    //  * เปลี่ยนขนาดหน้า
+    //  */
+    // async changePageSize(size: number) {
+    //   await this.fetchProducts({ page: 1, limit: size })
+    // }
+
+    // ✅ แบบใหม่ที่ถูกต้อง (แค่เปลี่ยนค่า State พอ ไม่ต้องยิง API)
+    changePage(page: number) {
+      this.currentPage = page;
+    },
+    changePageSize(size: number) {
+      this.pageSize = size;
+      this.currentPage = 1;
+    },
   }
 })
