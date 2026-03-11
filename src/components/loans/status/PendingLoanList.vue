@@ -68,7 +68,7 @@
                 </button>
               </div>
             </td>
-            <td>{{ formatDate(loan.created_at) }}</td>
+            <td>{{ formatDate(loan.createdAt) }}</td>
             <td>
               <div class="flex gap-2">
                 <button class="btn btn-circle btn-text btn-sm" @click="viewLoanDetails(loan)" aria-label="View details">
@@ -200,7 +200,7 @@
             </div>
             <div class="border-t pt-4">
               <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
-              <p>{{ formatDate(selectedLoan.created_at) }}</p>
+              <p>{{ formatDate(selectedLoan.createdAt) }}</p>
             </div>
           </div>
 
@@ -1188,7 +1188,7 @@ const filteredLoans = computed(() => {
 
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
-      const dateTarget = loan.created_at || '';
+      const dateTarget = loan.createdAt || '';
       if (!dateTarget) return false;
       const loanDate = new Date(dateTarget).toISOString().split('T')[0] || '';
       const fromDate = dateFrom.value || '1970-01-01'
@@ -2193,7 +2193,7 @@ const exportToCSV = () => {
     'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply,
     'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
     'ຄະແນນສິນເຊື່ອ': loan.credit_score || '-',
-    'ວັນທີ່ສ້າງ': formatDate(loan.created_at)
+    'ວັນທີ່ສ້າງ': formatDate(loan.createdAt)
   }))
 
   const csv = Papa.unparse(csvData)

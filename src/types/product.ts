@@ -27,6 +27,9 @@ export interface Product {
   term?: number
   partner_id?: number
   shop_id?: number
+  description?: string | null;
+  interest_type?: 'flat_rate' | 'effective_rate';
+  interest_rate_type?: 'monthly' | 'yearly';
 }
 
 export interface CreateProductDto {
@@ -37,6 +40,9 @@ export interface CreateProductDto {
   price: number
   interest_rate: number
   is_active: number
+  // 🟢 ເພີ່ມ 2 ບັນທັດນີ້ເຂົ້າໄປ
+  description?: string | null;
+  interest_rate_type?: 'monthly' | 'yearly';
 }
 
 export interface UpdateProductDto extends Partial<CreateProductDto> {

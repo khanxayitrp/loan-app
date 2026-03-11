@@ -14,8 +14,6 @@ import type {
 export const getProducts = async (params?: GetProductsParams) => {
   try {
     const response = await apiClient.get('/products', { params })
-    console.log('getProducts is ', response.data)
-    // ✅ ตรวจสอบโครงสร้าง response
     if (response.data.products) {
       return {
         products: response.data.products.data || [],
@@ -33,13 +31,14 @@ export const getProducts = async (params?: GetProductsParams) => {
 }
 
 /**
- * ดึงข้อมูลสินค้าเฉพาะ
+ * 🟢 ดึงข้อมูลสินค้าเฉพาะ (แก้ไขการดึงข้อมูลให้แม่นยำขึ้น)
  */
 export const getProductById = async (id: number) => {
   try {
     const response = await apiClient.get(`/products/${id}`)
     console.log('[API] Product by ID response:', response.data)
 
+    // คืนค่าเฉพาะ object ตัวสินค้า
     if (response.data?.product) {
       return response.data.product
     }
@@ -58,32 +57,18 @@ export const getProductById = async (id: number) => {
  */
 export const createProduct = async (data: CreateProductDto) => {
   try {
+    // 💡 data ตอนนี้จะมี description และ interest_rate_type ถูกส่งไปให้แล้ว
     const response = await apiClient.post('/products', data)
-    console.log('[API] Product created:', response.data)
-
-    // ✅ ตรวจสอบโครงสร้างและส่งคืนในรูปแบบมาตรฐาน { id: number, ... }
     let productData = null
 
-    // กรณี 1: มี .product wrapper
-    if (response.data?.product) {
-      productData = response.data.product
-    }
-    // กรณี 2: มี .data wrapper
-    else if (response.data?.data) {
-      productData = response.data.data
-    }
-    // กรณี 3: ส่งคืนตรงๆ
-    else {
-      productData = response.data
-    }
+    if (response.data?.product) productData = response.data.product
+    else if (response.data?.data) productData = response.data.data
+    else productData = response.data
 
-    // ✅ ตรวจสอบว่ามี id
     if (!productData?.id) {
-      console.warn('⚠️ Product ID not found in response. Full response:', response.data)
       throw new Error('ไม่พบ ID สินค้าในข้อมูลที่ได้รับจากเซิร์ฟเวอร์')
     }
 
-    console.log('✅ Created product:', productData)
     return productData
   } catch (error: any) {
     console.error('Error creating product:', error)
@@ -97,15 +82,8 @@ export const createProduct = async (data: CreateProductDto) => {
 export const updateProduct = async (id: number, data: UpdateProductDto) => {
   try {
     const response = await apiClient.put(`/products/${id}`, data)
-
-    console.log('[API] Product updated:', response.data)
-
-    if (response.data?.product) {
-      return response.data.product
-    }
-    if (response.data?.data) {
-      return response.data.data
-    }
+    if (response.data?.product) return response.data.product
+    if (response.data?.data) return response.data.data
     return response.data
   } catch (error: any) {
     console.error(`Error updating product ${id}:`, error)

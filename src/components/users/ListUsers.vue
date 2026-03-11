@@ -78,9 +78,9 @@
             <th>ລະດັບພະນັກງານ</th>
             <th>ສະຖານະ</th>
             <th>
-              <button @click="toggleSort('created_at')" class="flex items-center gap-1 hover:text-primary">
+              <button @click="toggleSort('createdAt')" class="flex items-center gap-1 hover:text-primary">
                 ວັນທີສ້າງ
-                <span v-if="sortColumn === 'created_at'" class="icon-[tabler--arrows-sort] size-4"
+                <span v-if="sortColumn === 'createdAt'" class="icon-[tabler--arrows-sort] size-4"
                   :class="sortDirection === 'asc' ? 'rotate-180' : ''"></span>
               </button>
             </th>
@@ -106,7 +106,7 @@
                 {{ user.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
-            <td>{{ formatDate(user.created_at) }}</td>
+            <td>{{ formatDate(user.createdAt) }}</td>
             <td>
               <div class="flex gap-1">
                 <button class="btn btn-circle btn-text btn-sm" @click="editUser(user)" aria-label="Edit">
@@ -355,7 +355,7 @@ const filteredUsers = computed(() => {
     user.username.toLowerCase().includes(search) ||
     user.role.toLowerCase().includes(search) ||
     (user.staff_level && user.staff_level.toLowerCase().includes(search)) ||
-    user.created_at?.toLowerCase().includes(search)
+    user.createdAt?.toLowerCase().includes(search)
   )
 })
 
@@ -513,7 +513,7 @@ const exportToCSV = () => {
     'ບົດບາດ': user.role,
     'ລະດັບພະນັກງານ': user.staff_level || 'N/A',
     'ສະຖານະ': user.is_active ? 'Active' : 'Inactive',
-    'ວັນທີສ້າງ': formatDate(user.created_at)
+    'ວັນທີສ້າງ': formatDate(user.createdAt)
   }))
 
   const csv = Papa.unparse(csvData)

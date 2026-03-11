@@ -85,7 +85,7 @@
 
             <td>{{ loan.approver?.username || '-' }}</td>
 
-            <td>{{ formatDate(loan.approved_at || loan.updated_at || loan.created_at || '') }}</td>
+            <td>{{ formatDate(loan.approved_at || loan.updatedAt || loan.createdAt || '') }}</td>
 
             <td>
               <div class="flex gap-2">
@@ -226,7 +226,7 @@
                   </div>
                   <div>
                     <label class="text-gray-500">ວັນທີ່ສ້າງ</label>
-                    <p>{{ formatDate((selectedLoan as any).delivery_note.created_at) }}</p>
+                    <p>{{ formatDate((selectedLoan as any).delivery_note.createdAt) }}</p>
                   </div>
                   <div>
                     <label class="text-gray-500">ສະຖານະ</label>
@@ -801,7 +801,7 @@ const exportToCSV = () => {
     'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
     'ສະຖານະການຈ່າຍ': getDisbursementStatusText((loan as any).disbursement_status),
     'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
-    'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || loan.updated_at || loan.created_at || '')
+    'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || loan.updatedAt || loan.createdAt || '')
   }))
 
   const csv = Papa.unparse(csvData)

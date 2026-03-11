@@ -111,6 +111,8 @@ export interface LoanApplication {
   remarks?: string
   created_at?: string
   updated_at?: string
+  createdAt?: string
+  updatedAt?: string
   fee?: number
   first_installment_amount?: number
   payment_day?: number
@@ -254,6 +256,9 @@ export interface CreateWithCustomerDto {
   loan_period: number
   interest_rate_at_apply?: number
   monthly_pay?: number
+  // 🟢 ເພີ່ມ 2 ບັນທັດນີ້ເຂົ້າໄປ
+  interest_type?: string;
+  interest_rate_type?: string;
   existing_customer_id?: number
 }
 

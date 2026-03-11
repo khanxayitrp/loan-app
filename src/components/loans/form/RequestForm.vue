@@ -1,14 +1,11 @@
 <template>
   <div class="request-form-container">
-    <!-- Loading State -->
     <div v-if="isLoadingForm" class="text-center py-12">
       <div class="loading loading-spinner loading-lg text-primary"></div>
       <p class="mt-2 text-gray-500">ກຳລັງໂຫຼດແບບຟອມ...</p>
     </div>
 
-    <!-- Form Content -->
     <div v-else class="loan-request-form">
-      <!-- ✅ Print Button - แสดงเสมอ (ไม่อยู่ใน no-print) -->
       <div class="print-button-container">
         <button @click="printForm" class="btn btn-primary btn-sm gap-2">
           <span class="icon-[tabler--printer] size-4"></span>
@@ -16,7 +13,6 @@
         </button>
       </div>
 
-      <!-- ✅ Edit Button - แสดงเมื่อไม่ใช่โหมดแก้ไข -->
       <div v-if="!isEditing" class="edit-button-container">
         <button @click="enableEdit" class="btn btn-warning btn-sm gap-2">
           <span class="icon-[tabler--pencil] size-4"></span>
@@ -24,7 +20,6 @@
         </button>
       </div>
 
-      <!-- Header -->
       <div class="form-header">
         <div class="emblem">
           <img src="/image/LOGO INSEE.png" alt="ສັນຍາລັກ" class="w-16 h-16" />
@@ -44,7 +39,6 @@
       </div>
 
       <form @submit.prevent="saveForm">
-        <!-- Section I: ຂໍ້ມູນລູກຄ້າ -->
         <section class="form-section">
           <h3 class="section-title">I. ຂໍ້ມູນລູກຄ້າ:</h3>
           <div class="form-grid">
@@ -122,7 +116,6 @@
           </div>
         </section>
 
-        <!-- Section II: ຂໍ້ມູນບ່ອນເຮັດວຽກ -->
         <section class="form-section">
           <h3 class="section-title">II. ຂໍ້ມູນບ່ອນເຮັດວຽກ:</h3>
           <div class="form-grid">
@@ -185,11 +178,13 @@
               <label>ເງິນເດືອນ: <span class="required">*</span></label>
               <input v-model.number="formData.work.salary" type="number" required :readonly="!isEditing"
                 :class="{ 'has-data': formData.work.salary, 'readonly-field': !isEditing }" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.work.salary">
+                {{ formatPrice(formData.work.salary) }} ກີບ
+              </div>
             </div>
           </div>
         </section>
 
-        <!-- Section III: ລາຍລະອຽດສິນຄ້າ -->
         <section class="form-section">
           <h3 class="section-title">III. ລາຍລະອຽດສິນຄ້າ:</h3>
           <div class="product-grid">
@@ -221,17 +216,26 @@
                 <input v-model.number="formData.product.price" type="number" required :readonly="!isEditing"
                   :class="{ 'has-data': formData.product.price, 'readonly-field': !isEditing }"
                   @input="calculateLoanDetails" />
+                <div class="text-xs text-gray-500 mt-1" v-if="formData.product.price">
+                  {{ formatPrice(formData.product.price) }} ກີບ
+                </div>
               </div>
               <div class="form-group">
                 <label>8. ວາງດາວ:</label>
                 <input v-model.number="formData.product.downPayment" type="number" :readonly="!isEditing"
                   :class="{ 'has-data': formData.product.downPayment, 'readonly-field': !isEditing }"
                   @input="calculateLoanDetails" />
+                <div class="text-xs text-gray-500 mt-1" v-if="formData.product.downPayment">
+                  {{ formatPrice(formData.product.downPayment) }} ກີບ
+                </div>
               </div>
               <div class="form-group">
                 <label>13. ວົງເງິນອະນຸມັດ:</label>
                 <input v-model.number="formData.product.approvedAmount" type="number" readonly
                   :class="{ 'has-data': formData.product.approvedAmount }" class="readonly-field calculated-field" />
+                <div class="text-xs text-gray-500 mt-1" v-if="formData.product.approvedAmount">
+                  {{ formatPrice(formData.product.approvedAmount) }} ກີບ
+                </div>
               </div>
             </div>
             <div class="product-row">
@@ -243,7 +247,12 @@
                   @input="calculateLoanDetails" />
               </div>
               <div class="form-group">
-                <label>9. ອັດຕາດອກເບ້ຍ (%):</label>
+                <label>
+                  9. ອັດຕາດອກເບ້ຍ (%)
+                  <span class="text-primary font-normal ml-1">
+                    {{ formData.product.interestRateType === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}
+                  </span>:
+                </label>
                 <input v-model.number="formData.product.interestRate" type="number" step="0.01" :readonly="!isEditing"
                   :class="{ 'has-data': formData.product.interestRate, 'readonly-field': !isEditing }"
                   @input="calculateLoanDetails" />
@@ -252,19 +261,27 @@
                 <label>14. ຈຳນວນດອກເບ້ຍທັງຫມົດ:</label>
                 <input v-model.number="formData.product.totalInterest" type="number" readonly
                   :class="{ 'has-data': formData.product.totalInterest }" class="readonly-field calculated-field" />
+                <div class="text-xs text-gray-500 mt-1" v-if="formData.product.totalInterest">
+                  {{ formatPrice(formData.product.totalInterest) }} ກີບ
+                </div>
               </div>
             </div>
             <div class="product-row">
               <div class="form-group">
                 <label>4. ຄ່າທຳນຽມ/(CIB):</label>
                 <input v-model.number="formData.product.fee" type="number" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.product.fee, 'readonly-field': !isEditing }" />
-                <small>20,000 ກີບ</small>
+                  :class="{ 'has-data': formData.product.fee, 'readonly-field': !isEditing }" @input="calculateLoanDetails" />
+                <div class="text-xs text-gray-500 mt-1" v-if="formData.product.fee">
+                  {{ formatPrice(formData.product.fee) }} ກີບ
+                </div>
               </div>
               <div class="form-group">
                 <label>10. ຄ່າງວດເດືອນທຳອິດ:</label>
-                <input v-model.number="formData.product.firstInstallment" type="number" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.product.firstInstallment, 'readonly-field': !isEditing }" />
+                <input v-model.number="formData.product.firstInstallment" type="number" readonly
+                  :class="{ 'has-data': formData.product.firstInstallment }" class="readonly-field calculated-field" />
+                <div class="text-xs text-gray-500 mt-1" v-if="formData.product.firstInstallment">
+                  {{ formatPrice(formData.product.firstInstallment) }} ກີບ
+                </div>
               </div>
             </div>
             <div class="product-row">
@@ -272,6 +289,9 @@
                 <label>5. ຄ່າງວດລາຍເດືອນ: <span class="required">*</span></label>
                 <input v-model.number="formData.product.monthlyPayment" type="number" required readonly
                   :class="{ 'has-data': formData.product.monthlyPayment }" class="readonly-field calculated-field" />
+                <div class="text-xs text-gray-500 mt-1" v-if="formData.product.monthlyPayment">
+                  {{ formatPrice(formData.product.monthlyPayment) }} ກີບ
+                </div>
               </div>
               <div class="form-group">
                 <label>11. ການຊຳລະຄ່າງວດທຸກໆວັນທີ່:</label>
@@ -280,9 +300,7 @@
                   :class="{ 'has-data': formData.product.paymentDay, 'readonly-field': !isEditing }" />
                 <small>ຂອງແຕ່ລະເດືອນ</small>
               </div>
-            </div>
-            <div class="product-row">
-              <div class="form-group full-width">
+              <div class="form-group">
                 <label>6. ຮ້ານຄ້າທີ່ເລືອກ:</label>
                 <input v-model="formData.product.store" type="text" :readonly="!isEditing"
                   :class="{ 'has-data': formData.product.store, 'readonly-field': !isEditing }" />
@@ -291,7 +309,6 @@
           </div>
         </section>
 
-        <!-- Section IV: ຜູ້ຄຳ້ປະກັນ/ຜູ້ອ້າງອີງ -->
         <section class="form-section">
           <h3 class="section-title">
             IV. ຂໍ້ມູນສ່ວນຕົວຂອງ
@@ -306,7 +323,6 @@
             (ຖ້າມີ)
           </h3>
 
-          <!-- ✅ แก้ไข: แสดงข้อมูลผู้ค้ำถ้ามีข้อมูลจริง ไม่ใช่แค่ checkbox -->
           <div v-if="hasGuarantorData || formData.hasGuarantor || formData.hasReference" class="form-grid">
             <div class="form-group">
               <label>ຊື່ ທ້າວ/ນາງ:</label>
@@ -372,7 +388,6 @@
                   :class="{ 'has-data': formData.guarantor.relationshipOther, 'readonly-field': !isEditing }" />
               </div>
             </div>
-            <!-- Work Info for Guarantor -->
             <div class="form-group full-width">
               <h4 class="subsection-title">ສະຖານທີ່ເຮັດວຽກ (ຜູ້ຄ້ຳປະກັນ):</h4>
             </div>
@@ -409,22 +424,22 @@
               <label>ເງິນເດືອນ:</label>
               <input v-model.number="formData.guarantor.work.salary" type="number" :readonly="!isEditing"
                 :class="{ 'has-data': formData.guarantor.work.salary, 'readonly-field': !isEditing }" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.guarantor.work.salary">
+                {{ formatPrice(formData.guarantor.work.salary) }} ກີບ
+              </div>
             </div>
           </div>
         </section>
 
-        <!-- Consent -->
         <div class="consent-section">
           <p>
             <strong>ໝາຍເຫດ:</strong> ຂ້າພະເຈົ້າ, ຜູ້ກູ້ ແລະ/ຫລື ຜູ້ຄ້ຳປະກັນ (ຖ້າມີ),
-            ເຫັນດີ ແລະ ຍິນຍອມໃຫ້ ສກຈບ ອິນຊີ ກວດສອບປະຫວັດໃນບົດລາຍງານ CIB
-            ຕາມຂໍ້ມູນທີ່ໄດ້ສະແດງຂ້າງເທິງ.
+            ເຫັນດີ ແລະ ຍິນຍອມໃຫ້ ສກຈບ ອິນຊີ ກວດສອບປະຫວັດໃນບົດລາຍງານ CIB ຕາມຂໍ້ມູນທີ່ໄດ້ສະແດງຂ້າງເທິງ.
           </p>
         </div>
 
         <p class="conclusion">ດັ່ງນັ້ນ, ຈື່ງສະເຫນີມາຍັງທ່ານພິຈາລະນາຕາມທາງຄວນດ້ວຍ</p>
 
-        <!-- Signatures -->
         <div class="signatures-section">
           <div class="signature-box">
             <h4>ເຊັນຜູ້ຂໍກູ້ (ລູກຄ້າ):</h4>
@@ -455,7 +470,6 @@
           </div>
         </div>
 
-        <!-- ✅ Actions - แสดงเมื่อเป็นโหมดแก้ไข -->
         <div v-if="isEditing" class="form-actions no-print">
           <button type="submit" class="btn btn-success" :disabled="isSaving">
             <span v-if="isSaving" class="loading loading-spinner loading-xs mr-2"></span>
@@ -498,7 +512,6 @@
               </button>
             </div>
           </div>
-
           <div class="flex-1 w-full bg-gray-300 dark:bg-gray-800 relative">
             <iframe v-if="pdfPreviewUrl" :src="pdfPreviewUrl" class="w-full h-full border-none"
               title="PDF Preview"></iframe>
@@ -510,12 +523,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted, computed, h, createApp } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import type { LoanApplication } from '@/types/loanApplication'
-// import RequestPrintTemplate from './RequestPrintTemplate.vue' // ✅ Import template
-// import { createApp, h } from 'vue' // ✅ สำหรับสร้าง print window
-// import html2pdf from 'html2pdf.js'
 import apiClient from '@/api/apiclient'
+
+// 🟢 1. ຢ່າລືມ Import ຟັງຊັນ formatPrice
+import { formatPrice } from '@/utils/formatters'
 
 // Props
 const props = defineProps<{
@@ -537,76 +550,13 @@ const isLoadingForm = ref(false)
 const isSaving = ref(false)
 const isEditing = ref(props.isEditing || false)
 
-// ✅ Print form with template
-// const printForm = () => {
-//   // ✅ วิธีที่ 1: ใช้ window.print() โดยตรง (ง่าย)
-//   // window.print()
-
-//   // ✅ วิธีที่ 2: สร้าง print window แยก (แนะนำ)
-//   const printWindow = window.open('', '_blank', 'width=800,height=600')
-
-//   if (!printWindow) {
-//     alert('ກະລຸນາອະນຸຍາດ popup ເພື່ອພິມແບບຟອມ')
-//     return
-//   }
-
-//   // ✅ สร้าง Vue app ใน print window
-//   const printApp = createApp({
-//     render: () => h(RequestPrintTemplate, {
-//       formData: formData
-//     })
-//   })
-
-//   // ✅ Mount และ print
-//   const container = printWindow.document.createElement('div')
-//   printWindow.document.body.appendChild(container)
-//   printApp.mount(container)
-
-//   // ✅ รอให้ render เสร็จแล้ว print
-//   setTimeout(() => {
-//     printWindow.focus()
-//     printWindow.print()
-//     printWindow.close()
-//   }, 500)
-// }
-// RequestForm.vue
-
-// 🟢 ຕົວແປສຳລັບຄວບຄຸມ UI Preview PDF
 const isGeneratingPDF = ref(false)
 const showPdfPreview = ref(false)
 const pdfPreviewUrl = ref('')
 
-// const printForm = async () => {
-//   try {
-//     const response = await apiClient.post('/pdf/generate-loan-pdf', {
-//       formData: formData,
-//       loanId: props.loanApplication?.loan_id || props.loanApplication?.id
-//     }, {
-//       timeout: 60000,
-//       responseType: 'blob' // ✅ สำคัญ: รับเป็น blob
-//     });
-
-//     // ✅ ดาวน์โหลด PDF
-//     const url = window.URL.createObjectURL(new Blob([response.data]));
-//     const link = document.createElement('a');
-//     link.href = url;
-//     link.setAttribute('download', `loan-${props.loanApplication?.loan_id || 'draft'}.pdf`);
-//     document.body.appendChild(link);
-//     link.click();
-//     link.remove();
-//     window.URL.revokeObjectURL(url);
-
-//   } catch (error: any) {
-//     console.error('❌ Error generating PDF:', error);
-//     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message));
-//   }
-// };
-
-// ✅ ປັບປຸງ: Print form with Preview Modal
 const printForm = async () => {
-  if (isGeneratingPDF.value) return; // ປ້ອງກັນການກົດຊ້ຳ
-
-  isGeneratingPDF.value = true; // ເປີດໜ້າຕ່າງ Loading
+  if (isGeneratingPDF.value) return;
+  isGeneratingPDF.value = true;
 
   try {
     const response = await apiClient.post('/pdf/generate-loan-pdf', {
@@ -617,38 +567,30 @@ const printForm = async () => {
       responseType: 'blob'
     });
 
-    // ສ້າງ URL ຈາກ Blob (PDF Data)
     const blob = new Blob([response.data], { type: 'application/pdf' });
     pdfPreviewUrl.value = window.URL.createObjectURL(blob);
-
-    // ເປີດ Modal Preview
     showPdfPreview.value = true;
 
   } catch (error: any) {
     console.error('❌ Error generating PDF:', error);
     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message));
   } finally {
-    isGeneratingPDF.value = false; // ປິດໜ້າຕ່າງ Loading
+    isGeneratingPDF.value = false;
   }
 };
 
-// 🟢 ດາວໂຫຼດ PDF ຈາກໜ້າ Preview
 const downloadPdf = () => {
   if (!pdfPreviewUrl.value) return;
-
   const link = document.createElement('a');
   link.href = pdfPreviewUrl.value;
   link.setAttribute('download', `loan-request-${props.loanApplication?.loan_id || 'draft'}.pdf`);
-
   document.body.appendChild(link);
   link.click();
   link.remove();
 }
 
-// 🟢 ປິດໜ້າ Preview ແລະ ທຳລາຍ Object URL
 const closePdfPreview = () => {
   showPdfPreview.value = false;
-
   if (pdfPreviewUrl.value) {
     setTimeout(() => {
       window.URL.revokeObjectURL(pdfPreviewUrl.value);
@@ -657,153 +599,41 @@ const closePdfPreview = () => {
   }
 }
 
-// const printForm = async () => {
-//   try {
-//     console.log('🖨️ Starting PDF generation...')
-
-//     const tempDiv = document.createElement('div')
-//     tempDiv.style.position = 'absolute'
-//     tempDiv.style.left = '-9999px'
-//     tempDiv.style.backgroundColor = '#ffffff' // ✅ Force white
-//     document.body.appendChild(tempDiv)
-
-//     const printComponent = h(RequestPrintTemplate, { formData })
-//     const app = createApp({ render: () => printComponent })
-//     app.mount(tempDiv)
-
-//     await new Promise(resolve => setTimeout(resolve, 500))
-
-//     const element = tempDiv.querySelector('.print-template') as HTMLElement
-//     if (!element) throw new Error('Print template not found')
-
-//     // ✅ CRITICAL: Force hex colors
-//     const style = document.createElement('style')
-//     style.textContent = `
-//       .print-template,
-//       .print-template *,
-//       .print-template *::before,
-//       .print-template *::after {
-//         background-color: #ffffff !important;
-//         background: #ffffff !important;
-//         color: #000000 !important;
-//         border-color: #000000 !important;
-//         box-shadow: none !important;
-//         --tw-bg-opacity: 1 !important;
-//       }
-//       table, tbody, tr, td, th {
-//         background-color: #ffffff !important;
-//         color: #000000 !important;
-//       }
-//     `
-//     element.insertBefore(style, element.firstChild)
-
-//     const opt = {
-//       margin: 10,
-//       filename: `loan-${props.loanApplication?.loan_id || 'draft'}.pdf`,
-//       image: { type: 'jpeg', quality: 0.95 },
-//       html2canvas: {
-//         scale: 2,
-//         backgroundColor: '#ffffff',
-//         logging: false,
-//         onclone: (clonedDoc: Document) => {
-//           const el = clonedDoc.querySelector('.print-template')
-//           el?.querySelectorAll('*').forEach((e: any) => {
-//             e.style.backgroundColor = '#ffffff'
-//             e.style.color = '#000000'
-//           })
-//         }
-//       },
-//       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-//     }
-
-//     await html2pdf().set(opt).from(element).save()
-//     console.log('✅ PDF created!')
-
-//     app.unmount()
-//     document.body.removeChild(tempDiv)
-
-//   } catch (error: any) {
-//     console.error('❌ PDF Error:', error)
-//     alert('ເກີດຂໍ້ຜິດພາດ: ' + error.message)
-//   }
-// }
-// Form Data
+// 🟢 Form Data ພ້ອມ Hidden State ສຳລັບ Interest Type
 const formData = reactive({
   customer: {
-    fullname: '',
-    dob: '',
-    age: null as number | null,
-    occupation: '',
-    phone: '',
+    fullname: '', dob: '', age: null as number | null, occupation: '', phone: '',
     address: { village: '', district: '', province: '' },
-    idCard: '',
-    censusNo: '',
-    unit: '',
-    issuePlace: '',
-    issueDate: ''
+    idCard: '', censusNo: '', unit: '', issuePlace: '', issueDate: ''
   },
   work: {
-    companyName: '',
-    address: { village: '', district: '', province: '' },
-    phone: '',
-    businessType: '',
-    businessDetail: '',
-    durationMonths: null as number | null,
-    durationYears: null as number | null,
-    department: '',
-    position: '',
-    salary: null as number | null
+    companyName: '', address: { village: '', district: '', province: '' },
+    phone: '', businessType: '', businessDetail: '', durationMonths: null as number | null,
+    durationYears: null as number | null, department: '', position: '', salary: null as number | null
   },
   product: {
-    type: '',
-    price: null as number | null,
-    loanTerm: null as number | null,
-    fee: 20000,
-    monthlyPayment: null as number | null,
-    store: '',
-    brand: '',
-    downPayment: null as number | null,
+    type: '', price: null as number | null, loanTerm: null as number | null, fee: 20000,
+    monthlyPayment: null as number | null, store: '', brand: '', downPayment: null as number | null,
     interestRate: null as number | null,
+    interestType: 'flat_rate',       // Hidden State
+    interestRateType: 'monthly',     // Hidden State
     firstInstallment: null as number | null,
-    paymentDay: null as number | null,
-    model: '',
-    approvedAmount: null as number | null,
-    totalInterest: null as number | null
+    paymentDay: null as number | null, model: '', approvedAmount: null as number | null, totalInterest: null as number | null
   },
-  hasGuarantor: false,
-  hasReference: false,
+  hasGuarantor: false, hasReference: false,
   guarantor: {
-    name: '',
-    dob: '',
-    age: null as number | null,
-    occupation: '',
-    phone: '',
-    address: { village: '', district: '', province: '' },
-    idCard: '',
-    relationship: '',
-    relationshipOther: '',
-    work: {
-      companyName: '',
-      address: { village: '', district: '', province: '' },
-      position: '',
-      phone: '',
-      salary: null as number | null
-    }
+    name: '', dob: '', age: null as number | null, occupation: '', phone: '',
+    address: { village: '', district: '', province: '' }, idCard: '', relationship: '', relationshipOther: '',
+    work: { companyName: '', address: { village: '', district: '', province: '' }, position: '', phone: '', salary: null as number | null }
   },
-  signatures: {
-    borrowerDate: '',
-    guarantorDate: '',
-    staffDate: ''
-  }
+  signatures: { borrowerDate: '', guarantorDate: '', staffDate: '' }
 })
 
-// ✅ Computed - ตรวจสอบว่ามีข้อมูลผู้ค้ำจริงหรือไม่
 const hasGuarantorData = computed(() => {
   const g = formData.guarantor
   return !!(g.name || g.phone || g.idCard || g.occupation || g.work.companyName)
 })
 
-// ✅ Helper Function - แปลง Address String เป็น Object
 const parseAddress = (addressStr: string) => {
   if (!addressStr || typeof addressStr !== 'string') {
     return { village: '', district: '', province: '' }
@@ -816,28 +646,38 @@ const parseAddress = (addressStr: string) => {
   }
 }
 
-// ✅ Load data from props - แก้ไขให้ตรงกับโครงสร้างข้อมูลจริง
+// 🟢 Helper Function ສຳລັບແປງຄ່າເປັນ Number ຢ່າງປອດໄພ
+const safeNumber = (val: any): number | null => {
+  if (val === null || val === undefined || val === '') return null;
+  const num = Number(val);
+  return isNaN(num) ? null : num;
+}
+
+// 🟢 ດຶງຂໍ້ມູນຈາກ JSON ມາໃສ່ໃນ Form ໃຫ້ຄົບຖ້ວນ
 const loadDataFromProps = () => {
   if (!props.loanApplication) {
     console.log('⚠️ No loan application data')
     return
   }
 
-  const loan = props.loanApplication
+  // 🟢 ໃຊ້ 'any' ເພື່ອຂ້າມຜ່ານຂໍ້ຈຳກັດຂອງ TypeScript ໃນບາງ Field ທີ່ອາດຈະມີ/ບໍ່ມີໃນ Type ເດີມ
+  const loan: any = props.loanApplication;
   console.log('📝 Loading data from loan application:', loan)
 
-  // ============================================
-  // ✅ 1. Customer Data
-  // ============================================
   if (loan.customer) {
-    console.log('📝 Loading customer ', loan.customer)
-
-    // Name
     formData.customer.fullname = `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim()
-
-    // Basic Info
     formData.customer.dob = loan.customer.date_of_birth || ''
-    formData.customer.age = loan.customer.age || null
+
+    // Age
+    if (loan.customer.age) {
+      formData.customer.age = safeNumber(loan.customer.age);
+    } else if (loan.customer.date_of_birth) {
+      const birthDate = new Date(loan.customer.date_of_birth);
+      const ageDifMs = Date.now() - birthDate.getTime();
+      const ageDate = new Date(ageDifMs);
+      formData.customer.age = Math.abs(ageDate.getUTCFullYear() - 1970);
+    }
+
     formData.customer.occupation = loan.customer.occupation || ''
     formData.customer.phone = loan.customer.phone || ''
     formData.customer.idCard = loan.customer.identity_number || ''
@@ -846,69 +686,56 @@ const loadDataFromProps = () => {
     formData.customer.issuePlace = loan.customer.issue_place || ''
     formData.customer.issueDate = loan.customer.issue_date || ''
 
-    // Address - Parse from string
     const customerAddress = parseAddress(loan.customer.address)
     formData.customer.address.village = customerAddress.village
     formData.customer.address.district = customerAddress.district
     formData.customer.address.province = customerAddress.province
+
+    // 🟢 ດຶງຂໍ້ມູນວຽກ (ຮອງຮັບທັງ customer_work_infos ແລະ work_info)
+    const workInfo = loan.customer.customer_work_infos?.[0] || loan.customer.work_info?.[0] || {};
+    if (workInfo && Object.keys(workInfo).length > 0) {
+      formData.work.companyName = workInfo.company_name || ''
+      formData.work.phone = workInfo.phone || ''
+      formData.work.businessType = workInfo.business_type || ''
+      formData.work.businessDetail = workInfo.business_detail || ''
+      formData.work.durationMonths = safeNumber(workInfo.duration_months)
+      formData.work.durationYears = safeNumber(workInfo.duration_years)
+      formData.work.department = workInfo.department || ''
+      formData.work.position = workInfo.position || ''
+      formData.work.salary = safeNumber(workInfo.salary)
+
+      const workAddr = parseAddress(workInfo.address || workInfo.location)
+      formData.work.address.village = workAddr.village
+      formData.work.address.district = workAddr.district
+      formData.work.address.province = workAddr.province
+    }
   }
 
-  // ============================================
-  // ✅ 2. Work Info - แก้ไข: ใช้ customer_work_infos[0]
-  // ============================================
-  const workInfo = (loan.customer as any)?.work_info?.[0] || {};
-  if (workInfo) {
-    console.log('📝 Loading work info:', workInfo)
-
-    formData.work.companyName = workInfo.company_name || ''
-    formData.work.phone = workInfo.phone || ''
-    formData.work.businessType = workInfo.business_type || ''
-    formData.work.businessDetail = workInfo.business_detail || ''
-    formData.work.durationMonths = workInfo.duration_months || null
-    formData.work.durationYears = workInfo.duration_years || null
-    formData.work.department = workInfo.department || ''
-    formData.work.position = workInfo.position || ''
-    formData.work.salary = parseFloat(workInfo.salary as string) || null
-
-    // Work Address - Parse from string
-    const workAddress = parseAddress(workInfo.address)
-    formData.work.address.village = workAddress.village
-    formData.work.address.district = workAddress.district
-    formData.work.address.province = workAddress.province
-  }
-
-  // ============================================
-  // ✅ 3. Product Data
-  // ============================================
   if (loan.product) {
-    console.log('📝 Loading product data:', loan.product)
-
     formData.product.type = loan.product.product_name || ''
-    formData.product.price = Number(loan.product.price) || Number(loan.total_amount) || null
-    formData.product.store = (loan.product as any).partner?.shop_name.toString() || ''
+    formData.product.price = safeNumber(loan.product.price) || safeNumber(loan.total_amount) || null
+    formData.product.store = loan.product.partner?.shop_name?.toString() || ''
     formData.product.brand = loan.product.brand || ''
     formData.product.model = loan.product.model || ''
   }
 
-  // Loan Details
-  formData.product.loanTerm = loan.loan_period || null
-  formData.product.monthlyPayment = Number(loan.monthly_pay) || null
-  formData.product.interestRate = Number(loan.interest_rate_at_apply) || null
-  formData.product.downPayment = Number(loan.down_payment) || null
-  formData.product.fee = Number(loan.fee) || 20000
-  formData.product.firstInstallment = Number(loan.first_installment_amount) || null
-  formData.product.paymentDay = loan.payment_day || null
+  formData.product.loanTerm = safeNumber(loan.loan_period)
+  formData.product.monthlyPayment = safeNumber(loan.monthly_pay)
+  formData.product.interestRate = safeNumber(loan.interest_rate_at_apply)
+  formData.product.downPayment = safeNumber(loan.down_payment) || 0
+  formData.product.fee = safeNumber(loan.fee) || 20000
+  formData.product.firstInstallment = safeNumber(loan.first_installment_amount)
+  formData.product.paymentDay = safeNumber(loan.payment_day) || 1
 
-  // Calculate loan details
+  // 🟢 ໂຫຼດປະເພດດອກເບ້ຍມາເກັບໄວ້
+  formData.product.interestType = loan.interest_type || 'flat_rate'
+  formData.product.interestRateType = loan.interest_rate_type || 'monthly'
+
+  // ຄິດໄລ່ຄ່າງວດອັດຕະໂນມັດຫຼັງຈາກໂຫຼດຂໍ້ມູນ
   calculateLoanDetails()
 
-  // ============================================
-  // ✅ 4. Guarantor Data - แก้ไข: ใช้ loan_guarantors[0]
-  // ============================================
   const guarantor = loan.loan_guarantors?.[0]
   if (guarantor) {
-    console.log('📝 Loading guarantor data:', guarantor)
-
     formData.hasGuarantor = true
     formData.guarantor.name = guarantor.name || ''
     formData.guarantor.phone = guarantor.phone || ''
@@ -917,38 +744,29 @@ const loadDataFromProps = () => {
     formData.guarantor.relationship = guarantor.relationship || ''
     formData.guarantor.dob = guarantor.date_of_birth || ''
 
-    // Guarantor Address - Parse from string
     const guarantorAddress = parseAddress(guarantor.address || '')
     formData.guarantor.address.village = guarantorAddress.village
     formData.guarantor.address.district = guarantorAddress.district
     formData.guarantor.address.province = guarantorAddress.province
 
-    // Guarantor Work Info
     formData.guarantor.work.companyName = guarantor.work_company_name || ''
     formData.guarantor.work.position = guarantor.work_position || ''
-    // 🟢 แก้ไขตรงนี้: แปลงเป็น string ก่อนเข้า parseFloat หรือใช้ Number() หุ้ม
-    formData.guarantor.work.salary = guarantor.work_salary ? Number(guarantor.work_salary) : null
+    formData.guarantor.work.salary = safeNumber(guarantor.work_salary)
     formData.guarantor.work.phone = guarantor.work_phone || ''
 
-    // Parse guarantor work address
-    const guarantorWorkAddress = parseAddress(guarantor.work_address || '')
+    // ຮອງຮັບທັງ work_location ແລະ work_address
+    const guarantorWorkAddress = parseAddress(guarantor.work_location || guarantor.work_address || '')
     formData.guarantor.work.address.village = guarantorWorkAddress.village
     formData.guarantor.work.address.district = guarantorWorkAddress.district
     formData.guarantor.work.address.province = guarantorWorkAddress.province
   }
 
-  // ============================================
-  // ✅ 5. Signatures
-  // ============================================
-  formData.signatures.borrowerDate = loan.borrower_signature_date || ''
-  formData.signatures.guarantorDate = loan.guarantor_signature_date || ''
-  formData.signatures.staffDate = loan.staff_signature_date || ''
-
-  console.log('✅ Form data loaded successfully')
-  console.log('✅ Final formData:', formData)
+  // ຈັດການວັນທີໃຫ້ເປັນ Format YYYY-MM-DD
+  formData.signatures.borrowerDate = loan.borrower_signature_date ? (new Date(loan.borrower_signature_date).toISOString().split('T')[0] || '') : ''
+  formData.signatures.guarantorDate = loan.guarantor_signature_date ? (new Date(loan.guarantor_signature_date).toISOString().split('T')[0] || '') : ''
+  formData.signatures.staffDate = loan.staff_signature_date ? (new Date(loan.staff_signature_date).toISOString().split('T')[0] || '') : ''
 }
 
-// Calculate age from DOB
 const calculateAge = () => {
   if (formData.customer.dob) {
     const today = new Date()
@@ -962,74 +780,77 @@ const calculateAge = () => {
   }
 }
 
-// Calculate loan details
+// 🟢 ສູດການຄິດໄລ່ດອກເບ້ຍ ຮອງຮັບທັງ Flat ແລະ Effective
 const calculateLoanDetails = () => {
   const price = formData.product.price || 0
   const downPayment = formData.product.downPayment || 0
   const loanTerm = formData.product.loanTerm || 1
   const interestRate = formData.product.interestRate || 0
 
+  const interestType = formData.product.interestType || 'flat_rate'
+  const interestRateType = formData.product.interestRateType || 'monthly'
 
-  // วงเงินอนุมัติ = ราคา - เงินดาว
   formData.product.approvedAmount = price - downPayment
 
   if (formData.product.approvedAmount > 0 && loanTerm > 0) {
-    const loanAmount = formData.product.approvedAmount
+    const principal = formData.product.approvedAmount
 
-    // 1. ຄິດໄລ່ດອກເບ້ຍລວມ (Flat Rate)
-    const theoreticalTotalInterest = loanAmount * (interestRate / 100) * (loanTerm / 12)
+    // ແປງດອກເບ້ຍເປັນຕໍ່ເດືອນສະເໝີ
+    const isYearly = interestRateType === 'yearly'
+    const ratePerMonth = isYearly ? (interestRate / 12) : interestRate
 
-    // 2. ຄິດໄລ່ຄ່າງວດຕໍ່ເດືອນ
-    const monthlyPayment = (loanAmount + theoreticalTotalInterest) / loanTerm
-    formData.product.monthlyPayment = Math.round(monthlyPayment)
+    if (ratePerMonth <= 0) {
+      formData.product.monthlyPayment = Math.round(principal / loanTerm)
+    } else {
+      let monthlyPayment = 0
 
-    // 3. ຄິດໄລ່ດອກເບ້ຍຕົວຈິງຈາກຍອດຊຳລະລວມ
+      if (interestType === 'flat_rate') {
+        const totalInterest = principal * (ratePerMonth / 100) * loanTerm
+        monthlyPayment = (principal + totalInterest) / loanTerm
+      } else if (interestType === 'effective_rate') {
+        const r = ratePerMonth / 100
+        const n = loanTerm
+        monthlyPayment = (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+      }
+
+      formData.product.monthlyPayment = Math.round(monthlyPayment)
+    }
+
     const totalPayment = formData.product.monthlyPayment * loanTerm
-    formData.product.totalInterest = totalPayment - loanAmount
-
-    formData.product.firstInstallment = monthlyPayment + formData.product.fee
+    formData.product.totalInterest = totalPayment - principal
+    formData.product.firstInstallment = formData.product.monthlyPayment + (formData.product.fee || 0)
   }
 }
 
-// ✅ Enable Edit Mode
 const enableEdit = () => {
   isEditing.value = true
   emit('enable-edit')
 }
 
-// Save form
 const saveForm = async () => {
   if (!props.loanApplication?.customer_id) {
-    console.error('❌ Missing customer_id')
     alert('ບໍ່ພົບຂໍ້ມູນລູກຄ້າ')
     return
   }
 
   isSaving.value = true
   try {
-    console.log('💾 Saving form ', formData)
     emit('save-form', props.loanApplication.customer_id, formData)
   } catch (error) {
-    console.error('Error saving form:', error)
     alert('ເກີດຂໍ້ຜິດພາດ: ' + error)
   } finally {
     isSaving.value = false
   }
 }
 
-// Cancel edit
 const cancelEdit = () => {
   emit('cancel-edit')
   isEditing.value = false
-  loadDataFromProps() // Reset form data
+  loadDataFromProps()
 }
 
-
-
-// Watch for prop changes
 watch(() => props.loanApplication, (newVal) => {
   if (newVal) {
-    console.log('🔄 Loan application changed, reloading...')
     loadDataFromProps()
   }
 }, { deep: true })
@@ -1038,413 +859,64 @@ watch(() => props.isEditing, (newVal) => {
   isEditing.value = newVal
 })
 
-// Mounted
 onMounted(() => {
-  console.log('🎯 RequestForm mounted')
   loadDataFromProps()
 })
 </script>
 
 <style scoped>
-/* Print Button - Fixed Position */
-.print-button-container {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  z-index: 100;
-}
-
-/* Edit Button - Fixed Position */
-.edit-button-container {
-  position: fixed;
-  top: 140px;
-  right: 20px;
-  z-index: 100;
-}
-
-/* Form Container */
-.request-form-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  background: white;
-  font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif;
-}
-
-.loan-request-form {
-  background: white;
-  padding: 40px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-}
-
-/* Header */
-.form-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.emblem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-text h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.header-text p {
-  margin: 5px 0 0;
-  font-size: 14px;
-}
-
-/* Title */
-.form-title {
-  text-align: center;
-  font-size: 24px;
-  font-weight: bold;
-  margin: 20px 0 10px;
-  text-decoration: underline;
-}
-
-.form-subtitle {
-  text-align: center;
-  font-size: 18px;
-  margin-bottom: 20px;
-}
-
-/* Recipient */
-.recipient-section {
-  margin-bottom: 30px;
-  line-height: 1.8;
-}
-
-/* Sections */
-.form-section {
-  margin-bottom: 30px;
-  border: 1px solid #333;
-  padding: 20px;
-}
-
-.section-title {
-  margin-top: 0;
-  border-bottom: 1px solid #333;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-  font-weight: bold;
-}
-
-.subsection-title {
-  font-weight: 600;
-  margin: 10px 0;
-  font-size: 14px;
-}
-
-/* Form Grid */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 15px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-group label {
-  font-weight: bold;
-  margin-bottom: 5px;
-  font-size: 14px;
-}
-
-.required {
-  color: red;
-}
-
-/* Inputs */
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
-}
-
-/* Has Data - Green highlight */
-.has-data {
-  background-color: #e8f5e9 !important;
-  border-color: #4caf50 !important;
-}
-
-/* Readonly Fields */
-.readonly-field {
-  background-color: #f5f5f5 !important;
-  cursor: not-allowed;
-}
-
-/* Calculated Fields */
-.calculated-field {
-  background-color: #e3f2fd !important;
-  font-weight: 600;
-  color: #1976d2;
-}
-
-/* Address Group */
-.address-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.address-group span {
-  white-space: nowrap;
-  font-size: 14px;
-}
-
-.address-group input {
-  flex: 1;
-  min-width: 100px;
-}
-
-/* Duration Group - แก้ไขให้ไม่ล้น */
-.duration-group {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-  /* ✅ จำกัดความกว้างให้เต็ม parent */
-  max-width: 100%;
-  /* ✅ ป้องกันการขยายเกิน */
-}
-
-.duration-group input {
-  flex: 1;
-  /* ✅ แบ่งพื้นที่เท่าๆ กัน */
-  min-width: 0;
-  /* ✅ ป้องกันการขยายเกิน */
-  width: 1%;
-  /* ✅ บังคับให้หดตาม container */
-}
-
-/* Product Grid */
-.product-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.product-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 15px;
-}
-
-/* Checkbox */
-.checkbox-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-right: 15px;
-  font-weight: normal;
-}
-
-/* Relationship Group */
-.relationship-group {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.relationship-group label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: normal;
-}
-
-/* Consent */
-.consent-section {
-  margin: 20px 0;
-  padding: 15px;
-  background: #f9f9f9;
-  border-left: 4px solid #333;
-}
-
-/* Conclusion */
-.conclusion {
-  text-align: center;
-  font-weight: bold;
-  margin: 20px 0;
-}
-
-/* Signatures */
-.signatures-section {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  margin-top: 40px;
-}
-
-.signature-box {
-  text-align: center;
-}
-
-.signature-box h4 {
-  margin-bottom: 60px;
-  border-bottom: 1px solid #333;
-  padding-bottom: 10px;
-  font-weight: bold;
-}
-
-.signature-line {
-  border-bottom: 1px solid #000;
-  margin-bottom: 10px;
-}
-
-.signature-box input {
-  max-width: 150px;
-  margin-left: 10px;
-}
-
-/* Form Actions */
-.form-actions {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-top: 40px;
-  padding: 20px;
-}
-
-.btn {
-  padding: 12px 30px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-
-.btn-primary {
-  background: #0066cc;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #0052a3;
-}
-
-.btn-warning {
-  background: #ffc107;
-  color: #000;
-}
-
-.btn-warning:hover {
-  background: #e0a800;
-}
-
-.btn-success {
-  background: #28a745;
-  color: white;
-}
-
-.btn-success:hover:not(:disabled) {
-  background: #218838;
-  transform: translateY(-2px);
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Print Styles */
-@media print {
-
-  .print-button-container,
-  .edit-button-container,
-  .form-actions,
-  .no-print {
-    display: none !important;
-  }
-
-  .loan-request-form {
-    box-shadow: none;
-    padding: 0;
-  }
-
-  .form-section {
-    break-inside: avoid;
-  }
-
-  .signatures-section {
-    break-inside: avoid;
-  }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .print-button-container {
-    top: 10px;
-    right: 10px;
-  }
-
-  .edit-button-container {
-    top: 60px;
-    right: 10px;
-  }
-
-  .loan-request-form {
-    padding: 20px;
-  }
-
-  .product-row {
-    grid-template-columns: 1fr;
-  }
-
-  .signatures-section {
-    grid-template-columns: 1fr;
-  }
-
-  .address-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-}
-
-/* ✅ เพิ่ม: CSS สำหรับ html2pdf (ใช้สีแบบเก่า) */
+.print-button-container { position: fixed; top: 80px; right: 20px; z-index: 100; }
+.edit-button-container { position: fixed; top: 140px; right: 20px; z-index: 100; }
+.request-form-container { max-width: 1200px; margin: 0 auto; padding: 20px; background: white; font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif; }
+.loan-request-form { background: white; padding: 40px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: 8px; }
+.form-header { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; text-align: center; }
+.emblem { display: flex; align-items: center; justify-content: center; }
+.header-text h2 { margin: 0; font-size: 18px; font-weight: bold; }
+.header-text p { margin: 5px 0 0; font-size: 14px; }
+.form-title { text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0 10px; text-decoration: underline; }
+.form-subtitle { text-align: center; font-size: 18px; margin-bottom: 20px; }
+.recipient-section { margin-bottom: 30px; line-height: 1.8; }
+.form-section { margin-bottom: 30px; border: 1px solid #333; padding: 20px; }
+.section-title { margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; }
+.subsection-title { font-weight: 600; margin: 10px 0; font-size: 14px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+.form-group { display: flex; flex-direction: column; }
+.form-group.full-width { grid-column: 1 / -1; }
+.form-group label { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+.required { color: red; }
+.form-group input, .form-group select, .form-group textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; transition: all 0.3s ease; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #0066cc; box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1); }
+.has-data { background-color: #e8f5e9 !important; border-color: #4caf50 !important; }
+.readonly-field { background-color: #f5f5f5 !important; cursor: not-allowed; }
+.calculated-field { background-color: #e3f2fd !important; font-weight: 600; color: #1976d2; }
+.address-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.address-group span { white-space: nowrap; font-size: 14px; }
+.address-group input { flex: 1; min-width: 100px; }
+.duration-group { display: flex; gap: 10px; width: 100%; max-width: 100%; }
+.duration-group input { flex: 1; min-width: 0; width: 1%; }
+.product-grid { display: flex; flex-direction: column; gap: 15px; }
+.product-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+.checkbox-label { display: inline-flex; align-items: center; gap: 5px; margin-right: 15px; font-weight: normal; }
+.relationship-group { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+.relationship-group label { display: flex; align-items: center; gap: 5px; font-weight: normal; }
+.consent-section { margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 4px solid #333; }
+.conclusion { text-align: center; font-weight: bold; margin: 20px 0; }
+.signatures-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
+.signature-box { text-align: center; }
+.signature-box h4 { margin-bottom: 60px; border-bottom: 1px solid #333; padding-bottom: 10px; font-weight: bold; }
+.signature-line { border-bottom: 1px solid #000; margin-bottom: 10px; }
+.signature-box input { max-width: 150px; margin-left: 10px; }
+.form-actions { display: flex; gap: 15px; justify-content: center; margin-top: 40px; padding: 20px; }
+.btn { padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s ease; }
+.btn-primary { background: #0066cc; color: white; }
+.btn-primary:hover { background: #0052a3; }
+.btn-warning { background: #ffc107; color: #000; }
+.btn-warning:hover { background: #e0a800; }
+.btn-success { background: #28a745; color: white; }
+.btn-success:hover:not(:disabled) { background: #218838; transform: translateY(-2px); }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-secondary:hover { background: #5a6268; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+@media print { .print-button-container, .edit-button-container, .form-actions, .no-print { display: none !important; } .loan-request-form { box-shadow: none; padding: 0; } .form-section { break-inside: avoid; } .signatures-section { break-inside: avoid; } }
+@media (max-width: 768px) { .print-button-container { top: 10px; right: 10px; } .edit-button-container { top: 60px; right: 10px; } .loan-request-form { padding: 20px; } .product-row { grid-template-columns: 1fr; } .signatures-section { grid-template-columns: 1fr; } .address-group { flex-direction: column; align-items: stretch; } }
 </style>

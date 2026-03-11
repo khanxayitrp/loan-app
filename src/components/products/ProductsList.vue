@@ -106,7 +106,7 @@
 
             <td class="font-medium">{{ formatPrice(product.price) }}</td>
 
-            <td>{{ product.interest_rate }}%</td>
+            <td>{{ product.interest_rate }}% {{ product.interest_rate_type === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</td>
 
             <td>
               <span class="badge badge-soft" :class="product.is_active ? 'badge-success' : 'badge-error'">
@@ -253,6 +253,13 @@
 
             <div class="form-control">
               <label class="label">
+                <span class="label-text font-medium">ລາຍລະອຽດສິນຄ້າ (ທາງເລືອກ)</span>
+              </label>
+              <textarea v-model="form.description" class="textarea textarea-bordered h-24" placeholder="ປ້ອນລາຍລະອຽດ ຫຼື ຄຸນສົມບັດຂອງສິນຄ້າ..."></textarea>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
                 <span class="label-text font-medium">ປະເພດສິນຄ້າ *</span>
               </label>
               <select v-model="form.productType_id" class="select select-bordered w-full"
@@ -306,15 +313,29 @@
             </div>
 
             <div class="form-control">
-              <label class="label">
-                <span class="label-text font-medium">ດອກເບ້ຍ (%) *</span>
-              </label>
-              <input v-model.number="form.interest_rate" type="number" placeholder="ປ້ອນດອກເບ້ຍ"
-                class="input input-bordered w-full" :class="{ 'input-error': errors.interest_rate }" min="0" max="100"
-                step="0.01" required />
-              <label v-if="errors.interest_rate" class="label text-error">
-                <span class="label-text-alt">{{ errors.interest_rate }}</span>
-              </label>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex-1 space-y-2">
+                  <label class="label">
+                    <span class="label-text font-medium">ດອກເບ້ຍ (%) *</span>
+                  </label>
+                  <input v-model.number="form.interest_rate" type="number" placeholder="ປ້ອນດອກເບ້ຍ"
+                    class="input input-bordered w-full" :class="{ 'input-error': errors.interest_rate }" min="0" max="100"
+                    step="0.01" required />
+                  <label v-if="errors.interest_rate" class="label text-error">
+                    <span class="label-text-alt">{{ errors.interest_rate }}</span>
+                  </label>
+                </div>
+
+                <div class="flex-1 space-y-2">
+                  <label class="label">
+                    <span class="label-text font-medium">ຮູບແບບດອກເບ້ຍ *</span>
+                  </label>
+                  <select v-model="form.interest_rate_type" class="select select-bordered w-full" required>
+                    <option value="monthly">ຕໍ່ເດືອນ (Monthly)</option>
+                    <option value="yearly">ຕໍ່ປີ (Yearly / APR)</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div class="form-control">
@@ -409,14 +430,16 @@ const statusFilter = ref('')
 const typeFilter = ref('')
 const localPageSize = ref(10)
 
-// Form state
+// 🟢 Form state (เพิ่ม description และ interest_rate_type)
 const form = reactive({
   product_name: '',
+  description: '', // เพิ่มใหม่
   product_brand: '',
   product_model: '',
   productType_id: 0,
   price: 0,
   interest_rate: 0,
+  interest_rate_type: 'monthly' as 'monthly' | 'yearly', // 🟢 ບັງຄັບ Type ຕັ້ງແຕ່ຕອນສ້າງ Form, // เพิ่มใหม่ ค่าเริ่มต้นเป็นต่อเดือน
   image_url: '',
   gallery: [] as string[],
   is_active: 1
@@ -454,7 +477,6 @@ const someRowsSelected = computed(() => {
 const hasInactiveSelected = computed(() => {
   return selectedRows.value.some(id => {
     const product = displayedProducts.value.find(p => p.id === id);
-    // 🟢 ແກ້ໄຂ: ປຽບທຽບກັບ 0 ເທົ່ານັ້ນ
     return product && product.is_active === 0;
   });
 });
@@ -462,7 +484,6 @@ const hasInactiveSelected = computed(() => {
 const hasActiveSelected = computed(() => {
   return selectedRows.value.some(id => {
     const product = displayedProducts.value.find(p => p.id === id);
-    // 🟢 ແກ້ໄຂ: ປຽບທຽບກັບ 1 ເທົ່ານັ້ນ
     return product && product.is_active === 1;
   });
 });
@@ -551,13 +572,12 @@ const validateForm = (): boolean => {
 }
 
 // =====================================
-// 🟢 SECTION: Filters & Pagination (ແກ້ໄຂໃໝ່)
+// 🟢 SECTION: Filters & Pagination
 // =====================================
 const applyFilters = () => {
-  selectedRows.value = [] // ລ້າງການເລືອກເມື່ອມີການ Filter
+  selectedRows.value = []
   productStore.changePage(1)
 
-  // ✅ FIX: Get currentShop from the store directly
   const currentShopId = shopStore.currentShop?.id;
 
   if (!currentShopId) {
@@ -576,10 +596,9 @@ const applyFilters = () => {
 }
 
 const changePageSize = () => {
-  selectedRows.value = [] // ລ້າງການເລືອກ
+  selectedRows.value = []
   productStore.changePageSize(localPageSize.value)
 
-  // ✅ FIX: Get currentShop from the store directly
   const currentShopId = shopStore.currentShop?.id;
 
   if (!currentShopId) {
@@ -612,18 +631,17 @@ const debounceSearch = () => {
 
 const previousPage = () => {
   if (hasPreviousPage.value) {
-    selectedRows.value = [] // ລ້າງການເລືອກ
+    selectedRows.value = []
     productStore.changePage(currentPage.value - 1)
   }
 }
 
 const nextPage = () => {
   if (hasNextPage.value) {
-    selectedRows.value = [] // ລ້າງການເລືອກ
+    selectedRows.value = []
     productStore.changePage(currentPage.value + 1)
   }
 }
-
 
 // =====================================
 // 🟢 SECTION: Modals & Actions
@@ -639,14 +657,16 @@ const openEditProductModal = async (product: Product) => {
   try {
     const gallery = await productStore.fetchProductGallery(product.id)
     form.product_name = product.product_name
+    form.description = product.description || '' // 🟢 ดึง description
     form.product_brand = product.brand
     form.product_model = product.model
     form.productType_id = product.productType_id
     form.price = Number(product.price)
     form.interest_rate = Number(product.interest_rate)
+    form.interest_rate_type = product.interest_rate_type || 'monthly' // 🟢 ดึงรูปแบบดอกเบี้ย
     form.image_url = product.image_url || ''
     form.gallery = gallery.map((item: any) => item.image_url) || []
-    form.is_active = product.is_active ? 1 : 0 // Ensure number for checkbox
+    form.is_active = product.is_active ? 1 : 0
 
     if (product.image_url) {
       imageFileInfo.name = 'product-image.jpg'
@@ -655,12 +675,15 @@ const openEditProductModal = async (product: Product) => {
     }
   } catch (error) {
     console.error('❌ Error loading gallery:', error)
+    // Fallback if gallery fails
     form.product_name = product.product_name
+    form.description = product.description || ''
     form.product_brand = product.brand
     form.product_model = product.model
     form.productType_id = product.productType_id
     form.price = Number(product.price)
     form.interest_rate = Number(product.interest_rate)
+    form.interest_rate_type = product.interest_rate_type || 'monthly'
     form.image_url = product.image_url || ''
     form.gallery = (product.gallery?.map(item => item.image_url)) || []
     form.is_active = product.is_active ? 1 : 0
@@ -675,11 +698,13 @@ const closeModal = () => {
 
 const resetForm = () => {
   form.product_name = ''
+  form.description = '' // 🟢 คืนค่าเป็นค่าว่าง
   form.product_brand = ''
   form.product_model = ''
   form.productType_id = 0
   form.price = 0
   form.interest_rate = 0
+  form.interest_rate_type = 'monthly' // 🟢 คืนค่าตั้งต้น
   form.image_url = ''
   form.gallery = []
   form.is_active = 1
@@ -699,15 +724,14 @@ const toggleProductStatus = (product: Product) => {
 
 const confirmToggleStatus = async () => {
   if (productToToggle.value) {
-    // 🟢 ແກ້ໄຂ: ທຽບກັບ 1
     const isDeactivating = productToToggle.value.is_active === 1;
     try {
       const newStatus = isDeactivating ? 0 : 1;
-      const newStatusBool = !isDeactivating; // Convert to boolean for the store method
+      const newStatusBool = !isDeactivating;
       await productStore.toggleProductStatus(productToToggle.value.id, newStatusBool)
       alert.success('ປ່ຽນສະຖານະສຳເລັດ!')
       productToToggle.value.is_active = newStatus as any
-      await applyFilters() // ດຶງຂໍ້ມູນໃໝ່ຫຼັງຈາກປ່ຽນສຳເລັດ
+      await applyFilters()
     } catch (error: any) {
       alert.error('ເກີດຂໍ້ຜິດພາດການປ່ຽນສະຖານະ')
     }
@@ -730,7 +754,7 @@ const confirmBulkToggle = async (isActive: boolean) => {
     try {
       await productStore.toggleMultipleStatus(selectedRows.value, isActive)
       alert.success(`${actionText}ສຳເລັດ!`)
-      applyFilters() // ດຶງຂໍ້ມູນໃໝ່ ແລະ ລ້າງ selectedRows ອັດຕະໂນມັດໃນ applyFilters
+      applyFilters()
     } catch (error) {
       alert.error(`ເກີດຂໍ້ຜິດພາດໃນການ${actionText}`)
     }
@@ -750,28 +774,33 @@ const saveProduct = async () => {
     if (editingProduct.value) {
       await productStore.updateProduct(editingProduct.value.id, {
         product_name: form.product_name,
+        description: form.description, // 🟢 ส่งไปยัง API
         brand: form.product_brand,
         model: form.product_model,
         productType_id: form.productType_id,
         price: form.price,
         interest_rate: form.interest_rate,
+        interest_rate_type: form.interest_rate_type as 'monthly' | 'yearly', // 🟢 ส่งไปยัง API
         is_active: form.is_active
       })
       productId = editingProduct.value.id
     } else {
       const newProduct = await productStore.createProduct({
         product_name: form.product_name,
+        description: form.description, // 🟢 ส่งไปยัง API
         brand: form.product_brand,
         model: form.product_model,
         productType_id: form.productType_id,
         price: form.price,
         interest_rate: form.interest_rate,
+        interest_rate_type: form.interest_rate_type as 'monthly' | 'yearly', // 🟢 ส่งไปยัง API
         is_active: form.is_active,
-        shop_id: currentShopId // ✅ Make sure shop_id is passed when creating
+        shop_id: currentShopId
       } as any)
       productId = newProduct.id
     }
 
+    // [ส่วนอัปโหลดรูปภาพคงไว้ตามเดิม ไม่มีการเปลี่ยนแปลง]
     if (form.image_url && !form.image_url.startsWith('http')) {
       try {
         const base64Response = await fetch(form.image_url)
@@ -826,7 +855,7 @@ const saveProduct = async () => {
     const message = editingProduct.value ? 'ແກ້ໄຂສິນຄ້າສຳເລັດ!' : 'ເພີ້ມສິນຄ້າສຳເລັດ!'
     alert.success(message)
     closeModal()
-    await applyFilters() // ດຶງຂໍ້ມູນໃໝ່ຫຼັງຈາກບັນທຶກ
+    await applyFilters()
 
   } catch (error) {
     console.error('Error saving product:', error)
@@ -952,7 +981,6 @@ const removeGalleryImage = (index: number) => {
 
 onMounted(async () => {
   try {
-    // ✅ ขั้น 1: โหลดข้อมูลร้านค้าปัจจุบันก่อน
     await shopStore.fetchCurrentShop()
 
     const currentShop = shopStore.currentShop
@@ -968,7 +996,6 @@ onMounted(async () => {
       name: currentShop.shop_name
     })
 
-    // ✅ ขั้น 2: โหลดสินค้าของร้านค้านั้น โดยใช้ shop_id
     await Promise.all([
       productStore.fetchProducts({
         shop_id: currentShop.id,

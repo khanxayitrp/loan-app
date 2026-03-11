@@ -91,7 +91,7 @@
               </span>
             </td>
             <!-- Created At -->
-            <td>{{ draft.created_at ? formatDate(draft.created_at) : '-' }}</td>
+            <td>{{ draft.createdAt ? formatDate(draft.createdAt) : '-' }}</td>
             <!-- Actions -->
             <td>
               <div class="flex gap-2">
@@ -249,7 +249,7 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
-                <p>{{ selectedDraft.created_at ? formatDate(selectedDraft.created_at) : '-' }}</p>
+                <p>{{ selectedDraft.createdAt ? formatDate(selectedDraft.createdAt) : '-' }}</p>
               </div>
               <!-- ✅ แสดง Customer Info ถ้าມີ -->
               <div v-if="selectedDraft.customer" class="border-t pt-4 mt-4">
@@ -983,8 +983,8 @@ const filteredDrafts = computed(() => {
   }
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(draft => {
-      if (!draft.created_at) return false
-      const draftDate = new Date(draft.created_at).toISOString().split('T')[0] ?? ''
+      if (!draft.createdAt) return false
+      const draftDate = new Date(draft.createdAt).toISOString().split('T')[0] ?? ''
       const fromDate = dateFrom.value || '1970-01-01'
       const toDate = dateTo.value || '9999-12-31'
       return draftDate >= fromDate && draftDate <= toDate
@@ -1689,7 +1689,7 @@ const exportToCSV = () => {
     'ດອກເບ້ຍ (%)': draft.interest_rate_at_apply,
     'ໄລຍະເວລາ (ເດືອນ)': draft.loan_period,
     'ເຈົ້າໜ້າທີ່': getRequesterName(draft),
-    'ວັນທີ່ສ້າງ': draft.created_at ? formatDate(draft.created_at) : '-'
+    'ວັນທີ່ສ້າງ': draft.createdAt ? formatDate(draft.createdAt) : '-'
   }))
   const csv = Papa.unparse(csvData)
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })

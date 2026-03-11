@@ -7,10 +7,6 @@
 
     <div v-else class="loan-contract-form">
       <div class="print-button-container">
-        <!-- <button @click="printForm" class="btn btn-primary btn-sm gap-2 shadow-md">
-          <span class="icon-[tabler--printer] size-4"></span>
-          ພິມສັນຍາ
-        </button> -->
         <button @click="printForm" class="btn btn-primary btn-sm gap-2 shadow-md" :disabled="isGeneratingPDF">
           <span v-if="isGeneratingPDF" class="loading loading-spinner loading-xs"></span>
           <span v-else class="icon-[tabler--printer] size-4"></span>
@@ -106,8 +102,6 @@
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ສະຖານະພາບ:</span></label>
-              <!-- <input v-model="formData.customer.maritalStatus" type="text" :readonly="!isEditing"
-                class="input input-sm input-bordered w-full" /> -->
               <select v-model="formData.customer.maritalStatus" :disabled="!isEditing"
                 class="select select-sm select-bordered w-full">
                 <option value="">ເລືອກ</option>
@@ -121,11 +115,6 @@
               <input v-model="formData.customer.occupation" type="text" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
             </div>
-            <!-- <div class="form-control">
-              <label class="label"><span class="label-text font-bold">ສາຍພົວພັນ:</span></label>
-              <input v-model="formData.customer.relationship" type="text" :readonly="!isEditing"
-                class="input input-sm input-bordered w-full" />
-            </div> -->
 
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ບັດປະຈຳຕົວ/Passport:</span></label>
@@ -154,11 +143,6 @@
                 <input v-model="formData.customer.censusAuthorizeBy" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
-              <!-- <div class="md:col-span-2">
-                <label class="label"><span class="label-text font-bold">ຜູ້ອະນຸມັດປຶ້ມສຳມະໂນຄົວ:</span></label>
-                <input v-model="formData.customer.censusAuthorizeBy" type="text" :readonly="!isEditing"
-                  class="input input-sm input-bordered w-full" />
-              </div> -->
               <div>
                 <label class="label"><span class="label-text font-bold">ເຮືອນເລກທີ:</span></label>
                 <input v-model="formData.customer.houseNumber" type="text" :readonly="!isEditing"
@@ -252,6 +236,9 @@
               <label class="label"><span class="label-text font-bold">ເງິນເດືອນ/ລາຍຮັບຕໍ່ເດືອນ (ກີບ):</span></label>
               <input v-model.number="formData.work.salary" type="number" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.work.salary">
+                {{ formatPrice(formData.work.salary) }} ກີບ
+              </div>
             </div>
 
             <div class="form-control">
@@ -265,9 +252,12 @@
                 class="input input-sm input-bordered w-full" />
             </div>
             <div class="form-control lg:col-span-2">
-              <label class="label"><span class="label-text font-bold">ລາຍໄດ້ອື່ນໆ (ຖ້າມີ):</span></label>
+              <label class="label"><span class="label-text font-bold">ລາຍໄດ້ອື່ນໆ (ຖ້າມີ) (ກີບ):</span></label>
               <input v-model.number="formData.work.otherIncome" type="number" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.work.otherIncome">
+                {{ formatPrice(formData.work.otherIncome) }} ກີບ
+              </div>
             </div>
             <div class="form-control lg:col-span-4">
               <label class="label"><span class="label-text font-bold">ແຫຼ່ງທີ່ມາຂອງລາຍໄດ້ອື່ນໆ:</span></label>
@@ -287,8 +277,6 @@
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ປະເພດສິນຄ້າ:</span></label>
-              <!-- <input v-model="formData.product.type" type="text" :readonly="!isEditing"
-                class="input input-sm input-bordered w-full" /> -->
               <select v-model="formData.product.type" :disabled="!isEditing"
                 class="select select-sm select-bordered w-full">
                 <option value="">ເລືອກ</option>
@@ -312,20 +300,36 @@
               <label class="label"><span class="label-text font-bold">ລາຄາສິນຄ້າ (ກີບ):</span></label>
               <input v-model.number="formData.product.price" type="number" :readonly="!isEditing"
                 @input="calculateLoanDetails" class="input input-sm input-bordered w-full" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.product.price">
+                {{ formatPrice(formData.product.price) }} ກີບ
+              </div>
             </div>
 
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ເງິນວາງດາວ (ກີບ):</span></label>
               <input v-model.number="formData.product.downPayment" type="number" :readonly="!isEditing"
                 @input="calculateLoanDetails" class="input input-sm input-bordered w-full" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.product.downPayment">
+                {{ formatPrice(formData.product.downPayment) }} ກີບ
+              </div>
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold text-primary">ວົງເງິນອະນຸມັດ (ກີບ):</span></label>
               <input v-model.number="formData.product.approvedAmount" type="number" readonly
                 class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.product.approvedAmount">
+                {{ formatPrice(formData.product.approvedAmount) }} ກີບ
+              </div>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-bold">ອັດຕາດອກເບ້ຍ (%):</span></label>
+              <label class="label">
+                <span class="label-text font-bold">
+                  ອັດຕາດອກເບ້ຍ (%)
+                  <span class="text-primary font-normal ml-1">
+                    {{ formData.product.interestRateType === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}
+                  </span>:
+                </span>
+              </label>
               <input v-model.number="formData.product.interestRate" type="number" step="0.01" :readonly="!isEditing"
                 @input="calculateLoanDetails" class="input input-sm input-bordered w-full" />
             </div>
@@ -336,27 +340,37 @@
                 @input="calculateLoanDetails" class="input input-sm input-bordered w-full" />
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-primary">ຈຳນວນດອກເບ້ຍທັງໝົດ
-                  (ກີບ):</span></label>
+              <label class="label"><span class="label-text font-bold text-primary">ຈຳນວນດອກເບ້ຍທັງໝົດ (ກີບ):</span></label>
               <input v-model.number="formData.product.totalInterest" type="number" readonly
                 class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.product.totalInterest">
+                {{ formatPrice(formData.product.totalInterest) }} ກີບ
+              </div>
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ຄ່າທຳນຽມ CIB/ອື່ນໆ (ກີບ):</span></label>
               <input v-model.number="formData.product.fee" type="number" :readonly="!isEditing"
                 @input="calculateLoanDetails" class="input input-sm input-bordered w-full" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.product.fee">
+                {{ formatPrice(formData.product.fee) }} ກີບ
+              </div>
             </div>
 
             <div class="form-control">
               <label class="label"><span class="label-text font-bold text-primary">ຄ່າງວດລາຍເດືອນ (ກີບ):</span></label>
               <input v-model.number="formData.product.monthlyPayment" type="number" readonly
                 class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.product.monthlyPayment">
+                {{ formatPrice(formData.product.monthlyPayment) }} ກີບ
+              </div>
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-primary">ຄ່າງວດເດືອນທຳອິດ
-                  (+ຄ່າທຳນຽມ):</span></label>
+              <label class="label"><span class="label-text font-bold text-primary">ຄ່າງວດເດືອນທຳອິດ (+ຄ່າທຳນຽມ):</span></label>
               <input v-model.number="formData.product.firstInstallment" type="number" readonly
                 class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.product.firstInstallment">
+                {{ formatPrice(formData.product.firstInstallment) }} ກີບ
+              </div>
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ມື້ກຳນົດການຊຳລະ (ທຸກວັນທີ):</span></label>
@@ -380,11 +394,6 @@
                 <input v-model="formData.product.motorcycle.tankNumber" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
-              <!-- <div class="form-control">
-                <label class="label"><span class="label-text font-bold">ຄ່າປະກັນໄພ ລົດຈັກ (ກີບ):</span></label>
-                <input v-model.number="formData.product.motorcycle.insurance" type="number" :readonly="!isEditing"
-                  class="input input-sm input-bordered w-full" />
-              </div> -->
               <div class="form-control">
                 <label class="label"><span class="label-text font-bold">ໄລຍະຮັບປະກັນລົດ (ເດືອນ):</span></label>
                 <input v-model.number="formData.product.motorcycle.motorWarranty" type="number" :readonly="!isEditing"
@@ -460,8 +469,6 @@
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ສະຖານະພາບ:</span></label>
-              <!-- <input v-model="formData.guarantor.maritalStatus" type="text" :readonly="!isEditing"
-                class="input input-sm input-bordered w-full bg-white" /> -->
               <select v-model="formData.guarantor.maritalStatus" :disabled="!isEditing"
                 class="select select-sm select-bordered w-full">
                 <option value="">ເລືອກ</option>
@@ -502,18 +509,12 @@
                 class="input input-sm input-bordered w-full bg-white" />
             </div>
 
-            <div
-              class="form-control lg:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-3 rounded mt-2 border">
+            <div class="form-control lg:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-3 rounded mt-2 border">
               <div class="md:col-span-2">
                 <label class="label"><span class="label-text font-bold">ສະຖານທີ່ອອກເອກະສານ:</span></label>
                 <input v-model="formData.guarantor.censusAuthorizeBy" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" />
               </div>
-              <!-- <div class="md:col-span-2">
-                <label class="label"><span class="label-text font-bold">ຜູ້ອະນຸມັດປຶ້ມສຳມະໂນຄົວ:</span></label>
-                <input v-model="formData.guarantor.censusAuthorizeBy" type="text" :readonly="!isEditing"
-                  class="input input-sm input-bordered w-full" />
-              </div> -->
               <div>
                 <label class="label"><span class="label-text font-bold">ເຮືອນເລກທີ:</span></label>
                 <input v-model="formData.guarantor.houseNumber" type="text" :readonly="!isEditing"
@@ -561,7 +562,6 @@
               </div>
             </div>
           </div>
-          <p v-else class="text-gray-500 italic mt-4 ml-2">ບໍ່ມີຂໍ້ມູນຜູ້ຄ້ຳປະກັນ/ອ້າງອີງ</p>
         </section>
 
         <section v-if="formData.hasGuarantor || formData.hasReference" class="form-section">
@@ -577,7 +577,6 @@
               <input v-model="formData.guarantorWork.businessType" type="text" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
             </div>
-
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ບ້ານ:</span></label>
               <input v-model="formData.guarantorWork.address.village" type="text" :readonly="!isEditing"
@@ -593,7 +592,6 @@
               <input v-model="formData.guarantorWork.address.province" type="text" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
             </div>
-
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ປີການເຮັດວຽກ:</span></label>
               <input v-model.number="formData.guarantorWork.workYears" type="number" :readonly="!isEditing"
@@ -608,8 +606,10 @@
               <label class="label"><span class="label-text font-bold">ເງິນເດືອນ/ລາຍຮັບຕໍ່ເດືອນ (ກີບ):</span></label>
               <input v-model.number="formData.guarantorWork.salary" type="number" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.guarantorWork.salary">
+                {{ formatPrice(formData.guarantorWork.salary) }} ກີບ
+              </div>
             </div>
-
             <div class="form-control">
               <label class="label"><span class="label-text font-bold">ມື້ເງິນເດືອນອອກ (ວັນທີ):</span></label>
               <input v-model.number="formData.guarantorWork.salaryDay" type="number" min="1" max="31"
@@ -621,9 +621,12 @@
                 class="input input-sm input-bordered w-full" />
             </div>
             <div class="form-control lg:col-span-2">
-              <label class="label"><span class="label-text font-bold">ລາຍໄດ້ອື່ນໆ (ຖ້າມີ):</span></label>
+              <label class="label"><span class="label-text font-bold">ລາຍໄດ້ອື່ນໆ (ຖ້າມີ) (ກີບ):</span></label>
               <input v-model.number="formData.guarantorWork.otherIncome" type="number" :readonly="!isEditing"
                 class="input input-sm input-bordered w-full" />
+              <div class="text-xs text-gray-500 mt-1" v-if="formData.guarantorWork.otherIncome">
+                {{ formatPrice(formData.guarantorWork.otherIncome) }} ກີບ
+              </div>
             </div>
             <div class="form-control lg:col-span-4">
               <label class="label"><span class="label-text font-bold">ແຫຼ່ງທີ່ມາຂອງລາຍໄດ້ອື່ນໆ:</span></label>
@@ -645,6 +648,7 @@
       </form>
     </div>
   </div>
+
   <teleport to="body">
     <div v-if="isGeneratingPDF"
       class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
@@ -689,6 +693,9 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import apiClient from '@/api/apiclient'
 
+// 🟢 1. ຢ່າລືມ Import ຟັງຊັນ formatPrice
+import { formatPrice } from '@/utils/formatters'
+
 const props = defineProps<{
   loanContractId?: number
   loanApplication?: any | null
@@ -717,19 +724,26 @@ const formData = reactive({
     censusBook: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
     address: { village: '', district: '', province: '' },
     residenceYears: null as number | null, liveWith: '', residenceStatus: '',
-    occupation: '', relationship: ''
+    occupation: '', relationship: '',
+    age: null as number | null // 🟢 ເພີ່ມ age ເຂົ້າໄປບ່ອນນີ້
   },
   work: {
     companyName: '', businessType: '',
     address: { village: '', district: '', province: '' },
     workYears: null as number | null, position: '', salary: null as number | null,
     salaryDay: null as number | null, totalEmployees: null as number | null,
-    otherIncome: null as number | null, otherIncomeSource: ''
+    otherIncome: null as number | null, otherIncomeSource: '',
+    phone: '',        // 🟢 ເພີ່ມ phone ຂອງບ່ອນເຮັດວຽກເຂົ້າໄປ
+    department: ''    // 🟢 ເພີ່ມ department ຂອງບ່ອນເຮັດວຽກເຂົ້າໄປ
   },
   product: {
     description: '', type: '', brand: '', model: '',
     price: null as number | null, downPayment: null as number | null,
     approvedAmount: null as number | null, interestRate: null as number | null,
+
+    interestType: 'flat_rate',
+    interestRateType: 'monthly',
+
     loanTerm: null as number | null, totalInterest: null as number | null,
     fee: 20000, monthlyPayment: null as number | null,
     firstInstallment: null as number | null, paymentDay: null as number | null,
@@ -760,27 +774,49 @@ const calculateLoanDetails = () => {
   const loanTerm = formData.product.loanTerm || 1
   const interestRate = formData.product.interestRate || 0
 
+  const interestType = formData.product.interestType || 'flat_rate'
+  const interestRateType = formData.product.interestRateType || 'monthly'
+
   formData.product.approvedAmount = price - downPayment
 
   if (formData.product.approvedAmount > 0 && loanTerm > 0) {
-    const loanAmount = formData.product.approvedAmount
-    const theoreticalTotalInterest = loanAmount * (interestRate / 100) * (loanTerm / 12)
-    const monthlyPayment = (loanAmount + theoreticalTotalInterest) / loanTerm
-    formData.product.monthlyPayment = Math.round(monthlyPayment)
+    const principal = formData.product.approvedAmount
+
+    // แปลงดอกเบี้ยให้เป็นต่อเดือนเสมอ
+    const isYearly = interestRateType === 'yearly'
+    const ratePerMonth = isYearly ? (interestRate / 12) : interestRate
+
+    if (ratePerMonth <= 0) {
+      formData.product.monthlyPayment = Math.round(principal / loanTerm)
+    } else {
+      let monthlyPayment = 0
+
+      if (interestType === 'flat_rate') {
+        const totalInterest = principal * (ratePerMonth / 100) * loanTerm
+        monthlyPayment = (principal + totalInterest) / loanTerm
+      } else if (interestType === 'effective_rate') {
+        const r = ratePerMonth / 100
+        const n = loanTerm
+        monthlyPayment = (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+      }
+
+      formData.product.monthlyPayment = Math.round(monthlyPayment)
+    }
+
     const totalPayment = formData.product.monthlyPayment * loanTerm
-    formData.product.totalInterest = totalPayment - loanAmount
+    formData.product.totalInterest = totalPayment - principal
     formData.product.firstInstallment = formData.product.monthlyPayment + (formData.product.fee || 0)
   }
 }
+
 const isGeneratingPDF = ref(false)
 const showPdfPreview = ref(false)
 const pdfPreviewUrl = ref('')
 
-// 🟢 ແກ້ໄຂ Function printForm ໃໝ່
 const printForm = async () => {
-  if (isGeneratingPDF.value) return; // ປ້ອງກັນການກົດຊ້ຳ
+  if (isGeneratingPDF.value) return;
 
-  isGeneratingPDF.value = true; // ເປີດໜ້າຕ່າງ Loading
+  isGeneratingPDF.value = true;
 
   try {
     const response = await apiClient.post('/pdf/generate-loan-contract', {
@@ -788,41 +824,31 @@ const printForm = async () => {
       contractId: props.loanContract?.id || props.loanContractId || props.loanApplication?.id
     }, { timeout: 60000, responseType: 'blob' })
 
-    // ສ້າງ URL ຈາກ Blob (PDF Data)
     const blob = new Blob([response.data], { type: 'application/pdf' });
     pdfPreviewUrl.value = window.URL.createObjectURL(blob);
-
-    // ເປີດ Modal Preview
     showPdfPreview.value = true;
 
   } catch (error: any) {
     console.error('PDF Generation Error:', error);
     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message))
   } finally {
-    isGeneratingPDF.value = false; // ປິດໜ້າຕ່າງ Loading
+    isGeneratingPDF.value = false;
   }
 }
 
-// 🟢 ເພີ່ມ Function ສຳລັບການດາວໂຫຼດຈາກໜ້າ Preview
 const downloadPdf = () => {
   if (!pdfPreviewUrl.value) return;
-
   const link = document.createElement('a');
   link.href = pdfPreviewUrl.value;
-
   const fileId = props.loanContract?.id || props.loanContractId || props.loanApplication?.id || 'draft';
   link.setAttribute('download', `contract-${fileId}.pdf`);
-
   document.body.appendChild(link);
   link.click();
   link.remove();
 }
 
-// 🟢 ເພີ່ມ Function ສຳລັບປິດໜ້າ Preview ແລະ ຄືນຄ່າໜ່ວຍຄວາມຈຳ (Memory)
 const closePdfPreview = () => {
   showPdfPreview.value = false;
-
-  // ລຶບ Object URL ເພື່ອບໍ່ໃຫ້ກິນ Memory ຂອງ Browser
   if (pdfPreviewUrl.value) {
     setTimeout(() => {
       window.URL.revokeObjectURL(pdfPreviewUrl.value);
@@ -830,25 +856,6 @@ const closePdfPreview = () => {
     }, 100);
   }
 }
-// const printForm = async () => {
-//   try {
-//     const response = await apiClient.post('/pdf/generate-loan-contract', {
-//       formData: formData,
-//       contractId: props.loanContract?.id || props.loanContractId || props.loanApplication?.id
-//     }, { timeout: 60000, responseType: 'blob' })
-
-//     const url = window.URL.createObjectURL(new Blob([response.data]))
-//     const link = document.createElement('a')
-//     link.href = url
-//     link.setAttribute('download', `contract-${props.loanContract?.id || 'draft'}.pdf`)
-//     document.body.appendChild(link)
-//     link.click()
-//     link.remove()
-//     window.URL.revokeObjectURL(url)
-//   } catch (error: any) {
-//     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message))
-//   }
-// }
 
 const enableEdit = () => {
   isEditing.value = true
@@ -856,7 +863,6 @@ const enableEdit = () => {
 }
 
 const saveForm = async () => {
-  // หา customer_id ตัวล่าสุดไม่ว่าจะมาจากไหน
   const customerId = props.loanContract?.customer_id
     || props.loanContract?.data?.customer_id
     || props.loanApplication?.customer_id;
@@ -891,16 +897,12 @@ const parseAddress = (addressStr: string) => {
   }
 }
 
-// -----------------------------------------------------
-// ฟังก์ชันหลัก: โหลดข้อมูล (พิจารณา Contract ก่อน Application)
-// -----------------------------------------------------
 const loadDataFromProps = () => {
   console.log('🔄 [LoanContractForm] Checking Props...', {
     loanContract: props.loanContract,
     loanApplication: props.loanApplication
   });
 
-  // 1. เช็คเชิงลึกว่า loanContract มีข้อมูลจริงไหม (หา property 'id')
   let contractData = null;
   let hasRealContract = false;
 
@@ -917,7 +919,6 @@ const loadDataFromProps = () => {
     }
   }
 
-  // 2. ตัดสินใจว่าจะใช้ Source ไหน
   const isFromContract = hasRealContract;
   const sourceData = isFromContract ? contractData : props.loanApplication;
 
@@ -926,11 +927,8 @@ const loadDataFromProps = () => {
     return;
   }
 
-  console.log(`✅ [Decision] ດຶງຂໍ້ມູນຈາກ: ${isFromContract ? 'LoanContract (ມີສັນຍາແລ້ວ)' : 'LoanApplication (ໃຊ້ໃບຄຳຂໍແທນ)'}`);
-  console.log('📦 [Source Data]:', sourceData);
-
   // -----------------------------------------------------
-  // กรณี 1: ดึงจาก Loan Contract (ฐานข้อมูลสัญญากู้)
+  // กรณี 1: ดึงจาก Loan Contract ที่เคยบันทึกไว้แล้ว
   // -----------------------------------------------------
   if (isFromContract) {
     formData.contractNumber = sourceData.loan_contract_number || sourceData.contract_number || ''
@@ -984,6 +982,10 @@ const loadDataFromProps = () => {
     formData.product.downPayment = parseFloat(sourceData.product_down_payment) || null
     formData.product.approvedAmount = parseFloat(sourceData.total_amount) || null
     formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply) || null
+
+    formData.product.interestType = sourceData.interest_type || sourceData.product?.interest_type || 'flat_rate'
+    formData.product.interestRateType = sourceData.interest_rate_type || sourceData.product?.interest_rate_type || 'monthly'
+
     formData.product.loanTerm = sourceData.loan_period || null
     formData.product.totalInterest = parseFloat(sourceData.total_interest) || null
     formData.product.fee = parseFloat(sourceData.fee as string) || 0;
@@ -1036,7 +1038,7 @@ const loadDataFromProps = () => {
     }
   }
   // -----------------------------------------------------
-  // กรณี 2: Fallback ดึงจาก Loan Application
+  // กรณี 2: Fallback ดึงจาก Loan Application (ยังไม่มีสัญญา)
   // -----------------------------------------------------
   else {
     formData.contractNumber = sourceData.loan_id || ''
@@ -1059,6 +1061,10 @@ const loadDataFromProps = () => {
       formData.customer.occupation = sourceData.customer.occupation || ''
       formData.customer.unit = sourceData.customer.unit || ''
 
+      if (sourceData.customer.age) {
+        formData.customer.age = sourceData.customer.age;
+      }
+
       const addr = parseAddress(sourceData.customer.address)
       formData.customer.address.village = addr.village
       formData.customer.address.district = addr.district
@@ -1071,6 +1077,8 @@ const loadDataFromProps = () => {
         formData.work.position = workInfo.position || ''
         formData.work.salary = parseFloat(workInfo.salary) || null
         formData.work.workYears = workInfo.duration_years || null
+        formData.work.phone = workInfo.phone || ''
+        formData.work.department = workInfo.department || ''
 
         const workAddr = parseAddress(workInfo.address)
         formData.work.address.village = workAddr.village
@@ -1084,7 +1092,6 @@ const loadDataFromProps = () => {
       formData.product.brand = sourceData.product.brand || ''
       formData.product.model = sourceData.product.model || ''
       formData.product.price = parseFloat(sourceData.product.price) || null
-      formData.product.interestRate = parseFloat(sourceData.product.interest_rate || sourceData.interest_rate_at_apply) || null
 
       if (sourceData.product.partner) {
         formData.shop.name = sourceData.product.partner.shop_name || ''
@@ -1093,13 +1100,16 @@ const loadDataFromProps = () => {
       }
     }
 
-    // ดึงค่าอื่นๆ ที่อยู่ในระดับ Application โดยตรง
+    formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply) || 0
     formData.product.downPayment = parseFloat(sourceData.down_payment) || 0
     formData.product.approvedAmount = parseFloat(sourceData.total_amount) || 0
     formData.product.loanTerm = sourceData.loan_period || 1
     formData.product.monthlyPayment = parseFloat(sourceData.monthly_pay) || 0
     formData.product.fee = parseFloat(sourceData.fee) || 20000
     formData.product.paymentDay = sourceData.payment_day || 1
+
+    formData.product.interestType = sourceData.interest_type || 'flat_rate'
+    formData.product.interestRateType = sourceData.interest_rate_type || 'monthly'
 
     const guarantor = sourceData.loan_guarantors?.[0]
     if (guarantor) {
@@ -1126,9 +1136,6 @@ const loadDataFromProps = () => {
     }
   }
 
-  // -----------------------------------------------------
-  // เช็คประเภทรถมอเตอร์ไซค์
-  // -----------------------------------------------------
   formData.product.motorcycle.motorId = sourceData.motorId || sourceData.motor_id || ''
   formData.product.motorcycle.motorColor = sourceData.motorColor || sourceData.motor_color || ''
   formData.product.motorcycle.tankNumber = sourceData.tankNumber || sourceData.tank_number || ''
@@ -1239,7 +1246,6 @@ onMounted(() => { loadDataFromProps() })
 }
 
 @media print {
-
   .print-button-container,
   .edit-button-container {
     display: none !important;

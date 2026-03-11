@@ -128,7 +128,7 @@
             </td>
 
             <!-- Created At -->
-            <td>{{ formatDate(loan.created_at) }}</td>
+            <td>{{ formatDate(loan.createdAt) }}</td>
 
             <!-- Actions -->
             <!-- <td @click.stop>
@@ -284,7 +284,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
-                <p>{{ formatDate(selectedLoan.created_at) }}</p>
+                <p>{{ formatDate(selectedLoan.createdAt) }}</p>
               </div>
             </div>
           </div>
@@ -474,7 +474,7 @@ const filteredLoans = computed(() => {
   // 📅 Date filter (client-side)
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
-      const loanDate = loan.created_at ? new Date(loan.created_at).toISOString().split('T')[0] : undefined;
+      const loanDate = loan.createdAt ? new Date(loan.createdAt).toISOString().split('T')[0] : undefined;
       if (!loanDate) return false;;
       const fromDate = dateFrom.value || '1970-01-01';
       const toDate = dateTo.value || '9999-12-31';
@@ -662,7 +662,7 @@ const exportToCSV = () => {
     'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '-',
     'ສະຖານະ': getStatusText(loan.status),
     'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
-    'ວັນທີ່ສ້າງ': formatDate(loan.created_at)
+    'ວັນທີ່ສ້າງ': formatDate(loan.createdAt)
   }))
 
   const csv = Papa.unparse(csvData)

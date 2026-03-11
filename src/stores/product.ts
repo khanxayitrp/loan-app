@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { getFullImageUrl } from '@/utils/url'
 import {
   getProducts,
+  getProductById, // 🟢 Import มาด้วย
   createProduct,
   updateProduct,
   toggleProductStatus,
@@ -13,13 +14,7 @@ import {
   saveProductGallery,
   getProductGallery
 } from '@/api/product'
-import type {
-  Product,
-  CreateProductDto,
-  UpdateProductDto,
-  GetProductsParams,
-  ProductType
-} from '@/types/product'
+import type { Product, CreateProductDto, UpdateProductDto, GetProductsParams, ProductType } from '@/types/product'
 
 export const useProductStore = defineStore('product', {
   state: () => ({
@@ -30,7 +25,7 @@ export const useProductStore = defineStore('product', {
     pageSize: 10,
     total: 0,
     error: null as string | null,
-    currentShopId: null as number | null // ✅ เพิ่ม: เก็บ shop_id ปัจจุบัน
+    currentShopId: null as number | null
   }),
 
   getters: {
@@ -181,6 +176,33 @@ export const useProductStore = defineStore('product', {
       } catch (error: any) {
         console.error('❌ [ProductStore] Failed to fetch product types:', error)
         throw error
+      }
+    },
+
+    /**
+     * 🟢 เพิ่มฟังก์ชันดึงข้อมูลสินค้าเฉพาะเจาะจง (รายตัว)
+     */
+    async fetchProductById(id: number) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const product = await getProductById(id);
+
+        // เราสามารถนำข้อมูลที่ได้มาประกอบ Full URL ของรูปภาพได้ด้วย
+        const productWithUrls = {
+          ...product,
+          image_url: getFullImageUrl(product.image_url),
+          gallery: Array.isArray(product.gallery)
+            ? product.gallery.map((img: any) => getFullImageUrl(img.image_url || img))
+            : []
+        };
+
+        return productWithUrls;
+      } catch (error: any) {
+        this.error = error.message || 'Failed to fetch product';
+        throw error;
+      } finally {
+        this.isLoading = false;
       }
     },
 

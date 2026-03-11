@@ -8,6 +8,8 @@ export interface User {
   is_active?: number
   created_at?: string
   updated_at?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 
