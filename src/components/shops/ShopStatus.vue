@@ -11,7 +11,7 @@
       <p>{{ error }}</p>
     </div>
 
-     <!-- Shop Data -->
+    <!-- Shop Data -->
     <div v-else-if="shop">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
@@ -33,16 +33,11 @@
 
       <!-- Logo -->
       <div class="flex justify-center mb-6">
-        <div
-          v-if="shop.shop_logo_url"
-          class="w-24 h-24 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden"
-        >
+        <div v-if="shop.shop_logo_url"
+          class="w-24 h-24 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
           <img :src="shop.shop_logo_url" alt="Shop logo" class="w-full h-full object-contain" />
         </div>
-        <div
-          v-else
-          class="w-24 h-24 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
-        >
+        <div v-else class="w-24 h-24 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
           <span class="icon-[tabler--building-store] size-8 text-gray-400"></span>
         </div>
       </div>
@@ -71,11 +66,8 @@
         </div>
         <div>
           <label class="text-sm font-medium text-gray-500">ສະຖານະ</label>
-          <span
-            class="badge badge-soft"
-            :class="shop.is_active ? 'badge-success' : 'badge-error'"
-          >
-            {{ shop.is_active ===true ? 'Active' : 'Inactive' }}
+          <span class="badge badge-soft" :class="shop.is_active ? 'badge-success' : 'badge-error'">
+            {{ shop.is_active ? 'Active' : 'Inactive' }}
           </span>
         </div>
       </div>
@@ -105,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import {  computed, props } from 'vue'
+import { computed, type Prop } from 'vue'
 import { useShopStore } from '@/stores/shop'
 import type { shopType } from '@/types/shop'
 

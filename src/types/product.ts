@@ -14,6 +14,8 @@ export interface Product {
   id: number
   productType_id: number
   product_name: string
+  brand: string // เพิ่ม
+  model: string // เพิ่ม
   price: number | string // ບາງເທື່ອ Decimal ຈາກ DB ມາເປັນ string
   interest_rate: number | string
   image_url: string | null
@@ -21,10 +23,16 @@ export interface Product {
   is_active: number
   created_at: string | Date
   updated_at: string | Date | null
+  type_name?: string
+  term?: number
+  partner_id?: number
+  shop_id?: number
 }
 
 export interface CreateProductDto {
   product_name: string
+  brand: string // เพิ่ม
+  model: string // เพิ่ม
   productType_id: number
   price: number
   interest_rate: number
@@ -37,11 +45,12 @@ export interface UpdateProductDto extends Partial<CreateProductDto> {
 }
 
 export interface GetProductsParams {
-  page?: number
-  limit?: number
+  shop_id?: number
   search?: string
   status?: string
   type?: string
+  page?: number
+  limit?: number
 }
 
 

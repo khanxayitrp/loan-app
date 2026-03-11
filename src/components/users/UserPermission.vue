@@ -398,24 +398,46 @@ const userPermissionsData = computed(() => {
   if (!Array.isArray(users)) return []
 
   // ✅ แปลงเป็นโครงสร้างที่ template ใช้
-  return users.map(user => ({
-    user: {
-      id: user.id,
-      full_name: user.full_name,
-      username: user.username,
-      role: user.role
+  return users.map((user: any) => {
+    // 🟢 ตรวจสอบหาว่า Backend ส่งข้อมูลสิทธิ์มาในชื่ออะไร (features หรือ user_permissions)
+    const rawPermissions = user.features || user.user_permissions || [];
+    return {
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        username: user.username,
+        role: user.role
     },
-    permissions: user.user_permissions?.map(permission => ({
-      user_id: user.id,
-      feature_id: permission.feature.id,
-      can_access: permission.can_access ? 1 : 0,
-      feature: {
-        id: permission.feature.id,
-        feature_name: permission.feature.feature_name,
-        description: permission.feature.description
-      }
-    })) || []
-  }))
+    permissions: rawPermissions.map((item: any) => {
+      // 🟢 กรณีดึงจาก user.features (จาก Log มี dataValues ซ้อนอยู่)
+        if (item.feature_name || item.dataValues?.feature_name) {
+          const fData = item.dataValues || item; // ถ้ามี dataValues ให้ใช้ก้อนนั้น
+          return {
+            user_id: user.id,
+            feature_id: fData.id,
+            can_access: item.can_access ? 1 : 0,
+            feature: {
+              id: fData.id,
+              feature_name: fData.feature_name,
+              description: fData.description
+            }
+          };
+        }
+
+        // 🟢 กรณีดึงจาก user.user_permissions (Fallback เผื่อไว้)
+        return {
+          user_id: user.id,
+          feature_id: item.feature_id,
+          can_access: item.can_access ? 1 : 0,
+          feature: {
+            id: item.feature?.id || item.feature_id,
+            feature_name: item.feature?.feature_name || 'Unknown',
+            description: item.feature?.description || ''
+          }
+        };
+      })
+    };
+  });
 })
 
 // Computed properties
@@ -567,7 +589,7 @@ onMounted(async () => {
 })
 
 // Add Modal methods
-let addDebounceTimer: NodeJS.Timeout | null = null
+let addDebounceTimer: ReturnType<typeof setTimeout> | null = null
 const debounceAddSearch = () => {
   if (addDebounceTimer) {
     clearTimeout(addDebounceTimer)
@@ -587,8 +609,8 @@ const performAddSearch = () => {
   // Filter users that don't already have permissions
   // ✅ ดึง ID ของผู้ใช้ที่มีสิทธิ์แล้ว (จาก user_permissions)
   const existingUserIds = userPermissionsData.value
-    .filter(user => user.user_permissions && user.user_permissions.length > 0)
-    .map(user => user.id)
+    .filter(user => user.permissions && user.permissions.length > 0)
+    .map(user => user.user.id)
 
   // ✅ กรองผู้ใช้ที่ยังไม่มีสิทธิ์ + ค้นหา
   addModal.value.searchResults = authStore.users
@@ -607,8 +629,8 @@ const handleAddFocus = () => {
     // Show all available users (not already having permissions)
     // ✅ แสดงผู้ใช้ที่ยังไม่มีสิทธิ์ทั้งหมด
     const existingUserIds = userPermissionsData.value
-      .filter(user => user.user_permissions && user.user_permissions.length > 0)
-      .map(user => user.id)
+      .filter(user => user.permissions && user.permissions.length > 0)
+      .map(user => user.user.id)
     addModal.value.searchResults = authStore.users.filter(user => !existingUserIds.includes(user.id))
   }
 }

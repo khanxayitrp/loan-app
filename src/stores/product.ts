@@ -49,7 +49,7 @@ export const useProductStore = defineStore('product', {
         ...product,
         image_url: getFullImageUrl(product.image_url),
         gallery: Array.isArray(product.gallery)
-          ? product.gallery.map(url => getFullImageUrl(url))
+          ? product.gallery.map(img => getFullImageUrl(img.image_url))
           : []
       }))
     },
@@ -66,7 +66,7 @@ export const useProductStore = defineStore('product', {
         ...product,
         image_url: getFullImageUrl(product.image_url),
         gallery: Array.isArray(product.gallery)
-          ? product.gallery.map(url => getFullImageUrl(url))
+          ? product.gallery.map(img => getFullImageUrl(img.image_url))
           : []
       }))
     },
@@ -94,7 +94,6 @@ export const useProductStore = defineStore('product', {
         this.currentPage = page
         this.pageSize = limit
 
-        // ✅ ถ้าเปลี่ยนร้าน → Clear products เก่า
         if (shopId !== undefined && shopId !== this.currentShopId) {
           console.log('🔄 [ProductStore] Shop changed, clearing old products')
           console.log('  Old shop:', this.currentShopId)
@@ -119,7 +118,6 @@ export const useProductStore = defineStore('product', {
 
         console.log('📥 [ProductStore] API response:', response)
 
-        // ✅ API มี normalize แล้ว ใช้ตรง ๆ
         const productsArray = Array.isArray(response.products)
           ? response.products
           : []
@@ -132,7 +130,6 @@ export const useProductStore = defineStore('product', {
           shop_id: shopId
         })
 
-        // ✅ ตรวจสอบว่ามี productType_id
         if (productsArray.length > 0) {
           const sample = productsArray[0]
           console.log('🔍 [ProductStore] First product:', {
@@ -144,7 +141,6 @@ export const useProductStore = defineStore('product', {
           })
         }
 
-        // ✅ อัปเดต state
         this.products = productsArray
         this.total = totalCount
 
@@ -272,7 +268,7 @@ export const useProductStore = defineStore('product', {
         // อัปเดตรูปภาพใน store
         const index = this.products.findIndex(p => p.id === productId)
         if (index !== -1) {
-          this.products[index].image_url = response.file_url
+          this.products[index]!.image_url = response.file_url
         }
         return response
       } catch (error) {
@@ -394,7 +390,7 @@ export const useProductStore = defineStore('product', {
         const index = this.products.findIndex(p => p.id === productId);
         if (index !== -1) {
           // ເກັບເປັນ Array ຂອງ String (URL) ເພື່ອໃຫ້ງ່າຍຕໍ່ການໃຊ້ໃນ v-for
-          this.products[index].gallery = gallery.map((item: any) => item.image_url);
+          this.products[index]!.gallery = gallery.map((item: any) => item.image_url);
         }
         return gallery;
       } catch (error) {

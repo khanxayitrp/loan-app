@@ -83,15 +83,15 @@
             <td>
               <span class="badge badge-soft" :class="{
                 'badge-warning': draft.is_confirmed === 0,
-                'badge-info': draft.is_confirmed === 1 && draft.status === 'pending',
-                'badge-success': draft.status === 'approved',
-                'badge-error': draft.status === 'rejected'
+                'badge-info': draft.is_confirmed === 1 && draft.status === LoanApplicationStatus.PENDING,
+                'badge-success': draft.status === LoanApplicationStatus.APPROVED,
+                'badge-error': draft.status === LoanApplicationStatus.REJECTED
               }">
                 {{ getStatusLabel(draft) }}
               </span>
             </td>
             <!-- Created At -->
-            <td>{{ draft.createdAt ? formatDate(draft.createdAt) : '-' }}</td>
+            <td>{{ draft.created_at ? formatDate(draft.created_at) : '-' }}</td>
             <!-- Actions -->
             <td>
               <div class="flex gap-2">
@@ -249,7 +249,7 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
-                <p>{{ selectedDraft.createdAt ? formatDate(selectedDraft.createdAt) : '-' }}</p>
+                <p>{{ selectedDraft.created_at ? formatDate(selectedDraft.created_at) : '-' }}</p>
               </div>
               <!-- ✅ แสดง Customer Info ถ้าມີ -->
               <div v-if="selectedDraft.customer" class="border-t pt-4 mt-4">
@@ -485,7 +485,7 @@
                       <p class="text-xs text-gray-500 mt-1">{{ doc.original_filename || doc.file_name || 'ບໍ່ຮູ້ຈັກ' }}
                       </p>
                     </div>
-                    <a :href="getFullImageUrl(doc.file_url)" target="_blank" download
+                    <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
                       class="btn btn-xs btn-ghost text-primary hover:bg-primary/10">
                       <span class="icon-[tabler--download] size-4 mr-1"></span>
                       ດາວໂຫຼດ
@@ -495,7 +495,7 @@
                   <div class="mt-2">
                     <div v-if="isImage(doc.file_url)"
                       class="aspect-video bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
-                      <img :src="getFullImageUrl(doc.file_url)" alt="Document preview"
+                      <img :src="getFullImageUrl(doc.file_url) || ''" alt="Document preview"
                         class="w-full h-full object-contain p-2" />
                     </div>
                     <div v-else
@@ -541,8 +541,8 @@
                     <!-- Document Preview or Upload Area -->
                     <div v-if="doc.preview" class="mt-3">
                       <div class="relative w-full h-40 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                        <img v-if="isImage(doc.preview)" :src="getFullImageUrl(doc.preview)" alt="Document preview"
-                          class="w-full h-full object-contain p-2" />
+                        <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
+                          alt="Document preview" class="w-full h-full object-contain p-2" />
                         <div v-else class="w-full h-full flex items-center justify-center text-gray-500">
                           <span class="icon-[tabler--file-description] size-10"></span>
                         </div>
@@ -589,8 +589,8 @@
                     <!-- Document Preview or Upload Area -->
                     <div v-if="doc.preview" class="mt-3">
                       <div class="relative w-full h-40 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                        <img v-if="isImage(doc.preview)" :src="getFullImageUrl(doc.preview)" alt="Document preview"
-                          class="w-full h-full object-contain p-2" />
+                        <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
+                          alt="Document preview" class="w-full h-full object-contain p-2" />
                         <div v-else class="w-full h-full flex items-center justify-center text-gray-500">
                           <span class="icon-[tabler--file-description] size-10"></span>
                         </div>
@@ -631,10 +631,10 @@
           <!-- ✅ เพิ่ม Tab แผนที่ -->
           <div v-else-if="activeTab === 'map'" class="space-y-6">
             <CustomerLocationMap :customer-id="selectedDraft?.customer_id || 0" :locations="customerLocations"
-              :is-loading="isLocationLoading" :can-add-location="true" :can-edit-location="true"
-              :can-delete-location="true" :can-set-primary="true" @add-location="handleAddLocation"
-              @update-location="handleUpdateLocation" @delete-location="handleDeleteLocation"
-              @set-primary="handleSetPrimary" />
+              googleMapsApiKey="YOUR_API_KEY" :is-loading="isLocationLoading" :can-add-location="true"
+              :can-edit-location="true" :can-delete-location="true" :can-set-primary="true"
+              @add-location="handleAddLocation" @update-location="handleUpdateLocation"
+              @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
           </div>
           <!-- ✅ เพิ่ม Tab RequestForm -->
           <div v-else-if="activeTab === 'requestForm'" class="space-y-6">
@@ -724,7 +724,7 @@
           <h3 class="font-bold text-lg mb-4 text-success">ສົ່ງຮ່າງສິນເຊື່ອ</h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
             ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການສົ່ງຮ່າງສິນເຊື່ອເລກທີ {{ draftToSubmit.loan_id }} ຂອງ "{{
-              draftToSubmit.customer.first_name }} {{ draftToSubmit.customer.last_name }}" ?
+              draftToSubmit.customer?.first_name }} {{ draftToSubmit.customer?.last_name }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
             <button class="btn btn-soft btn-secondary" @click="showSubmitModal = false">
@@ -740,11 +740,13 @@
   </div>
 </template>
 <script setup lang="ts">
+import { formatPrice } from '@/utils/formatters'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useProductStore } from '@/stores/product'
 import { useLoanContractStore } from '@/stores/loanContract'
-import type { LoanApplication, ConfirmDraftDto, CustomerLocation } from '@/types/loanApplication'
+import { LoanApplicationStatus } from '@/types/loanApplication'
+import type { LoanApplication, UpdateLoanApplicationDto, CustomerLocation, ConfirmDraftDto } from '@/types/loanApplication'
 import type { CreateLoanContractRequest } from '@/types/loanContract'
 import { requestOtpForCustomer } from '@/api/customer'
 import Papa from 'papaparse'
@@ -872,20 +874,22 @@ const handleDocumentUpload = (index: number, event: Event) => {
   const file = target.files?.[0]
   if (!file) return
   if (file.size > 5 * 1024 * 1024) {
-    alert('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 5MB')
+    alert.error('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 5MB')
     target.value = ''
     return
   }
   if (!file.type.match(/^(image\/.*|application\/pdf)$/)) {
-    alert('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ ຫຼື PDF ເທົ່ານັ້ນ')
+    alert.error('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ ຫຼື PDF ເທົ່ານັ້ນ')
     target.value = ''
     return
   }
   const allDocs = [...draftDocuments.value, ...optionalDocuments.value]
   const reader = new FileReader()
   reader.onload = (e) => {
-    allDocs[index].file = file
-    allDocs[index].preview = e.target?.result as string
+    if (allDocs[index]) {
+      allDocs[index].file = file
+      allDocs[index].preview = e.target?.result as string
+    }
     if (index < draftDocuments.value.length) {
       draftDocuments.value = [...allDocs.slice(0, draftDocuments.value.length)]
     } else {
@@ -898,8 +902,10 @@ const handleDocumentUpload = (index: number, event: Event) => {
 // ✅ ลบเอกสาร
 const removeDocument = (index: number) => {
   const allDocs = [...draftDocuments.value, ...optionalDocuments.value]
-  allDocs[index].file = null
-  allDocs[index].preview = null
+  if (allDocs[index]) {
+    allDocs[index].file = null
+    allDocs[index].preview = null
+  }
   if (index < draftDocuments.value.length) {
     draftDocuments.value = [...allDocs.slice(0, draftDocuments.value.length)]
   } else {
@@ -978,7 +984,7 @@ const filteredDrafts = computed(() => {
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(draft => {
       if (!draft.created_at) return false
-      const draftDate = new Date(draft.created_at).toISOString().split('T')[0]
+      const draftDate = new Date(draft.created_at).toISOString().split('T')[0] ?? ''
       const fromDate = dateFrom.value || '1970-01-01'
       const toDate = dateTo.value || '9999-12-31'
       return draftDate >= fromDate && draftDate <= toDate
@@ -991,7 +997,7 @@ const filteredModalProducts = computed(() => {
   const query = modalProductSearch.value.toLowerCase()
   return productStore.products.filter(product =>
     product.product_name.toLowerCase().includes(query) ||
-    product.type_name.toLowerCase().includes(query) ||
+    (product.type_name || '').toLowerCase().includes(query) ||
     product.id.toString().includes(query)
   )
 })
@@ -1015,25 +1021,23 @@ const getDraftDisplayName = (draft: LoanApplication): string => {
 }
 const isDraft = (draft: LoanApplication): boolean => {
   return draft.is_confirmed === 0 ||
-    draft.is_confirmed === false ||
     !draft.is_confirmed
 }
 const isConfirmed = (draft: LoanApplication): boolean => {
-  return draft.is_confirmed === 1 ||
-    draft.is_confirmed === true
+  return draft.is_confirmed === 1
 }
 const getStatusLabel = (draft: LoanApplication): string => {
   if (isDraft(draft)) {
     return 'ຮ່າງ'
   }
   switch (draft.status) {
-    case 'pending':
+    case LoanApplicationStatus.PENDING:
       return 'ລໍຖ້າ'
-    case 'verifying':
+    case LoanApplicationStatus.VERIFYING:
       return 'ກຳລັງກວດ'
-    case 'approved':
+    case LoanApplicationStatus.APPROVED:
       return 'ອະນຸມັດ'
-    case 'rejected':
+    case LoanApplicationStatus.REJECTED:
       return 'ປະຕິເສດ'
     default:
       return draft.status
@@ -1049,15 +1053,9 @@ const getProductName = (draft: LoanApplication): string => {
   return draft.product?.product_name || '-'
 }
 const getRequesterName = (draft: LoanApplication): string => {
-  return draft.requester?.full_name || '-'
+  return (draft.requester as any)?.full_name || (draft.requester as any)?.name || '-'
 }
-const formatPrice = (price: number | string): string => {
-  const numPrice = typeof price === 'string' ? parseFloat(price) : price
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK'
-  }).format(numPrice || 0)
-}
+
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString('lo-LA')
 }
@@ -1191,7 +1189,9 @@ const handleUpdateLocation = async (id: number, locationData: Partial<CustomerLo
     const { updateCustomerLocation } = await import('@/api/customer')
     await updateCustomerLocation(id, locationData)
     alert.success('ແກ້ໄຂທີ່ຢູ່ສຳເລັດ!')
-    await loadCustomerLocations(props.customerId)
+    if (selectedDraft.value?.customer_id) {
+      await loadCustomerLocations(selectedDraft.value.customer_id)
+    }
   } catch (error: any) {
     alert.error('ແກ້ໄຂທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
   }
@@ -1202,7 +1202,9 @@ const handleDeleteLocation = async (id: number) => {
     const { deleteCustomerLocation } = await import('@/api/customer')
     await deleteCustomerLocation(id)
     alert.success('ລຶບທີ່ຢູ່ສຳເລັດ!')
-    await loadCustomerLocations(props.customerId)
+    if (selectedDraft.value?.customer_id) {
+      await loadCustomerLocations(selectedDraft.value.customer_id)
+    }
   } catch (error: any) {
     alert.error('ລຶບທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
   }
@@ -1211,9 +1213,11 @@ const handleDeleteLocation = async (id: number) => {
 const handleSetPrimary = async (id: number) => {
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
-    await updateCustomerLocation(id, { is_primary: true })
+    await updateCustomerLocation(id, { is_primary: 1 })
     alert.success('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກສຳເລັດ!')
-    await loadCustomerLocations(props.customerId)
+    if (selectedDraft.value?.customer_id) {
+      await loadCustomerLocations(selectedDraft.value.customer_id)
+    }
   } catch (error: any) {
     alert.error('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກລົ້ມເຫຼວ', error.message)
   }
@@ -1238,7 +1242,7 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       return parts.join(', ')
     }
 
-    // ✅ Helper Function - แยกชื่อ-นามสกุล (ปลอดภัย)
+    // ✅ Helper Function - แยกชื่อ-นามສກົນ
     const parseName = (fullName: any) => {
       // ตรวจสอบว่า fullName เป็น string และไม่ empty
       if (!fullName || typeof fullName !== 'string') {
@@ -1255,7 +1259,6 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       }
     }
 
-    // ✅ แยกชื่อ-นามสกุลอย่างปลอดภัย
     // ✅ แยกชื่อ-นามສກົນ
     const { first_name, last_name } = parseName(formData.customer.fullname)
 
@@ -1306,7 +1309,7 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       date_of_birth: formData.customer.dob,
       age: formData.customer.age,
       occupation: formData.customer.occupation,
-      income_per_month: selectedDraft.value.customer.income_per_month,
+      income_per_month: selectedDraft.value.customer?.income_per_month,
       unit: formData.customer.unit,
       issue_place: formData.customer.issuePlace,
       issue_date: formData.customer.issueDate,
@@ -1319,7 +1322,7 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       loan_period: formData.product.loanTerm,
       down_payment: formData.product.downPayment,
       fee: formData.product.fee,
-      first_intstallment_amount: formData.product.firstInstallment || null,
+      first_installment_amount: formData.product.firstInstallment || null,
       payment_day: formData.product.paymentDay,
       borrower_signature_date: formData.signatures.borrowerDate || null,
       guarantor_signature_date: formData.signatures.guarantorDate || null,
@@ -1331,7 +1334,7 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
     await loanApplicationStore.updateDraftLoanApplication(selectedDraft.value.id, CustLoanData)
     alert.success('ບັນທຶກແບບຟອມຂໍກູ້ສຳເລັດ!')
     // ✅ Refresh ข้อมูล selectedDraft
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
+    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
     // ✅ หา draft ที่อัปเดตใหม่
     selectedDraft.value = loanApplicationStore.loanApplications.find(d => d.id === selectedDraft.value?.id) || null
   } catch (error: any) {
@@ -1415,7 +1418,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       motorWarranty: Number(formData.product.motorcycle?.insurance) || 0,
 
       // Shop Info
-      partnerId: selectedDraft.value.partner_id || null,
+      partnerId: (selectedDraft.value as any).partner_id || null,
       shopBranch: formData.shop.branch,
       shopId: formData.shop.code, // Assuming code maps to shopId string
 
@@ -1455,7 +1458,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     await loanContractStore.createContract(selectedDraft.value.id, contractData)
     alert.success('ບັນທຶກສັນຍາສຳເລັດ!')
     isEditingInModal.value = false
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
+    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
   } catch (error: any) {
     console.error('Error saving contract:', error)
     alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
@@ -1494,9 +1497,8 @@ const startEditInModal = async () => {
       return
     }
   }
-  const shopId = draftData.partner_id ||
-    draftData.product?.partner_id ||
-    null
+  const shopId = (draftData as any).partner_id || (draftData.product as any)?.partner_id || null;
+  // null << มีคำว่า null โผล่มาลอยๆ ในโค้ดคุณ แนะนำให้ลบทิ้งด้วยนะครับ
   modalShopId.value = shopId
   if (shopId) {
     try {
@@ -1510,12 +1512,14 @@ const startEditInModal = async () => {
           modalProductSearch.value = currentProduct.product_name
         }
       }
-      if (draftData.product.productType_id) {
-        const matchingProduct = productStore.products.find(
-          p => p.productType_id === draftData!.product.productType_id
+
+      // 🟢 แก้ไขตรงนี้: เพิ่ม ?. ก่อน .productType_id
+      if (draftData.product?.productType_id) {
+        const matchingType = productStore.productTypes.find(
+          t => t.id === draftData!.product?.productType_id
         )
-        if (matchingProduct) {
-          modalDraftForm.product_type = matchingProduct.productType.type_name
+        if (matchingType) {
+          modalDraftForm.product_type = matchingType.type_name
         }
       }
     } catch (error) {
@@ -1587,7 +1591,7 @@ const saveDraftFromModal = async () => {
     }
     alert.success('ບັນທຶກການປ່ຽນແປງສຳເລັດ!')
     isEditingInModal.value = false
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
+    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
   } catch (error: any) {
     console.error('Error saving draft:', error)
     alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
@@ -1596,12 +1600,12 @@ const saveDraftFromModal = async () => {
 const deleteDraft = async (draftId: number) => {
   if (!await alert.confirm('ຕ້ອງການລຶບຮ່າງສິນເຊື່ອນີ້ບໍ?')) return
   try {
-    await loanApplicationStore.updateLoanApplication(draftId, { status: 'rejected', remarks: 'ລຶບຮ່າງ' })
+    await loanApplicationStore.updateLoanApplication(draftId, { status: LoanApplicationStatus.REJECTED, remarks: 'ລຶບຮ່າງ' })
     alert.success('ລຶບຮ່າງສິນເຊື່ອສຳເລັດ!')
     if (selectedDraft.value?.id === draftId) {
       closeDetailsModal()
     }
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
+    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
   } catch (error: any) {
     console.error('Error deleting draft:', error)
     alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
@@ -1634,7 +1638,10 @@ const verifyAndSubmitDraft = async () => {
     otpError.value = 'ກະລຸນາປ້ອນລະຫັດ OTP 6 ຕົວ'
     return
   }
-  if (!draftToSubmit.value) return
+  if (!draftToSubmit.value || !draftToSubmit.value.customer?.phone) {
+    alert.error('ຂໍ້ມູນລູກຄ້າບໍ່ຄົບຖ້ວນ')
+    return
+  }
   isVerifying.value = true
   otpError.value = ''
   try {
@@ -1651,7 +1658,13 @@ const verifyAndSubmitDraft = async () => {
     }
     draftToSubmit.value = null
     otpCode.value = ''
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
+
+    // 🟢 แก้ไขตรงนี้: เปลี่ยน 'pending' เป็น LoanApplicationStatus.PENDING
+    await loanApplicationStore.fetchLoanApplications({
+        status: LoanApplicationStatus.PENDING,
+        is_confirmed: 0
+    })
+
   } catch (error: any) {
     console.error('❌ Submit draft failed:', error)
     otpError.value = error.message || 'ເກີດຂໍ້ຜິດພາດການຢືນຢັນ OTP'
@@ -1700,7 +1713,10 @@ watch(pageSize, () => {
 })
 onMounted(async () => {
   try {
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 0 })
+    await Promise.all([
+      loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 }),
+      productStore.fetchProductTypes()
+    ])
   } catch (error) {
     console.error('❌ Failed to load applications:', error)
   }

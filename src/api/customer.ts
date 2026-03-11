@@ -1,5 +1,5 @@
 // src/api/customer.ts
-import apiClient from '@/api/apiClient'; // หรือ path ที่ apiClient ของคุณอยู่ (ปรับตามโครงสร้างโปรเจกต์)
+import apiClient from '@/api/apiclient'; // หรือ path ที่ apiClient ของคุณอยู่ (ปรับตามโครงสร้างโปรเจกต์)
 
 // Interface สำหรับ request bodies และ responses (เหมือนเดิม)
 interface RequestOtpBody {

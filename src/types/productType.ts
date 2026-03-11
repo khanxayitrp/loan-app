@@ -4,7 +4,7 @@ export interface ProductType {
   partner_id: number
   type_name: string
   description: string | null
-  is_active: boolean // 👈 ใช้ boolean แทน number
+  is_active: number | boolean
   created_at: string
 }
 

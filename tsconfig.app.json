@@ -58,6 +58,6 @@
     "allowSyntheticDefaultImports": true,
 
     // Helps Volar / TypeScript understand Vue SFC better
-    "types": ["vite/client"]
+    "types": ["vite/client", "google.maps"]
   }
 }

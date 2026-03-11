@@ -13,11 +13,8 @@
       </div>
 
       <!-- Export Button -->
-      <button
-        @click="exportToCSV"
-        class="btn btn-outline btn-sm whitespace-nowrap"
-        :disabled="isLoading || displayedLoans.length === 0"
-      >
+      <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap"
+        :disabled="isLoading || displayedLoans.length === 0">
         <span class="icon-[tabler--file-export] size-4 mr-1"></span>
         Export CSV
       </button>
@@ -30,13 +27,8 @@
         <label class="label">
           <span class="label-text text-sm font-medium">ຄົ້ນຫາ</span>
         </label>
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="ຊື່ລູກຄ້າ, ເບີໂທ, ເລກທີ່..."
-          class="input input-bordered w-full"
-          @input="debounceSearch"
-        />
+        <input v-model="searchQuery" type="text" placeholder="ຊື່ລູກຄ້າ, ເບີໂທ, ເລກທີ່..."
+          class="input input-bordered w-full" @input="debounceSearch" />
       </div>
 
       <!-- Status Filter -->
@@ -44,10 +36,7 @@
         <label class="label">
           <span class="label-text text-sm font-medium">ສະຖານະ</span>
         </label>
-        <select
-          v-model="statusFilter"
-          class="select select-bordered w-full"
-        >
+        <select v-model="statusFilter" class="select select-bordered w-full">
           <option value="">ທັງໝົດສະຖານະ</option>
           <option value="pending">ລໍຖ້າການອະນຸມັດ</option>
           <option value="verifying">ກຳລັງກວດສອບ</option>
@@ -64,18 +53,8 @@
           <span class="label-text text-sm font-medium">ວັນທີ່ສ້າງ</span>
         </label>
         <div class="flex gap-2">
-          <input
-            v-model="dateFrom"
-            type="date"
-            class="input input-bordered w-full"
-            @change="applyDateFilter"
-          />
-          <input
-            v-model="dateTo"
-            type="date"
-            class="input input-bordered w-full"
-            @change="applyDateFilter"
-          />
+          <input v-model="dateFrom" type="date" class="input input-bordered w-full" @change="applyDateFilter" />
+          <input v-model="dateTo" type="date" class="input input-bordered w-full" @change="applyDateFilter" />
         </div>
       </div>
     </div>
@@ -109,12 +88,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="loan in displayedLoans"
-            :key="loan.id"
-            @click="viewLoanDetails(loan)"
-            class="cursor-pointer hover:bg-base-200"
-          >
+          <tr v-for="loan in displayedLoans" :key="loan.id" @click="viewLoanDetails(loan)"
+            class="cursor-pointer hover:bg-base-200">
             <!-- Loan Number -->
             <td class="font-mono text-gray-600 dark:text-gray-400">
               {{ loan.loan_id || '-' }}
@@ -139,24 +114,21 @@
 
             <!-- Status -->
             <td>
-              <span
-                class="badge badge-soft"
-                :class="getStatusBadgeClass(loan.status)"
-              >
+              <span class="badge badge-soft" :class="getStatusBadgeClass(loan.status)">
                 {{ getStatusText(loan.status) }}
               </span>
             </td>
 
             <!-- Approved By -->
             <td>
-              <span v-if="loan.approver?.name">
-                {{ loan.approver.name }} 
+              <span v-if="loan.approver?.username">
+                {{ loan.approver.username }}
               </span>
               <span v-else class="text-gray-400">-</span>
             </td>
 
             <!-- Created At -->
-            <td>{{ formatDate(loan.createdAt) }}</td>
+            <td>{{ formatDate(loan.created_at) }}</td>
 
             <!-- Actions -->
             <!-- <td @click.stop>
@@ -213,20 +185,13 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <select
-          v-model.number="pageSize"
-          class="select select-sm select-bordered"
-        >
+        <select v-model.number="pageSize" class="select select-sm select-bordered">
           <option :value="10">10 ຕໍ່ໜ້າ</option>
           <option :value="25">25 ຕໍ່ໜ້າ</option>
           <option :value="50">50 ຕໍ່ໜ້າ</option>
         </select>
 
-        <button
-          class="btn btn-sm"
-          :disabled="!hasPreviousPage"
-          @click="previousPage"
-        >
+        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">
           ກ່ອນໜ້າ
         </button>
 
@@ -234,11 +199,7 @@
           ໜ້າ {{ currentPage }} / {{ totalPages }}
         </span>
 
-        <button
-          class="btn btn-sm"
-          :disabled="!hasNextPage"
-          @click="nextPage"
-        >
+        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">
           ຖັດໄປ
         </button>
       </div>
@@ -246,8 +207,10 @@
 
     <!-- Loan Details Modal -->
     <teleport to="body">
-      <div v-if="showDetailsModal && selectedLoan" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div v-if="showDetailsModal && selectedLoan"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-bold">ລາຍລະອຽດສິນເຊື່ອ</h3>
             <button @click="closeDetailsModal" class="text-gray-400 hover:text-gray-600">
@@ -264,10 +227,7 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ສະຖານະ</label>
-                <span
-                  class="badge badge-soft"
-                  :class="getStatusBadgeClass(selectedLoan.status)"
-                >
+                <span class="badge badge-soft" :class="getStatusBadgeClass(selectedLoan.status)">
                   {{ getStatusText(selectedLoan.status) }}
                 </span>
               </div>
@@ -293,7 +253,7 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຜູ້ອະນຸມັດ</label>
-                <p>{{ selectedLoan.approver?.name || '-' }}</p>
+                <p>{{ selectedLoan.approver?.username || '-' }}</p>
               </div>
             </div>
 
@@ -313,11 +273,7 @@
             <div v-if="currentDocuments.length > 0">
               <label class="text-sm font-medium text-gray-500 mb-2 block">ເອກະສານ</label>
               <div class="flex flex-wrap gap-2">
-                <div
-                  v-for="doc in currentDocuments"
-                  :key="doc.id"
-                  class="badge badge-outline gap-1"
-                >
+                <div v-for="doc in currentDocuments" :key="doc.id" class="badge badge-outline gap-1">
                   <span class="icon-[tabler--file-text] size-3"></span>
                   {{ doc.document_type || 'ເອກະສານ' }}
                 </div>
@@ -330,43 +286,21 @@
                 <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
                 <p>{{ formatDate(selectedLoan.created_at) }}</p>
               </div>
-              <div v-if="selectedLoan.approved_at">
-                <label class="text-sm font-medium text-gray-500">ອະນຸມັດເມື່ອ</label>
-                <p>{{ formatDate(selectedLoan.approved_at) }}</p>
-              </div>
-              <div v-if="selectedLoan.completed_at">
-                <label class="text-sm font-medium text-gray-500">ສຳເລັດເມື່ອ</label>
-                <p>{{ formatDate(selectedLoan.completed_at) }}</p>
-              </div>
             </div>
           </div>
 
           <div class="flex justify-end gap-3 mt-6">
-            <button
-              class="btn btn-soft btn-secondary"
-              @click="closeDetailsModal"
-            >
+            <button class="btn btn-soft btn-secondary" @click="closeDetailsModal">
               ປິດ
             </button>
-            <button
-              v-if="selectedLoan.status === 'pending'"
-              class="btn btn-success"
-              @click="approveLoan(selectedLoan)"
-            >
+            <button v-if="selectedLoan.status === 'pending'" class="btn btn-success" @click="approveLoan(selectedLoan)">
               ອະນຸມັດ
             </button>
-            <button
-              v-if="selectedLoan.status === 'pending'"
-              class="btn btn-error"
-              @click="rejectLoan(selectedLoan)"
-            >
+            <button v-if="selectedLoan.status === 'pending'" class="btn btn-error" @click="rejectLoan(selectedLoan)">
               ປະຕິເສດ
             </button>
-            <button
-              v-if="selectedLoan.status === 'approved'"
-              class="btn btn-primary"
-              @click="disburseLoan(selectedLoan)"
-            >
+            <button v-if="selectedLoan.status === 'approved'" class="btn btn-primary"
+              @click="disburseLoan(selectedLoan)">
               ຈ່າຍເງິນ
             </button>
           </div>
@@ -377,24 +311,18 @@
     <!-- Action Confirmation Modals (Approve, Reject, Disburse) -->
     <!-- ใช้โครงสร้างเดิมจากโค้ดก่อนหน้า -->
     <teleport to="body">
-      <div v-if="showApproveModal && loanToAction" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div v-if="showApproveModal && loanToAction"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4 text-success">ອະນຸມັດສິນເຊື່ອ</h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
             ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການອະນຸມັດສິນເຊື່ອຂອງ "{{ getCustomerFullName(loanToAction) }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
-            <button
-              class="btn btn-soft btn-secondary"
-              @click="showApproveModal = false"
-            >
+            <button class="btn btn-soft btn-secondary" @click="showApproveModal = false">
               ຍົກເລີກ
             </button>
-            <button
-              class="btn btn-success"
-              @click="confirmApproveLoan"
-              :disabled="isSaving"
-            >
+            <button class="btn btn-success" @click="confirmApproveLoan" :disabled="isSaving">
               <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
               ອະນຸມັດ
             </button>
@@ -404,24 +332,18 @@
     </teleport>
 
     <teleport to="body">
-      <div v-if="showRejectModal && loanToAction" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div v-if="showRejectModal && loanToAction"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4 text-error">ປະຕິເສດສິນເຊື່ອ</h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
             ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການປະຕິເສດສິນເຊື່ອຂອງ "{{ getCustomerFullName(loanToAction) }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
-            <button
-              class="btn btn-soft btn-secondary"
-              @click="showRejectModal = false"
-            >
+            <button class="btn btn-soft btn-secondary" @click="showRejectModal = false">
               ຍົກເລີກ
             </button>
-            <button
-              class="btn btn-error"
-              @click="confirmRejectLoan"
-              :disabled="isSaving"
-            >
+            <button class="btn btn-error" @click="confirmRejectLoan" :disabled="isSaving">
               <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
               ປະຕິເສດ
             </button>
@@ -431,24 +353,19 @@
     </teleport>
 
     <teleport to="body">
-      <div v-if="showDisburseModal && loanToAction" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div v-if="showDisburseModal && loanToAction"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4 text-primary">ຈ່າຍເງິນສິນເຊື່ອ</h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຈ່າຍເງິນສິນເຊື່ອ {{ formatPrice(loanToAction.total_amount) }} ໃຫ້ "{{ getCustomerFullName(loanToAction) }}" ?
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຈ່າຍເງິນສິນເຊື່ອ {{ formatPrice(loanToAction.total_amount) }} ໃຫ້ "{{
+              getCustomerFullName(loanToAction) }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
-            <button
-              class="btn btn-soft btn-secondary"
-              @click="showDisburseModal = false"
-            >
+            <button class="btn btn-soft btn-secondary" @click="showDisburseModal = false">
               ຍົກເລີກ
             </button>
-            <button
-              class="btn btn-primary"
-              @click="confirmDisburseLoan"
-              :disabled="isSaving"
-            >
+            <button class="btn btn-primary" @click="confirmDisburseLoan" :disabled="isSaving">
               <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
               ຈ່າຍເງິນ
             </button>
@@ -460,11 +377,12 @@
 </template>
 
 <script setup lang="ts">
+import { formatPrice } from '@/utils/formatters'
 import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
-import type { LoanApplication, LoanApplicationStatus, LoanApplicationFilters } from '@/types/loanApplication'
+import { LoanApplicationStatus, type LoanApplication, type LoanApplicationFilters } from '@/types/loanApplication'
 
 // 📦 ใช้ Pinia Store
 const loanStore = useLoanApplicationStore()
@@ -548,18 +466,19 @@ const filteredLoans = computed(() => {
       const loanId = loan.loan_id || ''
 
       return customerName.includes(query) ||
-             phone.includes(query) ||
-             loanId.toLowerCase().includes(query)
+        phone.includes(query) ||
+        loanId.toLowerCase().includes(query)
     })
   }
 
   // 📅 Date filter (client-side)
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
-      const loanDate = loan.created_at ? new Date(loan.created_at).toISOString().split('T')[0] : ''
-      const fromDate = dateFrom.value || '1970-01-01'
-      const toDate = dateTo.value || '9999-12-31'
-      return loanDate >= fromDate && loanDate <= toDate
+      const loanDate = loan.created_at ? new Date(loan.created_at).toISOString().split('T')[0] : undefined;
+      if (!loanDate) return false;;
+      const fromDate = dateFrom.value || '1970-01-01';
+      const toDate = dateTo.value || '9999-12-31';
+      return loanDate >= fromDate && loanDate <= toDate;
     })
   }
 
@@ -608,14 +527,7 @@ const getStatusText = (status: string): string => {
 }
 
 // 💰 Format Price
-const formatPrice = (price: number | undefined): string => {
-  if (!price) return '0 ₭'
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK',
-    minimumFractionDigits: 0
-  }).format(price)
-}
+
 
 // 📅 Format Date
 const formatDate = (dateString: string | undefined): string => {
@@ -676,7 +588,7 @@ const confirmApproveLoan = async () => {
 
   try {
     await loanStore.changeStatus(loanToAction.value.id, {
-      status: 'approved',
+      status: LoanApplicationStatus.APPROVED,
       remarks: 'ອະນຸມັດໂດຍຜູ້ໃຊ້'
     })
     alert('ອະນຸມັດສິນເຊື່ອສຳເລັດ!')
@@ -700,7 +612,7 @@ const confirmRejectLoan = async () => {
 
   try {
     await loanStore.changeStatus(loanToAction.value.id, {
-      status: 'rejected',
+      status: LoanApplicationStatus.REJECTED,
       remarks: 'ປະຕິເສດໂດຍຜູ້ໃຊ້'
     })
     alert('ປະຕິເສດສິນເຊື່ອສຳເລັດ!')
@@ -724,7 +636,7 @@ const confirmDisburseLoan = async () => {
 
   try {
     await loanStore.changeStatus(loanToAction.value.id, {
-      status: 'completed',
+      status: LoanApplicationStatus.COMPLETED,
       remarks: 'ຈ່າຍເງິນແລ້ວ'
     })
     alert('ຈ່າຍເງິນສິນເຊື່ອສຳເລັດ!')
@@ -745,11 +657,11 @@ const exportToCSV = () => {
     'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
     'ຊື່ລູກຄ້າ': getCustomerFullName(loan),
     'ເບີໂທ': getCustomerPhone(loan),
-    'ຈຳນວນເງິນ': formatPrice(loan.total_amount),
+    'ຈຳນວນເງິນ': formatPrice(Number(loan.total_amount)),
     'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply || '-',
     'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '-',
     'ສະຖານະ': getStatusText(loan.status),
-    'ຜູ້ອະນຸມັດ': loan.approver?.name || '-',
+    'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
     'ວັນທີ່ສ້າງ': formatDate(loan.created_at)
   }))
 

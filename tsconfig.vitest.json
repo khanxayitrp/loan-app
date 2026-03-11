@@ -25,7 +25,7 @@
 
     // Vitest + jsdom needs these
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["node", "jsdom", "vitest/globals", "@testing-library/jest-dom"],
+    "types": ["node", "jsdom", "vitest/globals"],
 
     // Helps with Vue Testing Library + Composition API
     "jsx": "preserve",

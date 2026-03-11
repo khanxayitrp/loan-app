@@ -116,12 +116,12 @@
 
             <td>
               <div class="flex gap-2">
-                <button class="btn btn-circle btn-text btn-sm" @click="openEditProductModal(product)"
+                <button class="btn btn-circle btn-text btn-sm" @click="openEditProductModal(product as any)"
                   aria-label="Edit product">
                   <span class="icon-[tabler--edit] size-4"></span>
                 </button>
                 <button class="btn btn-circle btn-text btn-sm"
-                  :class="product.is_active ? 'text-error' : 'text-success'" @click="toggleProductStatus(product)"
+                  :class="product.is_active ? 'text-error' : 'text-success'" @click="toggleProductStatus(product as any)"
                   aria-label="Toggle status">
                   <span :class="product.is_active ? 'icon-[tabler--toggle-left]' : 'icon-[tabler--toggle-right]'"
                     class="size-4"></span>
@@ -166,20 +166,20 @@
       <div v-if="showStatusModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4">
-            {{ productToToggle?.is_active === true ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+            {{ productToToggle?.is_active ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
           </h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
             ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການ
-            {{ productToToggle?.is_active === true ? 'ປິດ' : 'ເປີດ' }}
+            {{ productToToggle?.is_active ? 'ປິດ' : 'ເປີດ' }}
             ການຂາຍ "{{ productToToggle?.product_name }}" ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
             <button class="btn btn-soft btn-secondary" @click="showStatusModal = false">
               ຍົກເລີກ
             </button>
-            <button class="btn" :class="productToToggle?.is_active === true ? 'btn-error' : 'btn-success'"
+            <button class="btn" :class="productToToggle?.is_active ? 'btn-error' : 'btn-success'"
               @click="confirmToggleStatus">
-              {{ productToToggle?.is_active === true ? 'ປິດການຂາຍ' : 'ເປີດການຂາຍ' }}
+              {{ productToToggle?.is_active ? 'ປິດການຂາຍ' : 'ເປີດການຂາຍ' }}
             </button>
           </div>
         </div>
@@ -376,29 +376,13 @@
 </template>
 
 <script setup lang="ts">
+import { formatPrice } from '@/utils/formatters'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useProductStore } from '@/stores/product'
 import { useShopStore } from '@/stores/shop'
 import { getFullImageUrl } from '@/utils/url'
 import { alert } from '@/utils/alert'
-
-interface Product {
-  id: number
-  product_name: string
-  brand: string
-  model: string
-  productType_id: number
-  price: number
-  interest_rate: number
-  image_url: string
-  is_active: boolean | number
-  gallery?: string[]
-}
-
-interface ProductType {
-  id: number
-  type_name: string
-}
+import type { Product, ProductType } from '@/types/product'
 
 interface ImageFileInfo {
   name: string
@@ -470,14 +454,16 @@ const someRowsSelected = computed(() => {
 const hasInactiveSelected = computed(() => {
   return selectedRows.value.some(id => {
     const product = displayedProducts.value.find(p => p.id === id);
-    return product && (product.is_active === false || product.is_active === 0);
+    // 🟢 ແກ້ໄຂ: ປຽບທຽບກັບ 0 ເທົ່ານັ້ນ
+    return product && product.is_active === 0;
   });
 });
 
 const hasActiveSelected = computed(() => {
   return selectedRows.value.some(id => {
     const product = displayedProducts.value.find(p => p.id === id);
-    return product && (product.is_active === true || product.is_active === 1);
+    // 🟢 ແກ້ໄຂ: ປຽບທຽບກັບ 1 ເທົ່ານັ້ນ
+    return product && product.is_active === 1;
   });
 });
 
@@ -525,7 +511,7 @@ const getGalleryImageUrl = (url: string): string => {
   if (!url) return ''
   if (isBase64(url)) return url
   if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return getFullImageUrl(url)
+  return getFullImageUrl(url) || ''
 }
 
 const handleImageError = (e: Event) => {
@@ -538,13 +524,6 @@ const handleImageError = (e: Event) => {
 const getProductTypeName = (productTypeId: number): string => {
   const type = productTypes.value.find(t => t.id === Number(productTypeId))
   return type ? type.type_name : `Type ID: ${productTypeId}`
-}
-
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK'
-  }).format(price)
 }
 
 const formatFileSize = (bytes: number): string => {
@@ -577,7 +556,17 @@ const validateForm = (): boolean => {
 const applyFilters = () => {
   selectedRows.value = [] // ລ້າງການເລືອກເມື່ອມີການ Filter
   productStore.changePage(1)
+
+  // ✅ FIX: Get currentShop from the store directly
+  const currentShopId = shopStore.currentShop?.id;
+
+  if (!currentShopId) {
+     alert.error('Error', 'Shop not found. Please refresh the page.');
+     return;
+  }
+
   productStore.fetchProducts({
+    shop_id: currentShopId,
     page: 1,
     limit: localPageSize.value,
     search: searchQuery.value,
@@ -589,7 +578,17 @@ const applyFilters = () => {
 const changePageSize = () => {
   selectedRows.value = [] // ລ້າງການເລືອກ
   productStore.changePageSize(localPageSize.value)
+
+  // ✅ FIX: Get currentShop from the store directly
+  const currentShopId = shopStore.currentShop?.id;
+
+  if (!currentShopId) {
+     alert.error('Error', 'Shop not found. Please refresh the page.');
+     return;
+  }
+
   productStore.fetchProducts({
+    shop_id: currentShopId,
     page: 1,
     limit: localPageSize.value,
     search: searchQuery.value,
@@ -643,11 +642,11 @@ const openEditProductModal = async (product: Product) => {
     form.product_brand = product.brand
     form.product_model = product.model
     form.productType_id = product.productType_id
-    form.price = product.price
-    form.interest_rate = product.interest_rate
+    form.price = Number(product.price)
+    form.interest_rate = Number(product.interest_rate)
     form.image_url = product.image_url || ''
     form.gallery = gallery.map((item: any) => item.image_url) || []
-    form.is_active = product.is_active
+    form.is_active = product.is_active ? 1 : 0 // Ensure number for checkbox
 
     if (product.image_url) {
       imageFileInfo.name = 'product-image.jpg'
@@ -660,11 +659,11 @@ const openEditProductModal = async (product: Product) => {
     form.product_brand = product.brand
     form.product_model = product.model
     form.productType_id = product.productType_id
-    form.price = product.price
-    form.interest_rate = product.interest_rate
+    form.price = Number(product.price)
+    form.interest_rate = Number(product.interest_rate)
     form.image_url = product.image_url || ''
-    form.gallery = product.gallery || []
-    form.is_active = product.is_active
+    form.gallery = (product.gallery?.map(item => item.image_url)) || []
+    form.is_active = product.is_active ? 1 : 0
   }
   showModal.value = true
 }
@@ -700,14 +699,16 @@ const toggleProductStatus = (product: Product) => {
 
 const confirmToggleStatus = async () => {
   if (productToToggle.value) {
-    const isDeactivating = productToToggle.value.is_active === true || productToToggle.value.is_active === 1;
+    // 🟢 ແກ້ໄຂ: ທຽບກັບ 1
+    const isDeactivating = productToToggle.value.is_active === 1;
     try {
       const newStatus = isDeactivating ? 0 : 1;
-      await productStore.toggleProductStatus(productToToggle.value.id, newStatus)
+      const newStatusBool = !isDeactivating; // Convert to boolean for the store method
+      await productStore.toggleProductStatus(productToToggle.value.id, newStatusBool)
       alert.success('ປ່ຽນສະຖານະສຳເລັດ!')
-      productToToggle.value.is_active = newStatus
+      productToToggle.value.is_active = newStatus as any
       await applyFilters() // ດຶງຂໍ້ມູນໃໝ່ຫຼັງຈາກປ່ຽນສຳເລັດ
-    } catch (error) {
+    } catch (error: any) {
       alert.error('ເກີດຂໍ້ຜິດພາດການປ່ຽນສະຖານະ')
     }
   }
@@ -743,6 +744,9 @@ const saveProduct = async () => {
   try {
     let productId: number
 
+    const currentShopId = shopStore.currentShop?.id;
+    if(!currentShopId) throw new Error("Shop ID not found");
+
     if (editingProduct.value) {
       await productStore.updateProduct(editingProduct.value.id, {
         product_name: form.product_name,
@@ -762,8 +766,9 @@ const saveProduct = async () => {
         productType_id: form.productType_id,
         price: form.price,
         interest_rate: form.interest_rate,
-        is_active: form.is_active
-      })
+        is_active: form.is_active,
+        shop_id: currentShopId // ✅ Make sure shop_id is passed when creating
+      } as any)
       productId = newProduct.id
     }
 

@@ -1,6 +1,6 @@
 // src/api/loanApplication.ts
 
-import apiClient from '@/api/apiClient'
+import apiClient from '@/api/apiclient'
 import type {
   LoanApplication,
   CreateLoanApplicationDto,

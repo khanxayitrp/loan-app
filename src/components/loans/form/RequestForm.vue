@@ -469,7 +469,8 @@
     </div>
 
     <teleport to="body">
-      <div v-if="isGeneratingPDF" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
+      <div v-if="isGeneratingPDF"
+        class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
         <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
         <h2 class="text-xl font-bold tracking-wide">ກຳລັງສ້າງເອກະສານ PDF...</h2>
         <p class="text-sm mt-2 opacity-80">ກະລຸນາລໍຖ້າຈັກໜ້ອຍ ລະບົບກຳລັງປະມວນຜົນຂໍ້ມູນ</p>
@@ -477,9 +478,12 @@
     </teleport>
 
     <teleport to="body">
-      <div v-if="showPdfPreview" class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-          <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+      <div v-if="showPdfPreview"
+        class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div
+            class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
             <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-white">
               <span class="icon-[tabler--file-type-pdf] text-error size-6"></span>
               ຕົວຢ່າງແບບຟອມຂໍກູ້
@@ -488,19 +492,16 @@
               <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm">
                 <span class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ
               </button>
-              <button @click="closePdfPreview" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10">
+              <button @click="closePdfPreview"
+                class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10">
                 <span class="icon-[tabler--x] size-5"></span>
               </button>
             </div>
           </div>
 
           <div class="flex-1 w-full bg-gray-300 dark:bg-gray-800 relative">
-            <iframe
-              v-if="pdfPreviewUrl"
-              :src="pdfPreviewUrl"
-              class="w-full h-full border-none"
-              title="PDF Preview"
-            ></iframe>
+            <iframe v-if="pdfPreviewUrl" :src="pdfPreviewUrl" class="w-full h-full border-none"
+              title="PDF Preview"></iframe>
           </div>
         </div>
       </div>
@@ -855,7 +856,7 @@ const loadDataFromProps = () => {
   // ============================================
   // ✅ 2. Work Info - แก้ไข: ใช้ customer_work_infos[0]
   // ============================================
-  const workInfo = loan.customer?.customer_work_infos?.[0]
+  const workInfo = (loan.customer as any)?.work_info?.[0] || {};
   if (workInfo) {
     console.log('📝 Loading work info:', workInfo)
 
@@ -867,7 +868,7 @@ const loadDataFromProps = () => {
     formData.work.durationYears = workInfo.duration_years || null
     formData.work.department = workInfo.department || ''
     formData.work.position = workInfo.position || ''
-    formData.work.salary = parseFloat(workInfo.salary) || null
+    formData.work.salary = parseFloat(workInfo.salary as string) || null
 
     // Work Address - Parse from string
     const workAddress = parseAddress(workInfo.address)
@@ -883,19 +884,19 @@ const loadDataFromProps = () => {
     console.log('📝 Loading product data:', loan.product)
 
     formData.product.type = loan.product.product_name || ''
-    formData.product.price = parseFloat(loan.product.price) || parseFloat(loan.total_amount) || null
-    formData.product.store = loan.product.partner?.shop_name.toString() || ''
+    formData.product.price = Number(loan.product.price) || Number(loan.total_amount) || null
+    formData.product.store = (loan.product as any).partner?.shop_name.toString() || ''
     formData.product.brand = loan.product.brand || ''
     formData.product.model = loan.product.model || ''
   }
 
   // Loan Details
   formData.product.loanTerm = loan.loan_period || null
-  formData.product.monthlyPayment = parseFloat(loan.monthly_pay) || null
-  formData.product.interestRate = parseFloat(loan.interest_rate_at_apply) || null
-  formData.product.downPayment = parseFloat(loan.down_payment) || null
-  formData.product.fee = parseFloat(loan.fee) || 20000
-  formData.product.firstInstallment = parseFloat(loan.first_installment_amount) || null
+  formData.product.monthlyPayment = Number(loan.monthly_pay) || null
+  formData.product.interestRate = Number(loan.interest_rate_at_apply) || null
+  formData.product.downPayment = Number(loan.down_payment) || null
+  formData.product.fee = Number(loan.fee) || 20000
+  formData.product.firstInstallment = Number(loan.first_installment_amount) || null
   formData.product.paymentDay = loan.payment_day || null
 
   // Calculate loan details
@@ -917,7 +918,7 @@ const loadDataFromProps = () => {
     formData.guarantor.dob = guarantor.date_of_birth || ''
 
     // Guarantor Address - Parse from string
-    const guarantorAddress = parseAddress(guarantor.address)
+    const guarantorAddress = parseAddress(guarantor.address || '')
     formData.guarantor.address.village = guarantorAddress.village
     formData.guarantor.address.district = guarantorAddress.district
     formData.guarantor.address.province = guarantorAddress.province
@@ -925,11 +926,12 @@ const loadDataFromProps = () => {
     // Guarantor Work Info
     formData.guarantor.work.companyName = guarantor.work_company_name || ''
     formData.guarantor.work.position = guarantor.work_position || ''
-    formData.guarantor.work.salary = parseFloat(guarantor.work_salary) || null
+    // 🟢 แก้ไขตรงนี้: แปลงเป็น string ก่อนเข้า parseFloat หรือใช้ Number() หุ้ม
+    formData.guarantor.work.salary = guarantor.work_salary ? Number(guarantor.work_salary) : null
     formData.guarantor.work.phone = guarantor.work_phone || ''
 
     // Parse guarantor work address
-    const guarantorWorkAddress = parseAddress(guarantor.work_address)
+    const guarantorWorkAddress = parseAddress(guarantor.work_address || '')
     formData.guarantor.work.address.village = guarantorWorkAddress.village
     formData.guarantor.work.address.district = guarantorWorkAddress.district
     formData.guarantor.work.address.province = guarantorWorkAddress.province

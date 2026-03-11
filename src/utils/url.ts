@@ -1,6 +1,6 @@
 // src/utils/url.ts
-export const getFullImageUrl = (relativePath: string | null): string | null => {
-  if (!relativePath) return null
+export const getFullImageUrl = (relativePath: string | null | undefined): string | undefined => {
+  if (!relativePath) return undefined
 
   // ตรวจสอบว่าเป็น URL เต็มอยู่แล้วหรือไม่
   if (relativePath.startsWith('http')) {

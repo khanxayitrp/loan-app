@@ -138,7 +138,7 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
         this.loanApplications = result.loans;
 
         if (result.pagination) {
-            this.pagination = result.pagination;
+          this.pagination = result.pagination;
         }
 
       } catch (error: any) {
@@ -165,7 +165,7 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
      * เปลี่ยนจำนวนรายการต่อหน้า
      */
     async changeLimit(limit: number) {
-        await this.fetchLoanApplications({ limit, page: 1 }); // รีเซ็ตไปหน้า 1 เสมอเมื่อเปลี่ยนลิมิต
+      await this.fetchLoanApplications({ limit, page: 1 }); // รีเซ็ตไปหน้า 1 เสมอเมื่อเปลี่ยนลิมิต
     },
 
     /**
@@ -260,80 +260,60 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
         console.log('[LoanApplicationStore] Created with customer:', result)
 
         // ✅ ตรวจสอบว่ามีข้อมูลหรือไม่
-    if (!result.data || !result.data.application_id) {
-      console.error('❌ Invalid response structure:', result)
-      throw new Error('ไม่พบข้อมูล application ในการตอบกลับจาก server')
-    }
+        if (!result.data || !result.data.application_id) {
+          console.error('❌ Invalid response structure:', result)
+          throw new Error('ไม่พบข้อมูล application ในการตอบกลับจาก server')
+        }
 
-    // ✅ Map ข้อมูลจาก response ให้ตรงกับ LoanApplication Type
-    const mappedApplication: LoanApplication = {
-      id: result.data.application_id,                    // ✅ map application_id → id
-      customer_id: result.data.customer_id,
-      product_id: result.data.product_id,
-      loan_id: result.data.loan_id,
-      total_amount: result.data.total_amount,
-      loan_period: result.data.loan_period,
-      interest_rate_at_apply: result.data.interest_rate_at_apply,
-      monthly_pay: result.data.monthly_pay,
-      is_confirmed: result.data.is_confirmed,
-      status: result.data.status as LoanApplicationStatus,
-      requester_id: result.data.requester_id || undefined,
-      approver_id: result.data.approver_id || undefined,
-      applied_at: result.data.applied_at || undefined,
-      approved_at: result.data.approved_at || undefined,
-      credit_score: result.data.credit_score || undefined,
-      remarks: result.data.remarks || undefined,
-      created_at: result.data.created_at || undefined,
-      updated_at: result.data.updated_at || undefined,
+        // ... (imports)
 
-      // ✅ Relations
-      customer: result.data.customer ? {
-        id: result.data.customer.id,
-        phone: result.data.customer.phone,
-        identity_number: result.data.customer.identity_number,
-        first_name: result.data.customer.first_name,
-        last_name: result.data.customer.last_name,
-        address: result.data.customer.address,
-        occupation: result.data.customer.occupation,
-        income_per_month: result.data.customer.income_per_month
-      } : undefined,
+        // ✅ Map ข้อมูลจาก response ให้ตรงกับ LoanApplication Type
+        const mappedApplication: LoanApplication = {
+          id: result.data.application_id,
+          customer_id: result.data.customer_id,
+          product_id: result.data.product_id,
+          loan_id: result.data.loan_id,
+          total_amount: result.data.total_amount,
+          loan_period: result.data.loan_period,
+          interest_rate_at_apply: result.data.interest_rate_at_apply,
+          monthly_pay: result.data.monthly_pay,
+          is_confirmed: result.data.is_confirmed,
+          status: result.data.status as LoanApplicationStatus,
+          requester_id: result.data.requester_id || undefined,
+          approver_id: result.data.approver_id || undefined,
+          applied_at: result.data.applied_at || undefined,
+          approved_at: result.data.approved_at || undefined,
+          credit_score: result.data.credit_score || undefined,
+          remarks: result.data.remarks || undefined,
+          created_at: result.data.created_at || undefined,
+          updated_at: result.data.updated_at || undefined,
 
-      product: result.data.product ? {
-        id: result.data.product.id,
-        product_name: result.data.product.product_name,
-        price: result.data.product.price,
-        interest_rate: result.data.product.interest_rate
-      } : undefined,
+          // ✅ Relations
+          customer: result.data.customer,
+          product: result.data.product,
+          requester: result.data.requester,
+          approver: result.data.approver
+        }
 
-      requester: result.data.requester?.id ? {
-        id: result.data.requester.id,
-        name: result.data.requester.name || ''
-      } : undefined,
+        console.log('✅ [LoanApplicationStore] Mapped application:', mappedApplication)
+        // ... (rest of the file)
 
-      approver: result.data.approver?.id ? {
-        id: result.data.approver.id,
-        name: result.data.approver.name || ''
-      } : undefined
-    }
+        // ✅ ตั้งค่า currentLoanApplication
+        this.currentLoanApplication = mappedApplication
 
-    console.log('✅ [LoanApplicationStore] Mapped application:', mappedApplication)
+        // ✅ เพิ่มเข้า list
+        this.loanApplications.unshift(mappedApplication)
 
-    // ✅ ตั้งค่า currentLoanApplication
-    this.currentLoanApplication = mappedApplication
+        console.log('✅ [LoanApplicationStore] Current loan application set:', {
+          id: this.currentLoanApplication.id,
+          loan_id: this.currentLoanApplication.loan_id,
+          customer_id: this.currentLoanApplication.customer_id
+        })
 
-    // ✅ เพิ่มเข้า list
-    this.loanApplications.unshift(mappedApplication)
-
-    console.log('✅ [LoanApplicationStore] Current loan application set:', {
-      id: this.currentLoanApplication.id,
-      loan_id: this.currentLoanApplication.loan_id,
-      customer_id: this.currentLoanApplication.customer_id
-    })
-
-    return {
-      ...result,
-      application: mappedApplication // ✅ ส่ง mapped application กลับไปด้วย
-    }
+        return {
+          ...result,
+          application: mappedApplication // ✅ ส่ง mapped application กลับไปด้วย
+        }
 
       } catch (error: any) {
         console.error('[LoanApplicationStore] Create with customer failed:', error)
@@ -529,9 +509,9 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       await this.fetchLoanApplications()
     },
 
-     /**
-     * อัปโหลดเอกสารเดี่ยวสำหรับ Loan Application
-     */
+    /**
+    * อัปโหลดเอกสารเดี่ยวสำหรับ Loan Application
+    */
     async uploadDocument(applicationId: number, file: File, docType: string) {
       this.isUploadingDocuments = true
       this.documentError = null

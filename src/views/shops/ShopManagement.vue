@@ -15,34 +15,17 @@
       <!-- ไม่มีร้านค้า -->
       <template v-if="!hasShop">
         <!-- โหมดสร้างใหม่ -->
-        <CreateShopForm
-          v-if="isCreating"
-          :initial-data="null"
-          @save="handleShopSaved"
-          @cancel="cancelCreating"
-        />
+        <CreateShopForm v-if="isCreating" :initial-data="null" @save="handleShopSaved" @cancel="cancelCreating" />
         <!-- ปุ่มสร้าง -->
-        <CreateShopButton
-          v-else
-          @create="startCreating"
-        />
+        <CreateShopButton v-else @create="startCreating" />
       </template>
 
       <!-- มีร้านค้า -->
       <template v-else>
         <!-- โหมดแก้ไข -->
-        <CreateShopForm
-          v-if="isEditing"
-          :initial-data="currentShop"
-          @save="handleShopSaved"
-          @cancel="cancelEditing"
-        />
+        <CreateShopForm v-if="isEditing" :initial-data="currentShop" @save="handleShopSaved" @cancel="cancelEditing" />
         <!-- โหมดแสดงผล -->
-        <ShopStatus
-          v-else
-          :shop="currentShop"
-          @edit="startEditing"
-        />
+        <ShopStatus v-else :shop="currentShop" @edit="startEditing" />
       </template>
     </template>
   </main>
@@ -60,28 +43,11 @@ const isLoading = ref(false)
 
 const hasShop = computed(() => {
   const shop = shopStore.currentShop
-  // ✅ ตรวจสอบโครงสร้างข้อมูลที่ถูกต้อง
   if (!shop) return false
-  // กรณี response เป็น { message: "...", shop: {...} }
-  if (shop.shop && shop.shop.id) {
-    return true
-  }
-  // กรณี response เป็น { id: ..., ... }
-  if (shop.id) {
-    return true
-  }
-
-  return false
+  return !!shop.id
 })
 const currentShop = computed(() => {
-  const shop = shopStore.currentShopWithFullUrls
-  if (!shop) return null
-
-  // ✅ extract ข้อมูลร้านค้าให้ถูกต้อง
-  if (shop.shop) {
-    return shop.shop
-  }
-  return shop
+  return shopStore.currentShopWithFullUrls as any
 })
 const isEditing = computed(() => shopStore.isEditing)
 

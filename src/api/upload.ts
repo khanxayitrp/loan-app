@@ -54,7 +54,8 @@ export const uploadMultipleApplicationDocuments = async (
 
     // อัปโหลดทีละไฟล์พร้อมประเภท
     const uploadPromises = files.map((file, index) =>
-      uploadApplicationDocument(applicationId, file, docTypes[index])
+      // 🟢 เติมเครื่องหมาย ! (Non-null assertion) เพื่อยืนยันกับ TS ว่ามีค่า string แน่นอน หรือใช้ || 'other' สำรองไว้
+      uploadApplicationDocument(applicationId, file, docTypes[index] || 'other')
     )
 
     const results = await Promise.all(uploadPromises)

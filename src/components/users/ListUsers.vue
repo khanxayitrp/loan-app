@@ -26,20 +26,20 @@
     <div v-if="showStatusModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
         <h3 class="font-bold text-lg mb-4">
-          {{ userToToggle?.is_active === true ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+          {{ userToToggle?.is_active ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
         </h3>
         <p class="py-4 text-gray-700 dark:text-gray-300">
           ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການ
-          {{ userToToggle?.is_active === true ? 'ປິດ' : 'ເປີດ' }}
+          {{ userToToggle?.is_active ? 'ປິດ' : 'ເປີດ' }}
           ການໃຊ້ງານຂອງ "{{ userToToggle?.full_name }}" ?
         </p>
         <div class="flex justify-end gap-3 mt-6">
           <button class="btn btn-soft btn-secondary" @click="showStatusModal = false">
             ຍົກເລີກ
           </button>
-          <button class="btn" :class="userToToggle?.is_active === true ? 'btn-error' : 'btn-success'"
+          <button class="btn" :class="userToToggle?.is_active ? 'btn-error' : 'btn-success'"
             @click="confirmToggleStatus">
-            {{ userToToggle?.is_active === true ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
+            {{ userToToggle?.is_active ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ' }}
           </button>
         </div>
       </div>
@@ -102,11 +102,11 @@
             </td>
             <td>{{ user.staff_level || 'N/A' }}</td>
             <td>
-              <span class="badge badge-soft" :class="getIsActiveBadgeClass(user.is_active)">
-                {{ user.is_active === true ? 'Active' : 'Inactive' }}
+              <span class="badge badge-soft" :class="getIsActiveBadgeClass(!!user.is_active)">
+                {{ user.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
-            <td>{{ formatDate(user.createdAt) }}</td>
+            <td>{{ formatDate(user.created_at) }}</td>
             <td>
               <div class="flex gap-1">
                 <button class="btn btn-circle btn-text btn-sm" @click="editUser(user)" aria-label="Edit">
@@ -215,7 +215,7 @@ const fetchUsers = async () => {
 onMounted(() => {
   fetchUsers()
   console.log('ListUsers component mounted, fetching users...', users.value)
-  console.log('Current user from store:', useAuthStore.allUsers) // debug เพื่อดูข้อมูล users ที่ได้จาก store
+  console.log('Current user from store:', authStore.allUsers) // debug เพื่อดูข้อมูล users ที่ได้จาก store
 
 })
 
@@ -231,10 +231,12 @@ const confirmToggleStatus = async () => {
   if (!userToToggle.value) return
 
   try {
-    const newStatus = userToToggle.value.is_active === true ? 0 : 1
+    // 🟢 ແກ້ໄຂ: ກວດສອບຈາກຕົວເລກ 1 ແລ້ວກຳນົດຄ່າເປັນ Boolean ເພື່ອສົ່ງໃຫ້ Store
+    const isActiveCurrently = userToToggle.value.is_active === 1;
+    const newStatusBoolean = !isActiveCurrently;
 
     // ✅ เรียก API update user status
-    await authStore.updateUserStatus(userToToggle.value.id, newStatus)
+    await authStore.updateUserStatus(userToToggle.value.id, newStatusBoolean)
     alert.success('ປ່ຽນສະຖານະສຳເລັດ!')
     // ✅ Refresh data
     await fetchUsers()
@@ -329,7 +331,7 @@ const handleCancelCreateUser = () => {
 
 // Debounced search query
 const debouncedSearch = ref('')
-let debounceTimer: NodeJS.Timeout | null = null
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(searchQuery, (newValue) => {
   if (debounceTimer) {
@@ -483,21 +485,21 @@ const formatDate = (dateString: string | undefined) => {
 }
 
 const deleteUser = async (userId: number) => {
-if (await alert.confirm('ຕ້ອງການລຶບຜູ້ໃຊ້ນີ້ບໍ?')) {
-  try {
-    // TODO: เรียก API delete user
-    // await authStore.deleteUser(userId)
-    alert.success('ລຶບຜູ້ໃຊ້ສຳເລັດແລ້ວ!')
-    // ✅ Refresh data
-    await fetchUsers()
+  if (await alert.confirm('ຕ້ອງການລຶບຜູ້ໃຊ້ນີ້ບໍ?')) {
+    try {
+      // TODO: เรียก API delete user
+      // await authStore.deleteUser(userId)
+      alert.success('ລຶບຜູ້ໃຊ້ສຳເລັດແລ້ວ!')
+      // ✅ Refresh data
+      await fetchUsers()
 
-    selectedRows.value = selectedRows.value.filter(id => id !== userId)
-  } catch (error) {
-    console.error('Error deleting user:', error)
-    alert.errorle.error('Error deleting user:', error)
-    alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຜູ້ໃຊ້')
+      selectedRows.value = selectedRows.value.filter(id => id !== userId)
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      alert.error('Error deleting user:', (error as Error).message);
+      alert.error('ເກີດຂໍ້ຜິດພາດໃນການລຶບຜູ້ໃຊ້');
+    }
   }
-}
 }
 
 // Export CSV
@@ -510,8 +512,8 @@ const exportToCSV = () => {
     'ຊື່ຜູ້ໃຊ້': user.username,
     'ບົດບາດ': user.role,
     'ລະດັບພະນັກງານ': user.staff_level || 'N/A',
-    'ສະຖານະ': user.is_active === true ? 'Active' : 'Inactive',
-    'ວັນທີສ້າງ': formatDate(user.createdAt)
+    'ສະຖານະ': user.is_active ? 'Active' : 'Inactive',
+    'ວັນທີສ້າງ': formatDate(user.created_at)
   }))
 
   const csv = Papa.unparse(csvData)

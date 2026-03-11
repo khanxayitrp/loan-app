@@ -67,7 +67,7 @@
             </div>
             <div class="flex-1">
               <div class="font-medium">{{ shop.shop_name }}</div>
-              <div class="text-sm text-gray-500 dark:text-gray-400">{{ shop.owner_name }}</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">{{ shop.shop_owner }}</div>
             </div>
           </div>
         </div>
@@ -244,7 +244,7 @@
             <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
               <span class="font-medium">ເງິນກູ້:</span>
               <span class="font-medium text-primary">{{ formatPrice(loanDetails.totalAmount - loanDetails.downPayment)
-              }}</span>
+                }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-400">ດອກເບ້ຍທັງໝົດ ({{ loanDetails.interestRate }}%):</span>
@@ -671,23 +671,9 @@ import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { requestOtpForCustomer } from '@/api/customer'; // Import function จาก api/customer
 import { alert } from '@/utils/alert'
 import type { CreateWithCustomerDto } from '@/types/loanApplication'
-// Types
-interface Shop {
-  id: number
-  shop_name: string
-  owner_name: string
-}
-
-interface Product {
-  id: number
-  product_name: string
-  type_name: string
-  productType_id: string
-  price: number
-  interest_rate: number
-  term: number
-  shop_id: number
-}
+import { formatPrice } from '@/utils/formatters'
+import type { shopType } from '@/types/shop'
+import type { Product } from '@/types/product'
 
 interface Customer {
   full_name: string
@@ -745,9 +731,9 @@ const calculateInitialLoanDetails = () => {
 
   const { price, interest_rate, term } = selectedProduct.value
 
-  loanDetails.totalAmount = price
-  loanDetails.interestRate = interest_rate
-  loanDetails.termMonths = term
+  loanDetails.totalAmount = Number(price)
+  loanDetails.interestRate = Number(interest_rate)
+  loanDetails.termMonths = Number(term)
   loanDetails.downPayment = 0
   loanDetails.monthlyPayment = calculateMonthlyPayment()
 }
@@ -840,7 +826,7 @@ const handleInterestRateChange = () => {
 // Shop selection
 const shopSearch = ref('')
 const showShopDropdown = ref(false)
-const selectedShop = ref<Shop | null>(null)
+const selectedShop = ref<shopType | null>(null)
 const selectedProductType = ref<string>('') // ✅ เพิ่ม state สำหรับชื่อประเภท
 
 // Product selection
@@ -1041,12 +1027,7 @@ const allRequiredDocumentsUploaded = computed(() => {
 })
 
 // Utility functions
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK'
-  }).format(price)
-}
+
 
 const maskPhone = (phone: string): string => {
   if (phone.length <= 4) return phone
@@ -1091,7 +1072,7 @@ const debounceProductSearch = () => {
 }
 
 // Shop selection
-const selectShop = async (shop: Shop) => {
+const selectShop = async (shop: shopType) => {
   console.group('🏪 Shop Selected')
   console.log('Shop ID:', shop.id)
   console.log('Shop Name:', shop.shop_name)
@@ -1200,7 +1181,7 @@ watch(() => selectedProduct.value, (newProduct) => {
     console.log('🔍 Selected Product:', {
       id: newProduct.id,
       name: newProduct.product_name,
-      type_id: newProduct.product_type_id,
+      type_id: newProduct.productType_id,
       type_name: newProduct.type_name
     })
   }
@@ -1282,7 +1263,8 @@ const validateCustomerForm = (): boolean => {
 const setupPinInputs = async () => {
   await nextTick() // รอให้ DOM render ช่อง input ครบก่อน
 
-  const inputs = document.querySelectorAll('[data-pin-input-item]')
+  // 🟢 เติม <HTMLInputElement> ตรงนี้ เพื่อบอก TypeScript ว่า Array นี้เป็นของ Input
+  const inputs = document.querySelectorAll<HTMLInputElement>('[data-pin-input-item]')
 
   if (inputs.length === 0) return
 
@@ -1294,8 +1276,11 @@ const setupPinInputs = async () => {
 
     // เมื่อพิมพ์ตัวเลข → โฟกัสช่องถัดไปอัตโนมัติ
     input.addEventListener('input', (e) => {
-      if (e.target.value.length === 1 && index < inputs.length - 1) {
-        inputs[index + 1].focus()
+      // 🟢 บังคับ Casting e.target ให้เป็น HTMLInputElement
+      const target = e.target as HTMLInputElement;
+
+      if (target.value.length === 1 && index < inputs.length - 1) {
+        inputs[index + 1]?.focus()
       }
 
       // รวมค่าทั้งหมดเป็น otpCode
@@ -1307,9 +1292,10 @@ const setupPinInputs = async () => {
     })
 
     // อนุญาตให้กด Backspace แล้วโฟกัสช่องก่อนหน้า
-    input.addEventListener('keydown', (e) => {
+    // 🟢 บังคับ Casting e ให้เป็น KeyboardEvent จะได้มี property .key
+    input.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Backspace' && input.value === '' && index > 0) {
-        inputs[index - 1].focus()
+        inputs[index - 1]?.focus()
       }
     })
   })
@@ -1505,8 +1491,11 @@ const handleFileSelect = (index: number, event: Event) => {
     const allDocs = [...requiredDocuments.value, ...optionalDocuments.value]
     const reader = new FileReader()
     reader.onload = (e) => {
-      allDocs[index].file = file
-      allDocs[index].preview = e.target?.result as string
+      // 🟢 ตรวจสอบความปลอดภัยว่ามี Object ก่อนยัดค่าใส่
+      if (allDocs[index]) {
+        allDocs[index].file = file
+        allDocs[index].preview = (e.target?.result as string) || null
+      }
 
       if (index < requiredDocuments.value.length) {
         requiredDocuments.value = [...allDocs.slice(0, requiredDocuments.value.length)]
@@ -1520,8 +1509,12 @@ const handleFileSelect = (index: number, event: Event) => {
 
 const removeDocument = (index: number) => {
   const allDocs = [...requiredDocuments.value, ...optionalDocuments.value]
-  allDocs[index].file = null
-  allDocs[index].preview = null
+
+  // 🟢 ตรวจสอบความปลอดภัยว่ามี Object ก่อนยัดค่าใส่
+  if (allDocs[index]) {
+      allDocs[index].file = null
+      allDocs[index].preview = null
+  }
 
   if (index < requiredDocuments.value.length) {
     requiredDocuments.value = [...allDocs.slice(0, requiredDocuments.value.length)]

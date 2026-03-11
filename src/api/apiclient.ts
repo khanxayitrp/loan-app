@@ -5,19 +5,21 @@ import { useAuthStore } from '@/stores/auth'
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:15520/api',
   timeout: 10000,
-   withCredentials: true, // ⭐ สำคัญมาก! ส่ง cookies ไปทุก request
+  withCredentials: true, // ⭐ สำคัญมาก! ส่ง cookies ไปทุก request
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
-// Request interceptor: เพิ่ม token
+// Request interceptor: เพิ่ม token (ถ้ามี)
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const authStore = useAuthStore()
-    if (authStore.token && config.headers) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
-    }
+    // กรณีใช้ Cookie ไม่ต้องส่ง Token ใน Header
+    // แต่ถ้าในอนาคตมีการใช้ Token แบบ Bearer ก็สามารถเปิดใช้ส่วนนี้ได้
+    // const authStore = useAuthStore()
+    // if (authStore.isAuthenticated && authStore.token && config.headers) {
+    //   config.headers.Authorization = `Bearer ${authStore.token}`
+    // }
     return config
   },
   (error) => Promise.reject(error)

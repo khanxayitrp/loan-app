@@ -262,7 +262,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { useShopStore } from '@/stores/shop'
 import { useAuthStore } from '@/stores/auth'
-import apiClient from '@/api/apiClient'
+import apiClient from '@/api/apiclient'
 import { getFullImageUrl } from '@/utils/url'
 import { alert } from '@/utils/alert'
 
@@ -366,8 +366,9 @@ const resetForm = () => {
 
 // ✅ ฟังก์ชันดึงชื่อไฟล์จาก URL
 const extractFileName = (url: string): string => {
+  if (!url) return '' // 🟢 เพิ่มการดักจับค่าว่าง
   const parts = url.split('/')
-  const fileName = parts[parts.length - 1]
+  const fileName = parts[parts.length - 1] || ''
   return fileName.length > 30 ? fileName.substring(0, 30) + '...' : fileName
 }
 // const resetForm = () => {
@@ -576,7 +577,7 @@ const removeLogo = async () => {
 
     // ลบจากเซิร์ฟเวอร์
     if (props.initialData?.id) {
-      shopStore.updateShop(props.initialData.id, { shop_logo_url: null })
+      shopStore.updateShop(props.initialData.id, { shop_logo_url: null } as any)
         .then(() => {
           form.shop_logo_url = ''
           console.log('✅ Logo removed from server')
@@ -609,6 +610,12 @@ const handleSubmit = async () => {
     return
   }
 
+  // 🟢 ตรวจสอบว่า currentUser มีค่าหรือไม่ ป้องกัน authStore.currentUser is possibly null
+  if (!authStore.currentUser?.id && !isEditMode.value) {
+      alert.error('ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ ລະບົບຈະບໍ່ສາມາດສ້າງຮ້ານໄດ້');
+      return;
+  }
+
   loading.value = true
   try {
     let response
@@ -626,7 +633,7 @@ const handleSubmit = async () => {
         // village: form.village || null,
         business_type: form.business_type,
         is_active: form.is_active
-      })
+      } as any)
       console.log('Update Shop ', response)
       // Handle logo upload
       if (form.logo) {
@@ -636,7 +643,7 @@ const handleSubmit = async () => {
     } else {
       // Create mode
       response = await shopStore.saveShop({
-        user_id: authStore.currentUser.id,
+        user_id: authStore.currentUser!.id,
         shop_name: form.shop_name,
         shop_id: form.shop_id,
         shop_owner: form.shop_owner,
@@ -647,7 +654,7 @@ const handleSubmit = async () => {
         // village: form.village || null,
         business_type: form.business_type,
         is_active: form.is_active
-      })
+      } as any)
       console.log('this response is', response)
       // Handle logo upload
       if (form.logo) {
@@ -707,7 +714,7 @@ const uploadLogo = async (partner_id: number) => {
     if (newLogoUrl) {
       form.shop_logo_url = newLogoUrl
       console.log('this id is', partner_id)
-      await shopStore.updateShop(partner_id, { shop_logo_url: newLogoUrl });
+      await shopStore.updateShop(partner_id, { shop_logo_url: newLogoUrl } as any);
       // ถ้ามี preview URL สร้างจาก createObjectURL อยู่ → revoke ได้ที่นี่
       // URL.revokeObjectURL(form.logo); // ถ้าเคยสร้างไว้
     } else {

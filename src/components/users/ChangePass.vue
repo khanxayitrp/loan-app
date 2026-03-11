@@ -194,7 +194,7 @@ onMounted(async () => {
 })
 
 // Debounce search
-let debounceTimer: NodeJS.Timeout | null = null
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const debounceSearch = () => {
   if (debounceTimer) {
     clearTimeout(debounceTimer)

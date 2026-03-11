@@ -646,42 +646,43 @@
     </div>
   </div>
   <teleport to="body">
-      <div v-if="isGeneratingPDF" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
-        <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
-        <h2 class="text-xl font-bold tracking-wide">ກຳລັງສ້າງເອກະສານ PDF...</h2>
-        <p class="text-sm mt-2 opacity-80">ກະລຸນາລໍຖ້າຈັກໜ້ອຍ ລະບົບກຳລັງປະມວນຜົນຂໍ້ມູນ</p>
-      </div>
-    </teleport>
+    <div v-if="isGeneratingPDF"
+      class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
+      <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
+      <h2 class="text-xl font-bold tracking-wide">ກຳລັງສ້າງເອກະສານ PDF...</h2>
+      <p class="text-sm mt-2 opacity-80">ກະລຸນາລໍຖ້າຈັກໜ້ອຍ ລະບົບກຳລັງປະມວນຜົນຂໍ້ມູນ</p>
+    </div>
+  </teleport>
 
-    <teleport to="body">
-      <div v-if="showPdfPreview" class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-          <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-            <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-white">
-              <span class="icon-[tabler--file-type-pdf] text-error size-6"></span>
-              ຕົວຢ່າງສັນຍາກູ້ຢືມ
-            </h3>
-            <div class="flex gap-3">
-              <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm">
-                <span class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ
-              </button>
-              <button @click="closePdfPreview" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10">
-                <span class="icon-[tabler--x] size-5"></span>
-              </button>
-            </div>
-          </div>
-
-          <div class="flex-1 w-full bg-gray-300 dark:bg-gray-800 relative">
-            <iframe
-              v-if="pdfPreviewUrl"
-              :src="pdfPreviewUrl"
-              class="w-full h-full border-none"
-              title="PDF Preview"
-            ></iframe>
+  <teleport to="body">
+    <div v-if="showPdfPreview"
+      class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div
+          class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-white">
+            <span class="icon-[tabler--file-type-pdf] text-error size-6"></span>
+            ຕົວຢ່າງສັນຍາກູ້ຢືມ
+          </h3>
+          <div class="flex gap-3">
+            <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm">
+              <span class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ
+            </button>
+            <button @click="closePdfPreview"
+              class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10">
+              <span class="icon-[tabler--x] size-5"></span>
+            </button>
           </div>
         </div>
+
+        <div class="flex-1 w-full bg-gray-300 dark:bg-gray-800 relative">
+          <iframe v-if="pdfPreviewUrl" :src="pdfPreviewUrl" class="w-full h-full border-none"
+            title="PDF Preview"></iframe>
+        </div>
       </div>
-    </teleport>
+    </div>
+  </teleport>
 </template>
 
 <script setup lang="ts">
@@ -985,7 +986,7 @@ const loadDataFromProps = () => {
     formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply) || null
     formData.product.loanTerm = sourceData.loan_period || null
     formData.product.totalInterest = parseFloat(sourceData.total_interest) || null
-    formData.product.fee = parseFloat(sourceData.fee) || null
+    formData.product.fee = parseFloat(sourceData.fee as string) || 0;
     formData.product.monthlyPayment = parseFloat(sourceData.monthly_pay) || null
     formData.product.firstInstallment = parseFloat(sourceData.first_installment_amount) || null
     formData.product.paymentDay = sourceData.payment_day || null

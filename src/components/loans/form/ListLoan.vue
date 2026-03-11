@@ -92,7 +92,7 @@
               </span>
             </td>
             <!-- Created At -->
-            <td>{{ formatDate(loan.createdAt) }}</td>
+            <td>{{ formatDate(loan.created_at) }}</td>
             <!-- Actions -->
             <td>
               <div class="flex gap-2">
@@ -226,7 +226,7 @@
                   </div>
                   <div>
                     <label class="text-sm font-medium text-gray-500">ວັນທີ່ສ້າງ</label>
-                    <p>{{ formatDate(selectedLoan.createdAt) }}</p>
+                    <p>{{ formatDate(selectedLoan.created_at) }}</p>
                   </div>
                 </div>
               </div>
@@ -775,10 +775,10 @@
             </div>
             <!-- ✅ Map Component -->
             <CustomerLocationMap v-else :customer-id="selectedLoan.customer_id" :locations="customerLocations"
-              :is-loading="isLocationLoading" :can-add-location="true" :can-edit-location="true"
-              :can-delete-location="true" :can-set-primary="true" @add-location="handleAddLocation"
-              @update-location="handleUpdateLocation" @delete-location="handleDeleteLocation"
-              @set-primary="handleSetPrimary" />
+              googleMapsApiKey="YOUR_API_KEY" :is-loading="isLocationLoading" :can-add-location="true"
+              :can-edit-location="true" :can-delete-location="true" :can-set-primary="true"
+              @add-location="handleAddLocation" @update-location="handleUpdateLocation"
+              @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
           </div>
           <div v-else-if="activeTab === 'requestForm'" class="space-y-6">
             <LoanRequestForm :loan-application-id="selectedLoan?.id" :loan-application="selectedLoan"
@@ -797,7 +797,8 @@
               {{ isEditingInModal ? 'ຍົກເລີກ' : 'ປິດ' }}
             </button>
             <!-- Edit button -->
-            <button v-if="!isEditingInModal && selectedLoan.status !== 'closed' && selectedLoan.status !== 'disbursed'"
+            <button
+              v-if="!isEditingInModal && selectedLoan.status !== LoanApplicationStatus.CLOSED_EARLY && selectedLoan.status !== 'completed'"
               class="btn btn-primary" @click="startEditInModal">
               <span class="icon-[tabler--edit] size-4 mr-1"></span>
               ແກ້ໄຂ
@@ -822,7 +823,10 @@ import { useRouter } from 'vue-router'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useProductStore } from '@/stores/product'
 import type { LoanApplication, UpdateLoanApplicationDto } from '@/types/loanApplication'
+import { LoanApplicationStatus } from '@/types/loanApplication'
 import type { CustomerLocation } from '@/types/customer'
+import type { CreateLoanContractRequest } from '@/types/loanContract'
+import { formatPrice } from '@/utils/formatters'
 import Papa from 'papaparse'
 import { getFullImageUrl } from '@/utils/url'
 import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue'
@@ -932,13 +936,15 @@ const filteredLoans = computed(() => {
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(loan =>
-    (loan.customer?.first_name?.toLowerCase().includes(query) ||
-      loan.customer?.last_name?.toLowerCase().includes(query) ||
-      loan.customer?.full_name?.toLowerCase().includes(query) ||
-      loan.customer?.phone?.includes(query) ||
-      loan.loan_id?.toLowerCase().includes(query))
-    )
+    filtered = filtered.filter(loan => {
+      if (loan.customer) {
+        const fullName = `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim().toLowerCase();
+        if (fullName.includes(query)) return true;
+        if (loan.customer.phone?.includes(query)) return true;
+      }
+      if (loan.loan_id?.toLowerCase().includes(query)) return true;
+      return false;
+    })
   }
   // Status filter
   if (statusFilter.value) {
@@ -947,8 +953,8 @@ const filteredLoans = computed(() => {
   // Date filter
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
-      if (!loan.createdAt) return false
-      const loanDate = new Date(loan.createdAt).toISOString().split('T')[0]
+      if (!loan.created_at) return false;
+      const loanDate = new Date(loan.created_at).toISOString().split('T')[0] || '';
       const fromDate = dateFrom.value || '1970-01-01'
       const toDate = dateTo.value || '9999-12-31'
       return loanDate >= fromDate && loanDate <= toDate
@@ -963,7 +969,7 @@ const filteredModalProducts = computed(() => {
   const query = modalProductSearch.value.toLowerCase()
   return productStore.products.filter(product =>
     product.product_name?.toLowerCase().includes(query) ||
-    product.type_name?.toLowerCase().includes(query) ||
+    product.product_name?.toLowerCase().includes(query) ||
     product.id?.toString().includes(query)
   )
 })
@@ -983,7 +989,8 @@ const hasNextPage = computed(() => currentPage.value < totalPages.value)
 
 // ✅ Helper functions
 const getCustomerName = (loan: LoanApplication): string => {
-  if (loan.customer?.full_name) return loan.customer.full_name
+  // 🟢 ປ່ຽນວິທີການຊອກຫາຊື່ລູກຄ້າ
+  if (!loan.customer) return '-'
   return `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.trim() || '-'
 }
 
@@ -1000,23 +1007,20 @@ const getProductName = (loan: LoanApplication): string => {
 }
 
 const getProductType = (loan: LoanApplication): string => {
-  const typeId = loan.product?.productType_id || (loan as any).productType_id
+  const typeId = loan.product?.productType_id
+  // 🟢 ກວດສອບ typeId ກ່ອນນຳໄປດຶງຄ່າຈາກ Object
+  if (!typeId) return '-'
   return productStore.productTypeMap[typeId] || '-'
 }
 
 const getRequesterName = (loan: LoanApplication): string => {
-  return loan.requester?.full_name || loan.requester?.name || `ID: ${loan.requester_id || '-'}`
+  return loan.requester?.name || `ID: ${loan.requester_id || '-'}`
 }
 
-const formatPrice = (price: number | string): string => {
-  const numPrice = typeof price === 'string' ? parseFloat(price) : price
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK'
-  }).format(numPrice || 0)
-}
 
-const formatDate = (dateString: string): string => {
+
+const formatDate = (dateString: string | undefined): string => {
+  if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('lo-LA', {
     year: 'numeric',
     month: 'long',
@@ -1050,12 +1054,12 @@ const getStatusText = (status: string): string => {
 
 // ✅ Calculation functions
 const calculateTotalInterest = (loan: LoanApplication): number => {
-  const totalPayment = loan.monthly_pay * loan.loan_period
-  return totalPayment - loan.total_amount
+  const totalPayment = Number(loan.monthly_pay) * Number(loan.loan_period)
+  return totalPayment - Number(loan.total_amount)
 }
 
 const calculateTotalPayment = (loan: LoanApplication): number => {
-  return loan.monthly_pay * loan.loan_period
+  return Number(loan.monthly_pay) * Number(loan.loan_period)
 }
 
 const calculateModalTotalInterest = (): number => {
@@ -1164,7 +1168,7 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       date_of_birth: formData.customer.dob,
       age: formData.customer.age,
       occupation: formData.customer.occupation,
-      income_per_month: selectedLoan.value.customer.income_per_month,
+      income_per_month: selectedLoan.value.customer!.income_per_month,
       unit: formData.customer.unit,
       issue_place: formData.customer.issuePlace,
       issue_date: formData.customer.issueDate,
@@ -1189,7 +1193,7 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
     await loanApplicationStore.updateDraftLoanApplication(selectedLoan.value.id, CustLoanData)
     alert.success('ບັນທຶກແບບຟອມຂໍກູ້ສຳເລັດ!')
     // ✅ Refresh ข้อมูล selectedLoan
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
+    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 1 })
     // ✅ หา draft ที่อัปเดตใหม่
     selectedLoan.value = loanApplicationStore.loanApplications.find(d => d.id === selectedLoan.value?.id) || null
   } catch (error: any) {
@@ -1308,7 +1312,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     await loanContractStore.createContract(selectedLoan.value.id, contractData)
     alert.success('ບັນທຶກສັນຍາສຳເລັດ!')
     isEditingInModal.value = false
-    await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
+    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 1 })
   } catch (error: any) {
     console.error('Error saving contract:', error)
     alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
@@ -1505,7 +1509,7 @@ const handleDeleteLocation = async (id: number) => {
 const handleSetPrimary = async (id: number) => {
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
-    await updateCustomerLocation(id, { is_primary: true })
+    await updateCustomerLocation(id, { is_primary: 1 })
     alert.success('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກສຳເລັດ!')
     if (selectedLoan.value?.customer_id) {
       await loadCustomerLocations(selectedLoan.value.customer_id)
@@ -1645,7 +1649,8 @@ const startEditInModal = async () => {
   modalLoanForm.product_id = selectedLoan.value.product_id
   modalLoanForm.product_name = getProductName(selectedLoan.value)
   modalLoanForm.product_type = getProductType(selectedLoan.value)
-  modalLoanForm.product_price = selectedLoan.value.product?.price || 0
+  // 🟢 ບັງຄັບໃຫ້ເປັນ Number()
+  modalLoanForm.product_price = Number(selectedLoan.value.product?.price || 0)
   modalLoanForm.total_amount = parseFloat(selectedLoan.value.total_amount.toString())
   modalLoanForm.interest_rate = parseFloat(selectedLoan.value.interest_rate_at_apply.toString())
   modalLoanForm.loan_period = selectedLoan.value.loan_period
@@ -1674,11 +1679,11 @@ const saveLoanFromModal = async () => {
     const nameParts = modalLoanForm.customer_name.trim().split(' ')
     const firstName = nameParts[0] || modalLoanForm.customer_name
     const lastName = nameParts.slice(1).join(' ') || ''
-    const updateData: UpdateLoanApplicationDto = {
+    const updateData: any = {
       customer_id: selectedLoan.value.customer_id,
       first_name: firstName,
       last_name: lastName,
-      age: modalLoanForm.age,
+      age: Number(modalLoanForm.age),
       phone: modalLoanForm.customer_phone.trim(),
       identity_number: modalLoanForm.customer_id_card.trim(),
       address: modalLoanForm.customer_address.trim(),
@@ -1715,7 +1720,7 @@ const saveLoanFromModal = async () => {
     alert.success('ບັນທຶກການປ່ຽນແປງສຳເລັດ!')
     isEditingInModal.value = false
     await loanApplicationStore.fetchLoanApplications({
-      status: 'pending',
+      status: LoanApplicationStatus.PENDING,
       is_confirmed: 1,
       limit: 1000
     })
@@ -1756,8 +1761,11 @@ const handleDocumentUpload = (index: number, event: Event) => {
   const allDocs = [...loanDocuments.value, ...optionalDocuments.value]
   const reader = new FileReader()
   reader.onload = (e) => {
-    allDocs[index].file = file
-    allDocs[index].preview = e.target?.result as string
+    // 🟢 ຕ້ອງກວດສອບ index ກ່ອນກຳນົດຄ່າ
+    if (allDocs[index]) {
+      allDocs[index].file = file
+      allDocs[index].preview = e.target?.result as string
+    }
     if (index < loanDocuments.value.length) {
       loanDocuments.value = [...allDocs.slice(0, loanDocuments.value.length)]
     } else {
@@ -1772,8 +1780,12 @@ const handleDocumentUpload = (index: number, event: Event) => {
 // ✅ ฟังก์ชันลบเอกสาร
 const removeDocument = (index: number) => {
   const allDocs = [...loanDocuments.value, ...optionalDocuments.value]
-  allDocs[index].file = null
-  allDocs[index].preview = null
+  // 🟢 เพิ่มการตรวจสอบเพื่อความปลอดภัย
+  if (allDocs[index]) {
+    allDocs[index].file = null
+    allDocs[index].preview = null
+  }
+
   if (index < loanDocuments.value.length) {
     loanDocuments.value = [...allDocs.slice(0, loanDocuments.value.length)]
   } else {
@@ -1817,7 +1829,7 @@ const exportToCSV = () => {
     'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
     'ເຈົ້າໜ້າທີ່': getRequesterName(loan),
     'ສະຖານະ': getStatusText(loan.status),
-    'ວັນທີ່ສ້າງ': formatDate(loan.createdAt || '')
+    'ວັນທີ່ສ້າງ': formatDate(loan.created_at || '')
   }))
   const csv = Papa.unparse(csvData)
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -1847,7 +1859,7 @@ onMounted(async () => {
     console.log('📡 Loading loan applications...')
     await Promise.all([
       loanApplicationStore.fetchLoanApplications({
-        status: 'pending',
+        status: LoanApplicationStatus.PENDING,
         is_confirmed: 1,
         limit: 1000
       }),

@@ -31,10 +31,13 @@ export const useAuthStore = defineStore('auth', {
     isTokenExpired: (state) => {
       if (!state.expiresAt) return true
       return Date.now() >= state.expiresAt * 1000
+    },
+    token: (state) => {
+      // This is a placeholder as token is in httpOnly cookie
+      return null
     }
   },
 
-  // ⚡ ACTIONS
   actions: {
     /**
      * เข้าสู่ระบบผู้ใช้
@@ -98,58 +101,58 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     // src/stores/auth.ts
-// src/stores/auth.ts
-async createUser(userData: {
-  username: string
-  password: string
-  role: 'admin' | 'staff' | 'partner' | 'customer'
-  full_name: string
-  staff_level?: 'requester' | 'approver' | 'none'
-  is_active?: number
-}): Promise<void> {
-  try {
-    console.log('[AUTH STORE] Creating user with data:', userData)
+    // src/stores/auth.ts
+    async createUser(userData: {
+      username: string
+      password: string
+      role: 'admin' | 'staff' | 'partner' | 'customer'
+      full_name: string
+      staff_level?: 'requester' | 'approver' | 'none'
+      is_active?: number
+    }): Promise<void> {
+      try {
+        console.log('[AUTH STORE] Creating user with data:', userData)
 
-    const response = await apiCreateUser(userData)
+        const response = await apiCreateUser(userData)
 
-    console.log('[AUTH STORE] User created:', response)
+        console.log('[AUTH STORE] User created:', response)
 
-    // ✅ ไม่ต้อง push เข้า users array ที่นี่
-    // จะ refresh ทั้งหมดจาก fetchUsers() แทน
-  } catch (error: any) {
-    console.error('[AUTH STORE] Error creating user:', error)
-    throw error
-  }
-},
+        // ✅ ไม่ต้อง push เข้า users array ที่นี่
+        // จะ refresh ทั้งหมดจาก fetchUsers() แทน
+      } catch (error: any) {
+        console.error('[AUTH STORE] Error creating user:', error)
+        throw error
+      }
+    },
 
-async updateUser(userId: number, userData: {
-  username?: string
-  role?: 'admin' | 'staff' | 'partner' | 'customer'
-  full_name?: string
-  staff_level?: 'requester' | 'approver' | 'none'
-  is_active?: number
-  password?: string
-}): Promise<void> {
-  try {
-    console.log('[AUTH STORE] Updating user:', userId, userData)
+    async updateUser(userId: number, userData: {
+      username?: string
+      role?: 'admin' | 'staff' | 'partner' | 'customer'
+      full_name?: string
+      staff_level?: 'requester' | 'approver' | 'none'
+      is_active?: number
+      password?: string
+    }): Promise<void> {
+      try {
+        console.log('[AUTH STORE] Updating user:', userId, userData)
 
-    // ✅ ลบ password ออกถ้าเป็นค่าว่าง
-    const cleanData = { ...userData }
-    if (!cleanData.password) {
-      delete cleanData.password
-    }
+        // ✅ ลบ password ออกถ้าเป็นค่าว่าง
+        const cleanData = { ...userData }
+        if (!cleanData.password) {
+          delete cleanData.password
+        }
 
-    const response = await updateUser(userId, cleanData)
+        const response = await updateUser(userId, cleanData)
 
-    console.log('[AUTH STORE] User updated:', response)
+        console.log('[AUTH STORE] User updated:', response)
 
-    // ✅ ไม่ต้องอัปเดต users array ที่นี่
-    // จะ refresh ทั้งหมดจาก fetchUsers() แทน
-  } catch (error: any) {
-    console.error('[AUTH STORE] Error updating user:', error)
-    throw error
-  }
-},
+        // ✅ ไม่ต้องอัปเดต users array ที่นี่
+        // จะ refresh ทั้งหมดจาก fetchUsers() แทน
+      } catch (error: any) {
+        console.error('[AUTH STORE] Error updating user:', error)
+        throw error
+      }
+    },
 
     async updateUserStatus(userId: number, isActive: boolean): Promise<void> {
       try {

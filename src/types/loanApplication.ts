@@ -1,4 +1,4 @@
-// src/types/loanApplication.ts
+import type { Product } from './product';
 
 /**
  * สถานะของคำขอสินเชื่อ (ตาม Backend)
@@ -10,7 +10,9 @@ export enum LoanApplicationStatus {
   REJECTED = 'rejected',
   CANCELLED = 'cancelled',
   COMPLETED = 'completed',
-  CLOSED_EARLY = 'closed_early'
+  CLOSED_EARLY = 'closed_early',
+  DISBURSED = 'disbursed',
+  CLOSED = 'closed'
 }
 /**
  * Document Model
@@ -27,19 +29,8 @@ export interface Document {
   uploaded_by?: number
 }
 
-/**
- * Customer Location Model
- */
-export interface CustomerLocation {
-  id: number
-  customer_id: number
-  location_type: 'home' | 'work' | 'other'
-  address: string
-  map_url: string
-  latitude?: number
-  longitude?: number
-  is_primary: number
-}
+import type { CustomerLocation } from './customer';
+export type { CustomerLocation };
 
 /**
  * Customer Model (พร้อม Documents และ Locations)
@@ -90,6 +81,9 @@ export interface Guarantor {
   work_company_name: string
   work_position: string
   work_salary: number
+  date_of_birth?: string
+  work_phone?: string
+  work_address?: string
 }
 
 /**
@@ -101,46 +95,36 @@ export interface LoanApplication {
   product_id: number
   loan_id: string
   total_amount: number | string
-  down_payment?: number | string     // ✅ เพิ่มสำหรับแสดงใน Checklist
+  down_payment?: number | string
   loan_period: number
   interest_rate_at_apply: number
   monthly_pay: number
-  is_confirmed: number               // 0 or 1
+  is_confirmed: number
   status: LoanApplicationStatus
   requester_id?: number
-  approver_id?: number               // ✅ เพิ่ม
-  applied_at?: string                // ✅ เพิ่ม
-  approved_at?: string               // ✅ เพิ่ม
-  credit_score?: number              // ✅ เพิ่ม
-  remarks?: string                   // ✅ เพิ่ม
+  approver_id?: number
+  partner_id?: number
+  shop_id?: number
+  applied_at?: string
+  approved_at?: string
+  credit_score?: number
+  remarks?: string
   created_at?: string
   updated_at?: string
+  fee?: number
+  first_installment_amount?: number
+  payment_day?: number
+  borrower_signature_date?: string
+  guarantor_signature_date?: string
+  staff_signature_date?: string
+  loan_guarantors?: Guarantor[]
 
   // Relations (ถ้า backend ส่งมา)
   customer?: CustomerLoan
-
-  product?: {
-    id: number
-    partner_id: number
-    productType_id: number
-    product_name: string
-    brand: string
-    model: string
-    price: number
-    interest_rate: number
-  }
+  product?: Product
   guarantor?: Guarantor;
-
-  requester?: {
-    id: number
-    name: string
-  }
-
-  approver?: {
-    id: number
-    name: string
-  }
-  // ✅ Relations
+  requester?: { id: number; name: string }
+  approver?: { id: number; full_name: string; username: string; }
   documents?: Document[]
 }
 
@@ -320,12 +304,7 @@ export interface LoanApplicationFilters {
 export interface CreateWithCustomerResponse {
   success: boolean
   message: string
-  data: {
-    customer_id: number
-    application_id: number
-    product_name: string
-    is_staff_mode: boolean
-  }
+  data: any
 }
 
 /**

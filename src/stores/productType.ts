@@ -64,9 +64,9 @@ export const useProductTypeStore = defineStore('productType', {
         this.isLoading = false
       }
     },
-     /**
-     * โหลดรายการประเภทสินค้า
-     */
+    /**
+    * โหลดรายการประเภทสินค้า
+    */
     async fetchProductTypeById(productTypeId: number) {
       this.isLoading = true
       this.error = null
@@ -76,7 +76,7 @@ export const useProductTypeStore = defineStore('productType', {
         const response = await getProductTypesByID(productTypeId)
         console.log('get all productType', response)
         // ✅ ตรวจสอบว่าเป็น array
-        this.productType = response.data || response
+        this.productType = response;
 
 
       } catch (error: any) {

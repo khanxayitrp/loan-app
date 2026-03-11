@@ -83,7 +83,7 @@
               </span>
             </td>
 
-            <td>{{ loan.approver?.name || '-' }}</td>
+            <td>{{ loan.approver?.username || '-' }}</td>
 
             <td>{{ formatDate(loan.approved_at || loan.updated_at || loan.created_at || '') }}</td>
 
@@ -195,7 +195,7 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຜູ້ອະນຸມັດ</label>
-                <p>{{ selectedLoan.approver?.name || '-' }}</p>
+                <p>{{ selectedLoan.approver?.username || '-' }}</p>
               </div>
             </div>
 
@@ -392,10 +392,12 @@
 </template>
 
 <script setup lang="ts">
+import { formatPrice } from '@/utils/formatters'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 // ✅ ປ່ຽນມາໃຊ້ useLoanApplicationStore
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import type { LoanApplication } from '@/types/loanApplication'
+import { LoanApplicationStatus } from '@/types/loanApplication'
 import Papa from 'papaparse'
 import { alert } from '@/utils/alert'
 
@@ -487,7 +489,10 @@ const filteredLoans = computed(() => {
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
       const dateTarget = loan.approved_at || loan.updated_at || loan.created_at || '';
-      const loanDate = new Date(dateTarget).toISOString().split('T')[0]
+      if (!dateTarget) return false;
+
+      // 🟢 ແກ້ໄຂ: ຕື່ມ || '' ເພື່ອຮັບປະກັນວ່າຈະເປັນ String ສະເໝີ
+      const loanDate = new Date(dateTarget).toISOString().split('T')[0] || '';
       const fromDate = dateFrom.value || '1970-01-01'
       const toDate = dateTo.value || '9999-12-31'
       return loanDate >= fromDate && loanDate <= toDate
@@ -511,12 +516,7 @@ const hasPreviousPage = computed(() => currentPage.value > 1)
 const hasNextPage = computed(() => currentPage.value < totalPages.value)
 
 // Utility functions
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK'
-  }).format(price)
-}
+
 
 const formatDate = (dateString: string): string => {
   if (!dateString) return '-'
@@ -703,27 +703,27 @@ const printDeliveryNote = () => {
           <div class="info-grid">
             <div class="info-item">
               <span class="info-label">ເລກທີ່ສິນເຊື່ອ:</span>
-              <span class="info-value">${loan.loan_id}</span>
+              <span class="info-value">${loan?.loan_id}</span>
             </div>
             <div class="info-item">
               <span class="info-label">ຊື່ລູກຄ້າ:</span>
-              <span class="info-value">${getCustomerName(loan)}</span>
+              <span class="info-value">${getCustomerName(loan!)}</span>
             </div>
             <div class="info-item">
               <span class="info-label">ຈຳນວນເງິນ:</span>
-              <span class="info-value">${formatPrice(Number(loan.total_amount) || 0)}</span>
+              <span class="info-value">${formatPrice(Number(loan?.total_amount) || 0)}</span>
             </div>
             <div class="info-item">
               <span class="info-label">ດອກເບ້ຍ:</span>
-              <span class="info-value">${loan.interest_rate_at_apply}%</span>
+              <span class="info-value">${loan?.interest_rate_at_apply}%</span>
             </div>
             <div class="info-item">
               <span class="info-label">ໄລຍະເວລາ:</span>
-              <span class="info-value">${loan.loan_period} ເດືອນ</span>
+              <span class="info-value">${loan?.loan_period} ເດືອນ</span>
             </div>
             <div class="info-item">
               <span class="info-label">ວັນທີ່ອະນຸມັດ:</span>
-              <span class="info-value">${formatDate(loan.approved_at || loan.updated_at || '')}</span>
+              <span class="info-value">${formatDate(loan?.approved_at || loan?.updated_at || '')}</span>
             </div>
           </div>
         </div>
@@ -800,7 +800,7 @@ const exportToCSV = () => {
     'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply,
     'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
     'ສະຖານະການຈ່າຍ': getDisbursementStatusText((loan as any).disbursement_status),
-    'ຜູ້ອະນຸມັດ': loan.approver?.name || '-',
+    'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
     'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || loan.updated_at || loan.created_at || '')
   }))
 
@@ -830,6 +830,6 @@ watch(pageSize, () => {
 
 onMounted(() => {
   // ✅ ເອີ້ນໃຊ້ API ດຶງສະເພາະສິນເຊື່ອທີ່ 'approved'
-  loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 });
+  loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.APPROVED, is_confirmed: 1 });
 })
 </script>

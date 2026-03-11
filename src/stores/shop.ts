@@ -25,7 +25,8 @@ export const useShopStore = defineStore('shop', {
     shops: [] as shopType[],
     currentShop: null as shopType | null,
     isLoading: false,
-    isCreating: false, // ✅ เพิ่ม state สำหรับโหมดสร้างใหม่
+    isSaving: false,
+    isCreating: false,
     isEditing: false,
     error: null as string | null
   }),
@@ -76,16 +77,13 @@ export const useShopStore = defineStore('shop', {
         console.log('[ShopStore] Response keys:', Object.keys(response || {}))
 
         // ✅ Normalize response structure
-        let shopData = null
+        const shopData = null
 
         // ✅ จัดการกรณีไม่มีร้านค้า
-        if (response === null) {
-          this.shops = null
+        if (response === null || (Array.isArray(response) && response.length === 0)) {
+          this.shops = []
         } else {
-          // ✅ extract ข้อมูลให้ถูกต้อง
-          shopData = response
-
-          this.shops = { ...shopData }
+          this.shops = Array.isArray(response) ? response : [response]
         }
 
         // รีเซ็ตโหมด
@@ -170,40 +168,22 @@ export const useShopStore = defineStore('shop', {
     //     this.isLoading = false
     //   }
     // },
-    async updateShop(shopId: number, shopData: any) {
-      console.log('[ShopStore] Updating shop:', shopId, shopData)
-
+    async updateShop(id: number, data: shopTypeForm, file?: File) {
+      this.isSaving = true;;
+      this.error = null
       try {
-        const response = await updateShop(shopId, shopData)
-        console.log('[ShopStore] Shop updated raw response:', response)
-
-        let ShopResult = null
-        if (response?.shop) {
-          ShopResult = response.shop
-        } else if (response?.data) {
-          ShopResult = response.data
-        } else if (response) {
-          ShopResult = response
+        const response = await updateShop(id, data, file)
+        let ShopResult = response;
+        if ((response as any)?.data) {
+          ShopResult = (response as any).data
         }
-
-        if (ShopResult && typeof ShopResult === 'object') {
-          // ✅ อัปเดต currentShop ถ้า ID ตรงกัน
-          if (this.currentShop && this.currentShop.id === ShopResult.id) {
-            this.currentShop = { ...this.currentShop, ...ShopResult }
-            console.log('[ShopStore] currentShop updated (merge):', this.currentShop)
-          } else {
-            // ✅ ถ้ายังไม่มี currentShop หรือ ID ไม่ตรง → set ใหม่
-            this.currentShop = ShopResult
-            console.log('[ShopStore] currentShop set from update:', this.currentShop)
-          }
-          this.isEditing = false
-          return this.currentShop
-        } else {
-          throw new Error('Invalid or empty shop data in response from updateShop')
-        }
+        this.currentShop = ShopResult
+        return ShopResult
       } catch (error: any) {
-        console.error('[ShopStore] Error updating shop:', error)
+        this.error = error.message || 'Failed to update shop'
         throw error
+      } finally {
+        this.isSaving = false
       }
     },
 
@@ -221,11 +201,7 @@ export const useShopStore = defineStore('shop', {
 
         // ✅ ตรวจสอบว่า response เป็น object และ extract ข้อมูลที่ถูกต้อง
         let ShopResult = null
-        if (response?.shop) {
-          ShopResult = response.shop
-        } else if (response?.data) {
-          ShopResult = response.data
-        } else if (response) {
+        if (response) {
           ShopResult = response
         }
 

@@ -25,12 +25,8 @@
           <span>{{ locations.length > 0 ? `ພົບ ${locations.length} ຕຳແໜ່ງ` : 'ຍັງບໍ່ມີຕຳແໜ່ງ' }}</span>
         </div>
 
-        <button
-          v-if="canAddLocation"
-          class="btn btn-sm btn-primary"
-          @click="enableAddLocationMode"
-          :disabled="isAddingLocation"
-        >
+        <button v-if="canAddLocation" class="btn btn-sm btn-primary" @click="enableAddLocationMode"
+          :disabled="isAddingLocation">
           <span class="icon-[tabler--plus] size-4 mr-1"></span>
           {{ isAddingLocation ? 'ກຳລັງປັກຈຸດ...' : 'ເພີ່ມທີ່ຢູ່' }}
         </button>
@@ -38,26 +34,21 @@
 
       <!-- Map Container -->
       <div class="card bg-base-200 p-4 rounded-lg border border-base-content/10 relative">
-        <div
-          ref="mapContainer"
-          class="w-full rounded-lg overflow-hidden map-container"
-          style="height: 384px;"
-          :class="{ 'cursor-crosshair': isAddingLocation }"
-        ></div>
+        <div ref="mapContainer" class="w-full rounded-lg overflow-hidden map-container" style="height: 384px;"
+          :class="{ 'cursor-crosshair': isAddingLocation }"></div>
       </div>
 
       <!-- Instruction Box -->
       <Teleport to="body">
-        <div
-          v-if="isAddingLocation"
-          class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md px-4"
-        >
-          <div class="p-3 bg-primary text-primary-content rounded-lg shadow-lg text-sm flex items-center justify-between">
+        <div v-if="isAddingLocation" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md px-4">
+          <div
+            class="p-3 bg-primary text-primary-content rounded-lg shadow-lg text-sm flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="icon-[tabler--info-circle] size-4"></span>
               <span><strong>ໝາຍເຫດ:</strong> ຄລິກໃສ່ແຜນທີ່ເພື່ອປັກຈຸດຕຳແໜ່ງ</span>
             </div>
-            <button class="btn btn-xs btn-ghost text-primary-content hover:bg-primary-focus" @click="disableAddLocationMode">
+            <button class="btn btn-xs btn-ghost text-primary-content hover:bg-primary-focus"
+              @click="disableAddLocationMode">
               ຍົກເລີກ
             </button>
           </div>
@@ -66,22 +57,16 @@
 
       <!-- Location List -->
       <div v-if="locations.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div
-          v-for="location in locations"
-          :key="location.id"
+        <div v-for="location in locations" :key="location.id"
           class="card bg-base-100 p-4 rounded-lg border border-base-content/10"
-          :class="{ 'border-primary border-2': location.is_primary }"
-        >
+          :class="{ 'border-primary border-2': location.is_primary }">
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-2">
-              <span
-                class="icon-[tabler--map-pin] size-5"
-                :class="{
-                  'text-primary': location.location_type === 'home',
-                  'text-success': location.location_type === 'work',
-                  'text-gray-500': location.location_type === 'other'
-                }"
-              ></span>
+              <span class="icon-[tabler--map-pin] size-5" :class="{
+                'text-primary': location.location_type === 'home',
+                'text-success': location.location_type === 'work',
+                'text-gray-500': location.location_type === 'other'
+              }"></span>
               <div>
                 <h4 class="font-semibold">
                   {{ getLocationTypeLabel(location.location_type) }}
@@ -92,18 +77,11 @@
             </div>
 
             <div class="flex gap-1">
-              <button
-                v-if="canEditLocation"
-                class="btn btn-ghost btn-xs"
-                @click="editLocation(location)"
-              >
+              <button v-if="canEditLocation" class="btn btn-ghost btn-xs" @click="editLocation(location)">
                 <span class="icon-[tabler--edit] size-3"></span>
               </button>
-              <button
-                v-if="canDeleteLocation"
-                class="btn btn-ghost btn-xs text-error"
-                @click="deleteLocation(location.id)"
-              >
+              <button v-if="canDeleteLocation" class="btn btn-ghost btn-xs text-error"
+                @click="deleteLocation(location.id)">
                 <span class="icon-[tabler--trash] size-3"></span>
               </button>
             </div>
@@ -114,19 +92,14 @@
           </div>
 
           <div class="flex gap-2 mt-3">
-            <a
-              :href="getGoogleMapsLink(location.latitude, location.longitude)"
-              target="_blank"
-              class="btn btn-xs btn-ghost flex-1"
-            >
+            <a v-if="location.latitude && location.longitude"
+              :href="getGoogleMapsLink(location.latitude, location.longitude)" target="_blank"
+              class="btn btn-xs btn-ghost flex-1">
               <span class="icon-[tabler--external-link] size-3 mr-1"></span>
               ເປີດ Google Maps
             </a>
-            <button
-              v-if="!location.is_primary && canSetPrimary"
-              class="btn btn-xs btn-outline btn-primary"
-              @click="setAsPrimary(location)"
-            >
+            <button v-if="!location.is_primary && canSetPrimary" class="btn btn-xs btn-outline btn-primary"
+              @click="setAsPrimary(location)">
               ຕັ້ງເປັນຫຼັກ
             </button>
           </div>
@@ -158,11 +131,8 @@
               <label class="label">
                 <span class="label-text font-medium">ທີ່ຢູ່ *</span>
               </label>
-              <textarea
-                v-model="locationForm.address"
-                class="textarea textarea-bordered w-full min-h-20"
-                placeholder="ປ້ອນທີ່ຢູ່ເຕັມ"
-              ></textarea>
+              <textarea v-model="locationForm.address" class="textarea textarea-bordered w-full min-h-20"
+                placeholder="ປ້ອນທີ່ຢູ່ເຕັມ"></textarea>
               <label class="label">
                 <span class="label-text-alt text-info">
                   <span class="icon-[tabler--bulb] size-3 inline"></span>
@@ -176,35 +146,20 @@
                 <label class="label">
                   <span class="label-text font-medium">ລາຕິຈູດ</span>
                 </label>
-                <input
-                  v-model="locationForm.latitude"
-                  type="text"
-                  class="input input-bordered w-full"
-                  readonly
-                />
+                <input v-model="locationForm.latitude" type="text" class="input input-bordered w-full" readonly />
               </div>
               <div class="form-control">
                 <label class="label">
                   <span class="label-text font-medium">ລອງຈິຈູດ</span>
                 </label>
-                <input
-                  v-model="locationForm.longitude"
-                  type="text"
-                  class="input input-bordered w-full"
-                  readonly
-                />
+                <input v-model="locationForm.longitude" type="text" class="input input-bordered w-full" readonly />
               </div>
             </div>
 
             <div class="form-control">
               <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  v-model="locationForm.is_primary"
-                  type="checkbox"
-                  class="checkbox checkbox-primary"
-                  :checked="locationForm.is_primary === 1"
-                  @change="toggleIsPrimary"
-                />
+                <input v-model="locationForm.is_primary" type="checkbox" class="checkbox checkbox-primary"
+                  :checked="locationForm.is_primary === 1" @change="toggleIsPrimary" />
                 <span class="label-text">ຕັ້ງເປັນທີ່ຢູ່ຫຼັກ</span>
               </label>
             </div>
@@ -214,11 +169,8 @@
             <button class="btn btn-soft btn-secondary" @click="closeLocationModal">
               ຍົກເລີກ
             </button>
-            <button
-              class="btn btn-primary"
-              @click="saveLocation"
-              :disabled="!locationForm.latitude || !locationForm.longitude"
-            >
+            <button class="btn btn-primary" @click="saveLocation"
+              :disabled="!locationForm.latitude || !locationForm.longitude">
               {{ editingLocation ? 'ບັນທຶກ' : 'ເພີ່ມ' }}
             </button>
           </div>
@@ -402,7 +354,8 @@ const reverseGeocode = async () => {
     })
 
     if (response.results && response.results.length > 0) {
-      locationForm.value.address = response.results[0].formatted_address
+      // 🟢 แก้ไขตรงนี้: เติม ?. เพื่อดักจับกรณีที่ results[0] ไม่มีอยู่จริง
+      locationForm.value.address = response.results[0]?.formatted_address || 'ບໍ່ສາມາດອ່ານທີ່ຢູ່ໄດ້'
     } else {
       alert('ບໍ່ພົບຂໍ້ມູນທີ່ຢູ່')
     }
@@ -460,7 +413,8 @@ const updateMarkers = () => {
 
   // ปรับมุมมองให้พอดีกับ markers ทั้งหมด
   if (markers.value.length > 0) {
-    map.value!.fitBounds(bounds, { padding: 50 })
+    // 🟢 แก้ไขตรงนี้: เปลี่ยนจากการส่ง Object { padding: 50 } เป็นส่งตัวเลข 50 ตรงๆ
+    map.value!.fitBounds(bounds, 50)
   }
 }
 
@@ -617,7 +571,7 @@ watch(() => props.locations, () => {
   background: #e5e3df;
 }
 
-.map-container > div {
+.map-container>div {
   border-radius: 0.5rem;
 }
 </style>

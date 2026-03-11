@@ -52,23 +52,19 @@ export const getAllShop = async (): Promise<shopType[] | null> => {
 /**
  * อัปเดตข้อมูลร้านค้า
  */
-export const updateShop = async (id: number, data: Partial<shopTypeForm>): Promise<shopType> => {
-try {
-  console.log('get this id:', id)
-  const response = await apiClient.put(`/shops/${id}`, data)
-   console.log('[API] Shop updated:', response.data)
-
-    if (response.data?.shop) {
-      return response.data.shop
-    }
-    if (response.data?.data) {
-      return response.data.data
-    }
-    return response.data
-     } catch (error: any) {
-    console.error('[API] Error updating shop:', error)
-    throw error
+export const updateShop = (id: number, data: shopTypeForm, file?: File): Promise<shopType> => {
+  const formData = new FormData()
+  Object.keys(data).forEach(key => {
+    formData.append(key, (data as any)[key])
+  })
+  if (file) {
+    formData.append('logo', file)
   }
+  return apiClient.put(`/shops/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }).then(res => res.data)
 }
 
 export const createShop = async (shopData: shopTypeForm): Promise<shopType> => {
@@ -77,10 +73,10 @@ export const createShop = async (shopData: shopTypeForm): Promise<shopType> => {
     const response = await apiClient.post('/shops', shopData)
 
 
-     console.log('[API] Shop created:', response.data)
+    console.log('[API] Shop created:', response.data)
     // ✅ ตรวจสอบโครงสร้าง response และ extract ข้อมูลที่ถูกต้อง
 
-     if (response.data?.shop) {
+    if (response.data?.shop) {
       return response.data.shop
     }
     if (response.data?.data) {
@@ -106,10 +102,10 @@ export const createShop = async (shopData: shopTypeForm): Promise<shopType> => {
 
 export const changeStatus = async (partnerId: number, isActive: boolean): Promise<{ message: string; shop: shopType }> => {
   try {
-  const response = await apiClient.put<{ message: string; shop: shopType }>(`/shops/status/${partnerId}`, {
-    is_active: isActive ? 1 : 0
-  })
-  console.log('[API] Shop status changed:', response.data)
+    const response = await apiClient.put<{ message: string; shop: shopType }>(`/shops/status/${partnerId}`, {
+      is_active: isActive ? 1 : 0
+    })
+    console.log('[API] Shop status changed:', response.data)
     return response.data
   } catch (error: any) {
     console.error('[API] Error changing shop status:', error)

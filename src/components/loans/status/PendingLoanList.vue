@@ -68,25 +68,28 @@
                 </button>
               </div>
             </td>
-            <td>{{ formatDate(loan.createdAt) }}</td>
+            <td>{{ formatDate(loan.created_at) }}</td>
             <td>
               <div class="flex gap-2">
                 <button class="btn btn-circle btn-text btn-sm" @click="viewLoanDetails(loan)" aria-label="View details">
                   <span class="icon-[tabler--eye] size-4"></span>
                 </button>
 
-                <button class="btn btn-circle btn-text btn-sm text-success" @click="approveLoan(loan)"
-                  aria-label="Approve loan" :disabled="!loan.credit_score || loan.credit_score < 1">
+                <button v-if="loan.credit_score && loan.credit_score >= 65" class="btn btn-circle btn-text btn-sm text-success" @click="approveLoan(loan)" aria-label="Approve loan">
+                  <span class="icon-[tabler--check] size-4"></span>
+                </button>
+                <button v-else-if="!loan.credit_score" class="btn btn-circle btn-text btn-sm text-gray-300" disabled>
                   <span class="icon-[tabler--check] size-4"></span>
                 </button>
 
-                <button class="btn btn-circle btn-text btn-sm text-error" @click="rejectLoan(loan)"
-                  aria-label="Reject loan" :disabled="!loan.credit_score || loan.credit_score < 1">
+                <button v-if="loan.credit_score && loan.credit_score <= 79" class="btn btn-circle btn-text btn-sm text-error" @click="rejectLoan(loan)" aria-label="Reject loan">
+                  <span class="icon-[tabler--x] size-4"></span>
+                </button>
+                <button v-else-if="!loan.credit_score" class="btn btn-circle btn-text btn-sm text-gray-300" disabled>
                   <span class="icon-[tabler--x] size-4"></span>
                 </button>
 
-                <button class="btn btn-circle btn-text btn-sm text-info" @click="openChecklistModal(loan)"
-                  aria-label="Verification Checklist">
+                <button class="btn btn-circle btn-text btn-sm text-info" @click="openChecklistModal(loan)" aria-label="Verification Checklist">
                   <span class="icon-[tabler--clipboard-check] size-5"></span>
                 </button>
               </div>
@@ -197,7 +200,7 @@
             </div>
             <div class="border-t pt-4">
               <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
-              <p>{{ formatDate(selectedLoan.createdAt) }}</p>
+              <p>{{ formatDate(selectedLoan.created_at) }}</p>
             </div>
           </div>
 
@@ -209,7 +212,7 @@
     </teleport>
 
 
-    <teleport to="body">
+    <!-- <teleport to="body">
       <div v-if="showCreditScoreModal && loanForCreditScore"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-auto">
@@ -274,10 +277,182 @@
           </form>
         </div>
       </div>
+    </teleport> -->
+
+    <teleport to="body">
+      <div v-if="showCreditScoreModal && loanForCreditScore"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-auto">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <span class="icon-[tabler--calculator] text-primary size-6"></span> ຄຳນວນຄະແນນສິນເຊື່ອ (Credit Scoring)
+            </h3>
+            <button @click="closeCreditScoreModal" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:bg-gray-200">
+              <span class="icon-[tabler--x] size-5"></span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-6 text-sm border border-gray-200 dark:border-gray-700">
+            <div>
+              <span class="text-gray-500 block mb-1">ອາຍຸລູກຄ້າ</span>
+              <span class="font-bold text-base">{{ creditScoreForm.age }} ປີ</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block mb-1">ອາຍຸການເຮັດວຽກ</span>
+              <span class="font-bold text-base">{{ creditScoreForm.job_tenure_years }} ປີ</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block mb-1">ສະຖານະ CIB</span>
+              <span class="font-bold text-base text-indigo-600">{{ getCibLabel(creditScoreForm.cib_status) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block mb-1">ອັດຕາສ່ວນໜີ້ສິນ (DSR)</span>
+              <span class="font-bold text-base text-red-500">{{ creditScoreForm.dsr_percent.toFixed(2) }}%</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block mb-1">ເງິນວາງດາວ</span>
+              <span class="font-bold text-base text-green-600">{{ creditScoreForm.down_payment_percent.toFixed(2) }}%</span>
+            </div>
+          </div>
+
+          <form @submit.prevent="calculateCreditScore">
+            <div v-if="creditScoreResult" class="mb-4 animate-in fade-in slide-in-from-bottom-2">
+              <div class="p-6 rounded-t-xl text-center text-white" :class="creditScoreResult.colorClass">
+                <p class="text-sm font-medium opacity-80 mb-1">ຄະແນນລວມ (Total Score)</p>
+                <div class="text-6xl font-black mb-2">{{ creditScoreResult.score }} <span class="text-2xl font-normal opacity-70">/ 100</span></div>
+                <div class="text-xl font-bold bg-white/20 inline-block px-4 py-1 rounded-full">
+                  {{ creditScoreResult.grade }} : {{ creditScoreResult.description }}
+                </div>
+              </div>
+
+              <div class="bg-white dark:bg-gray-800 border border-t-0 rounded-b-xl overflow-hidden">
+                <table class="table table-zebra table-sm w-full">
+                  <thead class="bg-base-200">
+                    <tr>
+                      <th>ປັດໄຈປະເມີນ (Scoring Factor)</th>
+                      <th class="text-right w-24">ຄະແນນທີ່ໄດ້</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>1. ອາຍຸ (Age)</td>
+                      <td class="text-right font-medium">{{ creditScoreResult.details.ageScore }} / 20</td>
+                    </tr>
+                    <tr>
+                      <td>2. ອາຍຸການເຮັດວຽກ (Job Tenure)</td>
+                      <td class="text-right font-medium">{{ creditScoreResult.details.tenureScore }} / 20</td>
+                    </tr>
+                    <tr>
+                      <td>3. ລາຍຮັບ ແລະ ໜີ້ສິນ (Income & DSR)</td>
+                      <td class="text-right font-medium">{{ creditScoreResult.details.dsrScore }} / 25</td>
+                    </tr>
+                    <tr>
+                      <td>4. ປະຫວັດສິນເຊື່ອ (Credit History / CIB)</td>
+                      <td class="text-right font-medium">{{ creditScoreResult.details.cibScore }} / 20</td>
+                    </tr>
+                    <tr>
+                      <td>5. ເງິນວາງດາວ (Down Payment)</td>
+                      <td class="text-right font-medium">{{ creditScoreResult.details.dpScore }} / 15</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-2">
+              <button type="button" class="btn btn-ghost" @click="closeCreditScoreModal">ປິດ / ຍົກເລີກ</button>
+
+              <button v-if="!creditScoreResult" type="submit" class="btn btn-primary w-40" :disabled="isCalculating">
+                <span v-if="isCalculating" class="loading loading-spinner loading-xs"></span>
+                <span v-else class="icon-[tabler--calculator] size-5"></span> ຄຳນວນຄະແນນ
+              </button>
+
+              <button v-else type="button" class="btn btn-success w-40 text-white" @click="saveCalculatedScore" :disabled="isCalculating">
+                <span v-if="isCalculating" class="loading loading-spinner loading-xs"></span>
+                <span v-else class="icon-[tabler--device-floppy] size-5"></span> ຢືນຢັນການບັນທຶກ
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </teleport>
+
+    <teleport to="body">
+      <div v-if="showApproveModal && loanToAction"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-auto">
+          <h3 class="font-bold text-xl mb-4 text-success flex items-center gap-2">
+            <span class="icon-[tabler--check] size-6"></span> ຢືນຢັນການອະນຸມັດ
+          </h3>
+          <p class="py-2 text-gray-700 dark:text-gray-300">
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການອະນຸມັດສິນເຊື່ອຂອງລູກຄ້າຊື່: <br>
+            <strong>"{{ getCustomerName(loanToAction) }}"</strong> ?
+          </p>
+
+          <div class="form-control mt-4 p-4 rounded-lg border" :class="isConditionalApproval ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'">
+            <label class="label pb-1">
+              <span class="label-text font-bold" :class="isConditionalApproval ? 'text-amber-700' : 'text-gray-600'">
+                <span v-if="isConditionalApproval" class="icon-[tabler--alert-triangle] size-4 mr-1"></span>
+                ເງື່ອນໄຂ / ເຫດຜົນອະນຸມັດ (Remarks) <span v-if="isConditionalApproval" class="text-error">*</span>
+              </span>
+            </label>
+            <p v-if="isConditionalApproval" class="text-xs text-amber-600 mb-2">ລູກຄ້າຢູ່ໃນເກນ (65-79 ຄະແນນ), ບັງຄັບໃຫ້ລະບຸເງື່ອນໄຂກ່ອນອະນຸມັດ.</p>
+            <p v-else class="text-xs text-gray-500 mb-2">ຄະແນນຜ່ານເກນດີເລີດ (80+ ຄະແນນ), ບໍ່ຈຳເປັນຕ້ອງລະບຸເຫດຜົນ.</p>
+
+            <textarea
+              v-model="approveRemark"
+              class="textarea textarea-bordered w-full h-20 bg-white"
+              :disabled="!isConditionalApproval"
+              :placeholder="isConditionalApproval ? 'ລະບຸເງື່ອນໄຂເຊັ່ນ: ຕ້ອງເພີ່ມເງິນດາວ 10%...' : 'ປິດການໃຊ້ງານ...'"
+            ></textarea>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6 border-t pt-4">
+            <button class="btn btn-soft btn-secondary" @click="showApproveModal = false">ຍົກເລີກ</button>
+            <button class="btn btn-success" @click="confirmApproveLoan">ອະນຸມັດສິນເຊື່ອ</button>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <teleport to="body">
+      <div v-if="showRejectModal && loanToAction"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-auto">
+          <h3 class="font-bold text-xl mb-4 text-error flex items-center gap-2">
+            <span class="icon-[tabler--x] size-6"></span> ຢືນຢັນການປະຕິເສດ
+          </h3>
+          <p class="py-2 text-gray-700 dark:text-gray-300">
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການປະຕິເສດສິນເຊື່ອຂອງລູກຄ້າຊື່: <br>
+            <strong>"{{ getCustomerName(loanToAction) }}"</strong> ?
+          </p>
+
+          <div class="form-control mt-4 p-4 rounded-lg border" :class="isConditionalApproval ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'">
+            <label class="label pb-1">
+              <span class="label-text font-bold" :class="isConditionalApproval ? 'text-amber-700' : 'text-red-700'">
+                ເຫດຜົນການປະຕິເສດ (Remarks) <span v-if="isConditionalApproval" class="text-error">*</span>
+              </span>
+            </label>
+            <p v-if="isConditionalApproval" class="text-xs text-amber-600 mb-2">ລູກຄ້າຢູ່ໃນເກນ (65-79 ຄະແນນ), ບັງຄັບໃຫ້ລະບຸເຫດຜົນການປະຕິເສດ.</p>
+            <p v-else class="text-xs text-red-500 mb-2">ຄະແນນຕ່ຳກວ່າເກນ (< 65 ຄະແນນ), ສາມາດລະບຸເຫດຜົນເພີ່ມເຕີມໄດ້ (Optional).</p>
+
+            <textarea
+              v-model="approveRemark"
+              class="textarea textarea-bordered w-full h-20 bg-white"
+              placeholder="ລະບຸເຫດຜົນເຊັ່ນ: ປະຫວັດ CIB ບໍ່ດີ, ໜີ້ສິນເກີນກຳນົດ..."
+            ></textarea>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6 border-t pt-4">
+            <button class="btn btn-soft btn-secondary" @click="showRejectModal = false">ຍົກເລີກ</button>
+            <button class="btn btn-error" @click="confirmRejectLoan">ປະຕິເສດສິນເຊື່ອ</button>
+          </div>
+        </div>
+      </div>
     </teleport>
 
 
-    <teleport to="body">
+    <!-- <teleport to="body">
       <div v-if="showApproveModal && loanToAction"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-auto">
@@ -288,6 +463,41 @@
             ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການອະນຸມັດສິນເຊື່ອຂອງລູກຄ້າຊື່: <br>
             <strong>"{{ getCustomerName(loanToAction) }}"</strong> ?
           </p>
+          <div class="flex justify-end gap-3 mt-6 border-t pt-4">
+            <button class="btn btn-soft btn-secondary" @click="showApproveModal = false">ຍົກເລີກ</button>
+            <button class="btn btn-success" @click="confirmApproveLoan">ອະນຸມັດສິນເຊື່ອ</button>
+          </div>
+        </div>
+      </div>
+    </teleport> -->
+
+    <!-- <teleport to="body">
+      <div v-if="showApproveModal && loanToAction"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-auto">
+          <h3 class="font-bold text-xl mb-4 text-success flex items-center gap-2">
+            <span class="icon-[tabler--check] size-6"></span> ຢືນຢັນການອະນຸມັດ
+          </h3>
+          <p class="py-2 text-gray-700 dark:text-gray-300">
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການອະນຸມັດສິນເຊື່ອຂອງລູກຄ້າຊື່: <br>
+            <strong>"{{ getCustomerName(loanToAction) }}"</strong> ?
+          </p>
+
+          <div v-if="isConditionalApproval" class="form-control mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200">
+            <label class="label pb-1">
+              <span class="label-text font-bold text-amber-700 dark:text-amber-500 flex items-center gap-1">
+                <span class="icon-[tabler--alert-triangle] size-4"></span>
+                ເຫດຜົນອະນຸມັດແບບມີເງື່ອນໄຂ (ຄະແນນ 65-79) *
+              </span>
+            </label>
+            <p class="text-xs text-amber-600 mb-2">ລູກຄ້າຢູ່ໃນເກນ Conditional Approval, ກະລຸນາລະບຸເງື່ອນໄຂເພີ່ມເຕີມ.</p>
+            <textarea
+              v-model="approveRemark"
+              class="textarea textarea-bordered w-full h-20"
+              placeholder="ລະບຸເງື່ອນໄຂເຊັ່ນ: ຕ້ອງເພີ່ມເງິນດາວ, ຕ້ອງມີຜູ້ຄ້ຳປະກັນ..."
+            ></textarea>
+          </div>
+
           <div class="flex justify-end gap-3 mt-6 border-t pt-4">
             <button class="btn btn-soft btn-secondary" @click="showApproveModal = false">ຍົກເລີກ</button>
             <button class="btn btn-success" @click="confirmApproveLoan">ອະນຸມັດສິນເຊື່ອ</button>
@@ -313,7 +523,7 @@
           </div>
         </div>
       </div>
-    </teleport>
+    </teleport> -->
 
 
     <teleport to="body">
@@ -571,42 +781,67 @@
             </div>
 
             <div v-else-if="checklistTab === 'cib'" class="space-y-6 animate-in fade-in">
-              <div class="border rounded-lg p-6 max-w-3xl mx-auto bg-white dark:bg-base-100 shadow-sm">
-                <div class="flex items-center gap-3 mb-6 border-b pb-4">
-                  <span class="icon-[tabler--report-money] size-8 text-primary"></span>
-                  <h4 class="font-bold text-lg">ຜົນການກວດສອບເຄຣດິດບູໂຣ (CIB)</h4>
+              <div
+                class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg flex justify-between items-center shadow-sm">
+                <div>
+                  <h4 class="font-bold text-indigo-800 dark:text-indigo-300">ປະຫວັດສິນເຊື່ອ (CIB History)</h4>
+                  <p class="text-sm text-indigo-600">ບັນທຶກປະຫວັດການກູ້ຢືມແຕ່ລະບັນຊີຈາກໃບລາຍງານ CIB</p>
                 </div>
+                <button class="btn btn-primary btn-sm" @click="addCIBDetail">
+                  <span class="icon-[tabler--plus] size-4"></span> ເພີ່ມບັນຊີ
+                </button>
+              </div>
 
-                <div class="grid grid-cols-2 gap-6">
-                  <div class="form-control p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <label class="label"><span class="label-text font-bold text-green-700">ປະຫວັດດີ (ຊັ້ນ A, B)
-                        ຈຳນວນ:</span></label>
-                    <div class="flex gap-2">
-                      <input v-model.number="formCIB.good_history_count" type="number" class="input input-bordered w-20"
-                        min="0" />
-                      <span class="mt-3">ບັນຊີ</span>
-                    </div>
-                    <label class="label mt-2"><span class="label-text">ຈາກສະຖາບັນການເງິນ:</span></label>
-                    <input v-model="formCIB.good_history_institutions" type="text" placeholder="ເຊັ່ນ: BCEL, JDB..."
-                      class="input input-bordered input-sm" />
+              <div v-for="(detail, index) in formCIBDetails" :key="index"
+                class="border rounded-lg p-6 relative bg-white dark:bg-base-100 shadow-sm">
+                <button class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error"
+                  @click="removeCIBDetail(index)">
+                  <span class="icon-[tabler--trash] size-5"></span>
+                </button>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-bold">ສະຖາບັນການເງິນ *</span></label>
+                    <input v-model="detail.institution_name" type="text" placeholder="ເຊັ່ນ: BCEL, JDB, AEON..."
+                      class="input input-bordered w-full" />
                   </div>
 
-                  <div class="form-control p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                    <label class="label"><span class="label-text font-bold text-red-700">ປະຫວັດຊ້າ/ໜີ້ເສຍ (C, D, E)
-                        ຈຳນວນ:</span></label>
-                    <div class="flex gap-2">
-                      <input v-model.number="formCIB.bad_history_count" type="number" class="input input-bordered w-20"
-                        min="0" />
-                      <span class="mt-3">ບັນຊີ</span>
-                    </div>
-                    <label class="label mt-2"><span class="label-text">ຈາກສະຖາບັນການເງິນ:</span></label>
-                    <input v-model="formCIB.bad_history_institutions" type="text" placeholder="ລະບຸຊື່ທະນາຄານ..."
-                      class="input input-bordered input-sm" />
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-bold">ປະເພດສິນເຊື່ອ</span></label>
+                    <input v-model="detail.account_type" type="text" placeholder="ເຊັ່ນ: ບັດເຄຣດິດ, ສິນເຊື່ອລົດຈັກ"
+                      class="input input-bordered w-full" />
+                  </div>
+
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-bold text-primary">ສະຖານະການຊຳລະ *</span></label>
+                    <select v-model="detail.history_status" class="select select-bordered font-medium"
+                      :class="getCibStatusColor(detail.history_status)">
+                      <option value="no_delay">ດີຫຼາຍ: ບໍ່ມີຊັກຊ້າ (20 ຄະແນນ)</option>
+                      <option value="delay_30_days">ດີ: ຊັກຊ້າບໍ່ເກີນ 30 ວັນ (15 ຄະແນນ)</option>
+                      <option value="delay_60_days">ປານກາງ: ຊັກຊ້າ 30-60 ວັນ (10 ຄະແນນ)</option>
+                      <option value="delay_90_days">ສ່ຽງສູງ: ຊັກຊ້າ 60-90 ວັນ (5 ຄະແນນ)</option>
+                      <option value="blacklist">ບໍ່ດີ: ຊັກຊ້າ 90 ວັນ+ / Blacklist (0 ຄະແນນ)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-bold">ຍອດໜີ້ຄົງເຫຼືອ (ກີບ)</span></label>
+                    <input v-model.number="detail.outstanding_balance" type="number"
+                      class="input input-bordered w-full text-right" />
                   </div>
                 </div>
+              </div>
 
-                <div class="divider"></div>
+              <div v-if="formCIBDetails.length === 0" class="alert alert-warning shadow-sm">
+                <span class="icon-[tabler--alert-circle] size-6"></span>
+                <span>ຍັງບໍ່ມີຂໍ້ມູນປະຫວັດ CIB. ກະລຸນາກົດປຸ່ມ "ເພີ່ມບັນຊີ" ເພື່ອບັນທຶກຂໍ້ມູນ,
+                  ຫຼືລະບຸວ່າບໍ່ເຄີຍມີປະຫວັດ.</span>
+              </div>
 
+              <div class="divider"></div>
+
+              <div class="border rounded-lg p-6 bg-white dark:bg-base-100 shadow-sm">
+                <h4 class="font-bold text-lg mb-4">ຂໍ້ມູນອື່ນໆ</h4>
                 <div class="form-control">
                   <label class="cursor-pointer label justify-start gap-4">
                     <input type="checkbox" v-model="formCIB.is_existing_customer" class="toggle toggle-primary" />
@@ -626,7 +861,7 @@
                 <div class="form-control mt-4">
                   <label class="label"><span class="label-text">ໝາຍເຫດເພີ່ມເຕີມ</span></label>
                   <textarea v-model="formCIB.remark" class="textarea textarea-bordered h-24"
-                    placeholder="ບົດສະຫຼຸບການປະເມີນ CIB..."></textarea>
+                    placeholder="ລາຍລະອຽດເພີ່ມເຕີມຈາກໃບລາຍງານ CIB..."></textarea>
                 </div>
               </div>
             </div>
@@ -851,10 +1086,12 @@
 </template>
 
 <script setup lang="ts">
+import { formatPrice } from '@/utils/formatters'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import type { LoanApplication, UpdateLoanApplicationDto } from '@/types/loanApplication'
+import { LoanApplicationStatus } from '@/types/loanApplication'
 import apiClient from '@/api/apiclient'
 import { getFullImageUrl } from '@/utils/url'
 import { useChecklistStore } from '@/stores/checklist';
@@ -881,24 +1118,46 @@ const selectedLoan = ref<LoanApplication | null>(null)
 const loanForCreditScore = ref<LoanApplication | null>(null)
 const loanToAction = ref<LoanApplication | null>(null)
 
-// Credit score form
+// --- 🟢 โค้ดส่วนคำนวณและตัวแปร Credit Score ---
+
 const creditScoreForm = reactive({
-  monthly_income: 0,
-  other_debts: 0,
   age: 0,
-  employment_status: ''
+  job_tenure_years: 0,
+  cib_status: 'no_delay',
+  dsr_percent: 0,
+  down_payment_percent: 0
 })
 
 const creditScoreResult = ref<{
   score: number
   grade: string
   description: string
+  colorClass: string
+  details: {
+    ageScore: number,
+    tenureScore: number,
+    cibScore: number,
+    dsrScore: number,
+    dpScore: number
+  }
 } | null>(null)
+
+// ตัวช่วยแปลงชื่อ CIB ให้แสดงบน UI
+const getCibLabel = (status: string) => {
+  const map: Record<string, string> = {
+    'no_delay': 'ດີຫຼາຍ (ບໍ່ມີຊັກຊ້າ)',
+    'delay_30_days': 'ດີ (ຊັກຊ້າບໍ່ເກີນ 30 ວັນ)',
+    'delay_60_days': 'ປານກາງ (ຊັກຊ້າ 30-60 ວັນ)',
+    'delay_90_days': 'ສ່ຽງສູງ (ຊັກຊ້າ 60-90 ວັນ)',
+    'blacklist': 'ບໍ່ດີ (ຊັກຊ້າ 90+ ວັນ/Blacklist)'
+  }
+  return map[status] || status;
+}
 
 const isCalculating = ref(false)
 
 // Debounce search
-let debounceTimer: NodeJS.Timeout | null = null
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const debouncedSearch = ref('')
 
 const debounceSearch = () => {
@@ -929,7 +1188,9 @@ const filteredLoans = computed(() => {
 
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
-      const loanDate = new Date(loan.createdAt || '').toISOString().split('T')[0]
+      const dateTarget = loan.created_at || '';
+      if (!dateTarget) return false;
+      const loanDate = new Date(dateTarget).toISOString().split('T')[0] || '';
       const fromDate = dateFrom.value || '1970-01-01'
       const toDate = dateTo.value || '9999-12-31'
       return loanDate >= fromDate && loanDate <= toDate
@@ -952,26 +1213,11 @@ const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, tot
 const hasPreviousPage = computed(() => currentPage.value > 1)
 const hasNextPage = computed(() => currentPage.value < totalPages.value)
 
-const formatPrice = (price: number | string | undefined): string => {
-  const numPrice = Number(price || 0)
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK'
-  }).format(numPrice)
-}
 
 const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return '-'
   return new Date(dateString).toLocaleDateString('lo-LA')
 }
-
-const getScoreColorClass = (score: number): string => {
-  if (score >= 750) return 'text-success'
-  if (score >= 650) return 'text-info'
-  if (score >= 550) return 'text-warning'
-  return 'text-error'
-}
-
 
 // ==========================================
 // 🟢 CHECKLIST MODAL STATES & LOGIC 🟢
@@ -1041,16 +1287,45 @@ const removeCallRecord = (index: number) => {
   formCalls.value.splice(index, 1)
 }
 
-// 3. CIB Form
+// 3. CIB Form ✅
+interface CIBDetailRecord {
+  id?: number;
+  institution_name: string;
+  account_type: string;
+  history_status: string;
+  outstanding_balance: number;
+}
+const formCIBDetails = ref<CIBDetailRecord[]>([])
+
 const formCIB = reactive({
-  good_history_count: 0,
-  good_history_institutions: '',
-  bad_history_count: 0,
-  bad_history_institutions: '',
   is_existing_customer: false,
   existing_customer_status: 'normal',
   remark: ''
 })
+
+const addCIBDetail = () => {
+  formCIBDetails.value.push({
+    institution_name: '',
+    account_type: '',
+    history_status: 'no_delay',
+    outstanding_balance: 0
+  })
+}
+
+const removeCIBDetail = (index: number) => {
+  formCIBDetails.value.splice(index, 1)
+}
+
+const getCibStatusColor = (status: string) => {
+  switch (status) {
+    case 'no_delay': return 'text-success border-success';
+    case 'delay_30_days': return 'text-info border-info';
+    case 'delay_60_days': return 'text-warning border-warning';
+    case 'delay_90_days': return 'text-orange-500 border-orange-500';
+    case 'blacklist': return 'text-error border-error bg-error/10';
+    default: return '';
+  }
+}
 
 // 4. Field Visit Form
 interface FieldVisitRecord {
@@ -1105,8 +1380,11 @@ const getCurrentLocation = (index: number) => {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        formFieldVisits.value[index].latitude = position.coords.latitude;
-        formFieldVisits.value[index].longitude = position.coords.longitude;
+        // 🟢 ກວດສອບວ່າມີ Index ນີ້ແທ້ຫຼືບໍ່
+        if (formFieldVisits.value[index]) {
+          formFieldVisits.value[index].latitude = position.coords.latitude;
+          formFieldVisits.value[index].longitude = position.coords.longitude;
+        }
       },
       (error) => {
         let msg = "ເກີດຂໍ້ຜິດພາດໃນການດຶງທີ່ຕັ້ງ";
@@ -1133,12 +1411,16 @@ const handleVisitImageUpload = (index: number, photoNum: 1 | 2, event: Event) =>
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    if (photoNum === 1) {
-      formFieldVisits.value[index].photo_1_file = file;
-      formFieldVisits.value[index].photo_1_preview = e.target?.result as string;
-    } else {
-      formFieldVisits.value[index].photo_2_file = file;
-      formFieldVisits.value[index].photo_2_preview = e.target?.result as string;
+    // 🟢 ກວດສອບກ່ອນຍັດຄ່າໃສ່ Object
+    const visit = formFieldVisits.value[index];
+    if (visit) {
+      if (photoNum === 1) {
+        visit.photo_1_file = file;
+        visit.photo_1_preview = e.target?.result as string;
+      } else {
+        visit.photo_2_file = file;
+        visit.photo_2_preview = e.target?.result as string;
+      }
     }
     target.value = '';
   };
@@ -1146,14 +1428,18 @@ const handleVisitImageUpload = (index: number, photoNum: 1 | 2, event: Event) =>
 }
 
 const removeVisitImage = (index: number, photoNum: 1 | 2) => {
-  if (photoNum === 1) {
-    formFieldVisits.value[index].photo_1_file = null;
-    formFieldVisits.value[index].photo_1_preview = null;
-    formFieldVisits.value[index].photo_url_1 = null;
-  } else {
-    formFieldVisits.value[index].photo_2_file = null;
-    formFieldVisits.value[index].photo_2_preview = null;
-    formFieldVisits.value[index].photo_url_2 = null;
+  // 🟢 ກວດສອບກ່ອນຍັດຄ່າ null
+  const visit = formFieldVisits.value[index];
+  if (visit) {
+    if (photoNum === 1) {
+      visit.photo_1_file = null;
+      visit.photo_1_preview = null;
+      visit.photo_url_1 = null;
+    } else {
+      visit.photo_2_file = null;
+      visit.photo_2_preview = null;
+      visit.photo_url_2 = null;
+    }
   }
 }
 
@@ -1193,8 +1479,22 @@ const fetchChecklistData = async (loanId: number) => {
         addCallRecord();
       }
 
+      // ✅ Updated CIB mapping
       if (summaryData.cib_check) {
+        console.log("CIB Check Data:", summaryData.cib_check);
         Object.assign(formCIB, summaryData.cib_check);
+        formCIB.is_existing_customer = !!summaryData.cib_check.is_existing_customer;
+
+        if (summaryData.cib_check.cib_details && summaryData.cib_check.cib_details.length > 0) {
+          formCIBDetails.value = [...summaryData.cib_check.cib_details];
+        } else {
+          formCIBDetails.value = [];
+        }
+      } else {
+        Object.assign(formCIB, {
+          is_existing_customer: false, existing_customer_status: 'normal', remark: ''
+        });
+        formCIBDetails.value = [];
       }
 
       if (summaryData.field_visits && summaryData.field_visits.length > 0) {
@@ -1219,6 +1519,7 @@ const fetchChecklistData = async (loanId: number) => {
       addCallRecord();
       formFieldVisits.value = [];
       addFieldVisit();
+      formCIBDetails.value = [];
     }
 
   } catch (error) {
@@ -1227,6 +1528,7 @@ const fetchChecklistData = async (loanId: number) => {
     addCallRecord();
     formFieldVisits.value = [];
     addFieldVisit();
+    formCIBDetails.value = [];
   }
 }
 
@@ -1248,7 +1550,7 @@ const openChecklistModal = async (loan: LoanApplication) => {
     formBasic.has_income_doc = Boolean(dbData.basic_verification.has_income_doc);
     formBasic.has_other_doc = Boolean(dbData.basic_verification.has_other_doc);
 
-    const workInfo = loan.customer?.customer_work_infos?.[0];
+    const workInfo = loan.customer?.work_info?.[0];
     formBasic.verified_first_name = formBasic.verified_first_name || loan.customer?.first_name || '';
     formBasic.verified_last_name = formBasic.verified_last_name || loan.customer?.last_name || '';
     formBasic.verified_dob = formBasic.verified_dob || (loan.customer?.date_of_birth ? new Date(loan.customer.date_of_birth).toISOString().slice(0, 10) : '');
@@ -1269,7 +1571,7 @@ const openChecklistModal = async (loan: LoanApplication) => {
     } catch (error) {
       console.error("Error fetching full loan details:", error);
     }
-    const workInfo = fullDetails?.customer?.customer_work_infos?.[0];
+    const workInfo = fullDetails?.customer?.work_info?.[0];
     Object.assign(formBasic, {
       cus_contact_method: 'phone',
       verified_first_name: fullDetails?.customer?.first_name || '',
@@ -1296,13 +1598,18 @@ const openChecklistModal = async (loan: LoanApplication) => {
     addCallRecord();
   }
 
+  // ✅ Updated CIB prepopulation
   if (dbData?.cib_check) {
     Object.assign(formCIB, dbData.cib_check);
+    formCIB.is_existing_customer = Boolean(dbData.cib_check.is_existing_customer);
+    if (dbData.cib_check.cib_details) {
+      formCIBDetails.value = [...dbData.cib_check.cib_details]
+    }
   } else {
     Object.assign(formCIB, {
-      good_history_count: 0, good_history_institutions: '', bad_history_count: 0, bad_history_institutions: '',
       is_existing_customer: false, existing_customer_status: 'normal', remark: ''
     });
+    formCIBDetails.value = [];
   }
 
   if (dbData?.field_visits && dbData.field_visits.length > 0) {
@@ -1340,7 +1647,7 @@ const saveBasicInfo = async (loanId: number) => {
     full_name: `${formBasic.verified_first_name} ${formBasic.verified_last_name}`.trim()
   }
   try {
-    await checklistApi.saveBasicInfo(loanId, formData);
+    await checklistApi.saveBasic(loanId, formData);
     alert.success('ບັນທຶກຂໍ້ມູນສຳເລັດ', `ຂໍ້ມູນພື້ນຖານຂອງເລກທີ່ສິນເຊື່ອ ${selectedChecklistLoan.value?.loan_id || ''} ຖືກບັນທຶກແລ້ວ.`);
   } catch (err) {
     console.error("Failed to save Basic Info:", err);
@@ -1353,7 +1660,8 @@ const saveBasicInfo = async (loanId: number) => {
 const saveCallRecords = async (loanId: number) => {
   isSavingChecklist.value = true;
   try {
-    const result = await checklistApi.saveCallRecords(loanId, { calls: formCalls.value });
+    const result = await checklistApi.saveCalls(loanId, { calls: formCalls.value });
+    console.log("Save calls result:", result);
     alert.success('ບັນທຶກການໂທສຳເລັດ', `ບັນທຶກສຳເລັດແລ້ວ.`);
     await fetchChecklistData(loanId);
   } catch (err) {
@@ -1364,11 +1672,25 @@ const saveCallRecords = async (loanId: number) => {
   }
 }
 
+// ✅ Updated save CIB
 const saveCIBInfo = async (loanId: number) => {
   isSavingChecklist.value = true;
   try {
-    await checklistApi.saveCIBInfo(loanId, formCIB);
+    // Validation check
+    if (formCIBDetails.value.some(d => !d.institution_name)) {
+      alert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາລະບຸຊື່ສະຖາບັນການເງິນໃຫ້ຄົບທຸກບັນຊີ');
+      isSavingChecklist.value = false;
+      return;
+    }
+
+    const payload = {
+      ...formCIB,
+      cib_details: formCIBDetails.value
+    };
+
+    await checklistApi.saveCIB(loanId, payload);
     alert.success('ບັນທຶກຂໍ້ມູນ CIB ສຳເລັດ');
+    await fetchChecklistData(loanId); // Refresh to get the generated IDs
   } catch (err) {
     console.error("Failed to save CIB info:", err);
     alert.error('ບັນທຶກຂໍ້ມູນ CIB ບໍ່ສຳເລັດ');
@@ -1464,7 +1786,7 @@ const saveFieldVisits = async (loanId: number) => {
 const saveIncomeAssessment = async (loanId: number) => {
   isSavingChecklist.value = true;
   try {
-    await checklistApi.saveIncomeAssessment(loanId, formIncome);
+    await checklistApi.saveIncome(loanId, formIncome);
     alert.success('ບັນທຶກຂໍ້ມູນປະເມີນລາຍຮັບສຳເລັດ');
   } catch (err) {
     console.error("Failed to save Income Assessment:", err);
@@ -1539,16 +1861,13 @@ const openCreditScoreModal = async (loan: LoanApplication) => {
 
     const errorMsg = [];
 
+    // Validation (ตรวจสอบเหมือนเดิม)
     if (!summaryData) {
       alert.error('ກະລຸນາກວດສອບຂໍ້ມູນ Checklist ທັງໝົດໃຫ້ຄົບຖ້ວນກ່ອນຄຳນວນຄະແນນ');
-      isCalculating.value = false;
-      return;
+      isCalculating.value = false; return;
     }
-
-    if (!summaryData.basic_verification) {
-      errorMsg.push("- ຍັງບໍ່ໄດ້ບັນທຶກ 'ຂໍ້ມູນທົ່ວໄປ'");
-    } else if (summaryData.basic_verification.status !== 'completed') {
-      errorMsg.push("- ຂໍ້ມູນທົ່ວໄປຍັງເປັນ 'ບັນທຶກຮ່າງ (Draft)' ກະລຸນາປ່ຽນເປັນ 'ກວດສອບສຳເລັດ'");
+    if (!summaryData.basic_verification || summaryData.basic_verification.status !== 'completed') {
+      errorMsg.push("- ຍັງບໍ່ໄດ້ບັນທຶກ 'ຂໍ້ມູນທົ່ວໄປ' ຫຼື ຍັງເປັນຮ່າງ");
     }
     if (!summaryData.call_verifications || summaryData.call_verifications.length === 0) {
       errorMsg.push("- ຍັງບໍ່ມີປະຫວັດ 'ການໂທຢືນຢັນ'");
@@ -1565,28 +1884,47 @@ const openCreditScoreModal = async (loan: LoanApplication) => {
 
     if (errorMsg.length > 0) {
       alert.error("ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້", "ເນື່ອງຈາກ:\n" + errorMsg.join('\n'));
-      isCalculating.value = false;
-      return;
+      isCalculating.value = false; return;
     }
 
-    loanForCreditScore.value = loan
-    const verifiedIncome = summaryData.income_assessment;
-    creditScoreForm.monthly_income = verifiedIncome.average_monthly_income || loan.customer?.income_per_month || 0;
-    creditScoreForm.other_debts = verifiedIncome.existing_debt_payments || loan.customer?.other_debts || 0;
-    creditScoreForm.age = loan.customer?.age || 0
-    creditScoreForm.employment_status = loan.customer?.occupation || ''
+    // 🟢 ดึงข้อมูลจาก Checklist มาใส่ Form อัตโนมัติ
+    loanForCreditScore.value = loan;
+    creditScoreResult.value = null; // Reset ผลลัพธ์เก่า
 
-    creditScoreResult.value = loan.credit_score ? {
-      score: loan.credit_score,
-      grade: getGradeFromScore(loan.credit_score),
-      description: getDescriptionFromScore(loan.credit_score)
-    } : null
+    const basic = summaryData.basic_verification;
+    const income = summaryData.income_assessment;
+    const cib = summaryData.cib_check;
 
-    showCreditScoreModal.value = true
+    // 1. อายุ
+    let age = loan.customer?.age || 0;
+    if (!age && basic.verified_dob) {
+      const diffMs = Date.now() - new Date(basic.verified_dob).getTime();
+      const ageDt = new Date(diffMs);
+      age = Math.abs(ageDt.getUTCFullYear() - 1970);
+    }
+    creditScoreForm.age = age;
+
+    // 2. อายุงาน
+    creditScoreForm.job_tenure_years = Number(basic.work_years) || 0;
+
+    // 3. CIB Status
+    creditScoreForm.cib_status = cib.cib_status || cib.overall_cib_status || 'no_delay';
+
+    // 4. DSR %
+    const totalIncome = (Number(income.average_monthly_income) || 0) + (Number(income.other_verified_income) || 0);
+    const totalDebt = (Number(income.existing_debt_payments) || 0) + (Number(income.proposed_installment) || 0);
+    creditScoreForm.dsr_percent = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 100;
+
+    // 5. Down Payment %
+    const price = Number(basic.verified_price) || Number(loan.total_amount) || 1;
+    const dp = Number(basic.verified_down_payment) || Number(loan.down_payment) || 0;
+    creditScoreForm.down_payment_percent = (dp / price) * 100;
+
+    showCreditScoreModal.value = true;
 
   } catch (error) {
     console.error("Error checking checklist validation", error);
-    alert.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບ Checklist');
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ Checklist');
   } finally {
     isCalculating.value = false;
   }
@@ -1598,106 +1936,247 @@ const closeCreditScoreModal = () => {
   creditScoreResult.value = null
 }
 
+// ฟังก์ชันจำลองการคำนวณ (โชว์ตัวเลขให้พนักงานดู)
 const calculateCreditScore = async () => {
-  if (!loanForCreditScore.value) return
-  isCalculating.value = true
+  isCalculating.value = true;
+
+  // หน่วงเวลาให้ดูเหมือนกำลังประมวลผล AI สวยๆ
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  let totalScore = 0;
+
+  // 1. Age Score (Max 20)
+  const age = creditScoreForm.age;
+  let ageScore = 0;
+  if (age >= 25 && age <= 35) ageScore = 20;
+  else if (age >= 36 && age <= 45) ageScore = 18;
+  else if (age >= 46 && age <= 55) ageScore = 12;
+  else if (age >= 18 && age <= 24) ageScore = 10;
+  else if (age >= 56) ageScore = 8;
+  totalScore += ageScore;
+
+  // 2. Job Tenure Score (Max 20)
+  const tenure = creditScoreForm.job_tenure_years;
+  let tenureScore = 0;
+  if (tenure >= 3) tenureScore = 20;
+  else if (tenure >= 1) tenureScore = 15;
+  else if (tenure >= 0.5) tenureScore = 10;
+  else tenureScore = 5;
+  totalScore += tenureScore;
+
+  // 3. CIB Score (Max 20)
+  const cib = creditScoreForm.cib_status;
+  let cibScore = 0;
+  if (cib === 'no_delay') cibScore = 20;
+  else if (cib === 'delay_30_days') cibScore = 15;
+  else if (cib === 'delay_60_days') cibScore = 10;
+  else if (cib === 'delay_90_days') cibScore = 5;
+  else if (cib === 'blacklist') cibScore = 0;
+  totalScore += cibScore;
+
+  // 4. DSR Score (Max 25)
+  const dsr = creditScoreForm.dsr_percent;
+  let dsrScore = 0;
+  if (dsr <= 30) dsrScore = 25;
+  else if (dsr <= 40) dsrScore = 20;
+  else if (dsr <= 50) dsrScore = 15;
+  else if (dsr <= 60) dsrScore = 10;
+  else dsrScore = 5;
+  totalScore += dsrScore;
+
+  // 5. Down Payment Score (Max 15)
+  const dp = creditScoreForm.down_payment_percent;
+  let dpScore = 0;
+  if (dp >= 30) dpScore = 15;
+  else if (dp >= 20) dpScore = 12;
+  else if (dp >= 10) dpScore = 8;
+  else dpScore = 5;
+  totalScore += dpScore;
+
+  // Decision Rules
+  let grade = '';
+  let description = '';
+  let colorClass = '';
+
+  if (totalScore >= 80) {
+      grade = 'APPROVE';
+      description = 'ຜ່ານອະນຸມັດ';
+      colorClass = 'bg-gradient-to-r from-emerald-500 to-green-600';
+  } else if (totalScore >= 65) {
+      grade = 'CONDITIONAL APPROVAL';
+      description = 'ອະນຸມັດແບບມີເງື່ອນໄຂ';
+      colorClass = 'bg-gradient-to-r from-amber-400 to-orange-500';
+  } else {
+      grade = 'REJECT';
+      description = 'ປະຕິເສດການອະນຸມັດ';
+      colorClass = 'bg-gradient-to-r from-red-500 to-rose-600';
+  }
+
+  creditScoreResult.value = {
+    score: totalScore,
+    grade,
+    description,
+    colorClass,
+    details: { ageScore, tenureScore, cibScore, dsrScore, dpScore }
+  };
+
+  isCalculating.value = false;
+}
+
+// ฟังก์ชันบันทึกคะแนนลง Database เมื่อกดยืนยัน
+const saveCalculatedScore = async () => {
+  if (!loanForCreditScore.value || !creditScoreResult.value) return;
+  isCalculating.value = true;
+
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const updateData: UpdateLoanApplicationDto = { credit_score: creditScoreResult.value.score };
+    await loanApplicationStore.updateLoanApplication(loanForCreditScore.value.id, updateData);
 
-    let score = 300
-    if (creditScoreForm.monthly_income >= 5000000) score += 200
-    else if (creditScoreForm.monthly_income >= 3000000) score += 150
-    else if (creditScoreForm.monthly_income >= 2000000) score += 100
-    else if (creditScoreForm.monthly_income >= 1000000) score += 50
+    // ✅ แกัตรงนี้ โหลดสถานะ PENDING และ VERIFYING ด้วย
+    await loanApplicationStore.fetchLoanApplications({
+        status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING] as any,
+        is_confirmed: 1
+    });
 
-    const dti = creditScoreForm.monthly_income > 0 ? creditScoreForm.other_debts / creditScoreForm.monthly_income : 1
-    if (dti <= 0.2) score += 100
-    else if (dti <= 0.3) score += 75
-    else if (dti <= 0.4) score += 50
-    else if (dti <= 0.5) score += 25
-
-    if (creditScoreForm.age >= 40) score += 50
-    else if (creditScoreForm.age >= 30) score += 30
-    else if (creditScoreForm.age >= 25) score += 20
-
-    if (creditScoreForm.employment_status === 'employed' || creditScoreForm.employment_status.includes('ພະນັກງານ')) score += 75
-    else if (creditScoreForm.employment_status === 'self-employed' || creditScoreForm.employment_status.includes('ທຸລະກິດ')) score += 50
-    else if (creditScoreForm.employment_status === 'retired') score += 25
-
-    score = Math.max(300, Math.min(850, Math.round(score)))
-
-    creditScoreResult.value = {
-      score: score,
-      grade: getGradeFromScore(score),
-      description: getDescriptionFromScore(score)
-    }
-
-    const updateData: UpdateLoanApplicationDto = { credit_score: score }
-    if (loanForCreditScore.value) {
-      await loanApplicationStore.updateLoanApplication(loanForCreditScore.value.id, updateData)
-      await loanApplicationStore.fetchLoanApplications({ status: 'pending', is_confirmed: 1 })
-    }
+    alert.success('ບັນທຶກຄະແນນສຳເລັດ', `ສິນເຊື່ອໄດ້ຮັບ ${creditScoreResult.value.score} ຄະແນນ`);
+    closeCreditScoreModal();
   } catch (error) {
-    console.error('Error calculating credit score:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດການຄຳນວນຄະແນນສິນເຊື່ອ')
+    console.error('Error saving credit score:', error);
+    alert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກຄະແນນສິນເຊື່ອ');
   } finally {
-    isCalculating.value = false
+    isCalculating.value = false;
   }
 }
+// 🟢 1. ເພີ່ມຕົວແປສຳລັບເກັບຂໍ້ຄວາມເຫດຜົນ ແລະ ເຊັກເງື່ອນໄຂຄະແນນ
+const approveRemark = ref('');
 
-const getGradeFromScore = (score: number): string => {
-  if (score >= 750) return 'A'
-  if (score >= 700) return 'B'
-  if (score >= 650) return 'C'
-  if (score >= 600) return 'D'
-  return 'F'
-}
-
-const getDescriptionFromScore = (score: number): string => {
-  if (score >= 750) return 'ດີເລີດ'
-  if (score >= 700) return 'ດີ'
-  if (score >= 650) return 'ປານກາງ'
-  if (score >= 600) return 'ຕ່ຳ'
-  return 'ຕ່ຳຫຼາຍ'
-}
+const isConditionalApproval = computed(() => {
+  if (!loanToAction.value || !loanToAction.value.credit_score) return false;
+  const score = loanToAction.value.credit_score;
+  return score >= 65 && score <= 79;
+});
 
 const approveLoan = (loan: LoanApplication) => {
   loanToAction.value = loan
+  approveRemark.value = ''; // ເຄຼຍຄ່າທຸກຄັ້ງທີ່ເປີດ Modal ໃໝ່
   showApproveModal.value = true
 }
 
+// const confirmApproveLoan = async () => {
+//   if (!loanToAction.value) return
+//   try {
+//     const updateData: UpdateLoanApplicationDto = { status: LoanApplicationStatus.APPROVED, remarks: 'Approved by staff' }
+//     await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData)
+//     alert.success('ອະນຸມັດສິນເຊື່ອສຳເລັດແລ້ວ!')
+//     showApproveModal.value = false
+
+//     // ✅ แกัตรงนี้ โหลดสถานะ PENDING และ VERIFYING ด้วย
+//     await loanApplicationStore.fetchLoanApplications({
+//         status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING],
+//         is_confirmed: 1
+//     })
+//   } catch (error) {
+//     console.error("Error approving loan:", error)
+//     alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!')
+//   } finally {
+//     loanToAction.value = null
+//   }
+// }
 const confirmApproveLoan = async () => {
-  if (!loanToAction.value) return
+  if (!loanToAction.value) return;
+
+  // Validation: ถ้า 65-79 ต้องใส่เหตุผล
+  if (isConditionalApproval.value && !approveRemark.value.trim()) {
+    alert.error('ກະລຸນາປ້ອນເຫດຜົນ', 'ລູກຄ້າຢູ່ໃນເກນ (65-79 ຄະແນນ) ຕ້ອງລະບຸເງື່ອນໄຂກ່ອນອະນຸມັດ!');
+    return;
+  }
+
   try {
-    const updateData: UpdateLoanApplicationDto = { status: 'approved' }
+    const updateData: UpdateLoanApplicationDto = { status: LoanApplicationStatus.APPROVED }
+
+    // ถ้ามีการกรอก Remark ให้แนบไปด้วย (เปลี่ยน 'remarks' เป็นชื่อฟิลด์จริงใน DB ของคุณ)
+    if (approveRemark.value.trim()) {
+      (updateData as any).remarks = approveRemark.value.trim();
+    }
+
     await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData)
     alert.success('ອະນຸມັດສິນເຊື່ອສຳເລັດແລ້ວ!')
     showApproveModal.value = false
-    loanApplicationStore.fetchLoanApplications({ status: 'pending' })
-  } catch (error) {
+
+    await loanApplicationStore.fetchLoanApplications({
+      status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING] as any,
+      is_confirmed: 1
+    })
+  } catch (error: any) {
     console.error("Error approving loan:", error)
-    alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!')
+    const errMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດໃນການດຳເນີນການ';
+    alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!', errMsg)
   } finally {
     loanToAction.value = null
   }
 }
 
+// const rejectLoan = (loan: LoanApplication) => {
+//   loanToAction.value = loan
+//   showRejectModal.value = true
+// }
+
+// const confirmRejectLoan = async () => {
+//   if (!loanToAction.value) return
+//   try {
+//     const updateData: UpdateLoanApplicationDto = { status: LoanApplicationStatus.REJECTED }
+//     await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData)
+//     alert.success('ປະຕິເສດສິນເຊື່ອສຳເລັດແລ້ວ!')
+//     showRejectModal.value = false
+
+//     // ✅ แกัตรงนี้ โหลดสถานะ PENDING และ VERIFYING ด้วย
+//     await loanApplicationStore.fetchLoanApplications({
+//         status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING],
+//         is_confirmed: 1
+//     })
+//   } catch (error) {
+//     console.error("Error rejecting loan:", error)
+//     alert.error('ການປະຕິເສດສິນເຊື່ອຜິດພາດ!')
+//   } finally {
+//     loanToAction.value = null
+//   }
+// }
+
+// ======== REJECT LOGIC ========
 const rejectLoan = (loan: LoanApplication) => {
-  loanToAction.value = loan
-  showRejectModal.value = true
+  loanToAction.value = loan;
+  approveRemark.value = ''; // ล้างข้อความเก่าทุกครั้งที่เปิด Modal
+  showRejectModal.value = true;
 }
 
 const confirmRejectLoan = async () => {
-  if (!loanToAction.value) return
+  if (!loanToAction.value) return;
+
+  // Validation: ถ้า 65-79 แล้วจะปฏิเสธ ก็ต้องบอกเหตุผลว่าทำไมถึงตก
+  if (isConditionalApproval.value && !approveRemark.value.trim()) {
+    alert.error('ກະລຸນາປ້ອນເຫດຜົນ', 'ລູກຄ້າຢູ່ໃນເກນ (65-79 ຄະແນນ) ຕ້ອງລະບຸເຫດຜົນການປະຕິເສດ!');
+    return;
+  }
+
   try {
-    const updateData: UpdateLoanApplicationDto = { status: 'rejected' }
+    const updateData: UpdateLoanApplicationDto = { status: LoanApplicationStatus.REJECTED }
+
+    if (approveRemark.value.trim()) {
+      (updateData as any).remarks = approveRemark.value.trim();
+    }
+
     await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData)
     alert.success('ປະຕິເສດສິນເຊື່ອສຳເລັດແລ້ວ!')
     showRejectModal.value = false
-    loanApplicationStore.fetchLoanApplications({ status: 'pending' })
-  } catch (error) {
+
+    await loanApplicationStore.fetchLoanApplications({
+      status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING] as any,
+      is_confirmed: 1
+    })
+  } catch (error: any) {
     console.error("Error rejecting loan:", error)
-    alert.error('ການປະຕິເສດສິນເຊື່ອຜິດພາດ!')
+    const errMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດໃນການດຳເນີນການ';
+    alert.error('ການປະຕິເສດສິນເຊື່ອຜິດພາດ!', errMsg)
   } finally {
     loanToAction.value = null
   }
@@ -1714,7 +2193,7 @@ const exportToCSV = () => {
     'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply,
     'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
     'ຄະແນນສິນເຊື່ອ': loan.credit_score || '-',
-    'ວັນທີ່ສ້າງ': formatDate(loan.createdAt)
+    'ວັນທີ່ສ້າງ': formatDate(loan.created_at)
   }))
 
   const csv = Papa.unparse(csvData)
@@ -1743,8 +2222,9 @@ watch(pageSize, () => {
 
 onMounted(async () => {
   try {
+    // ✅ แกัตรงนี้ โหลดสถานะ PENDING และ VERIFYING ด้วย (รองรับ API ที่รับเป็น String คั่นด้วย comma หรือ Array)
     await loanApplicationStore.fetchLoanApplications({
-      status: 'pending',
+      status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING] as any,
       is_confirmed: 1,
     })
   } catch (e) {

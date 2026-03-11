@@ -157,21 +157,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+// ✅ Added 'reactive' to the import list
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useProductTypeStore } from '@/stores/productType'
+import type { ProductType } from '@/types/product'
 import { alert } from '@/utils/alert'
 
-// Types
-interface ProductTypeForm {
-  type_name: string
-  description: string | null
-  is_active: number
-}
-
-// Store
 const productTypeStore = useProductTypeStore()
 
-// Modal state
 const showModal = ref(false)
 const editingProductType = ref<ProductType | null>(null)
 
@@ -196,7 +189,14 @@ const endIndex = computed(() => productTypeStore.endIndex)
 const hasPreviousPage = computed(() => productTypeStore.hasPreviousPage)
 const hasNextPage = computed(() => productTypeStore.hasNextPage)
 const currentPage = computed(() => productTypeStore.currentPage)
-const pageSize = computed(() => productTypeStore.pageSize)
+
+// Use a writeable computed property to link the template select to the store
+const pageSize = computed({
+  get: () => productTypeStore.pageSize,
+  set: (newSize) => productTypeStore.changePageSize(newSize)
+})
+
+const loading = ref(false);
 
 // Validation
 const validateForm = (): boolean => {
@@ -218,8 +218,8 @@ const openAddProductTypeModal = () => {
 const openEditProductTypeModal = (productType: ProductType) => {
   editingProductType.value = productType
   form.type_name = productType.type_name
-  form.description = productType.description || ''
-  form.is_active = productType.is_active
+  form.description = (productType as any).description || ''
+  form.is_active = (productType as any).is_active ? 1 : 0 // Ensure it's a number for the checkbox
   showModal.value = true
 }
 
@@ -237,6 +237,7 @@ const resetForm = () => {
 // Save product type
 const saveProductType = async () => {
   if (!validateForm()) return
+  loading.value = true;
 
   try {
     if (editingProductType.value) {
@@ -259,19 +260,22 @@ const saveProductType = async () => {
     closeModal()
   } catch (error) {
     console.error('Error saving product type:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກປະເພດສິນຄ້າ')
+    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດບັນທຶກປະເພດສິນຄ້າໄດ້')
+  } finally {
+    loading.value = false;
   }
 }
 
 // Delete product type
 const deleteProductType = async (productTypeId: number) => {
-  if (await alert.confirm('ຕ້ອງການລຶບປະເພດສິນຄ້ານີ້ບໍ?')) {
+  const confirmed = await alert.confirm('ຢືນຢັນການລຶບ', 'ທ່ານຕ້ອງການລຶບປະເພດສິນຄ້ານີ້ແທ້ບໍ່?');
+  if (confirmed) {
     try {
       await productTypeStore.deleteProductType(productTypeId)
       alert.success('ລຶບປະເພດສິນຄ້າສຳເລັດ!')
     } catch (error) {
       console.error('Error deleting product type:', error)
-      alert.error('ເກີດຂໍ້ຜິດພາດການລຶບປະເພດສິນຄ້າ')
+      alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດລຶບປະເພດສິນຄ້າໄດ້')
     }
   }
 }
@@ -289,12 +293,12 @@ const nextPage = () => {
   }
 }
 
-const handlePageSizeChange = (newSize: number) => {
-  productTypeStore.changePageSize(newSize)
-}
-
-// Initial fetch
-onMounted(() => {
-  productTypeStore.fetchProductTypes()
+// Initialize data
+onMounted(async () => {
+  try {
+    await productTypeStore.fetchProductTypes()
+  } catch (error) {
+    console.error('Error initializing product type page:', error)
+  }
 })
 </script>

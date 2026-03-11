@@ -119,6 +119,44 @@ import { alert } from '@/utils/alert' // Import the alert utility
 
 // Reactive state
 const router = useRouter()
+const authStore = useAuthStore()
+
+const form = reactive({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const errors = reactive({
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+const loading = ref(false)
+
+const validateForm = () => {
+  // Reset errors
+  errors.newPassword = ''
+  errors.confirmPassword = ''
+
+  let isValid = true
+
+  // Example validation (customize as needed)
+  if (form.newPassword.length < 8) {
+    errors.newPassword = 'ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ'
+    isValid = false
+  }
+
+  if (form.newPassword !== form.confirmPassword) {
+    errors.confirmPassword = 'ລະຫັດຜ່ານບໍ່ຕົງກັນ'
+    isValid = false
+  }
+
+  return isValid
+}
 // ... existing code ...
 const handleSubmit = async () => {
   if (!validateForm()) {
