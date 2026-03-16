@@ -1,6 +1,6 @@
 // src/api/loanApplication.ts
 
-import apiClient from '@/api/apiclient'
+import apiClient from './apiclient'
 import type {
   LoanApplication,
   CreateLoanApplicationDto,
@@ -286,3 +286,60 @@ export const sentDraftApply = async (
     throw new Error(error.response?.data?.message || 'Failed to Apply Draft Loan Application')
   }
 }
+
+/**
+ * 🟢 บันทึกตารางการผ่อนชำระ (Repayment Schedule)
+ */
+export const createRepaymentSchedule = async (
+  applicationId: number,
+  scheduleData: any[]
+): Promise<any> => {
+  try {
+    console.log(`[LoanApplication API] Creating Repayment Schedule for ID ${applicationId}:`, scheduleData)
+
+    const response = await apiClient.post(
+      `/loan-application/repayment-schedule/${applicationId}`,
+      { scheduleData } // ส่งข้อมูลไปใน body ตามที่ backend คาดหวัง
+    )
+
+    console.log('[LoanApplication API] Repayment Schedule Created:', response.data)
+
+    if (response.data.success) {
+      return response.data.data
+    }
+
+    throw new Error('Failed to create repayment schedule')
+
+  } catch (error: any) {
+    console.error('[LoanApplication API] Create Repayment Schedule failed:', error)
+    throw new Error(error.response?.data?.message || 'Failed to create repayment schedule')
+  }
+}
+
+/**
+ * 🟢 ดืงตารางการผ่อนชำระ (Repayment Schedule)
+ */
+export const fetchRepaymentSchedule = async (
+  applicationId: number,
+): Promise<any> => {
+  try {
+    console.log(`[LoanApplication API] Fetching Repayment Schedule for ID ${applicationId}`)
+
+    const response = await apiClient.get(
+      `/loan-application/repayment-schedule/${applicationId}/all`
+    )
+
+    console.log('[LoanApplication API] Repayment Schedule fetch:', response.data)
+
+    if (response.data.success) {
+      return response.data.data
+    }
+
+    throw new Error('Failed to fetch repayment schedule')
+
+  } catch (error: any) {
+    console.error('[LoanApplication API] Fetch Repayment Schedule failed:', error)
+    throw new Error(error.response?.data?.message || 'Failed to fetch repayment schedule')
+  }
+}
+

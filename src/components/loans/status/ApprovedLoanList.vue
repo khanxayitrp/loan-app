@@ -78,14 +78,14 @@
             <td>{{ loan.loan_period }} ເດືອນ</td>
 
             <td>
-              <span class="badge badge-soft" :class="getDisbursementBadgeClass((loan as any).disbursement_status)">
-                {{ getDisbursementStatusText((loan as any).disbursement_status) }}
+              <span class="badge badge-soft" :class="getDisbursementBadgeClass(loan)">
+                {{ getDisbursementStatusText(loan) }}
               </span>
             </td>
 
             <td>{{ loan.approver?.username || '-' }}</td>
 
-            <td>{{ formatDate(loan.approved_at || loan.updatedAt || loan.createdAt || '') }}</td>
+            <td>{{ formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '') }}</td>
 
             <td>
               <div class="flex gap-2">
@@ -98,8 +98,8 @@
                   <span class="icon-[tabler--file-invoice] size-4"></span>
                 </button>
 
-                <button
-                  v-if="(loan as any).disbursement_status === 'pending_disbursement' && (loan as any).delivery_note_approved"
+                <!-- 🟢 ອັບເດດເງື່ອນໄຂປຸ່ມ: ສັນຍາອະນຸມັດແລ້ວ + ໃບຮັບເຄື່ອງອະນຸມັດແລ້ວ -->
+                <button v-if="loan.status === 'approved' && hasApprovedDeliveryNote(loan)"
                   class="btn btn-circle btn-text btn-sm text-primary" @click="disburseLoan(loan)"
                   aria-label="Disburse payment">
                   <span class="icon-[tabler--currency-dollar] size-4"></span>
@@ -143,6 +143,7 @@
       </div>
     </div>
 
+    <!-- Details Modal -->
     <teleport to="body">
       <div v-if="showDetailsModal && selectedLoan"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -163,7 +164,10 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ສະຖານະ</label><br>
-                <span class="badge badge-soft badge-info mt-1">ອະນຸມັດແລ້ວ</span>
+                <span class="badge badge-soft mt-1"
+                  :class="selectedLoan.status === 'disbursed' ? 'badge-success' : 'badge-info'">
+                  {{ selectedLoan.status === 'disbursed' ? 'ຈ່າຍເງິນແລ້ວ' : 'ອະນຸມັດແລ້ວ' }}
+                </span>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຊື່ລູກຄ້າ</label>
@@ -204,70 +208,48 @@
               <p class="whitespace-pre-line">{{ selectedLoan.customer?.address || '-' }}</p>
             </div>
 
-            <div v-if="(selectedLoan as any).delivery_note">
-              <div class="border-t pt-4">
-                <h4 class="font-medium mb-2">ຂໍ້ມູນໃບມອບຮັບສິນຄ້າ</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <label class="text-gray-500">ເລກທີ່ໃບມອບຮັບ</label>
-                    <p>{{ (selectedLoan as any).delivery_note.note_number }}</p>
-                  </div>
-                  <div>
-                    <label class="text-gray-500">ຜູ້ຮັບ</label>
-                    <p>{{ (selectedLoan as any).delivery_note.recipient_name }}</p>
-                  </div>
-                  <div>
-                    <label class="text-gray-500">ເບີໂທຜູ້ຮັບ</label>
-                    <p>{{ (selectedLoan as any).delivery_note.recipient_phone }}</p>
-                  </div>
-                  <div>
-                    <label class="text-gray-500">ທີ່ຢູ່ຈັດສົ່ງ</label>
-                    <p>{{ (selectedLoan as any).delivery_note.delivery_address }}</p>
-                  </div>
-                  <div>
-                    <label class="text-gray-500">ວັນທີ່ສ້າງ</label>
-                    <p>{{ formatDate((selectedLoan as any).delivery_note.createdAt) }}</p>
-                  </div>
-                  <div>
-                    <label class="text-gray-500">ສະຖານະ</label>
-                    <br>
-                    <span class="badge badge-soft mt-1"
-                      :class="(selectedLoan as any).delivery_note_approved ? 'badge-success' : 'badge-warning'">
-                      {{ (selectedLoan as any).delivery_note_approved ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າການອະນຸມັດ' }}
-                    </span>
-                  </div>
+            <div v-if="(selectedLoan as any).delivery_receipt"
+              class="border-t pt-4 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg mt-2">
+              <h4 class="font-medium mb-3 flex items-center gap-2">
+                <span class="icon-[tabler--file-invoice] size-5 text-primary"></span> ຂໍ້ມູນໃບມອບຮັບສິນຄ້າ
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <label class="text-gray-500 block mb-1">ເລກທີ່ໃບມອບຮັບ</label>
+                  <p class="font-medium">{{ (selectedLoan as any).delivery_receipt.receipts_id }}</p>
+                </div>
+                <div>
+                  <label class="text-gray-500 block mb-1">ຊື່ຜູ້ຮັບສິນຄ້າ</label>
+                  <p class="font-medium">{{ (selectedLoan as any).delivery_receipt.receiver_name }}</p>
+                </div>
+                <div>
+                  <label class="text-gray-500 block mb-1">ວັນທີ່ມອບຮັບ</label>
+                  <p>{{ formatDate((selectedLoan as any).delivery_receipt.delivery_date) }}</p>
+                </div>
+                <div>
+                  <label class="text-gray-500 block mb-1">ສະຖານະ</label>
+                  <br>
+                  <span class="badge badge-soft mt-1"
+                    :class="(selectedLoan as any).delivery_receipt.status === 'approved' ? 'badge-success' : 'badge-warning'">
+                    {{ (selectedLoan as any).delivery_receipt.status === 'approved' ? 'ອະນຸມັດແລ້ວ' :
+                      'ລໍຖ້າການອະນຸມັດ' }}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div v-if="(selectedLoan as any).disbursement_status === 'disbursed'">
-              <div class="border-t pt-4">
-                <h4 class="font-medium mb-2">ຂໍ້ມູນການຈ່າຍເງິນ</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <label class="text-gray-500">ວັນທີ່ຈ່າຍເງິນ</label>
-                    <p>{{ formatDate((selectedLoan as any).disbursed_at) }}</p>
-                  </div>
-                  <div>
-                    <label class="text-gray-500">ຈ່າຍໃຫ້</label>
-                    <p>{{ (selectedLoan as any).disbursement_recipient }}</p>
-                  </div>
-                  <div>
-                    <label class="text-gray-500">ເບີບັນຊີ</label>
-                    <p>{{ (selectedLoan as any).disbursement_account }}</p>
-                  </div>
-                </div>
+            <div v-else class="border-t pt-4 mt-2">
+              <div class="alert alert-warning shadow-sm">
+                <span class="icon-[tabler--alert-circle] size-5"></span>
+                <span>ຍັງບໍ່ມີຂໍ້ມູນການມອບຮັບສິນຄ້າ</span>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4 mt-4">
               <div>
                 <label class="text-sm font-medium text-gray-500">ອະນຸມັດເມື່ອ</label>
-                <p>{{ formatDate(selectedLoan.approved_at || selectedLoan.updated_at || '') }}</p>
-              </div>
-              <div v-if="(selectedLoan as any).disbursed_at">
-                <label class="text-sm font-medium text-gray-500">ຈ່າຍເງິນເມື່ອ</label>
-                <p>{{ formatDate((selectedLoan as any).disbursed_at) }}</p>
+                <p>{{ formatDate(selectedLoan.approved_at || (selectedLoan as any).updatedAt || (selectedLoan as
+                  any).createdAt || '') }}</p>
               </div>
             </div>
           </div>
@@ -281,24 +263,32 @@
       </div>
     </teleport>
 
+    <!-- Delivery Note Modal -->
     <teleport to="body">
       <div v-if="showDeliveryNoteModal && loanForDeliveryNote"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-auto">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-bold">
-              {{ (loanForDeliveryNote as any).delivery_note ? 'ຈັດການໃບມອບຮັບສິນຄ້າ' : 'ສ້າງໃບມອບຮັບສິນຄ້າ' }}
+              {{ deliveryReceiptStore.currentReceipt ? 'ຈັດການໃບມອບຮັບສິນຄ້າ' : 'ສ້າງໃບມອບຮັບສິນຄ້າ' }}
             </h3>
             <button @click="closeDeliveryNoteModal" class="text-gray-400 hover:text-gray-600">
               <span class="icon-[tabler--x] size-5"></span>
             </button>
           </div>
 
-          <form @submit.prevent="saveDeliveryNote" class="space-y-4">
+          <div v-if="isLoadingDeliveryNote" class="text-center py-8">
+            <span class="loading loading-spinner"></span>
+            <p class="text-sm text-gray-500 mt-2">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
+          </div>
+
+          <form v-else @submit.prevent="saveDeliveryNote" class="space-y-4">
             <div class="form-control">
               <label class="label"><span class="label-text font-medium">ເລກທີ່ໃບມອບຮັບ *</span></label>
               <input v-model="deliveryNoteForm.note_number" type="text" placeholder="ປ້ອນເລກທີ່ໃບມອບຮັບ"
-                class="input input-bordered w-full" :disabled="isEditingDisabled" required />
+                class="input input-bordered w-full" disabled />
+              <p v-if="!deliveryReceiptStore.currentReceipt" class="text-xs text-gray-500 mt-1">ລະບົບສ້າງໃຫ້ອັດຕະໂນມັດ
+              </p>
             </div>
 
             <div class="form-control">
@@ -308,15 +298,15 @@
             </div>
 
             <div class="form-control">
-              <label class="label"><span class="label-text font-medium">ເບີໂທຜູ້ຮັບ *</span></label>
-              <input v-model="deliveryNoteForm.recipient_phone" type="tel" placeholder="ປ້ອນເບີໂທຜູ້ຮັບ"
-                class="input input-bordered w-full" :disabled="isEditingDisabled" required />
+              <label class="label"><span class="label-text font-medium">ເບີໂທຜູ້ຮັບ</span></label>
+              <input v-model="deliveryNoteForm.recipient_phone" type="tel" placeholder="ອ້າງອີງຈາກຂໍ້ມູນລູກຄ້າ"
+                class="input input-bordered w-full bg-gray-50" readonly />
             </div>
 
             <div class="form-control">
-              <label class="label"><span class="label-text font-medium">ທີ່ຢູ່ຈັດສົ່ງ *</span></label>
-              <textarea v-model="deliveryNoteForm.delivery_address" placeholder="ປ້ອນທີ່ຢູ່ຈັດສົ່ງ"
-                class="textarea textarea-bordered w-full min-h-24" :disabled="isEditingDisabled" required></textarea>
+              <label class="label"><span class="label-text font-medium">ທີ່ຢູ່ຈັດສົ່ງ</span></label>
+              <textarea v-model="deliveryNoteForm.delivery_address" placeholder="ອ້າງອີງຈາກຂໍ້ມູນລູກຄ້າ"
+                class="textarea textarea-bordered w-full min-h-24 bg-gray-50" readonly></textarea>
             </div>
 
             <div class="form-control">
@@ -335,16 +325,18 @@
                 ຍົກເລີກ
               </button>
 
+              <!-- 🟢 ອັບເດດປຸ່ມພິມ PDF ໃຫ້ສະແດງ Loading State -->
               <button v-if="hasDeliveryNote" type="button" class="btn btn-outline btn-primary"
-                @click="printDeliveryNote">
-                <span class="icon-[tabler--printer] size-4 mr-1"></span>
-                ພິມໃບມອບຮັບ
+                @click="printDeliveryNote" :disabled="isPrintingDeliveryNote || isSavingDeliveryNote">
+                <span v-if="isPrintingDeliveryNote" class="loading loading-spinner loading-xs mr-1"></span>
+                <span v-else class="icon-[tabler--printer] size-4 mr-1"></span>
+                {{ isPrintingDeliveryNote ? 'ກຳລັງພິມ...' : 'ພິມໃບມອບຮັບ' }}
               </button>
 
               <button type="submit" class="btn btn-primary" :disabled="isSavingDeliveryNote || isSaveDisabled">
                 <span v-if="isSavingDeliveryNote" class="loading loading-spinner loading-xs"></span>
                 <span v-else>
-                  {{ (loanForDeliveryNote as any).delivery_note ? 'ບັນທຶກການປ່ຽນແປງ' : 'ສ້າງໃບມອບຮັບ' }}
+                  {{ deliveryReceiptStore.currentReceipt ? 'ບັນທຶກການປ່ຽນແປງ' : 'ສ້າງໃບມອບຮັບ' }}
                 </span>
               </button>
             </div>
@@ -353,6 +345,7 @@
       </div>
     </teleport>
 
+    <!-- Disburse Modal -->
     <teleport to="body">
       <div v-if="showDisburseModal && loanToDisburse"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -365,17 +358,6 @@
               formatPrice(Number(loanToDisburse.total_amount) || 0) }}</strong>
             ໃຫ້ "{{ (loanToDisburse as any).disbursement_recipient || getCustomerName(loanToDisburse) }}" ?
           </p>
-
-          <div class="space-y-2 mb-4 bg-base-200 p-3 rounded-lg border">
-            <div class="flex justify-between">
-              <span class="text-gray-600">ເລກບັນຊີ:</span>
-              <span class="font-medium">{{ (loanToDisburse as any).disbursement_account || '-' }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">ທະນາຄານ:</span>
-              <span class="font-medium">{{ (loanToDisburse as any).disbursement_bank || '-' }}</span>
-            </div>
-          </div>
 
           <div class="flex justify-end gap-3 mt-6 border-t pt-4">
             <button class="btn btn-soft btn-secondary" @click="showDisburseModal = false">
@@ -394,25 +376,21 @@
 <script setup lang="ts">
 import { formatPrice } from '@/utils/formatters'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-// ✅ ປ່ຽນມາໃຊ້ useLoanApplicationStore
 import { useLoanApplicationStore } from '@/stores/loanApplication'
+import { useDeliveryReceiptStore } from '@/stores/delivery_receipt'
 import type { LoanApplication } from '@/types/loanApplication'
 import { LoanApplicationStatus } from '@/types/loanApplication'
 import Papa from 'papaparse'
 import { alert } from '@/utils/alert'
+import apiClient from '@/api/apiclient'
 
 const loanApplicationStore = useLoanApplicationStore()
-
-interface DeliveryNote {
-  note_number: string
-  recipient_name: string
-  recipient_phone: string
-  delivery_address: string
-  created_at: string
-}
+const deliveryReceiptStore = useDeliveryReceiptStore()
 
 // Reactive state
 const isLoading = computed(() => loanApplicationStore.isLoading)
+const isLoadingDeliveryNote = ref(false)
+const isPrintingDeliveryNote = ref(false) // 🟢 ເພີ່ມ State ສຳລັບປຸ່ມ Print
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchQuery = ref('')
@@ -439,7 +417,6 @@ const deliveryNoteForm = reactive({
 
 const isSavingDeliveryNote = ref(false)
 
-// Helpers ສຳລັບດຶງຊື່ ແລະ ເບີໂທ
 const getCustomerName = (loan: LoanApplication): string => {
   if (!loan.customer) return '-'
   return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim()
@@ -448,7 +425,6 @@ const getCustomerPhone = (loan: LoanApplication): string => {
   return loan.customer?.phone || '-'
 }
 
-// Debounce search
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const debouncedSearch = ref('')
 
@@ -466,11 +442,9 @@ const applyDateFilter = () => {
   currentPage.value = 1
 }
 
-// ✅ Filtered loans (ໃຊ້ loanApplicationStore)
 const filteredLoans = computed(() => {
   let filtered = loanApplicationStore.loanApplications
 
-  // Search filter
   if (debouncedSearch.value) {
     const query = debouncedSearch.value.toLowerCase()
     filtered = filtered.filter(loan =>
@@ -480,18 +454,18 @@ const filteredLoans = computed(() => {
     )
   }
 
-  // Disbursement status filter (Mock property `disbursement_status`)
-  if (disbursementFilter.value) {
-    filtered = filtered.filter(loan => (loan as any).disbursement_status === disbursementFilter.value)
+  // 🟢 ປັບປຸງ Filter ການຈ່າຍເງິນໃຫ້ໃຊ້ສະຖານະແທ້ຈິງ
+  if (disbursementFilter.value === 'disbursed') {
+    filtered = filtered.filter(loan => ['disbursed', 'completed', 'closed'].includes(loan.status));
+  } else if (disbursementFilter.value === 'pending_disbursement') {
+    filtered = filtered.filter(loan => loan.status === 'approved');
   }
 
-  // Date filter
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
-      const dateTarget = loan.approved_at || loan.updated_at || loan.created_at || '';
+      const dateTarget = loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '';
       if (!dateTarget) return false;
 
-      // 🟢 ແກ້ໄຂ: ຕື່ມ || '' ເພື່ອຮັບປະກັນວ່າຈະເປັນ String ສະເໝີ
       const loanDate = new Date(dateTarget).toISOString().split('T')[0] || '';
       const fromDate = dateFrom.value || '1970-01-01'
       const toDate = dateTo.value || '9999-12-31'
@@ -515,31 +489,25 @@ const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, tot
 const hasPreviousPage = computed(() => currentPage.value > 1)
 const hasNextPage = computed(() => currentPage.value < totalPages.value)
 
-// Utility functions
-
-
 const formatDate = (dateString: string): string => {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('lo-LA')
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('lo-LA')
 }
 
-const getDisbursementBadgeClass = (status: string): string => {
-  switch (status) {
-    case 'disbursed': return 'badge-success'
-    case 'pending_disbursement': return 'badge-warning'
-    default: return 'badge-neutral'
-  }
+// 🟢 ປ່ຽນໃຫ້ໃຊ້ loan.status ແທນ
+const getDisbursementBadgeClass = (loan: any): string => {
+  if (['disbursed', 'completed', 'closed'].includes(loan.status)) return 'badge-success'
+  return 'badge-warning'
 }
 
-const getDisbursementStatusText = (status: string): string => {
-  const statusMap: Record<string, string> = {
-    'disbursed': 'ຈ່າຍເງິນແລ້ວ',
-    'pending_disbursement': 'ຍັງບໍ່ໄດ້ຈ່າຍເງິນ'
-  }
-  return statusMap[status] || status || 'ລໍຖ້າຈ່າຍເງິນ' // Default text
+// 🟢 ປ່ຽນໃຫ້ໃຊ້ loan.status ແທນ
+const getDisbursementStatusText = (loan: any): string => {
+  if (['disbursed', 'completed', 'closed'].includes(loan.status)) return 'ຈ່າຍເງິນແລ້ວ'
+  return 'ຍັງບໍ່ໄດ້ຈ່າຍເງິນ'
 }
 
-// Action handlers
 const viewLoanDetails = async (loan: LoanApplication) => {
   try {
     const fullDetails = await loanApplicationStore.fetchLoanApplicationById(loan.id)
@@ -556,222 +524,266 @@ const closeDetailsModal = () => {
   selectedLoan.value = null
 }
 
-const hasDeliveryNote = computed(() => {
-  return !!(loanForDeliveryNote.value as any)?.delivery_note
-})
-
-const isEditingDisabled = computed(() => {
-  return (loanForDeliveryNote.value as any)?.delivery_note_approved === true
-})
-
-const canApproveDeliveryNote = computed(() => {
-  return (loanForDeliveryNote.value as any)?.delivery_note &&
-    !(loanForDeliveryNote.value as any)?.delivery_note_approved
-})
-
-const isSaveDisabled = computed(() => {
-  if (isEditingDisabled.value) {
-    return true
-  }
-  if ((loanForDeliveryNote.value as any)?.delivery_note && !hasChanges()) {
-    return true
-  }
-  return false
-})
-
-const approvalDisabledMessage = computed(() => {
-  if (!(loanForDeliveryNote.value as any)?.delivery_note) {
-    return 'ຕ້ອງສ້າງໃບມອບຮັບກ່ອນຈຶ່ງຈະສາມາດອະນຸມັດໄດ້'
-  }
-  if ((loanForDeliveryNote.value as any)?.delivery_note_approved) {
-    return 'ໃບມອບຮັບນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ'
-  }
-  return ''
-})
-
-const originalDeliveryNoteData = ref<DeliveryNote | null>(null)
+const originalDeliveryNoteData = ref<any>(null)
 const originalApprovedStatus = ref(false)
 
-const openDeliveryNoteModal = (loan: LoanApplication) => {
-  loanForDeliveryNote.value = loan
-  const note = (loan as any).delivery_note;
+// 🟢 อัปเดตฟังก์ชันเช็คสถานะใบส่งมอบสินค้าให้ครอบคลุมและถูกต้อง
+const hasApprovedDeliveryNote = (loan: any): boolean => {
+  if (!loan) return false;
 
-  if (note) {
-    deliveryNoteForm.note_number = note.note_number
-    deliveryNoteForm.recipient_name = note.recipient_name
-    deliveryNoteForm.recipient_phone = note.recipient_phone
-    deliveryNoteForm.delivery_address = note.delivery_address
-    deliveryNoteForm.approved = (loan as any).delivery_note_approved
-
-    originalDeliveryNoteData.value = { ...note }
-    originalApprovedStatus.value = (loan as any).delivery_note_approved
-  } else {
-    deliveryNoteForm.note_number = ''
-    deliveryNoteForm.recipient_name = getCustomerName(loan)
-    deliveryNoteForm.recipient_phone = getCustomerPhone(loan)
-    deliveryNoteForm.delivery_address = loan.customer?.address || ''
-    deliveryNoteForm.approved = false
-
-    originalDeliveryNoteData.value = null
-    originalApprovedStatus.value = false
+  // 1. เช็คกรณีที่ API ส่งมาเป็น Object (delivery_receipt ไม่มี s) -> จาก Console ปัจจุบัน
+  if (loan.delivery_receipt && loan.delivery_receipt.status === 'approved') {
+    return true;
   }
 
-  showDeliveryNoteModal.value = true
+  // 2. เช็คเผื่อกรณีที่ API ส่งมาเป็น Array (delivery_receipts มี s) -> เผื่อ endpoint อื่น
+  if (loan.delivery_receipts && loan.delivery_receipts.length > 0) {
+    return loan.delivery_receipts[0].status === 'approved';
+  }
+
+  return false;
+}
+
+const openDeliveryNoteModal = async (loan: LoanApplication) => {
+  // 1. ເປີດ Modal ແລະ ສະແດງ Loading ທັນທີ
+  showDeliveryNoteModal.value = true;
+  isLoadingDeliveryNote.value = true;
+
+  try {
+    // 🟢 2. ດຶງຂໍ້ມູນ Loan ແບບເຕັມຮູບແບບ (ຍ້າຍມາຈາກ printDeliveryNote)
+    let fullLoanData = loan; // ຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນຂໍ້ມູນເດີມກັນໜຽວ
+    try {
+      const fetchedLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id);
+      if (fetchedLoan) {
+        // Deep copy ປ້ອງກັນ Proxy issues
+        fullLoanData = JSON.parse(JSON.stringify(fetchedLoan));
+
+        // ປັບໂຄງສ້າງຂໍ້ມູນໃຫ້ Backend ອ່ານໄດ້
+        if (fullLoanData.customer) {
+          if (fullLoanData.customer.customer_work_infos) {
+            fullLoanData.customer.work_info = fullLoanData.customer.customer_work_infos;
+          }
+          if (fullLoanData.customer.customer_locations) {
+            fullLoanData.customer.locations = fullLoanData.customer.customer_locations;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch full loan details, using basic info', err);
+    }
+
+    // 🟢 3. ເກັບຂໍ້ມູນ "ເຕັມ" ໄວ້ໃນ state ເພື່ອໃຫ້ພ້ອມສຳລັບການພິມ
+    loanForDeliveryNote.value = fullLoanData;
+
+    // 4. ດຶງຂໍ້ມູນໃບຮັບເຄື່ອງ (Receipt)
+    const existingReceipt = await deliveryReceiptStore.fetchReceiptByApplicationId(loan.id);
+
+    if (existingReceipt) {
+      deliveryNoteForm.note_number = existingReceipt.receipts_id;
+      deliveryNoteForm.recipient_name = existingReceipt.receiver_name;
+      deliveryNoteForm.approved = existingReceipt.status === 'approved';
+
+      // ໃຊ້ຂໍ້ມູນຈາກ fullLoanData ທີ່ໂຫຼດມາໃໝ່
+      deliveryNoteForm.recipient_phone = getCustomerPhone(fullLoanData);
+      deliveryNoteForm.delivery_address = fullLoanData.customer?.address || '';
+
+      originalDeliveryNoteData.value = { receiver_name: existingReceipt.receiver_name };
+      originalApprovedStatus.value = existingReceipt.status === 'approved';
+    } else {
+      let nextReceiptId = '';
+      const currentYear = new Date().getFullYear();
+
+      if (typeof deliveryReceiptStore.fetchLatestReceiptId === 'function') {
+        const lastReceiptData = await deliveryReceiptStore.fetchLatestReceiptId();
+        if (lastReceiptData && lastReceiptData.receipts_id) {
+          const parts = lastReceiptData.receipts_id.split('-');
+          if (parts.length === 3) {
+            const num = parseInt(parts[2], 10) + 1;
+            nextReceiptId = `DR-${currentYear}-${num.toString().padStart(6, '0')}`;
+          } else {
+            nextReceiptId = `DR-${currentYear}-000001`;
+          }
+        } else {
+          nextReceiptId = `DR-${currentYear}-000001`;
+        }
+      } else {
+        console.warn("fetchLatestReceiptId is not a function in store. Using default ID.");
+        nextReceiptId = `DR-${currentYear}-000001`;
+      }
+
+      deliveryNoteForm.note_number = nextReceiptId;
+      // ໃຊ້ຂໍ້ມູນຈາກ fullLoanData ທີ່ໂຫຼດມາໃໝ່
+      deliveryNoteForm.recipient_name = getCustomerName(fullLoanData);
+      deliveryNoteForm.recipient_phone = getCustomerPhone(fullLoanData);
+      deliveryNoteForm.delivery_address = fullLoanData.customer?.address || '';
+      deliveryNoteForm.approved = false;
+
+      originalDeliveryNoteData.value = null;
+      originalApprovedStatus.value = false;
+    }
+  } catch (error) {
+    console.error("Failed to load delivery receipt info", error);
+    alert.error('ບໍ່ສາມາດດຶງຂໍ້ມູນໃບມອບຮັບໄດ້');
+  } finally {
+    isLoadingDeliveryNote.value = false;
+  }
 }
 
 const closeDeliveryNoteModal = () => {
-  showDeliveryNoteModal.value = false
-  loanForDeliveryNote.value = null
+  showDeliveryNoteModal.value = false;
+  loanForDeliveryNote.value = null;
+  deliveryReceiptStore.clearCurrentReceipt();
 }
+
+const hasDeliveryNote = computed(() => {
+  return deliveryReceiptStore.currentReceipt !== null;
+})
+
+const isEditingDisabled = computed(() => {
+  return deliveryReceiptStore.currentReceipt?.status === 'approved';
+})
+
+const canApproveDeliveryNote = computed(() => {
+  return deliveryReceiptStore.currentReceipt !== null && deliveryReceiptStore.currentReceipt.status !== 'approved';
+})
+
+const isSaveDisabled = computed(() => {
+  if (isEditingDisabled.value) return true;
+  if (deliveryReceiptStore.currentReceipt && !hasChanges()) return true;
+  return false;
+})
+
+const approvalDisabledMessage = computed(() => {
+  if (!deliveryReceiptStore.currentReceipt) return 'ຕ້ອງສ້າງໃບມອບຮັບກ່ອນຈຶ່ງຈະສາມາດອະນຸມັດໄດ້';
+  if (deliveryReceiptStore.currentReceipt.status === 'approved') return 'ໃບມອບຮັບນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ';
+  return '';
+})
 
 const hasChanges = (): boolean => {
-  if (!(loanForDeliveryNote.value as any)?.delivery_note) return false
+  if (!deliveryReceiptStore.currentReceipt) return false;
 
-  const currentData = {
-    note_number: deliveryNoteForm.note_number,
-    recipient_name: deliveryNoteForm.recipient_name,
-    recipient_phone: deliveryNoteForm.recipient_phone,
-    delivery_address: deliveryNoteForm.delivery_address
-  }
+  const currentData = { receiver_name: deliveryNoteForm.recipient_name };
+  const hasDataChanges = JSON.stringify(currentData) !== JSON.stringify(originalDeliveryNoteData.value);
+  const hasApprovalChanged = deliveryNoteForm.approved !== originalApprovedStatus.value;
 
-  const hasDataChanges = JSON.stringify(currentData) !== JSON.stringify(originalDeliveryNoteData.value)
-  const hasApprovalChanged = deliveryNoteForm.approved !== originalApprovedStatus.value
-
-  return hasDataChanges || hasApprovalChanged
-}
-
-const printDeliveryNote = () => {
-  if (!(loanForDeliveryNote.value as any)?.delivery_note) return
-
-  const printWindow = window.open('', '_blank')
-  if (!printWindow) return
-
-  const loan = loanForDeliveryNote.value
-  const note = (loan as any).delivery_note!
-
-  const printContent = `
-    <!DOCTYPE html>
-    <html lang="lo">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>ໃບມອບຮັບສິນຄ້າ - ${note.note_number}</title>
-      <style>
-        body { font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif; padding: 20px; line-height: 1.6; background: white; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; }
-        .header h1 { font-size: 28px; margin: 0 0 10px 0; color: #000; }
-        .header p { font-size: 16px; margin: 0; color: #666; }
-        .section { margin-bottom: 25px; }
-        .section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #000; border-left: 4px solid #007bff; padding-left: 10px; }
-        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .info-item { display: flex; flex-direction: column; }
-        .info-label { font-weight: bold; color: #333; margin-bottom: 5px; }
-        .info-value { color: #000; padding: 8px; background: #f8f9fa; border-radius: 4px; }
-        .footer { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #ddd; }
-        .signature-line { width: 250px; margin: 20px auto; border-top: 1px solid #000; padding-top: 5px; }
-        @media print { .container { max-width: 100%; } body { padding: 0; } }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>ໃບມອບຮັບສິນຄ້າ</h1>
-          <p>ເລກທີ່ເອກະສານ: ${note.note_number}</p>
-        </div>
-
-        <div class="section">
-          <div class="section-title">ຂໍ້ມູນຜູ້ຮັບ</div>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">ຊື່ຜູ້ຮັບ:</span>
-              <span class="info-value">${note.recipient_name}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">ເບີໂທ:</span>
-              <span class="info-value">${note.recipient_phone}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">ທີ່ຢູ່ຈັດສົ່ງ:</span>
-              <span class="info-value">${note.delivery_address}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">ຂໍ້ມູນສິນເຊື່ອ</div>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">ເລກທີ່ສິນເຊື່ອ:</span>
-              <span class="info-value">${loan?.loan_id}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">ຊື່ລູກຄ້າ:</span>
-              <span class="info-value">${getCustomerName(loan!)}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">ຈຳນວນເງິນ:</span>
-              <span class="info-value">${formatPrice(Number(loan?.total_amount) || 0)}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">ດອກເບ້ຍ:</span>
-              <span class="info-value">${loan?.interest_rate_at_apply}%</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">ໄລຍະເວລາ:</span>
-              <span class="info-value">${loan?.loan_period} ເດືອນ</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">ວັນທີ່ອະນຸມັດ:</span>
-              <span class="info-value">${formatDate(loan?.approved_at || loan?.updated_at || '')}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">ຂໍ້ມູນໃບມອບຮັບ</div>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">ວັນທີ່ສ້າງໃບມອບຮັບ:</span>
-              <span class="info-value">${formatDate(note.created_at)}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">ສະຖານະ:</span>
-              <span class="info-value" style="background: #d4edda; color: #155724;">
-                ໄດ້ຮັບການອະນຸມັດແລ້ວ
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <div class="signature-line"></div>
-          <p>ລົງນາມຜູ້ຮັບ: _________________________</p>
-          <p>ວັນທີ່: _________________________</p>
-        </div>
-      </div>
-
-      <script>
-        window.addEventListener('load', function() {
-          window.print();
-        });
-      <\/script>
-    </body>
-    </html>
-  `
-  printWindow.document.write(printContent)
-  printWindow.document.close()
+  return hasDataChanges || hasApprovalChanged;
 }
 
 const saveDeliveryNote = async () => {
-  if (!loanForDeliveryNote.value) return
-  isSavingDeliveryNote.value = true
-  console.log("Saving delivery note:", deliveryNoteForm);
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  isSavingDeliveryNote.value = false
-  closeDeliveryNoteModal()
-  alert.info('ແຈ້ງເຕືອນ', 'ການບັນທຶກໃບມອບຮັບຕ້ອງເຊື່ອມຕໍ່ກັບ API.')
+  if (!loanForDeliveryNote.value) return;
+  isSavingDeliveryNote.value = true;
+
+  try {
+    const payload = {
+      application_id: loanForDeliveryNote.value.id,
+      delivery_date: new Date().toISOString(),
+      receiver_name: deliveryNoteForm.recipient_name,
+      status: (deliveryNoteForm.approved ? 'approved' : 'pending') as 'pending' | 'approved' | 'rejected',
+    };
+
+    if (deliveryReceiptStore.currentReceipt) {
+      await deliveryReceiptStore.updateReceipt(deliveryReceiptStore.currentReceipt.id, payload);
+      alert.success('ອັບເດດໃບຮັບສິນຄ້າສຳເລັດ');
+    } else {
+      await deliveryReceiptStore.createReceipt(loanForDeliveryNote.value.id, payload);
+      alert.success('ສ້າງໃບຮັບສິນຄ້າສຳເລັດ');
+    }
+
+    // Refresh list to get updated array data including new delivery_receipt status
+    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.APPROVED, is_confirmed: 1 });
+    closeDeliveryNoteModal();
+  } catch (error: any) {
+    console.error("Save delivery note error:", error);
+    alert.error('ເກີດຂໍ້ຜິດພາດ: ' + (error.message || 'ບໍ່ສາມາດບັນທຶກໄດ້'));
+  } finally {
+    isSavingDeliveryNote.value = false;
+  }
 }
+
+
+
+const printDeliveryNote = async () => {
+  if (!deliveryReceiptStore.currentReceipt || !loanForDeliveryNote.value) return;
+
+  isPrintingDeliveryNote.value = true;
+  alert.info('ກຳລັງສ້າງເອກະສານ PDF ກະລຸນາລໍຖ້າ...');
+
+  // 🟢 1. เปิด Tab รอไว้ "ก่อน" ที่จะรันคำสั่ง await (วิธีนี้รับประกันว่าไม่โดนบล็อก 100%)
+  const pdfWindow = window.open('', '_blank');
+  if (pdfWindow) {
+    // เขียนหน้าจอ Loading สวยๆ ไว้รอ
+    pdfWindow.document.write(`
+      <html lang="lo">
+        <head><title>ກຳລັງໂຫຼດ PDF...</title></head>
+        <body style="display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif; background-color:#f3f4f6; color:#555;">
+          <div style="text-align:center;">
+            <h2 style="margin-bottom: 10px;">ກຳລັງສ້າງເອກະສານ PDF...</h2>
+            <p>ກະລຸນາລໍຖ້າຈັກໜ່ອຍ, ລະບົບກຳລັງປະມວນຜົນ.</p>
+          </div>
+        </body>
+      </html>
+    `);
+    pdfWindow.document.close();
+  }
+
+  try {
+    const loan = loanForDeliveryNote.value;
+    const receipt = deliveryReceiptStore.currentReceipt;
+
+    // ⏳ 2. ยิง API (ถึงจะรอนานแค่ไหนก็ไม่เป็นไร เพราะเราเปิด Tab รอไว้แล้ว)
+    const response = await apiClient.post('/pdf/delivery-receipt', {
+      loanData: loan,
+      receiptData: receipt,
+      receiverPhone: deliveryNoteForm.recipient_phone,
+      deliveryAddress: deliveryNoteForm.delivery_address
+    }, {
+      responseType: 'blob',
+      timeout: 60000
+    });
+
+    // สร้าง Blob URL
+    const blobData = response.data instanceof Blob ? response.data : response;
+    const file = new Blob([blobData as any], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(file);
+
+    // 🟢 3. ท่าไม้ตาย: ยัด PDF ลงไปใน iframe ของ Tab ที่เราเปิดรอไว้ (หลบ Security Block)
+    if (pdfWindow) {
+      pdfWindow.document.open();
+      pdfWindow.document.write(`
+        <html>
+          <head><title>ໃບມອບຮັບສິນຄ້າ - ${receipt.receipts_id}</title></head>
+          <body style="margin:0; padding:0; overflow:hidden;">
+            <iframe src="${url}" width="100%" height="100%" style="border:none;"></iframe>
+          </body>
+        </html>
+      `);
+      pdfWindow.document.close();
+    } else {
+      // Fallback ถ้ามีอะไรผิดพลาดจริงๆ ให้บังคับดาวน์โหลด
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `receipt-${receipt.receipts_id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    alert.success('ສ້າງ PDF ສຳເລັດແລ້ວ');
+
+  } catch (error: any) {
+    console.error('Print Receipt Error:', error);
+
+    // 💡 ปิดหน้าต่าง Loading ทิ้งทันทีถ้า API เกิด Error
+    if (pdfWindow) pdfWindow.close();
+
+    alert.error("ເກີດຂໍ້ຜິດພາດ", "ບໍ່ສາມາດພິມເອກະສານໄດ້. ກະລຸນາກວດສອບການເຊື່ອມຕໍ່ ຫຼື Router Endpoint.");
+  } finally {
+    isPrintingDeliveryNote.value = false;
+  }
+}
+
+
+
 
 const disburseLoan = (loan: LoanApplication) => {
   loanToDisburse.value = loan
@@ -788,7 +800,6 @@ const confirmDisburseLoan = async () => {
   loanToDisburse.value = null
 }
 
-// ✅ Export CSV (ໃຊ້ field ຂອງ LoanApplication)
 const exportToCSV = () => {
   if (!displayedLoans.value.length) return
 
@@ -799,9 +810,9 @@ const exportToCSV = () => {
     'ຈຳນວນເງິນ': formatPrice(Number(loan.total_amount) || 0),
     'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply,
     'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
-    'ສະຖານະການຈ່າຍ': getDisbursementStatusText((loan as any).disbursement_status),
+    'ສະຖານະການຈ່າຍ': getDisbursementStatusText(loan),
     'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
-    'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || loan.updatedAt || loan.createdAt || '')
+    'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '')
   }))
 
   const csv = Papa.unparse(csvData)
@@ -829,7 +840,8 @@ watch(pageSize, () => {
 })
 
 onMounted(() => {
-  // ✅ ເອີ້ນໃຊ້ API ດຶງສະເພາະສິນເຊື່ອທີ່ 'approved'
+  // ດຶງຂໍ້ມູນສະເພາະສິນເຊື່ອທີ່ອະນຸມັດແລ້ວ ຫຼື ຈ່າຍເງິນແລ້ວຂຶ້ນມາສະແດງ
+  // ອາດຈະປ່ຽນການ Filter ຈາກ Backend ໃຫ້ດຶງຫຼາຍ Status ຖ້າ API ຮອງຮັບ
   loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.APPROVED, is_confirmed: 1 });
 })
 </script>

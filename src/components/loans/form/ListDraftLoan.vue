@@ -1,20 +1,17 @@
 <template>
   <div class="p-6">
-    <!-- Toolbar -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ລາຍການຮ່າງສິນເຊື່ອ</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການຮ່າງຄຳຂໍສິນເຊື່ອທີ່ຍັງບໍ່ໄດ້ສົ່ງ</p>
       </div>
-      <!-- Export Button -->
       <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
         <span class="icon-[tabler--file-export] size-4 mr-1"></span>
         Export CSV
       </button>
     </div>
-    <!-- Filter Section -->
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <!-- Search Input -->
       <div>
         <label class="label">
           <span class="label-text text-sm font-medium">ຄົ້ນຫາ</span>
@@ -22,7 +19,6 @@
         <input v-model="searchQuery" type="text" placeholder="ຊື່ລູກຄ້າ, ເບີໂທ..." class="input input-bordered w-full"
           @input="debounceSearch" />
       </div>
-      <!-- Staff Filter -->
       <div>
         <label class="label">
           <span class="label-text text-sm font-medium">ເຈົ້າໜ້າທີ່</span>
@@ -34,7 +30,6 @@
           </option>
         </select>
       </div>
-      <!-- Date Range Filter -->
       <div>
         <label class="label">
           <span class="label-text text-sm font-medium">ວັນທີ່ສ້າງ</span>
@@ -45,11 +40,11 @@
         </div>
       </div>
     </div>
-    <!-- Loading State -->
+
     <div v-if="isLoading" class="text-center py-8">
       <div class="loading loading-spinner"></div>
     </div>
-    <!-- Table -->
+
     <div v-else class="w-full overflow-x-auto rounded-lg border border-base-content/10">
       <table class="table table-zebra w-full min-w-max">
         <thead>
@@ -65,21 +60,16 @@
         </thead>
         <tbody>
           <tr v-for="draft in displayedDrafts" :key="draft.id">
-            <!-- Customer Name -->
             <td class="font-medium">
               <div>{{ getDraftDisplayName(draft) || `Loan #${draft.loan_id}` }}</div>
               <div class="text-sm text-gray-500">{{ getDraftPhone(draft) }}</div>
             </td>
-            <!-- Product -->
             <td>
               <div>{{ getProductName(draft) }}</div>
               <div class="text-sm text-gray-500">ID: {{ draft.product_id }}</div>
             </td>
-            <!-- Amount -->
             <td class="font-medium">{{ formatPrice(draft.total_amount) }}</td>
-            <!-- Staff -->
             <td>{{ getRequesterName(draft) || `ID: ${draft.requester_id || '-'}` }}</td>
-            <!-- Status -->
             <td>
               <span class="badge badge-soft" :class="{
                 'badge-warning': draft.is_confirmed === 0,
@@ -90,21 +80,17 @@
                 {{ getStatusLabel(draft) }}
               </span>
             </td>
-            <!-- Created At -->
             <td>{{ draft.createdAt ? formatDate(draft.createdAt) : '-' }}</td>
-            <!-- Actions -->
             <td>
               <div class="flex gap-2">
                 <button class="btn btn-circle btn-text btn-sm" @click="viewDraftDetails(draft)"
                   aria-label="View details">
                   <span class="icon-[tabler--eye] size-4"></span>
                 </button>
-                <!-- ✅ แสดงปุ่มลบเฉพาะ draft -->
                 <button v-if="isDraft(draft)" class="btn btn-circle btn-text btn-sm text-error"
                   @click="deleteDraft(draft.id)" aria-label="Delete draft">
                   <span class="icon-[tabler--trash] size-4"></span>
                 </button>
-                <!-- ✅ แสดงปุ่มສົ່ງเฉพาะ draft -->
                 <button v-if="isDraft(draft)" class="btn btn-circle btn-text btn-sm text-success"
                   @click="confirmSubmitDraft(draft)" aria-label="Submit draft">
                   <span class="icon-[tabler--check] size-4"></span>
@@ -120,7 +106,7 @@
         </tbody>
       </table>
     </div>
-    <!-- Pagination -->
+
     <div v-if="!isLoading" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
       <div>
         ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalDrafts }} ລາຍການ
@@ -131,24 +117,17 @@
           <option :value="25">25 ຕໍ່ໜ້າ</option>
           <option :value="50">50 ຕໍ່ໜ້າ</option>
         </select>
-        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">
-          ກ່ອນໜ້າ
-        </button>
-        <span class="px-2">
-          ໜ້າ {{ currentPage }} / {{ totalPages }}
-        </span>
-        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">
-          ຖັດໄປ
-        </button>
+        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
+        <span class="px-2"> ໜ້າ {{ currentPage }} / {{ totalPages }} </span>
+        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
       </div>
     </div>
-    <!-- Draft Details Modal -->
+
     <teleport to="body">
       <div v-if="showDetailsModal && selectedDraft"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-          <!-- Modal Header -->
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-bold">
               {{ isEditingInModal ? 'ແກ້ໄຂຮ່າງສິນເຊື່ອ' : 'ລາຍລະອຽດຮ່າງສິນເຊື່ອ' }}
@@ -157,35 +136,29 @@
               <span class="icon-[tabler--x] size-5"></span>
             </button>
           </div>
-          <!-- Tab Navigation -->
-          <div class="tabs tabs-boxed mb-6">
+
+          <div class="tabs tabs-boxed mb-6 flex-wrap gap-1">
             <button class="tab" :class="{ 'tab-active': activeTab === 'details' }" @click="activeTab = 'details'">
               ລາຍລະອຽດ
             </button>
             <button class="tab" :class="{ 'tab-active': activeTab === 'documents' }" @click="activeTab = 'documents'">
               ເອກະສານ
             </button>
-            <!-- ✅ เพิ่ม Tab แผนที่ -->
             <button class="tab" :class="{ 'tab-active': activeTab === 'map' }" @click="activeTab = 'map'">
-              <span class="icon-[tabler--map] size-4 mr-1"></span>
-              ແຜນທີ່
+              <span class="icon-[tabler--map] size-4 mr-1"></span> ແຜນທີ່
             </button>
-            <!-- ✅ เพิ่ม Tab RequestForm -->
             <button class="tab" :class="{ 'tab-active': activeTab === 'requestForm' }"
               @click="activeTab = 'requestForm'">
-              <span class="icon-[tabler--file-text] size-4 mr-1"></span>
-              ແບບຟອມຂໍກູ້
+              <span class="icon-[tabler--file-text] size-4 mr-1"></span> ແບບຟອມຂໍກູ້
             </button>
-            <!-- ✅ Add the new LoanContractForm tab button -->
             <button class="tab" :class="{ 'tab-active': activeTab === 'loanContract' }"
               @click="activeTab = 'loanContract'">
-              <span class="icon-[tabler--file-invoice] size-4 mr-1"></span>
-              ສັນຍາກູ້ຢືມ
+              <span class="icon-[tabler--file-invoice] size-4 mr-1"></span> ສັນຍາກູ້ຢືມ
             </button>
           </div>
-          <!-- Tab Content -->
+
           <div v-if="activeTab === 'details'" class="space-y-6">
-            <!-- View Mode -->
+
             <div v-if="!isEditingInModal" class="space-y-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -201,8 +174,12 @@
                   <p>{{ selectedDraft.product_id }}</p>
                 </div>
                 <div>
-                  <label class="text-sm font-medium text-gray-500">ຈຳນວນເງິນ</label>
+                  <label class="text-sm font-medium text-gray-500">ຈຳນວນເງິນກູ້ (ຍອດຈັດ)</label>
                   <p class="font-medium text-primary">{{ formatPrice(selectedDraft.total_amount) }}</p>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-500">ເງິນດາວ</label>
+                  <p class="font-medium">{{ formatPrice(selectedDraft.down_payment || 0) }}</p>
                 </div>
                 <div>
                   <label class="text-sm font-medium text-gray-500">ດອກເບ້ຍ</label>
@@ -214,32 +191,12 @@
                 </div>
                 <div>
                   <label class="text-sm font-medium text-gray-500">ຄ່າຜ່ອນ/ເດືອນ</label>
-                  <p class="font-medium">{{ formatPrice(selectedDraft.monthly_pay) }}</p>
-                </div>
-                <div>
-                  <label class="text-sm font-medium text-gray-500">ສະຖານະການຢືນຢັນ</label>
-                  <p>
-                    <span class="badge badge-soft" :class="getConfirmedStyle(selectedDraft.is_confirmed).color">
-                      {{ getConfirmedStyle(selectedDraft.is_confirmed).text }}
-                    </span>
-                  </p>
+                  <p class="font-medium text-success">{{ formatPrice(selectedDraft.monthly_pay) }}</p>
                 </div>
                 <div>
                   <label class="text-sm font-medium text-gray-500">ສະຖານະ</label>
                   <p>
-                    <span class="badge badge-soft" :class="{
-                      'badge-info': selectedDraft.status === 'pending',
-                      'badge-warning': selectedDraft.status === 'verifying',
-                      'badge-success': selectedDraft.status === 'approved',
-                      'badge-error': selectedDraft.status === 'rejected'
-                    }">
-                      {{
-                        selectedDraft.status === 'pending' ? 'ລໍຖ້າ' :
-                          selectedDraft.status === 'verifying' ? 'ກຳລັງກວດ' :
-                            selectedDraft.status === 'approved' ? 'ອະນຸມັດ' :
-                              selectedDraft.status === 'rejected' ? 'ປະຕິເສດ' : selectedDraft.status
-                      }}
-                    </span>
+                    <span class="badge badge-soft badge-info">ຮ່າງ (Draft)</span>
                   </p>
                 </div>
                 <div>
@@ -247,11 +204,6 @@
                   <p>{{ getRequesterName(selectedDraft) || 'ID: ' + selectedDraft.requester_id }}</p>
                 </div>
               </div>
-              <div>
-                <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
-                <p>{{ selectedDraft.createdAt ? formatDate(selectedDraft.createdAt) : '-' }}</p>
-              </div>
-              <!-- ✅ แสดง Customer Info ถ้าມີ -->
               <div v-if="selectedDraft.customer" class="border-t pt-4 mt-4">
                 <h4 class="font-medium mb-3">ຂໍ້ມູນລູກຄ້າ</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -263,17 +215,16 @@
                     <label class="text-sm font-medium text-gray-500">ເບີໂທ</label>
                     <p>{{ getDraftPhone(selectedDraft) }}</p>
                   </div>
-                  <div>
+                  <div class="md:col-span-2">
                     <label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label>
                     <p>{{ getDraftAddress(selectedDraft) }}</p>
                   </div>
                   <div v-if="selectedDraft.customer.income_per_month">
                     <label class="text-sm font-medium text-gray-500">ລາຍຮັບ</label>
-                    <p>{{ formatPrice(selectedDraft.customer.income_per_month) }}</p>
+                    <p class="text-success">{{ formatPrice(selectedDraft.customer.income_per_month) }}</p>
                   </div>
                 </div>
               </div>
-              <!-- ✅ แสดง Product Info ถ้าມີ -->
               <div v-if="selectedDraft.product" class="border-t pt-4 mt-4">
                 <h4 class="font-medium mb-3">ຂໍ້ມູນສິນຄ້າ</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -288,182 +239,216 @@
                 </div>
               </div>
             </div>
-            <!-- Edit Mode -->
-            <div v-else class="space-y-4">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ຊື່ລູກຄ້າ *</label>
-                  <input v-model="modalDraftForm.customer_name" type="text" class="input input-bordered w-full"
-                    :class="{ 'input-error': modalFormErrors.customer_name }" required />
-                  <label v-if="modalFormErrors.customer_name" class="label text-error">
-                    <span class="label-text-alt">{{ modalFormErrors.customer_name }}</span>
+
+            <div v-else class="space-y-6">
+
+              <div>
+                <h4 class="font-medium text-lg mb-4 flex items-center gap-2">
+                  <span class="icon-[tabler--user-edit] size-5 text-primary"></span>
+                  ແກ້ໄຂຂໍ້ມູນລູກຄ້າ
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ຊື່ ແລະ ນາມສະກຸນ *</span></label>
+                    <input v-model="modalDraftForm.customer_name" type="text" class="input input-bordered w-full"
+                      :class="{ 'input-error': modalFormErrors.customer_name }" required />
+                    <label v-if="modalFormErrors.customer_name" class="label text-error">
+                      <span class="label-text-alt">{{ modalFormErrors.customer_name }}</span>
+                    </label>
+                  </div>
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ເບີໂທລະສັບ *</span></label>
+                    <input v-model="modalDraftForm.customer_phone" type="tel" class="input input-bordered w-full"
+                      :class="{ 'input-error': modalFormErrors.customer_phone }" required />
+                    <label v-if="modalFormErrors.customer_phone" class="label text-error">
+                      <span class="label-text-alt">{{ modalFormErrors.customer_phone }}</span>
+                    </label>
+                  </div>
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ເລກບັດປະຈຳຕົວ *</span></label>
+                    <input v-model="modalDraftForm.customer_id_card" type="text" class="input input-bordered w-full"
+                      :class="{ 'input-error': modalFormErrors.customer_id_card }" required />
+                    <label v-if="modalFormErrors.customer_id_card" class="label text-error">
+                      <span class="label-text-alt">{{ modalFormErrors.customer_id_card }}</span>
+                    </label>
+                  </div>
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ອາຍຸ *</span></label>
+                    <input v-model.number="modalDraftForm.age" type="number" class="input input-bordered w-full"
+                      min="0" />
+                    <label v-if="modalFormErrors.age" class="label text-error">
+                      <span class="label-text-alt">{{ modalFormErrors.age }}</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="form-control mt-4">
+                  <label class="label">
+                    <span class="label-text font-medium">ອາຊີບ *</span>
+                    <span class="text-xs text-gray-500 ml-1">(ຕົວຢ່າງ: ພະນັກງານລັດ, ທຸລະກິດສ່ວນຕົວ, ກະສິກອນ,
+                      ແຮງງານ)</span>
+                  </label>
+                  <input v-model="modalDraftForm.occupation" type="text" class="input input-bordered w-full"
+                    :class="{ 'input-error': modalFormErrors.occupation }" required />
+                  <label v-if="modalFormErrors.occupation" class="label text-error">
+                    <span class="label-text-alt">{{ modalFormErrors.occupation }}</span>
                   </label>
                 </div>
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ເບີໂທ *</label>
-                  <input v-model="modalDraftForm.customer_phone" type="tel" class="input input-bordered w-full"
-                    :class="{ 'input-error': modalFormErrors.customer_phone }" required />
-                  <label v-if="modalFormErrors.customer_phone" class="label text-error">
-                    <span class="label-text-alt">{{ modalFormErrors.customer_phone }}</span>
+                <div class="form-control mt-4">
+                  <label class="label"><span class="label-text font-medium">ທີ່ຢູ່ *</span></label>
+                  <textarea v-model="modalDraftForm.customer_address" class="textarea textarea-bordered w-full min-h-24"
+                    :class="{ 'textarea-error': modalFormErrors.customer_address }" required></textarea>
+                  <label v-if="modalFormErrors.customer_address" class="label text-error">
+                    <span class="label-text-alt">{{ modalFormErrors.customer_address }}</span>
                   </label>
                 </div>
-                <!-- Product Selection -->
+              </div>
+
+              <div class="border-t pt-6">
+                <h4 class="font-medium text-lg mb-4 flex items-center gap-2">
+                  <span class="icon-[tabler--building-store] size-5 text-primary"></span>
+                  ເລືອກຮ້ານຄ້າ ແລະ ສິນຄ້າ
+                </h4>
+
+                <div class="form-control mb-4">
+                  <label class="label"><span class="label-text font-medium">ຮ້ານຄ້າ / ຕົວແທນ *</span></label>
+                  <select v-model="modalShopId" class="select select-bordered w-full" @change="handleShopChange"
+                    required>
+                    <option :value="null" disabled>-- ກະລຸນາເລືອກຮ້ານຄ້າ --</option>
+                    <option v-for="shop in shopsList" :key="shop.id" :value="shop.id">
+                      {{ shop.shop_name }}
+                    </option>
+                  </select>
+                </div>
+
                 <div class="form-control">
                   <label class="label">
-                    <span class="label-text font-medium">ສິນຄ້າ *</span>
+                    <span class="label-text font-medium" :class="{ 'text-gray-400': !modalShopId }">ສິນຄ້າ *</span>
+                    <span v-if="!modalShopId" class="text-xs text-error">ກະລຸນາເລືອກຮ້ານຄ້າກ່ອນ</span>
                   </label>
+
                   <div class="relative">
                     <input v-model="modalProductSearch" type="text" placeholder="ພິມຊື່ສິນຄ້າ ຫຼື ລະຫັດ…"
                       class="input input-bordered w-full pl-10 pr-10" :disabled="!modalShopId"
                       @input="debounceModalProductSearch" @focus="showModalProductDropdown = true"
                       @blur="handleModalProductBlur" />
+
                     <span
                       class="icon-[tabler--search] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
+
                     <button type="button"
                       class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       :disabled="!selectedModalProduct" @click="clearModalProductSelection">
                       <span class="icon-[tabler--x] size-4"></span>
                     </button>
-                  </div>
-                  <!-- แสดงข้อความเมื่อไม่มີຮ้านຄ້າ -->
-                  <div v-if="!modalShopId" class="text-xs text-warning mt-1">
-                    ⚠️ ບໍ່ພົບຂໍ້ມູນຮ້ານຄ້າສຳລັບດຶງລາຍການສິນຄ້າ
-                  </div>
-                  <!-- Product Dropdown -->
-                  <div v-if="showModalProductDropdown && filteredModalProducts.length > 0"
-                    class="absolute z-10 mt-1 w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    <div v-for="product in filteredModalProducts" :key="product.id"
-                      class="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
-                      @click="selectModalProduct(product)">
-                      <div class="w-8 h-8 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                        <span class="icon-[tabler--box] size-4 text-gray-400"></span>
-                      </div>
-                      <div class="flex-1">
-                        <div class="font-medium">{{ product.product_name }}</div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ product.type_name }}</div>
-                      </div>
-                      <div class="text-right">
-                        <div class="font-medium text-primary">{{ formatPrice(product.price) }}</div>
-                        <div class="text-xs text-gray-500">{{ product.interest_rate }}% / {{ product.term }} ເດືອນ</div>
+
+                    <div v-if="showModalProductDropdown && filteredModalProducts.length > 0"
+                      class="absolute left-0 right-0 z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <div v-for="product in filteredModalProducts" :key="product.id"
+                        class="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
+                        @click="selectModalProduct(product)">
+                        <div class="flex-1">
+                          <div class="font-medium">{{ product.product_name }}</div>
+                          <div class="text-sm text-gray-500">{{ product.type_name }}</div>
+                        </div>
+                        <div class="text-right">
+                          <div class="font-medium text-primary">{{ formatPrice(product.price) }}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <!-- No results -->
-                  <div v-else-if="showModalProductDropdown && filteredModalProducts.length === 0 && modalProductSearch"
-                    class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4">
-                    <div class="text-center text-gray-500">ບໍ່ພົບສິນຄ້າ</div>
+                </div>
+              </div>
+
+              <div class="border-t pt-6">
+                <h4 class="font-medium text-lg mb-4 flex items-center gap-2">
+                  <span class="icon-[tabler--file-invoice] size-5 text-primary"></span>
+                  ລາຍລະອຽດສິນເຊື່ອ
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ລາຄາສິນຄ້າ *</span></label>
+                    <input type="text" :value="formatPrice(modalDraftForm.total_amount)"
+                      class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 cursor-not-allowed" readonly
+                      required />
                   </div>
-                </div>
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ປະເພດ</label>
-                  <input v-model="modalDraftForm.product_type" type="text" class="input input-bordered w-full"
-                    readonly />
-                </div>
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ມູນຄ່າ *</label>
-                  <input v-model.number="modalDraftForm.total_amount" type="number"
-                    class="input input-bordered w-full text-blue-700"
-                    :class="{ 'input-error': modalFormErrors.total_amount }" required min="0" />
-                  <div class="text-xs text-gray-500 mt-1">
-                    <div>ມູນຄ່າ (ກີບ): {{ formatPrice(modalDraftForm.total_amount) }}</div>
-                    <label v-if="modalFormErrors.total_amount" class="label text-error">
-                      <span class="label-text-alt">{{ modalFormErrors.total_amount }}</span>
+
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-medium">ຈຳນວນເງິນດາວ
+                        <span v-if="modalDraftForm.total_amount > 0" class="text-xs text-gray-500">
+                          ຍອດຈັດ: {{ formatPrice(Math.max(0, modalDraftForm.total_amount - (modalDraftForm.down_payment
+                            || 0))) }}
+                        </span></span>
+                    </label>
+                    <input type="text" :value="formatCurrencyInput(modalDraftForm.down_payment)"
+                      @input="handleModalCurrencyInput('down_payment', $event)" class="input input-bordered w-full"
+                      :class="{ 'input-error': modalFormErrors.down_payment }" />
+                    <label v-if="modalFormErrors.down_payment" class="label text-error">
+                      <span class="label-text-alt">{{ modalFormErrors.down_payment }}</span>
                     </label>
                   </div>
-                </div>
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ດອກເບ້ຍ (%)</label>
-                  <input v-model.number="modalDraftForm.interest_rate" type="number" class="input input-bordered w-full"
-                    :class="{ 'input-error': modalFormErrors.interest_rate }" min="0" max="100" step="0.01" />
-                  <label v-if="modalFormErrors.interest_rate" class="label text-error">
-                    <span class="label-text-alt">{{ modalFormErrors.interest_rate }}</span>
-                  </label>
-                </div>
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ໄລຍະເວລາ (ເດືອນ) *</label>
-                  <input v-model.number="modalDraftForm.loan_period" type="number" class="input input-bordered w-full"
-                    :class="{ 'input-error': modalFormErrors.loan_period }" min="1" max="60" />
-                  <label v-if="modalFormErrors.loan_period" class="label text-error">
-                    <span class="label-text-alt">{{ modalFormErrors.loan_period }}</span>
-                  </label>
-                </div>
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ຄ່າງວດຕໍ່ເດືອນ (ກີບ)</label>
-                  <input v-model.number="modalDraftForm.monthly_payment" type="number"
-                    class="input input-bordered w-full text-red-500" min="1" max="60" readonly />
-                  <div class="text-xs text-gray-500 mt-1">
-                    <div>ຄ່າງວດ (ກີບ): {{ formatPrice(modalDraftForm.monthly_payment) }}</div>
+
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ໄລຍະເວລາ (ເດືອນ) *</span></label>
+                    <input v-model.number="modalDraftForm.loan_period" type="number" class="input input-bordered w-full"
+                      :class="{ 'input-error': modalFormErrors.loan_period }" min="1" max="60" required />
+                    <label v-if="modalFormErrors.loan_period" class="label text-error">
+                      <span class="label-text-alt">{{ modalFormErrors.loan_period }}</span>
+                    </label>
+                  </div>
+
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-medium">ອັດຕາດອກເບ້ຍ * <span
+                          class="badge badge-primary badge-sm badge-soft">
+                          {{ modalDraftForm.interest_rate_type === 'yearly' ? '% ຕໍ່ປີ' : '% ຕໍ່ເດືອນ' }}
+                        </span></span>
+                    </label>
+                    <input v-model.number="modalDraftForm.interest_rate" type="number"
+                      class="input input-bordered w-full" :class="{ 'input-error': modalFormErrors.interest_rate }"
+                      min="0" max="100" step="0.01" readonly required />
+                  </div>
+
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ປະເພດດອກເບ້ຍ *</span></label>
+                    <select v-model="modalDraftForm.interest_type" class="select select-bordered w-full bg-base-50">
+                      <option value="flat_rate">ດອກເບ້ຍຄົງທີ່ (Flat Rate)</option>
+                      <option value="effective_rate">ລົດຕົ້ນລົດດອກ (Effective Rate)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ຄ່າງວດຕໍ່ເດືອນ</span></label>
+                    <input :value="formatPrice(modalDraftForm.monthly_payment)" type="text"
+                      class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 text-success font-bold cursor-not-allowed"
+                      readonly />
+                  </div>
+
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ລາຍຮັບຕໍ່ເດືອນ *</span></label>
+                    <input type="text" :value="formatCurrencyInput(modalDraftForm.income_per_month)"
+                      @input="handleModalCurrencyInput('income_per_month', $event)"
+                      class="input input-bordered w-full text-blue-700"
+                      :class="{ 'input-error': modalFormErrors.income_per_month }" />
+                    <label v-if="modalFormErrors.income_per_month" class="label text-error">
+                      <span class="label-text-alt">{{ modalFormErrors.income_per_month }}</span>
+                    </label>
+                  </div>
+
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ໜີ້ສິນອື່ນໆ</span></label>
+                    <input type="text" :value="formatCurrencyInput(modalDraftForm.other_debts)"
+                      @input="handleModalCurrencyInput('other_debts', $event)"
+                      class="input input-bordered w-full text-red-500" />
                   </div>
                 </div>
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ລາຍຮັບຕໍ່ເດືອນ</label>
-                  <input v-model.number="modalDraftForm.income_per_month" type="number"
-                    class="input input-bordered w-full text-blue-700"
-                    :class="{ 'input-error': modalFormErrors.income_per_month }" min="0" />
-                  <div class="text-xs text-gray-500 mt-1">
-                    <div>ລາຍຮັບ (ກີບ): {{ formatPrice(modalDraftForm.income_per_month) }}</div>
-                  </div>
-                  <label v-if="modalFormErrors.income_per_month" class="label text-error">
-                    <span class="label-text-alt">{{ modalFormErrors.income_per_month }}</span>
-                  </label>
-                </div>
-                <div class="form-control">
-                  <label class="text-sm font-medium text-gray-500">ອາຍຸ *</label>
-                  <input v-model.number="modalDraftForm.age" type="number" class="input input-bordered w-full"
-                    :class="{ 'input-error': modalFormErrors.age }" min="0" />
-                  <label v-if="modalFormErrors.age" class="label text-error">
-                    <span class="label-text-alt">{{ modalFormErrors.age }}</span>
-                  </label>
-                </div>
               </div>
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text font-medium">ເລກບັດປະຈຳຕົວ *</span>
-                </label>
-                <input v-model="modalDraftForm.customer_id_card" type="text" placeholder="ປ້ອນເລກບັດປະຈຳຕົວ"
-                  class="input input-bordered w-full" :class="{ 'input-error': modalFormErrors.customer_id_card }"
-                  required />
-                <label v-if="modalFormErrors.customer_id_card" class="label text-error">
-                  <span class="label-text-alt">{{ modalFormErrors.customer_id_card }}</span>
-                </label>
-              </div>
-              <!-- ✅ Occupation Field -->
-              <div class="form-control">
-                <label class="label">
-                  <span class="label-text font-medium">ອາຊີບ <span class="text-primary">*</span></span>
-                  <span class="text-xs text-gray-500 ml-1">(ຂໍ້ມູນສຳຄັນສຳລັບການພິຈາລະນາສິນເຊື່ອ)</span>
-                </label>
-                <input v-model="modalDraftForm.occupation" type="text"
-                  placeholder="ປ້ອນອາຊີບ (ຕົວຢ່າງ: ພະນັກງານລັດ, ທຸລະກິດສ່ວນຕົວ, ກະສິກອນ, ແຮງງານ)"
-                  class="input input-bordered w-full" :class="{ 'input-error': modalFormErrors.occupation }" required />
-                <label v-if="modalFormErrors.occupation" class="label text-error">
-                  <span class="label-text-alt">{{ modalFormErrors.occupation }}</span>
-                </label>
-                <div class="text-xs text-gray-500 mt-1">
-                  <p>ຕົວຢ່າງ: ພະນັກງານບໍລິສັດ, ຄູ, ແພດ, ທຸລະກິດສ່ວນຕົວ, ກະສິກອນ, ແຮງງານອຸດສາຫະກຳ</p>
-                </div>
-              </div>
-              <div>
-                <label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label>
-                <textarea v-model="modalDraftForm.customer_address" class="textarea textarea-bordered w-full min-h-24"
-                  :class="{ 'textarea-error': modalFormErrors.customer_address }"></textarea>
-                <label v-if="modalFormErrors.customer_address" class="label text-error">
-                  <span class="label-text-alt">{{ modalFormErrors.customer_address }}</span>
-                </label>
-              </div>
-              <div>
-                <label class="text-sm font-medium text-gray-500">ໜີ້ສິນອື່ນໆ</label>
-                <input v-model.number="modalDraftForm.other_debts" type="number"
-                  class="input input-bordered w-full text-red-500" min="0" />
-                <div class="text-xs text-gray-500 mt-1">
-                  <div>ໜີ້ສິນອື່ນໆ (ກີບ): {{ formatPrice(modalDraftForm.other_debts) }}</div>
-                </div>
-              </div>
+
             </div>
           </div>
-          <!-- Documents Tab -->
+
           <div v-else-if="activeTab === 'documents'">
-            <!-- View Mode: แสดงเอกสารที่อัปโหลดแล้ว -->
+
             <div v-if="!isEditingInModal" class="space-y-6">
               <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
                 class="text-center py-12 text-gray-500">
@@ -487,11 +472,9 @@
                     </div>
                     <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
                       class="btn btn-xs btn-ghost text-primary hover:bg-primary/10">
-                      <span class="icon-[tabler--download] size-4 mr-1"></span>
-                      ດາວໂຫຼດ
+                      <span class="icon-[tabler--download] size-4 mr-1"></span> ດາວໂຫຼດ
                     </a>
                   </div>
-                  <!-- Document Preview -->
                   <div class="mt-2">
                     <div v-if="isImage(doc.file_url)"
                       class="aspect-video bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
@@ -503,31 +486,16 @@
                       <span class="icon-[tabler--file-description] size-12 text-gray-400"></span>
                     </div>
                   </div>
-                  <!-- Document Metadata -->
-                  <div class="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <div class="flex justify-between">
-                      <span>ອັບໂຫຼດເມື່ອ:</span>
-                      <span>{{ formatDate(doc.uploaded_at || doc.createdAt) }}</span>
-                    </div>
-                    <div class="flex justify-between mt-1">
-                      <span>ຂະໜາດ:</span>
-                      <span>{{ formatFileSize(doc.file_size) }}</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
-            <!-- Edit Mode: อัปโหลดเอกสารใหม่ -->
+
             <div v-else class="space-y-6">
-              <!-- Required Documents -->
+
               <div>
                 <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
-                  <span class="icon-[tabler--file-check] size-5 text-error"></span>
-                  ເອກະສານທີ່ຕ້ອງການ
+                  <span class="icon-[tabler--file-check] size-5 text-error"></span> ເອກະສານທີ່ຕ້ອງການ
                 </h4>
-                <div class="text-sm text-gray-500 mb-4">
-                  ກະລຸນາອັບໂຫຼດເອກະສານທັງໝົດທີ່ຕ້ອງການເພື່ອດຳເນີນການຕໍ່
-                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div v-for="(doc, index) in draftDocuments" :key="index"
                     class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
@@ -538,29 +506,20 @@
                       </div>
                       <span class="badge badge-soft badge-error text-xs">ຕ້ອງການ</span>
                     </div>
-                    <!-- Document Preview or Upload Area -->
-                    <div v-if="doc.preview" class="mt-3">
-                      <div class="relative w-full h-40 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                        <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
-                          alt="Document preview" class="w-full h-full object-contain p-2" />
-                        <div v-else class="w-full h-full flex items-center justify-center text-gray-500">
-                          <span class="icon-[tabler--file-description] size-10"></span>
-                        </div>
-                        <button type="button"
-                          class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition"
-                          @click="removeDocument(index)">
-                          <span class="icon-[tabler--x] size-4"></span>
-                        </button>
-                      </div>
+                    <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
+                      <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
+                        class="w-full h-full object-contain p-2" />
+                      <button type="button"
+                        class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                        @click="removeDocument(index)">
+                        <span class="icon-[tabler--x] size-4"></span>
+                      </button>
                     </div>
                     <div v-else class="mt-3">
                       <label
-                        class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
-                        <div class="flex flex-col items-center justify-center pt-3 pb-2">
-                          <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
-                          <p class="text-sm text-gray-600 dark:text-gray-400">ຄລິກເພື່ອອັບໂຫຼດ</p>
-                          <p class="text-xs text-gray-500 mt-1">JPG, PNG, PDF (ສູງສຸດ 5MB)</p>
-                        </div>
+                        class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                        <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
+                        <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
                         <input type="file" class="hidden" accept="image/*,.pdf"
                           @change="(event) => handleDocumentUpload(index, event)" />
                       </label>
@@ -568,15 +527,11 @@
                   </div>
                 </div>
               </div>
-              <!-- Optional Documents -->
+
               <div class="mt-8">
                 <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
-                  <span class="icon-[tabler--file-plus] size-5 text-primary"></span>
-                  ເອກະສານເພີ່ມເຕີມ (ບໍ່ບັງຄັບ)
+                  <span class="icon-[tabler--file-plus] size-5 text-primary"></span> ເອກະສານເພີ່ມເຕີມ (ບໍ່ບັງຄັບ)
                 </h4>
-                <div class="text-sm text-gray-500 mb-4">
-                  ອັບໂຫຼດເອກະສານເພີ່ມເຕີມເພື່ອຊ່ວຍໃນການພິຈາລະນາສິນເຊື່ອ
-                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div v-for="(doc, index) in optionalDocuments" :key="index + draftDocuments.length"
                     class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
@@ -586,29 +541,20 @@
                         <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
                       </div>
                     </div>
-                    <!-- Document Preview or Upload Area -->
-                    <div v-if="doc.preview" class="mt-3">
-                      <div class="relative w-full h-40 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                        <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
-                          alt="Document preview" class="w-full h-full object-contain p-2" />
-                        <div v-else class="w-full h-full flex items-center justify-center text-gray-500">
-                          <span class="icon-[tabler--file-description] size-10"></span>
-                        </div>
-                        <button type="button"
-                          class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition"
-                          @click="removeDocument(index + draftDocuments.length)">
-                          <span class="icon-[tabler--x] size-4"></span>
-                        </button>
-                      </div>
+                    <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
+                      <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
+                        class="w-full h-full object-contain p-2" />
+                      <button type="button"
+                        class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                        @click="removeDocument(index + draftDocuments.length)">
+                        <span class="icon-[tabler--x] size-4"></span>
+                      </button>
                     </div>
                     <div v-else class="mt-3">
                       <label
-                        class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition">
-                        <div class="flex flex-col items-center justify-center pt-3 pb-2">
-                          <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
-                          <p class="text-sm text-gray-600 dark:text-gray-400">ຄລິກເພື່ອອັບໂຫຼດ</p>
-                          <p class="text-xs text-gray-500 mt-1">JPG, PNG, PDF (ສູງສຸດ 5MB)</p>
-                        </div>
+                        class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                        <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
+                        <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
                         <input type="file" class="hidden" accept="image/*,.pdf"
                           @change="(event) => handleDocumentUpload(index + draftDocuments.length, event)" />
                       </label>
@@ -616,58 +562,48 @@
                   </div>
                 </div>
               </div>
-              <!-- Upload Status -->
-              <div v-if="isUploadingDocuments" class="mt-4 p-3 bg-info/10 rounded-lg text-center">
-                <div class="loading loading-spinner loading-sm inline-block mr-2"></div>
-                <span>ກຳລັງອັບໂຫຼດເອກະສານ...</span>
-              </div>
-              <!-- Validation Message -->
-              <div v-if="!allRequiredDocumentsUploaded && isEditingInModal"
-                class="mt-4 p-3 bg-warning/10 text-warning rounded-lg text-sm">
-                ⚠️ ກະລຸນາອັບໂຫຼດເອກະສານທີ່ຕ້ອງການທັງໝົດກ່ອນບັນທຶກ
-              </div>
+
             </div>
           </div>
-          <!-- ✅ เพิ่ม Tab แผนที่ -->
           <div v-else-if="activeTab === 'map'" class="space-y-6">
             <CustomerLocationMap :customer-id="selectedDraft?.customer_id || 0" :locations="customerLocations"
-              googleMapsApiKey="YOUR_API_KEY" :is-loading="isLocationLoading" :can-add-location="true"
-              :can-edit-location="true" :can-delete-location="true" :can-set-primary="true"
-              @add-location="handleAddLocation" @update-location="handleUpdateLocation"
-              @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
+              :is-loading="isLocationLoading" :can-add-location="true" :can-edit-location="true"
+              :can-delete-location="true" :can-set-primary="true" @add-location="handleAddLocation"
+              @update-location="handleUpdateLocation" @delete-location="handleDeleteLocation"
+              @set-primary="handleSetPrimary" />
           </div>
-          <!-- ✅ เพิ่ม Tab RequestForm -->
           <div v-else-if="activeTab === 'requestForm'" class="space-y-6">
             <LoanRequestForm :loan-application-id="selectedDraft?.id" :loan-application="selectedDraft"
               :is-editing="isEditingInModal" @save-form="handleRequestFormSave" @form-updated="handleRequestFormUpdated"
               @cancel-edit="isEditingInModal = false" />
           </div>
-          <!-- ✅ Add the new LoanContractForm component -->
           <div v-else-if="activeTab === 'loanContract'" class="space-y-6">
             <LoanContractForm :loan-contract-id="selectedDraft?.id" :loan-application="selectedDraft"
               :loan-contract="selectedContract" :is-editing="isEditingInModal" @cancel-edit="isEditingInModal = false"
               @enable-edit="isEditingInModal = true" @save-form="handleSaveContract" />
           </div>
-          <!-- Modal Actions -->
-          <div class="flex justify-end gap-3 mt-6">
+
+          <div class="flex justify-end gap-3 mt-6 border-t pt-6">
             <button class="btn btn-soft btn-secondary" @click="closeDetailsModal">
               {{ isEditingInModal ? 'ຍົກເລີກ' : 'ປິດ' }}
             </button>
-            <!-- Edit button (only in view mode) -->
-            <button v-if="!isEditingInModal" class="btn btn-primary" @click="startEditInModal">
-              ແກ້ໄຂ
+            <button v-if="!isEditingInModal && (activeTab === 'details' || activeTab === 'documents')"
+              class="btn btn-primary" @click="startEditInModal">
+              <span class="icon-[tabler--edit] size-4 mr-1"></span> ແກ້ໄຂ
             </button>
-            <!-- Save button (only in edit mode) -->
-            <button v-else class="btn btn-success" @click="saveDraftFromModal" :disabled="isSaving">
+            <button v-else-if="isEditingInModal && (activeTab === 'details' || activeTab === 'documents')"
+              class="btn btn-success" @click="saveDraftFromModal" :disabled="isSaving">
               <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
-              <span v-else>ບັນທຶກການປ່ຽນແປງ</span>
+              <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span>
+              <span v-if="!isSaving">ບັນທຶກການປ່ຽນແປງ</span>
             </button>
           </div>
+
         </div>
       </div>
     </teleport>
-    <!-- OTP Modal -->
-    <teleport to="body">
+
+    <!-- <teleport to="body">
       <div v-if="showOtpModal && draftToSubmit"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
@@ -681,15 +617,10 @@
             <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <span class="icon-[tabler--message] size-6 text-primary"></span>
             </div>
-            <p class="text-gray-600 dark:text-gray-400">
-              ພວກເຮົາໄດ້ສົ່ງລະຫັດ OTP ໄປຫາເບີ
-            </p>
+            <p class="text-gray-600 dark:text-gray-400">ພວກເຮົາໄດ້ສົ່ງລະຫັດ OTP ໄປຫາເບີ</p>
             <p class="font-medium text-lg mt-2">{{ getDraftPhone(draftToSubmit) }}</p>
           </div>
           <div class="form-control mb-6">
-            <label class="label">
-              <span class="label-text font-medium">ລະຫັດ OTP *</span>
-            </label>
             <input v-model="otpCode" type="text" inputmode="numeric" placeholder="ປ້ອນລະຫັດ OTP 6 ຕົວ"
               class="input input-bordered w-full text-center text-2xl tracking-widest"
               :class="{ 'input-error': otpError }" maxlength="6" @keyup.enter="verifyAndSubmitDraft" />
@@ -697,41 +628,47 @@
               <span class="label-text-alt">{{ otpError }}</span>
             </label>
           </div>
-          <div class="text-center mb-4">
-            <button type="button" class="btn btn-link btn-sm" @click="requestOtp">
-              ຂໍລະຫັດໃໝ່
-            </button>
-          </div>
           <div class="flex justify-between gap-3">
-            <button type="button" class="btn btn-soft btn-secondary flex-1" @click="closeOtpModal"
-              :disabled="isVerifying">
-              ຍົກເລີກ
-            </button>
-            <button type="button" class="btn btn-success flex-1"
-              :disabled="!otpCode || otpCode.length !== 6 || isVerifying" @click="verifyAndSubmitDraft">
+            <button type="button" class="btn btn-soft btn-secondary flex-1" @click="closeOtpModal">ຍົກເລີກ</button>
+            <button type="button" class="btn btn-success flex-1" @click="verifyAndSubmitDraft" :disabled="isVerifying || otpCode.length !== 6">
               <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
               <span v-else>ຢືນຢັນ</span>
             </button>
           </div>
         </div>
       </div>
-    </teleport>
-    <!-- Submit Confirmation Modal -->
-    <teleport to="body">
+    </teleport> -->
+
+    <!-- <teleport to="body">
       <div v-if="showSubmitModal && draftToSubmit"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <h3 class="font-bold text-lg mb-4 text-success">ສົ່ງຮ່າງສິນເຊື່ອ</h3>
           <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການສົ່ງຮ່າງສິນເຊື່ອເລກທີ {{ draftToSubmit.loan_id }} ຂອງ "{{
-              draftToSubmit.customer?.first_name }} {{ draftToSubmit.customer?.last_name }}" ?
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການສົ່ງຮ່າງສິນເຊື່ອເລກທີ {{ draftToSubmit.loan_id }} ?
           </p>
           <div class="flex justify-end gap-3 mt-6">
-            <button class="btn btn-soft btn-secondary" @click="showSubmitModal = false">
-              ຍົກເລີກ
-            </button>
-            <button class="btn btn-success" @click="submitDraft">
-              ສົ່ງຮ່າງ
+            <button class="btn btn-soft btn-secondary" @click="showSubmitModal = false">ຍົກເລີກ</button>
+            <button class="btn btn-success" @click="submitDraft">ສົ່ງຮ່າງ</button>
+          </div>
+        </div>
+      </div>
+    </teleport> -->
+    <teleport to="body">
+      <div v-if="showSubmitModal && draftToSubmit"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+          <h3 class="font-bold text-lg mb-4 text-success">ຢືນຢັນການສົ່ງຄຳຂໍສິນເຊື່ອ</h3>
+          <p class="py-4 text-gray-700 dark:text-gray-300">
+            ທ່ານກວດສອບຂໍ້ມູນ ແລະ ເອກະສານຄົບຖ້ວນແລ້ວແມ່ນບໍ່?<br>
+            ຕ້ອງການສົ່ງຮ່າງສິນເຊື່ອເລກທີ <strong>{{ draftToSubmit.loan_id }}</strong> ເຂົ້າສູ່ລະບົບການພິຈາລະນາເລີຍບໍ່?
+          </p>
+          <div class="flex justify-end gap-3 mt-6">
+            <button class="btn btn-soft btn-secondary" @click="showSubmitModal = false"
+              :disabled="isVerifying">ຍົກເລີກ</button>
+            <button class="btn btn-success" @click="submitDraft" :disabled="isVerifying">
+              <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
+              <span v-else>ຢືນຢັນການສົ່ງ</span>
             </button>
           </div>
         </div>
@@ -739,27 +676,32 @@
     </teleport>
   </div>
 </template>
+
 <script setup lang="ts">
 import { formatPrice } from '@/utils/formatters'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useProductStore } from '@/stores/product'
 import { useLoanContractStore } from '@/stores/loanContract'
+import { useShopStore } from '@/stores/shop' // 🟢 ເພີ່ມ Store ຮ້ານຄ້າ
 import { LoanApplicationStatus } from '@/types/loanApplication'
-import type { LoanApplication, UpdateLoanApplicationDto, CustomerLocation, ConfirmDraftDto } from '@/types/loanApplication'
+import type { LoanApplication, CustomerLocation, ConfirmDraftDto } from '@/types/loanApplication'
 import type { CreateLoanContractRequest } from '@/types/loanContract'
 import { requestOtpForCustomer } from '@/api/customer'
 import Papa from 'papaparse'
 import { getConfirmedStyle } from '@/utils/formatters'
 import { getFullImageUrl } from '@/utils/url'
 import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue'
-import LoanRequestForm from '@/components/loans/form/RequestForm.vue'  // ✅ Import the new component
+import LoanRequestForm from '@/components/loans/form/RequestForm.vue'
 import LoanContractForm from '@/components/loans/form/LoanContractForm.vue'
 import { alert } from '@/utils/alert'
-// ✅ Use Store
+
+// ✅ Stores
 const loanApplicationStore = useLoanApplicationStore()
 const productStore = useProductStore()
 const loanContractStore = useLoanContractStore()
+const shopStore = useShopStore() // 🟢 ເພີ່ມຕົວແປ Store ຮ້ານຄ້າ
+
 // Reactive state
 const isLoading = computed(() => loanApplicationStore.isLoading)
 const isSaving = computed(() => loanApplicationStore.isSaving)
@@ -769,41 +711,43 @@ const searchQuery = ref('')
 const staffFilter = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
+
 // Modal states
 const showDetailsModal = ref(false)
 const showSubmitModal = ref(false)
 const showOtpModal = ref(false)
 const selectedDraft = ref<LoanApplication | null>(null)
 const draftToSubmit = ref<LoanApplication | null>(null)
-const activeTab = ref<'details' | 'documents' | 'map' | 'requestForm' | 'loanContract'>('details')  // ✅ Extend activeTab type
+const activeTab = ref<'details' | 'documents' | 'map' | 'requestForm' | 'loanContract'>('details')
 const isEditingInModal = ref(false)
+
 // ✅ Product Search in Modal
 const modalProductSearch = ref('')
 const showModalProductDropdown = ref(false)
 const selectedModalProduct = ref<any | null>(null)
 const modalShopId = ref<number | null>(null)
+
+// 🟢 ດຶງລາຍຊື່ຮ້ານຄ້າມາຈາກ ShopStore
+const shopsList = computed(() => shopStore.shops)
+
 // OTP
 const otpCode = ref('')
 const otpError = ref('')
 const isVerifying = ref(false)
-// ✅ เพิ่ม state สำหรับ locations
+
+// Map states
 const customerLocations = ref<CustomerLocation[]>([])
 const isLocationLoading = ref(false)
+
 // Mock staff list
 const mockStaffList = [
   { id: 1, name: 'ສົມຊາຍ ພົນສຸກ' },
   { id: 2, name: 'ສົມສິງ ດຳດີ' },
   { id: 3, name: 'ອຸດົມ ສີສົມບັດ' }
 ]
+
 // ✅ Documents
-interface Document {
-  id: string
-  name: string
-  description: string
-  required: boolean
-  file: File | null
-  preview: string | null
-}
+interface Document { id: string, name: string, description: string, required: boolean, file: File | null, preview: string | null }
 const draftDocuments = ref<Document[]>([
   { id: 'id_card', name: 'ບັດປະຈຳຕົວ', description: 'ຮູບຖ່າຍບັດປະຈຳຕົວທັງໜ້າ-ຫຼັງ', required: true, file: null, preview: null },
   { id: 'house_reg', name: 'ໃບຄອບຄົວ', description: 'ໃບຄອບຄົວຫຼືເອກະສານຢືນຢັນທີ່ຢູ່', required: true, file: null, preview: null }
@@ -813,11 +757,9 @@ const optionalDocuments = ref<Document[]>([
   { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
 ])
 const isUploadingDocuments = ref(false)
-// ✅ ตรวจสอบเอกสารที่จำเป็น
-const allRequiredDocumentsUploaded = computed(() => {
-  return draftDocuments.value.every(doc => doc.file !== null)
-})
-// Form for editing
+const allRequiredDocumentsUploaded = computed(() => draftDocuments.value.every(doc => doc.file !== null))
+
+// 🟢 Updated Form for editing (Added missing fields)
 const modalDraftForm = reactive({
   customer_name: '',
   customer_phone: '',
@@ -828,13 +770,17 @@ const modalDraftForm = reactive({
   product_name: '',
   product_type: '',
   total_amount: 0,
+  down_payment: 0, // ເພີ່ມເງິນດາວ
   interest_rate: 0,
   loan_period: 0,
   monthly_payment: 0,
   income_per_month: 0,
-  other_debts: 0
+  other_debts: 0,
+  interest_type: 'flat_rate', // Flat Rate vs Effective Rate
+  interest_rate_type: 'monthly' // Monthly vs Yearly
 })
-// ✅ Validation errors
+
+// 🟢 Updated Validation errors
 const modalFormErrors = reactive({
   customer_name: '',
   customer_phone: '',
@@ -843,22 +789,16 @@ const modalFormErrors = reactive({
   occupation: '',
   age: '',
   total_amount: '',
+  down_payment: '',
   interest_rate: '',
   loan_period: '',
   income_per_month: ''
 })
 
-
-
 // ✅ Helper functions
 const isImage = (url: string) => /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url.toLowerCase())
 const getDocumentTypeName = (type: string): string => {
-  const typeMap: Record<string, string> = {
-    'id_card': 'ບັດປະຈຳຕົວ',
-    'house_reg': 'ໃບຄອບຄົວ',
-    'salary_slip': 'ຫຼັກຖານລາຍຮັບ',
-    'other': 'ເອກະສານອື່ນໆ'
-  }
+  const typeMap: Record<string, string> = { 'id_card': 'ບັດປະຈຳຕົວ', 'house_reg': 'ໃບຄອບຄົວ', 'salary_slip': 'ຫຼັກຖານລາຍຮັບ', 'other': 'ເອກະສານອື່ນໆ' }
   return typeMap[type] || type
 }
 const formatFileSize = (size: number | string): string => {
@@ -868,7 +808,48 @@ const formatFileSize = (size: number | string): string => {
   if (numSize < 1024 * 1024) return `${(numSize / 1024).toFixed(1)} KB`
   return `${(numSize / (1024 * 1024)).toFixed(1)} MB`
 }
-// ✅ อัปโหลดเอกสาร
+
+// 🟢 ຟັງຊັນສຳລັບຈັດການ Input ທີ່ເປັນເງິນ ໃຫ້ມີໝາຍຈຸດ (,) อัตโนมัติ (จาก ListLoan.vue)
+// 🟢 แก้ไขการ Format เงิน ให้บังคับปัดเศษทศนิยมออก
+const formatCurrencyInput = (val: number | null | undefined): string => {
+  if (val === null || val === undefined || isNaN(val)) return '0';
+  return Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
+};
+
+const handleModalCurrencyInput = (field: 'total_amount' | 'down_payment' | 'income_per_month' | 'other_debts', event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
+  const numericValue = Number(rawValue);
+
+  if (!isNaN(numericValue) && rawValue !== '') {
+    modalDraftForm[field] = numericValue;
+  } else {
+    modalDraftForm[field] = 0;
+  }
+  target.value = formatCurrencyInput(modalDraftForm[field]);
+};
+
+// 🟢 ຟັງຊັນເມື່ອແອັດມິນປ່ຽນຮ້ານຄ້າໃນ Dropdown
+const handleShopChange = async () => {
+  clearModalProductSelection()
+  modalDraftForm.total_amount = 0
+  modalDraftForm.down_payment = 0
+  modalDraftForm.interest_rate = 0
+  modalDraftForm.loan_period = 0
+  modalDraftForm.monthly_payment = 0
+
+  if (modalShopId.value) {
+    try {
+      await productStore.fetchProducts({ shop_id: modalShopId.value, limit: 100 })
+    } catch (error) {
+      alert.error('ບໍ່ສາມາດດຶງຂໍ້ມູນສິນຄ້າຂອງຮ້ານນີ້ໄດ້')
+    }
+  } else {
+    productStore.clearProducts()
+  }
+}
+
+// ✅ Upload Documents
 const handleDocumentUpload = (index: number, event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
@@ -899,7 +880,6 @@ const handleDocumentUpload = (index: number, event: Event) => {
   }
   reader.readAsDataURL(file)
 }
-// ✅ ลบเอกสาร
 const removeDocument = (index: number) => {
   const allDocs = [...draftDocuments.value, ...optionalDocuments.value]
   if (allDocs[index]) {
@@ -912,59 +892,30 @@ const removeDocument = (index: number) => {
     optionalDocuments.value = [...allDocs.slice(draftDocuments.value.length)]
   }
 }
-// ✅ Validation function
+
+// 🟢 Validation function Updated
 const validateModalForm = (): boolean => {
-  Object.keys(modalFormErrors).forEach(key => {
-    modalFormErrors[key as keyof typeof modalFormErrors] = ''
-  })
+  Object.keys(modalFormErrors).forEach(key => { modalFormErrors[key as keyof typeof modalFormErrors] = '' })
   let isValid = true
-  if (!modalDraftForm.customer_name.trim()) {
-    modalFormErrors.customer_name = 'ກະລຸນາປ້ອນຊື່ລູກຄ້າ'
-    isValid = false
-  }
+
+  if (!modalDraftForm.customer_name.trim()) { modalFormErrors.customer_name = 'ກະລຸນາປ້ອນຊື່ລູກຄ້າ'; isValid = false }
   const phoneRegex = /^[\d\-\+\(\)\s]{8,15}$/
-  if (!modalDraftForm.customer_phone.trim()) {
-    modalFormErrors.customer_phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'
-    isValid = false
-  } else if (!phoneRegex.test(modalDraftForm.customer_phone)) {
-    modalFormErrors.customer_phone = 'ເບີໂທລະສັບບໍ່ຖືກຕ້ອງ'
-    isValid = false
-  }
-  if (!modalDraftForm.customer_id_card.trim()) {
-    modalFormErrors.customer_id_card = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ'
-    isValid = false
-  }
-  if (!modalDraftForm.customer_address.trim()) {
-    modalFormErrors.customer_address = 'ກະລຸນາປ້ອນທີ່ຢູ່'
-    isValid = false
-  }
-  if (!modalDraftForm.occupation.trim()) {
-    modalFormErrors.occupation = 'ກະລຸນາປ້ອນອາຊີບ'
-    isValid = false
-  }
-  if (!modalDraftForm.age || modalDraftForm.age < 18 || modalDraftForm.age > 100) {
-    modalFormErrors.age = 'ອາຍຸຕ້ອງຢູ່ລະຫວ່າງ 18-100 ປີ'
-    isValid = false
-  }
-  if (!modalDraftForm.total_amount || modalDraftForm.total_amount <= 0) {
-    modalFormErrors.total_amount = 'ມູນຄ່າຕ້ອງຫຼາຍກວ່າ 0'
-    isValid = false
-  }
-  if (modalDraftForm.interest_rate < 0 || modalDraftForm.interest_rate > 100) {
-    modalFormErrors.interest_rate = 'ດອກເບ້ຍຕ້ອງຢູ່ລະຫວ່າງ 0-100%'
-    isValid = false
-  }
-  if (!modalDraftForm.loan_period || modalDraftForm.loan_period < 1 || modalDraftForm.loan_period > 60) {
-    modalFormErrors.loan_period = 'ໄລຍະເວລາຕ້ອງຢູ່ລະຫວ່າງ 1-60 ເດືອນ'
-    isValid = false
-  }
-  if (!modalDraftForm.income_per_month || modalDraftForm.income_per_month <= 0) {
-    modalFormErrors.income_per_month = 'ລາຍຮັບຕ້ອງຫຼາຍກວ່າ 0'
-    isValid = false
-  }
+  if (!modalDraftForm.customer_phone.trim()) { modalFormErrors.customer_phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'; isValid = false }
+  else if (!phoneRegex.test(modalDraftForm.customer_phone)) { modalFormErrors.customer_phone = 'ເບີໂທລະສັບບໍ່ຖືກຕ້ອງ'; isValid = false }
+  if (!modalDraftForm.customer_id_card.trim()) { modalFormErrors.customer_id_card = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ'; isValid = false }
+  if (!modalDraftForm.customer_address.trim()) { modalFormErrors.customer_address = 'ກະລຸນາປ້ອນທີ່ຢູ່'; isValid = false }
+  if (!modalDraftForm.occupation.trim()) { modalFormErrors.occupation = 'ກະລຸນາປ້ອນອາຊີບ'; isValid = false }
+  if (!modalDraftForm.age || modalDraftForm.age < 18 || modalDraftForm.age > 100) { modalFormErrors.age = 'ອາຍຸຕ້ອງຢູ່ລະຫວ່າງ 18-100 ປີ'; isValid = false }
+  if (!modalDraftForm.total_amount || modalDraftForm.total_amount <= 0) { modalFormErrors.total_amount = 'ມູນຄ່າຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
+  if (modalDraftForm.down_payment >= modalDraftForm.total_amount) { modalFormErrors.down_payment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າລາຄາສິນຄ້າ'; isValid = false }
+  if (modalDraftForm.interest_rate < 0 || modalDraftForm.interest_rate > 100) { modalFormErrors.interest_rate = 'ດອກເບ້ຍຕ້ອງຢູ່ລະຫວ່າງ 0-100%'; isValid = false }
+  if (!modalDraftForm.loan_period || modalDraftForm.loan_period < 1 || modalDraftForm.loan_period > 60) { modalFormErrors.loan_period = 'ໄລຍະເວລາຕ້ອງຢູ່ລະຫວ່າງ 1-60 ເດືອນ'; isValid = false }
+  if (!modalDraftForm.income_per_month || modalDraftForm.income_per_month <= 0) { modalFormErrors.income_per_month = 'ລາຍຮັບຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
+
   return isValid
 }
-// ✅ Computed properties
+
+// Computed properties
 const staffList = computed(() => mockStaffList)
 const filteredDrafts = computed(() => {
   let filtered = loanApplicationStore.loanApplications || []
@@ -1012,78 +963,77 @@ const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
 const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalDrafts.value))
 const hasPreviousPage = computed(() => currentPage.value > 1)
 const hasNextPage = computed(() => currentPage.value < totalPages.value)
-// ✅ Helper functions
-const getDraftDisplayName = (draft: LoanApplication): string => {
-  if (draft.customer) {
-    return `${draft.customer.first_name || ''} ${draft.customer.last_name || ''}`.trim()
-  }
-  return '-'
-}
-const isDraft = (draft: LoanApplication): boolean => {
-  return draft.is_confirmed === 0 ||
-    !draft.is_confirmed
-}
-const isConfirmed = (draft: LoanApplication): boolean => {
-  return draft.is_confirmed === 1
-}
-const getStatusLabel = (draft: LoanApplication): string => {
-  if (isDraft(draft)) {
-    return 'ຮ່າງ'
-  }
-  switch (draft.status) {
-    case LoanApplicationStatus.PENDING:
-      return 'ລໍຖ້າ'
-    case LoanApplicationStatus.VERIFYING:
-      return 'ກຳລັງກວດ'
-    case LoanApplicationStatus.APPROVED:
-      return 'ອະນຸມັດ'
-    case LoanApplicationStatus.REJECTED:
-      return 'ປະຕິເສດ'
-    default:
-      return draft.status
-  }
-}
-const getDraftPhone = (draft: LoanApplication): string => {
-  return draft.customer?.phone || '-'
-}
-const getDraftAddress = (draft: LoanApplication): string => {
-  return draft.customer?.address || '-'
-}
-const getProductName = (draft: LoanApplication): string => {
-  return draft.product?.product_name || '-'
-}
-const getRequesterName = (draft: LoanApplication): string => {
-  return (draft.requester as any)?.full_name || (draft.requester as any)?.name || '-'
-}
 
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('lo-LA')
+// Data Extractors
+const getDraftDisplayName = (draft: LoanApplication): string => draft.customer ? `${draft.customer.first_name || ''} ${draft.customer.last_name || ''}`.trim() : '-'
+const isDraft = (draft: LoanApplication): boolean => draft.is_confirmed === 0 || !draft.is_confirmed
+const getStatusLabel = (draft: LoanApplication): string => {
+  if (isDraft(draft)) return 'ຮ່າງ'
+  switch (draft.status) {
+    case LoanApplicationStatus.PENDING: return 'ລໍຖ້າ'
+    case LoanApplicationStatus.VERIFYING: return 'ກຳລັງກວດ'
+    case LoanApplicationStatus.APPROVED: return 'ອະນຸມັດ'
+    case LoanApplicationStatus.REJECTED: return 'ປະຕິເສດ'
+    default: return draft.status
+  }
 }
-// ✅ คำนวณค่างวด
+const getDraftPhone = (draft: LoanApplication): string => draft.customer?.phone || '-'
+const getDraftAddress = (draft: LoanApplication): string => draft.customer?.address || '-'
+const getProductName = (draft: LoanApplication): string => draft.product?.product_name || '-'
+const getRequesterName = (draft: LoanApplication): string => (draft.requester as any)?.full_name || (draft.requester as any)?.name || '-'
+const formatDate = (dateString: string): string => new Date(dateString).toLocaleDateString('lo-LA')
+
+// 🟢 ຄຳນວນຄ່າງວດ (Advance formula handling down payment & rate types)
 const calculateModalMonthlyPayment = (): number => {
-  const { total_amount, interest_rate, loan_period } = modalDraftForm
-  if (!total_amount || !interest_rate || !loan_period) return 0
-  const monthlyRate = interest_rate / 100 / 12
-  const monthlyPayment = (total_amount * monthlyRate * Math.pow(1 + monthlyRate, loan_period)) /
-    (Math.pow(1 + monthlyRate, loan_period) - 1)
+  const { total_amount, down_payment, interest_rate, loan_period, interest_type, interest_rate_type } = modalDraftForm
+
+  const principal = Math.max(0, total_amount - (down_payment || 0))
+  if (!principal || !interest_rate || !loan_period) return 0
+
+  const ratePerMonth = interest_rate_type === 'yearly' ? (interest_rate / 12) / 100 : interest_rate / 100
+  let monthlyPayment = 0
+
+  if (interest_type === 'flat_rate') {
+    const flatMonthlyPrincipal = principal / loan_period
+    const flatMonthlyInterest = principal * ratePerMonth
+    monthlyPayment = flatMonthlyPrincipal + flatMonthlyInterest
+  } else {
+    if (ratePerMonth > 0) {
+      monthlyPayment = (principal * ratePerMonth * Math.pow(1 + ratePerMonth, loan_period)) /
+        (Math.pow(1 + ratePerMonth, loan_period) - 1)
+    } else {
+      monthlyPayment = principal / loan_period
+    }
+  }
+
   return Math.round(monthlyPayment)
 }
+
 watch(
-  () => [modalDraftForm.total_amount, modalDraftForm.interest_rate, modalDraftForm.loan_period],
-  () => {
-    modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
-  }
+  () => [
+    modalDraftForm.total_amount,
+    modalDraftForm.down_payment,
+    modalDraftForm.interest_rate,
+    modalDraftForm.loan_period,
+    modalDraftForm.interest_type,
+    modalDraftForm.interest_rate_type
+  ],
+  () => { modalDraftForm.monthly_payment = calculateModalMonthlyPayment() }
 )
-// ✅ เลือกสินค้า
+
+// 🟢 เลือกสินค้า
 const selectModalProduct = (product: any) => {
   selectedModalProduct.value = product
   modalProductSearch.value = product.product_name
   showModalProductDropdown.value = false
   modalDraftForm.product_name = product.product_name
-  modalDraftForm.product_type = product.productType?.type_name || ''
+  modalDraftForm.product_type = product.productType?.type_name || product.type_name || ''
   modalDraftForm.total_amount = product.price
+  modalDraftForm.down_payment = 0
   modalDraftForm.interest_rate = product.interest_rate
   modalDraftForm.loan_period = product.term
+  modalDraftForm.interest_type = product.interest_type || 'flat_rate'
+  modalDraftForm.interest_rate_type = product.interest_rate_type || 'monthly'
   modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
 }
 const clearModalProductSelection = () => {
@@ -1092,181 +1042,101 @@ const clearModalProductSelection = () => {
   modalDraftForm.product_name = ''
   modalDraftForm.product_type = ''
 }
-const handleModalProductBlur = () => {
-  setTimeout(() => {
-    showModalProductDropdown.value = false
-  }, 200)
-}
-let modalProductSearchTimer: NodeJS.Timeout | null = null
-const debounceModalProductSearch = () => {
-  if (modalProductSearchTimer) {
-    clearTimeout(modalProductSearchTimer)
-  }
-  modalProductSearchTimer = setTimeout(() => {
-    // handled by computed
-  }, 300)
-}
-// Debounce search
+const handleModalProductBlur = () => setTimeout(() => showModalProductDropdown.value = false, 200)
+
 let debounceTimer: NodeJS.Timeout | null = null
-const debounceSearch = () => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-  }
-  debounceTimer = setTimeout(() => {
-    currentPage.value = 1
-  }, 300)
-}
-const applyDateFilter = () => {
-  currentPage.value = 1
-}
+const debounceSearch = () => { if (debounceTimer) clearTimeout(debounceTimer); debounceTimer = setTimeout(() => currentPage.value = 1, 300) }
+let modalProductSearchTimer: NodeJS.Timeout | null = null
+const debounceModalProductSearch = () => { if (modalProductSearchTimer) clearTimeout(modalProductSearchTimer); modalProductSearchTimer = setTimeout(() => { }, 300) }
+const applyDateFilter = () => currentPage.value = 1
 
 const selectedContract = ref<any | null>(null)
+
 // Action handlers
 const viewDraftDetails = async (draft: LoanApplication) => {
   if (!draft.id) return
-  // Show modal immediately with existing data for responsiveness
   selectedDraft.value = draft
   showDetailsModal.value = true
   isEditingInModal.value = false
   activeTab.value = 'details'
 
   try {
-    // Fetch the full, updated details from the API
     const fullDetails = await loanApplicationStore.fetchLoanApplicationById(draft.id)
-    selectedDraft.value = fullDetails // Replace with fresh data
-
-    // ✅ โหลดเอกสาร
+    selectedDraft.value = fullDetails
     await loanApplicationStore.fetchDocuments(draft.id)
-
     try {
-      // เรียกฟังก์ชันจาก loanContractStore (อาจจะต้องตั้ง error แบบเงียบๆ ถ้าไม่เจอ)
       selectedContract.value = await loanContractStore.fetchContract(draft.id)
     } catch (e) {
       console.log('Contract not found or error fetching:', e)
-      // ถ้าไม่เจอ ไม่ต้องทำอะไร ให้เป็น null ต่อไป เพื่อให้มัน fallback ไปใช้ draft แทน
     }
-
-    // ✅ โหลด locations
-    if (fullDetails.customer_id) {
-      await loadCustomerLocations(fullDetails.customer_id)
-    }
+    if (fullDetails.customer_id) await loadCustomerLocations(fullDetails.customer_id)
   } catch (error) {
-    console.error('Failed to fetch full draft details:', error)
-    // Optionally, show an error message to the user
     alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຮ່າງສິນເຊື່ອແບບເຕັມໄດ້.')
-    closeDetailsModal() // Close modal if fetch fails
+    closeDetailsModal()
   }
 }
-// ✅ ฟังก์ชันโหลด Customer Locations
+
+// Location Maps
 const loadCustomerLocations = async (customerId: number) => {
   isLocationLoading.value = true
   try {
     const { getCustomerLocations } = await import('@/api/customer')
     const response = await getCustomerLocations(customerId)
     customerLocations.value = response.data || response || []
-    console.log('[Map] Loaded locations:', customerLocations.value.length)
-  } catch (error) {
-    console.error('[Map] Failed to load locations:', error)
-    customerLocations.value = []
-  } finally {
-    isLocationLoading.value = false
-  }
+  } catch (error) { customerLocations.value = [] } finally { isLocationLoading.value = false }
 }
-// ✅ Handle Add Location
 const handleAddLocation = async (locationData: Omit<CustomerLocation, 'id'>) => {
   try {
     const { createCustomerLocation } = await import('@/api/customer')
     await createCustomerLocation(locationData.customer_id, locationData)
     alert.success('ເພີ່ມທີ່ຢູ່ສຳເລັດ!')
     await loadCustomerLocations(locationData.customer_id)
-  } catch (error: any) {
-    alert.error('ເພີ່ມທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
-  }
+  } catch (error: any) { alert.error('ເພີ່ມທີ່ຢູ່ລົ້ມເຫຼວ', error.message) }
 }
-// ✅ Handle Update Location
 const handleUpdateLocation = async (id: number, locationData: Partial<CustomerLocation>) => {
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
     await updateCustomerLocation(id, locationData)
     alert.success('ແກ້ໄຂທີ່ຢູ່ສຳເລັດ!')
-    if (selectedDraft.value?.customer_id) {
-      await loadCustomerLocations(selectedDraft.value.customer_id)
-    }
-  } catch (error: any) {
-    alert.error('ແກ້ໄຂທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
-  }
+    if (selectedDraft.value?.customer_id) await loadCustomerLocations(selectedDraft.value.customer_id)
+  } catch (error: any) { alert.error('ແກ້ໄຂທີ່ຢູ່ລົ້ມເຫຼວ', error.message) }
 }
-// ✅ Handle Delete Location
 const handleDeleteLocation = async (id: number) => {
   try {
     const { deleteCustomerLocation } = await import('@/api/customer')
     await deleteCustomerLocation(id)
     alert.success('ລຶບທີ່ຢູ່ສຳເລັດ!')
-    if (selectedDraft.value?.customer_id) {
-      await loadCustomerLocations(selectedDraft.value.customer_id)
-    }
-  } catch (error: any) {
-    alert.error('ລຶບທີ່ຢູ່ລົ້ມເຫຼວ', error.message)
-  }
+    if (selectedDraft.value?.customer_id) await loadCustomerLocations(selectedDraft.value.customer_id)
+  } catch (error: any) { alert.error('ລຶບທີ່ຢູ່ລົ້ມເຫຼວ', error.message) }
 }
-// ✅ Handle Set Primary
 const handleSetPrimary = async (id: number) => {
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
     await updateCustomerLocation(id, { is_primary: 1 })
     alert.success('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກສຳເລັດ!')
-    if (selectedDraft.value?.customer_id) {
-      await loadCustomerLocations(selectedDraft.value.customer_id)
-    }
-  } catch (error: any) {
-    alert.error('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກລົ້ມເຫຼວ', error.message)
-  }
+    if (selectedDraft.value?.customer_id) await loadCustomerLocations(selectedDraft.value.customer_id)
+  } catch (error: any) { alert.error('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກລົ້ມເຫຼວ', error.message) }
 }
-// ✅ Handle RequestForm Save (เรียกเมื่อ component emit save-form)
+
+// Advanced Form Logic
 const handleRequestFormSave = async (customerId: number, formData: any) => {
   if (!selectedDraft.value) return
   try {
-    console.log('📥 Received customerId:', customerId)
-    console.log('📥 Received formData:', formData)
-    // ✅ แปลง Address จาก Object เป็น String
-    // ✅ ตรวจสอบว่า formData มีค่าหรือไม่
-    if (!formData || !formData.customer) {
-      throw new Error('ข้อมูลฟอร์มไม่ถูกต้อง')
-    }
-
-    // ✅ Helper Function - แปลง Address จาก Object เป็น String (ปลอดภัย)
+    if (!formData || !formData.customer) throw new Error('ข้อมูลฟอร์มไม่ถูกต้อง')
     const formatAddress = (addr: any): string => {
       if (!addr || typeof addr !== 'object') return ''
-      const parts = [addr.village, addr.district, addr.province]
-        .filter((p: any) => p && typeof p === 'string' && p.trim())
-      return parts.join(', ')
+      return [addr.village, addr.district, addr.province].filter((p: any) => p && typeof p === 'string' && p.trim()).join(', ')
     }
-
-    // ✅ Helper Function - แยกชื่อ-นามສກົນ
     const parseName = (fullName: any) => {
-      // ตรวจสอบว่า fullName เป็น string และไม่ empty
-      if (!fullName || typeof fullName !== 'string') {
-        return { first_name: '', last_name: '' }
-      }
+      if (!fullName || typeof fullName !== 'string') return { first_name: '', last_name: '' }
       const trimmed = fullName.trim()
-      if (!trimmed) {
-        return { first_name: '', last_name: '' }
-      }
+      if (!trimmed) return { first_name: '', last_name: '' }
       const parts = trimmed.split(/\s+/)
-      return {
-        first_name: parts[0] || '',
-        last_name: parts.slice(1).join(' ') || ''
-      }
+      return { first_name: parts[0] || '', last_name: parts.slice(1).join(' ') || '' }
     }
-
-    // ✅ แยกชื่อ-นามສກົນ
     const { first_name, last_name } = parseName(formData.customer.fullname)
 
-    console.log('📝 Parsed name:', { first_name, last_name })
-    console.log('📝 All formData:', formData)
-    // ✅ Map formData จาก RequestForm ไปยัง backend format (คล้ายกับ saveDraftFromModal)
     const updateData = {
-      // ຂໍ້ມູນວຽກ (Work Info)
       company_name: formData.work?.companyName || '',
       address: formatAddress(formData.customer.address),
       phone: formData.customer.phone || '',
@@ -1278,24 +1148,25 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       position: formData.work?.position || '',
       salary: Number(formData.work?.salary) || 0,
 
-      // ຂໍ້ມູນຜູ້ຄ້ຳປະກັນ (Guarantor) - ຖ້າມີ
       name: formData.guarantor?.name || '',
       identity_number: formData.guarantor?.idCard || '',
       occupation: formData.guarantor?.occupation || '',
       relationship: formData.guarantor?.relationship || '',
       Guarantorphone: formData.guarantor.phone || '',
       GuarantorDOB: formData.guarantor.dob || '',
+      GuatantorAGE: formData.guarantor?.age || 0,
+
       Guarantoraddress: formatAddress(formData.guarantor?.address),
       work_company_name: formData.guarantor?.work?.companyName || '',
-      work_location: formatAddress(formData.guarantor?.work_address),
+
+      work_location: formatAddress(formData.guarantor?.work?.address),
       work_phone: formData.guarantor.work.phone || '',
       work_position: formData.guarantor?.work?.position || '',
       work_salary: String(formData.guarantor?.work?.salary || '0'),
 
-      // ຂໍ້ມູນເພີ່ມເຕີມທີ່ໃຊ້ໃນການຄິດໄລ່
       first_name: first_name,
       last_name: last_name,
-      identity_card: formData.customer.idCard // ເພີ່ມໃຫ້ຄົບ
+      identity_card: formData.customer.idCard
     }
 
     const CustLoanData = {
@@ -1317,7 +1188,10 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       product_id: selectedDraft.value.product_id,
       total_amount: formData.product.price,
       interest_rate_at_apply: formData.product.interestRate,
-      // status: loan_status,
+
+      interest_type: formData.product.interestType, // 🟢 ເພີ່ມບັນທັດນີ້
+      interest_rate_type: formData.product.interestRateType, // 🟢 ເພີ່ມບັນທັດນີ້
+
       monthly_pay: formData.product.monthlyPayment,
       loan_period: formData.product.loanTerm,
       down_payment: formData.product.downPayment,
@@ -1327,45 +1201,31 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       borrower_signature_date: formData.signatures.borrowerDate || null,
       guarantor_signature_date: formData.signatures.guarantorDate || null,
       staff_signature_date: formData.signatures.staffDate || null
+
     }
-    console.log('fixed error ', updateData)
+
     const { saveCustProposal } = await import('@/api/proposal')
     await saveCustProposal(selectedDraft.value.customer_id, selectedDraft.value.id, updateData)
     await loanApplicationStore.updateDraftLoanApplication(selectedDraft.value.id, CustLoanData)
     alert.success('ບັນທຶກແບບຟອມຂໍກູ້ສຳເລັດ!')
-    // ✅ Refresh ข้อมูล selectedDraft
     await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
-    // ✅ หา draft ที่อัปเดตใหม่
     selectedDraft.value = loanApplicationStore.loanApplications.find(d => d.id === selectedDraft.value?.id) || null
-  } catch (error: any) {
-    console.error('Error saving request form:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
-  }
+  } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.message) }
 }
-// ✅ Handle RequestForm Updated (emit เมื่อ form มีการเปลี่ยนแปลง ถ้าต้องการ sync กับ modal อื่นๆ)
 const handleRequestFormUpdated = (updatedData: any) => {
-  // ✅ Optional: Sync ข้อมูลบางส่วนกลับไปยัง modalDraftForm ถ้าต้องการ
   Object.assign(modalDraftForm, {
     customer_name: updatedData.customerName,
     customer_phone: updatedData.customerPhone,
-    // ... sync fields อื่นๆ ถ้าจำเป็น
   })
 }
 
-// ✅ Handle Save Loan Contract
+// Contract Form
 const handleSaveContract = async (customerId: number, formData: any) => {
   if (!selectedDraft.value) return
-
   try {
-    const formatAddress = (addr: any) => {
-      if (!addr) return ''
-      return [addr.village, addr.district, addr.province].filter(Boolean).join(', ')
-    }
-
+    const formatAddress = (addr: any) => addr ? [addr.village, addr.district, addr.province].filter(Boolean).join(', ') : ''
     const contractData: CreateLoanContractRequest = {
       loanId: selectedDraft.value.id,
-
-      // Customer Info
       cusFullName: formData.customer.fullname,
       cusSex: formData.customer.gender,
       cusDateOfBirth: formData.customer.dob,
@@ -1374,7 +1234,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusIdPassNumber: formData.customer.idCard,
       cusIdPassDate: formData.customer.idCardIssueDate,
       cusCensusNumber: formData.customer.censusBook,
-      cusCensusCreated: null, // Not in form
+      cusCensusCreated: null,
       cusCensusAuthorizeBy: formData.customer.idCardPlace,
       cusHouseNumber: formData.customer.houseNumber,
       cusUnit: Number(formData.customer.unit) || 0,
@@ -1382,8 +1242,6 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusLivedYear: Number(formData.customer.residenceYears) || 0,
       cusLivedWith: formData.customer.liveWith,
       cusLivedSituation: formData.customer.residenceStatus,
-
-      // Customer Work
       cusCompanyName: formData.work.companyName,
       cusCompanyBusinessType: formData.work.businessType,
       cusCompanyLocation: formatAddress(formData.work.address),
@@ -1394,8 +1252,6 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusCompanyEmpNumber: Number(formData.work.totalEmployees) || 0,
       cusIncomeOther: Number(formData.work.otherIncome) || 0,
       cusIncomeOtherSource: formData.work.otherIncomeSource,
-
-      // Product Info
       productDetail: formData.product.description,
       producttypeId: selectedDraft.value.product?.productType_id || null,
       productBrand: formData.product.brand,
@@ -1410,24 +1266,18 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       monthlyPay: Number(formData.product.monthlyPayment) || 0,
       firstInstallmentAmount: Number(formData.product.firstInstallment) || 0,
       paymentDay: Number(formData.product.paymentDay) || 0,
-
-      // Motorcycle Specific
       motorId: formData.product.motorcycle?.engineNo || '',
       motorColor: formData.product.motorcycle?.color || '',
       tankNumber: formData.product.motorcycle?.chassisNo || '',
       motorWarranty: Number(formData.product.motorcycle?.insurance) || 0,
-
-      // Shop Info
       partnerId: (selectedDraft.value as any).partner_id || null,
       shopBranch: formData.shop.branch,
-      shopId: formData.shop.code, // Assuming code maps to shopId string
-
-      // Guarantor / Reference
+      shopId: formData.shop.code,
       refName: formData.guarantor.fullname,
       refDateOfBirth: formData.guarantor.dob,
       refPhone: formData.guarantor.phone,
       refSex: formData.guarantor.gender,
-      refMaritalStatus: '', // Missing in form
+      refMaritalStatus: '',
       refIdPassNumber: formData.guarantor.idCard,
       refIdPassDate: formData.guarantor.idCardIssueDate,
       refCensusNumber: formData.guarantor.censusBook,
@@ -1441,8 +1291,6 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       refLivedSituation: formData.guarantor.residenceStatus,
       refOccupation: formData.guarantor.occupation,
       refRelationship: formData.guarantor.relationship,
-
-      // Guarantor Work
       refCompanyName: formData.guarantorWork.companyName,
       refCompanyBusinessType: formData.guarantorWork.businessType,
       refCompanyLocation: formatAddress(formData.guarantorWork.address),
@@ -1454,15 +1302,11 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       refIncomeOther: Number(formData.guarantorWork.otherIncome) || 0,
       refIncomeOtherSource: formData.guarantorWork.otherIncomeSource
     }
-
     await loanContractStore.createContract(selectedDraft.value.id, contractData)
     alert.success('ບັນທຶກສັນຍາສຳເລັດ!')
     isEditingInModal.value = false
     await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
-  } catch (error: any) {
-    console.error('Error saving contract:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
-  }
+  } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.message) }
 }
 
 const closeDetailsModal = () => {
@@ -1470,64 +1314,44 @@ const closeDetailsModal = () => {
   selectedDraft.value = null
   isEditingInModal.value = false
   activeTab.value = 'details'
-  customerLocations.value = [] // ✅ ล้าง locations
+  customerLocations.value = []
   modalProductSearch.value = ''
   showModalProductDropdown.value = false
   selectedModalProduct.value = null
   modalShopId.value = null
   productStore.products = []
-  // ล้างเอกสาร
-  draftDocuments.value.forEach(doc => {
-    doc.file = null
-    doc.preview = null
-  })
-  optionalDocuments.value.forEach(doc => {
-    doc.file = null
-    doc.preview = null
-  })
+  draftDocuments.value.forEach(doc => { doc.file = null; doc.preview = null })
+  optionalDocuments.value.forEach(doc => { doc.file = null; doc.preview = null })
 }
+
+// 🟢 ເປີດໂໝດແກ້ໄຂ
 const startEditInModal = async () => {
   if (!selectedDraft.value) return
   let draftData = selectedDraft.value
   if (typeof draftData === 'string') {
-    try {
-      draftData = JSON.parse(draftData)
-    } catch (e) {
-      console.error('Error parsing selectedDraft.value:', e)
-      return
-    }
+    try { draftData = JSON.parse(draftData) } catch (e) { return }
   }
-  const shopId = (draftData as any).partner_id || (draftData.product as any)?.partner_id || null;
-  // null << มีคำว่า null โผล่มาลอยๆ ในโค้ดคุณ แนะนำให้ลบทิ้งด้วยนะครับ
+
+  const shopId = (draftData as any).partner_id || (draftData.product as any)?.partner_id || null
   modalShopId.value = shopId
+
   if (shopId) {
     try {
       await productStore.fetchProducts({ shop_id: shopId, limit: 100 })
       if (draftData.product_id) {
-        const currentProduct = productStore.products.find(
-          p => p.id === draftData!.product_id
-        )
+        const currentProduct = productStore.products.find(p => p.id === draftData!.product_id)
         if (currentProduct) {
           selectedModalProduct.value = currentProduct
           modalProductSearch.value = currentProduct.product_name
         }
       }
-
-      // 🟢 แก้ไขตรงนี้: เพิ่ม ?. ก่อน .productType_id
       if (draftData.product?.productType_id) {
-        const matchingType = productStore.productTypes.find(
-          t => t.id === draftData!.product?.productType_id
-        )
-        if (matchingType) {
-          modalDraftForm.product_type = matchingType.type_name
-        }
+        const matchingType = productStore.productTypes.find(t => t.id === draftData!.product?.productType_id)
+        if (matchingType) modalDraftForm.product_type = matchingType.type_name
       }
-    } catch (error) {
-      console.error('❌ Failed to load products:', error)
-    }
-  } else {
-    productStore.products = []
-  }
+    } catch (error) { console.error('❌ Failed to load products:', error) }
+  } else { productStore.products = [] }
+
   modalDraftForm.customer_name = getDraftDisplayName(draftData)
   modalDraftForm.customer_phone = getDraftPhone(draftData)
   modalDraftForm.customer_id_card = draftData.customer?.identity_number || ''
@@ -1535,190 +1359,216 @@ const startEditInModal = async () => {
   modalDraftForm.occupation = draftData.customer?.occupation || ''
   modalDraftForm.age = draftData.customer?.age || 0
   modalDraftForm.product_name = getProductName(draftData)
-  modalDraftForm.total_amount = parseFloat(draftData.total_amount.toString())
-  modalDraftForm.interest_rate = parseFloat(draftData.interest_rate_at_apply.toString())
-  modalDraftForm.loan_period = draftData.loan_period
-  modalDraftForm.monthly_payment = parseFloat(draftData.monthly_pay.toString())
-  modalDraftForm.income_per_month = draftData.customer?.income_per_month || 0
-  modalDraftForm.other_debts = draftData.customer?.other_debts || 0
+
+  // 🟢 บังคับให้ปัดเศษและเป็น Number ที่ถูกต้อง
+  modalDraftForm.total_amount = Math.round(Number(draftData.total_amount || 0))
+  modalDraftForm.down_payment = Math.round(Number(draftData.down_payment || 0))
+  modalDraftForm.interest_rate = Number(draftData.interest_rate_at_apply || 0)
+  modalDraftForm.loan_period = Number(draftData.loan_period || 0)
+  modalDraftForm.income_per_month = Math.round(Number(draftData.customer?.income_per_month || 0))
+  modalDraftForm.other_debts = Math.round(Number(draftData.customer?.other_debts || 0))
+
+  modalDraftForm.interest_type = draftData.interest_type || 'flat_rate'
+  modalDraftForm.interest_rate_type = draftData.interest_rate_type || 'monthly'
+
+  // 🟢 บังคับคำนวณค่างวดทันทีที่เปิด Modal เพื่อไม่ให้แสดงเป็น 0
+  modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
+
   isEditingInModal.value = true
   activeTab.value = 'details'
 }
+
+// 🟢 ບັນທຶກ Draft
 const saveDraftFromModal = async () => {
   if (!selectedDraft.value) return
-  if (!validateModalForm()) {
-    alert.error('ກະລຸນາກວດສອບຂໍ້ມູນທີ່ປ້ອນ')
-    return
-  }
+  if (!validateModalForm()) { alert.error('ກະລຸນາກວດສອບຂໍ້ມູນທີ່ປ້ອນ'); return }
+
   try {
     const nameParts = modalDraftForm.customer_name.trim().split(' ')
     const firstName = nameParts[0] || modalDraftForm.customer_name
     const lastName = nameParts.slice(1).join(' ') || ''
     const productIdToUpdate = selectedModalProduct.value?.id || selectedDraft.value.product_id
+
     const updateData: any = {
       product_id: productIdToUpdate,
-      total_amount: modalDraftForm.total_amount,
-      interest_rate_at_apply: modalDraftForm.interest_rate,
-      loan_period: modalDraftForm.loan_period,
-      monthly_pay: modalDraftForm.monthly_payment,
       customer_id: selectedDraft.value?.customer_id,
       first_name: firstName,
       last_name: lastName,
+
+      age: Number(modalDraftForm.age),
       phone: modalDraftForm.customer_phone.trim(),
       identity_number: modalDraftForm.customer_id_card.trim(),
       address: modalDraftForm.customer_address.trim(),
       occupation: modalDraftForm.occupation.trim(),
-      age: modalDraftForm.age,
+
       income_per_month: modalDraftForm.income_per_month,
-      other_debts: modalDraftForm.other_debts || 0
+      other_debts: modalDraftForm.other_debts || 0,
+      interest_type: modalDraftForm.interest_type,
+      interest_rate_type: modalDraftForm.interest_rate_type,
+
+      total_amount: modalDraftForm.total_amount,
+      down_payment: modalDraftForm.down_payment,
+      interest_rate_at_apply: modalDraftForm.interest_rate,
+      loan_period: modalDraftForm.loan_period,
+      monthly_pay: modalDraftForm.monthly_payment,
+
+
+
+
     }
+
     await loanApplicationStore.updateDraftLoanApplication(selectedDraft.value.id, updateData)
-    // ✅ อัปโหลดเอกสาร
+
     if (selectedDraft.value.id) {
       isUploadingDocuments.value = true
       const allDocs = [...draftDocuments.value, ...optionalDocuments.value].filter(doc => doc.file)
       for (const doc of allDocs) {
         if (doc.file) {
-          await loanApplicationStore.uploadDocument(
-            selectedDraft.value.id,
-            doc.file,
-            doc.id
-          )
+          await loanApplicationStore.uploadDocument(selectedDraft.value.id, doc.file, doc.id)
         }
       }
       await loanApplicationStore.fetchDocuments(selectedDraft.value.id)
       isUploadingDocuments.value = false
     }
+
     alert.success('ບັນທຶກການປ່ຽນແປງສຳເລັດ!')
     isEditingInModal.value = false
     await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
-  } catch (error: any) {
-    console.error('Error saving draft:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
-  }
+  } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.message) }
 }
+
 const deleteDraft = async (draftId: number) => {
   if (!await alert.confirm('ຕ້ອງການລຶບຮ່າງສິນເຊື່ອນີ້ບໍ?')) return
   try {
     await loanApplicationStore.updateLoanApplication(draftId, { status: LoanApplicationStatus.REJECTED, remarks: 'ລຶບຮ່າງ' })
     alert.success('ລຶບຮ່າງສິນເຊື່ອສຳເລັດ!')
-    if (selectedDraft.value?.id === draftId) {
-      closeDetailsModal()
-    }
+    if (selectedDraft.value?.id === draftId) closeDetailsModal()
     await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
+  } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.message) }
+}
+// 🟢 ເພີ່ມຟັງຊັນກວດສອບເອກະສານກ່ອນສົ່ງຮ່າງ
+const confirmSubmitDraft = async (draft: LoanApplication) => {
+  if (!draft.id) return;
+
+  try {
+    // 1. ໂຫຼດຂໍ້ມູນເອກະສານຫຼ້າສຸດຂອງຮ່າງນີ້ມາກວດສອບກ່ອນ
+    await loanApplicationStore.fetchDocuments(draft.id);
+    const uploadedDocs = loanApplicationStore.currentDocuments || [];
+
+    // 2. ກວດສອບວ່າອັບໂຫຼດຄົບຕາມເງື່ອນໄຂແລ້ວຫຼືຍັງ (id_card, house_reg, salary_slip)
+    const hasIdCard = uploadedDocs.some(doc => doc.document_type === 'id_card' || doc.doc_type === 'id_card');
+    const hasHouseReg = uploadedDocs.some(doc => doc.document_type === 'house_reg' || doc.doc_type === 'house_reg');
+    const hasSalarySlip = uploadedDocs.some(doc => doc.document_type === 'salary_slip' || doc.doc_type === 'salary_slip');
+
+    const missingDocs = [];
+    if (!hasIdCard) missingDocs.push('ບັດປະຈຳຕົວ');
+    if (!hasHouseReg) missingDocs.push('ໃບຄອບຄົວ');
+    if (!hasSalarySlip) missingDocs.push('ຫຼັກຖານລາຍຮັບ (ໃບເງິນເດືອນ)');
+
+    // 3. ຖ້າບໍ່ຄົບ ໃຫ້ແຈ້ງເຕືອນ ແລະ ຢຸດການເຮັດວຽກ (ບໍ່ເປີດ Modal)
+    if (missingDocs.length > 0) {
+      alert.error(
+        'ເອກະສານບໍ່ຄົບຖ້ວນ',
+        `ກະລຸນາອັບໂຫຼດເອກະສານລຸ່ມນີ້ໃຫ້ຄົບກ່ອນສົ່ງຮ່າງ:\n\n- ${missingDocs.join('\n- ')}`
+      );
+      return;
+    }
+
+    // 4. ຖ້າເອກະສານຄົບແລ້ວ ຈຶ່ງອະນຸຍາດໃຫ້ເປີດ Modal ຢືນຢັນ
+    draftToSubmit.value = draft;
+    showSubmitModal.value = true;
+
   } catch (error: any) {
-    console.error('Error deleting draft:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດ', error.message)
+    console.error("Error checking documents:", error);
+    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດກວດສອບເອກະສານໄດ້ ກະລຸນາລອງໃໝ່');
   }
 }
-const confirmSubmitDraft = (draft: LoanApplication) => {
-  draftToSubmit.value = draft
-  showSubmitModal.value = true
-}
+
+// 🟢 ຟັງຊັນສົ່ງຮ່າງ (Submit Draft) ແບບບໍ່ຕ້ອງໃຊ້ OTP
 const submitDraft = async () => {
-  if (!draftToSubmit.value) return
-  showSubmitModal.value = false
-  await requestOtp()
-  showOtpModal.value = true
+  if (!draftToSubmit.value) return;
+
+  isVerifying.value = true;
+  try {
+    // ອັບເດດສະຖານະແຈ້ງ Backend ວ່າ Confirm ແລ້ວ (is_confirmed: 1)
+    // ທ່ານສາມາດປັບຊື່ Endpoint API ຕາມທີ່ Backend ທ່ານຮອງຮັບໄດ້ເລີຍ (ApplyDraft ຫຼື updateStatus)
+    const confirmData: ConfirmDraftDto = {
+      is_confirmed: 1,
+      status: LoanApplicationStatus.PENDING // ຫຼື 'verifying' ແລ້ວແຕ່ Flow ລະບົບທ່ານ
+    };
+
+    await loanApplicationStore.ApplyDraft(draftToSubmit.value.id, confirmData);
+
+    alert.success('ສົ່ງຄຳຂໍສິນເຊື່ອສຳເລັດແລ້ວ!');
+
+    showSubmitModal.value = false;
+
+    // ປິດ Modal ລາຍລະອຽດ ຖ້າມັນເປີດຢູ່
+    if (selectedDraft.value?.id === draftToSubmit.value.id) {
+      closeDetailsModal();
+    }
+
+    draftToSubmit.value = null;
+
+    // Refresh ໜ້າຈໍ ດຶງຂໍ້ມູນໃໝ່ (ເຫຼືອແຕ່ອັນທີ່ຍັງບໍ່ Submit)
+    await loanApplicationStore.fetchLoanApplications({
+      status: LoanApplicationStatus.PENDING,
+      is_confirmed: 0
+    });
+
+  } catch (error: any) {
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງຄຳຂໍ', error.message || 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ');
+  } finally {
+    isVerifying.value = false;
+  }
 }
 const requestOtp = async () => {
-  if (!draftToSubmit.value?.customer?.phone) {
-    alert.error('ບໍ່ພົບເບີໂທລະສັບ')
-    return
-  }
-  try {
-    await requestOtpForCustomer({ phone: draftToSubmit.value.customer.phone })
-  } catch (error: any) {
-    console.error('❌ Request OTP failed:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດການສົ່ງ OTP', error.message)
-  }
+  if (!draftToSubmit.value?.customer?.phone) { alert.error('ບໍ່ພົບເບີໂທລະສັບ'); return }
+  try { await requestOtpForCustomer({ phone: draftToSubmit.value.customer.phone }) }
+  catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດການສົ່ງ OTP', error.message) }
 }
 const verifyAndSubmitDraft = async () => {
-  if (!otpCode.value || otpCode.value.length !== 6) {
-    otpError.value = 'ກະລຸນາປ້ອນລະຫັດ OTP 6 ຕົວ'
-    return
-  }
-  if (!draftToSubmit.value || !draftToSubmit.value.customer?.phone) {
-    alert.error('ຂໍ້ມູນລູກຄ້າບໍ່ຄົບຖ້ວນ')
-    return
-  }
+  if (!otpCode.value || otpCode.value.length !== 6) { otpError.value = 'ກະລຸນາປ້ອນລະຫັດ OTP 6 ຕົວ'; return }
+  if (!draftToSubmit.value || !draftToSubmit.value.customer?.phone) { alert.error('ຂໍ້ມູນລູກຄ້າບໍ່ຄົບຖ້ວນ'); return }
+
   isVerifying.value = true
   otpError.value = ''
   try {
-    const confirmData: ConfirmDraftDto = {
-      phone: draftToSubmit.value.customer.phone,
-      otp: otpCode.value.trim(),
-      is_confirmed: 1
-    }
+    const confirmData: ConfirmDraftDto = { phone: draftToSubmit.value.customer.phone, otp: otpCode.value.trim(), is_confirmed: 1 }
     await loanApplicationStore.ApplyDraft(draftToSubmit.value.id, confirmData)
     alert.success('ສົ່ງຮ່າງສິນເຊື່ອສຳເລັດ!')
     showOtpModal.value = false
-    if (selectedDraft.value?.id === draftToSubmit.value.id) {
-      closeDetailsModal()
-    }
+    if (selectedDraft.value?.id === draftToSubmit.value.id) closeDetailsModal()
     draftToSubmit.value = null
     otpCode.value = ''
-
-    // 🟢 แก้ไขตรงนี้: เปลี่ยน 'pending' เป็น LoanApplicationStatus.PENDING
-    await loanApplicationStore.fetchLoanApplications({
-        status: LoanApplicationStatus.PENDING,
-        is_confirmed: 0
-    })
-
-  } catch (error: any) {
-    console.error('❌ Submit draft failed:', error)
-    otpError.value = error.message || 'ເກີດຂໍ້ຜິດພາດການຢືນຢັນ OTP'
-  } finally {
-    isVerifying.value = false
-  }
+    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
+  } catch (error: any) { otpError.value = error.message || 'ເກີດຂໍ້ຜິດພາດການຢືນຢັນ OTP' } finally { isVerifying.value = false }
 }
-const closeOtpModal = () => {
-  showOtpModal.value = false
-  otpCode.value = ''
-  otpError.value = ''
-  draftToSubmit.value = null
-}
+const closeOtpModal = () => { showOtpModal.value = false; otpCode.value = ''; otpError.value = ''; draftToSubmit.value = null }
 const exportToCSV = () => {
   if (!displayedDrafts.value.length) return
   const csvData = displayedDrafts.value.map(draft => ({
-    'Loan ID': draft.loan_id,
-    'ລູກຄ້າ': getDraftDisplayName(draft),
-    'ເບີໂທ': getDraftPhone(draft),
-    'ສິນຄ້າ': getProductName(draft),
-    'ຈຳນວນເງິນ': formatPrice(draft.total_amount),
-    'ດອກເບ້ຍ (%)': draft.interest_rate_at_apply,
-    'ໄລຍະເວລາ (ເດືອນ)': draft.loan_period,
-    'ເຈົ້າໜ້າທີ່': getRequesterName(draft),
-    'ວັນທີ່ສ້າງ': draft.createdAt ? formatDate(draft.createdAt) : '-'
+    'Loan ID': draft.loan_id, 'ລູກຄ້າ': getDraftDisplayName(draft), 'ເບີໂທ': getDraftPhone(draft),
+    'ສິນຄ້າ': getProductName(draft), 'ຈຳນວນເງິນ': formatPrice(draft.total_amount), 'ດອກເບ້ຍ (%)': draft.interest_rate_at_apply,
+    'ໄລຍະເວລາ (ເດືອນ)': draft.loan_period, 'ເຈົ້າໜ້າທີ່': getRequesterName(draft), 'ວັນທີ່ສ້າງ': draft.createdAt ? formatDate(draft.createdAt) : '-'
   }))
   const csv = Papa.unparse(csvData)
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
-  link.download = `loan_applications_${new Date().toISOString().split('T')[0]}.csv`
+  link.download = `draft_loans_${new Date().toISOString().split('T')[0]}.csv`
   link.click()
 }
-const previousPage = () => {
-  if (hasPreviousPage.value) {
-    currentPage.value--
-  }
-}
-const nextPage = () => {
-  if (hasNextPage.value) {
-    currentPage.value++
-  }
-}
-watch(pageSize, () => {
-  currentPage.value = 1
-})
+const previousPage = () => { if (hasPreviousPage.value) currentPage.value-- }
+const nextPage = () => { if (hasNextPage.value) currentPage.value++ }
+watch(pageSize, () => currentPage.value = 1)
 onMounted(async () => {
   try {
     await Promise.all([
       loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 }),
-      productStore.fetchProductTypes()
+      productStore.fetchProductTypes(),
+      shopStore.fetchAllShop() // 🟢 ໂຫຼດຮ້ານຄ້າໃນຕອນເລີ່ມຕົ້ນ
     ])
-  } catch (error) {
-    console.error('❌ Failed to load applications:', error)
-  }
+  } catch (error) { console.error('❌ Failed to load applications:', error) }
 })
 </script>

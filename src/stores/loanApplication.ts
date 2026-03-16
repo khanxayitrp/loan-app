@@ -10,7 +10,9 @@ import {
   updateLoanApplication,
   changeApplicationStatus,
   sentDraftApply,
-  updateDraftLoanApplication
+  updateDraftLoanApplication,
+  createRepaymentSchedule, // 🟢 Import API ໃໝ່ທີ່ຫາກໍ່ສ້າງ
+  fetchRepaymentSchedule
 } from '@/api/loanApplication';
 import { searchCustomerByFullname, searchCustomerByPhone } from '@/api/customer';
 import {
@@ -461,6 +463,50 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
 
       } finally {
         this.isSaving = false
+      }
+    },
+
+    /**
+     * 🟢 บันทึกตารางการผ่อนชำระ (Repayment Schedule)
+     */
+    async saveRepaymentSchedule(applicationId: number, scheduleData: any[]) {
+      this.isSaving = true;
+      this.error = null;
+
+      try {
+        console.log('[LoanApplicationStore] Saving Repayment Schedule:', applicationId);
+        const result = await createRepaymentSchedule(applicationId, scheduleData);
+
+        console.log('[LoanApplicationStore] Repayment Schedule Saved successfully');
+        return result;
+      } catch (error: any) {
+        console.error('[LoanApplicationStore] Save Repayment Schedule failed:', error);
+        this.error = error.message || 'Failed to save repayment schedule';
+        throw error;
+      } finally {
+        this.isSaving = false;
+      }
+    },
+
+    /**
+     * 🟢 ดึงตารางการผ่อนชำระ (Repayment Schedule)
+     */
+    async fetchRepaymentSchedule(applicationId: number) {
+      this.isSaving = true;
+      this.error = null;
+
+      try {
+        console.log('[LoanApplicationStore] Fetching Repayment Schedule:', applicationId);
+        const result = await fetchRepaymentSchedule(applicationId as number);
+
+        console.log('[LoanApplicationStore] Repayment Schedule Fetch successfully');
+        return result;
+      } catch (error: any) {
+        console.error('[LoanApplicationStore] Fetch Repayment Schedule failed:', error);
+        this.error = error.message || 'Failed to fetch repayment schedule';
+        throw error;
+      } finally {
+        this.isSaving = false;
       }
     },
 

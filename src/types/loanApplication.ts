@@ -1,4 +1,7 @@
 import type { Product } from './product';
+import type { CustomerLocation } from './customer';
+import type { DeliveryReceipt } from './delivery_receipt';
+export type { CustomerLocation };
 
 /**
  * สถานะของคำขอสินเชื่อ (ตาม Backend)
@@ -29,8 +32,6 @@ export interface Document {
   uploaded_by?: number
 }
 
-import type { CustomerLocation } from './customer';
-export type { CustomerLocation };
 
 /**
  * Customer Model (พร้อม Documents และ Locations)
@@ -125,6 +126,7 @@ export interface LoanApplication {
   customer?: CustomerLoan
   product?: Product
   guarantor?: Guarantor;
+  delivery_receipts?: DeliveryReceipt[]; // ຮອງຮັບການ Join ຈາກ backend
   requester?: { id: number; name: string }
   approver?: { id: number; full_name: string; username: string; }
   documents?: Document[]

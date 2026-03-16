@@ -743,6 +743,7 @@ const loadDataFromProps = () => {
     formData.guarantor.occupation = guarantor.occupation || ''
     formData.guarantor.relationship = guarantor.relationship || ''
     formData.guarantor.dob = guarantor.date_of_birth || ''
+    formData.guarantor.age = guarantor.age || ''
 
     const guarantorAddress = parseAddress(guarantor.address || '')
     formData.guarantor.address.village = guarantorAddress.village

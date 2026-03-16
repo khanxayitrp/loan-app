@@ -1,5 +1,5 @@
 // src/api/product.ts
-import apiClient from '@/api/apiclient'
+import apiClient from './apiclient'
 import type {
   Product,
   CreateProductDto,

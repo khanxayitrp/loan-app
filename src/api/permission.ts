@@ -1,5 +1,5 @@
 // src/api/permission.ts
-import apiClient from '@/api/apiclient'
+import apiClient from './apiclient'
 import type {
   Feature,
   UserWithPermissions,

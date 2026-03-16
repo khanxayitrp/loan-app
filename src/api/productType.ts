@@ -1,6 +1,6 @@
 
 // src/api/productType.ts
-import apiClient from '@/api/apiclient'
+import apiClient from './apiclient'
 import type { ProductType, ProductTypeForm } from '@/types/productType'
 
 

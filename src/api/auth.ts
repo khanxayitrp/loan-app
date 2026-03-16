@@ -1,5 +1,5 @@
 // src/api/auth.ts
-import apiClient from '@/api/apiclient'
+import apiClient from './apiclient'
 import type {
   SignInRequest,
   SignInResponse,

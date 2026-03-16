@@ -1,4 +1,4 @@
-import apiClient from '@/api/apiclient'
+import apiClient from './apiclient'
 import type { LoanContract, CreateLoanContractRequest } from '@/types/loanContract'
 
 export const getLoanContract = async (loanId: number): Promise<LoanContract> => {

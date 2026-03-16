@@ -1,4 +1,4 @@
-import apiClient from '@/api/apiclient'
+import apiClient from './apiclient'
 
 export const checklistApi = {
   getSummary(loanId: number) {

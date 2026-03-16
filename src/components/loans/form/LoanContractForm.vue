@@ -268,7 +268,37 @@
         </section>
 
         <section class="form-section">
-          <h3 class="section-title">III. ຕາຕະລາງລາຍລະອຽດຂອງສິນຄ້າກູ້</h3>
+          <div class="flex justify-between items-center mb-4 border-b-2 border-e5e7eb pb-2">
+            <h3 class="section-title mb-0 border-none pb-0">III. ຕາຕະລາງລາຍລະອຽດຂອງສິນຄ້າກູ້</h3>
+
+            <button v-if="hasProductConflict && isEditing" @click="syncProductWithApplication" type="button"
+              class="btn btn-warning btn-sm gap-1">
+              <span class="icon-[tabler--refresh] size-4"></span>
+              ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍ
+            </button>
+          </div>
+
+          <div v-if="hasProductConflict" class="alert alert-warning shadow-sm mb-6 flex-row items-start p-3">
+            <span class="icon-[tabler--alert-triangle] size-6 shrink-0 mt-0.5"></span>
+            <div>
+              <h3 class="font-bold">⚠️ ຂໍ້ມູນສິນຄ້າ/ສິນເຊື່ອ ບໍ່ກົງກັບໃບຄຳຂໍຫຼ້າສຸດ!</h3>
+              <div class="text-sm mt-1 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                <template v-for="(diff, key) in productDifferences" :key="key">
+                  <div v-if="diff.hasDiff" class="flex justify-between border-b border-warning/20 border-dashed pb-1">
+                    <span class="font-medium">{{ diff.label }}:</span>
+                    <span>
+                      <span class="line-through text-error opacity-70 mr-2">{{ diff.format(diff.contractVal) }}</span>
+                      <span class="font-bold text-success">👉 {{ diff.format(diff.appVal) }}</span>
+                    </span>
+                  </div>
+                </template>
+              </div>
+              <div v-if="!isEditing" class="mt-2 text-xs font-semibold text-error">
+                * ກະລຸນາກົດປຸ່ມ "ແກ້ໄຂຂໍ້ມູນ" ແລ້ວກົດ "ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍ" ເພື່ອແກ້ໄຂສັນຍາໃຫ້ຖືກຕ້ອງ.
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div class="form-control lg:col-span-2">
               <label class="label"><span class="label-text font-bold">ລາຍລະອຽດສິນຄ້າ:</span></label>
@@ -692,8 +722,6 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 import apiClient from '@/api/apiclient'
-
-// 🟢 1. ຢ່າລືມ Import ຟັງຊັນ formatPrice
 import { formatPrice } from '@/utils/formatters'
 
 const props = defineProps<{
@@ -714,6 +742,9 @@ const isLoadingForm = ref(false)
 const isSaving = ref(false)
 const isEditing = ref(props.isEditing || false)
 
+const hasProductConflict = ref(false);
+const productDifferences = reactive<Record<string, any>>({});
+
 const formData = reactive({
   contractNumber: '',
   contractDate: { day: '', month: '', year: '' },
@@ -725,7 +756,7 @@ const formData = reactive({
     address: { village: '', district: '', province: '' },
     residenceYears: null as number | null, liveWith: '', residenceStatus: '',
     occupation: '', relationship: '',
-    age: null as number | null // 🟢 ເພີ່ມ age ເຂົ້າໄປບ່ອນນີ້
+    age: null as number | null
   },
   work: {
     companyName: '', businessType: '',
@@ -733,17 +764,15 @@ const formData = reactive({
     workYears: null as number | null, position: '', salary: null as number | null,
     salaryDay: null as number | null, totalEmployees: null as number | null,
     otherIncome: null as number | null, otherIncomeSource: '',
-    phone: '',        // 🟢 ເພີ່ມ phone ຂອງບ່ອນເຮັດວຽກເຂົ້າໄປ
-    department: ''    // 🟢 ເພີ່ມ department ຂອງບ່ອນເຮັດວຽກເຂົ້າໄປ
+    phone: '',
+    department: ''
   },
   product: {
     description: '', type: '', brand: '', model: '',
     price: null as number | null, downPayment: null as number | null,
     approvedAmount: null as number | null, interestRate: null as number | null,
-
     interestType: 'flat_rate',
     interestRateType: 'monthly',
-
     loanTerm: null as number | null, totalInterest: null as number | null,
     fee: 20000, monthlyPayment: null as number | null,
     firstInstallment: null as number | null, paymentDay: null as number | null,
@@ -768,6 +797,83 @@ const formData = reactive({
   }
 })
 
+// 🟢 ฟังก์ชันตรวจสอบความแตกต่าง
+const checkProductConflicts = () => {
+  hasProductConflict.value = false;
+  Object.keys(productDifferences).forEach(k => delete productDifferences[k]);
+
+  if (!props.loanContract || !props.loanApplication) return;
+
+  const contract = props.loanContract.data?.data || props.loanContract.data || props.loanContract;
+  const app = props.loanApplication;
+
+  if (!contract || !contract.id) return;
+
+  const getCVal = (key: string) => Number(contract[key]) || 0;
+  const getAVal = (key: string) => Number(app[key]) || 0;
+
+  const contractProductPrice = getCVal('product_price');
+  const appProductPrice = getAVal('total_amount');
+
+  const contractDownPayment = getCVal('product_down_payment');
+  const appDownPayment = getAVal('down_payment');
+
+  const contractApprovedAmount = getCVal('total_amount');
+  const appApprovedAmount = appProductPrice - appDownPayment;
+
+  const checks = [
+    { key: 'product_price', label: 'ລາຄາສິນຄ້າ', cVal: contractProductPrice, aVal: appProductPrice },
+    { key: 'approved_amount', label: 'ວົງເງິນອະນຸມັດ/ຍອດຈັດ', cVal: contractApprovedAmount, aVal: appApprovedAmount },
+    { key: 'down_payment', label: 'ເງິນວາງດາວ', cVal: contractDownPayment, aVal: appDownPayment },
+    { key: 'interest_rate', label: 'ອັດຕາດອກເບ້ຍ (%)', cVal: getCVal('interest_rate_at_apply'), aVal: getAVal('interest_rate_at_apply') },
+    { key: 'loan_period', label: 'ໄລຍະເວລາ (ເດືອນ)', cVal: getCVal('loan_period'), aVal: getAVal('loan_period') },
+    { key: 'monthly_pay', label: 'ຄ່າງວດຕໍ່ເດືອນ', cVal: getCVal('monthly_pay'), aVal: getAVal('monthly_pay') },
+  ];
+
+  let isConflict = false;
+
+  checks.forEach(item => {
+    if (Math.abs(item.cVal - item.aVal) > 1) {
+      isConflict = true;
+      productDifferences[item.key] = {
+        label: item.label,
+        contractVal: item.cVal,
+        appVal: item.aVal,
+        hasDiff: true,
+        format: (val: number) => item.key === 'interest_rate' || item.key === 'loan_period' ? val.toString() : formatPrice(val)
+      };
+    }
+  });
+
+  hasProductConflict.value = isConflict;
+}
+
+// 🟢 ຟັງຊັນດຶງຄ່າຈາກ Application ມາທັບໃນ Form ອັດຕະໂນມັດ
+const syncProductWithApplication = () => {
+  if (!props.loanApplication) return;
+  const app = props.loanApplication;
+
+  const appProductPrice = Number(app.total_amount) || 0;
+  const appDownPayment = Number(app.down_payment) || 0;
+  const appApprovedAmount = appProductPrice - appDownPayment;
+
+  formData.product.price = appProductPrice;
+  formData.product.downPayment = appDownPayment;
+  formData.product.approvedAmount = appApprovedAmount;
+
+  formData.product.interestRate = parseFloat(app.interest_rate_at_apply) || null;
+  formData.product.loanTerm = app.loan_period || null;
+  formData.product.monthlyPayment = parseFloat(app.monthly_pay) || null;
+  formData.product.interestType = app.interest_type || app.interestType || 'flat_rate';
+  formData.product.interestRateType = app.interest_rate_type || app.interestRateType || 'monthly';
+  formData.product.fee = parseFloat(app.fee) || 20000;
+
+  calculateLoanDetails();
+  checkProductConflicts();
+
+  alert('ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍສຳເລັດແລ້ວ. ກະລຸນາກວດສອບ ແລະ ກົດບັນທຶກ.');
+}
+
 const calculateLoanDetails = () => {
   const price = formData.product.price || 0
   const downPayment = formData.product.downPayment || 0
@@ -781,8 +887,6 @@ const calculateLoanDetails = () => {
 
   if (formData.product.approvedAmount > 0 && loanTerm > 0) {
     const principal = formData.product.approvedAmount
-
-    // แปลงดอกเบี้ยให้เป็นต่อเดือนเสมอ
     const isYearly = interestRateType === 'yearly'
     const ratePerMonth = isYearly ? (interestRate / 12) : interestRate
 
@@ -790,7 +894,6 @@ const calculateLoanDetails = () => {
       formData.product.monthlyPayment = Math.round(principal / loanTerm)
     } else {
       let monthlyPayment = 0
-
       if (interestType === 'flat_rate') {
         const totalInterest = principal * (ratePerMonth / 100) * loanTerm
         monthlyPayment = (principal + totalInterest) / loanTerm
@@ -799,7 +902,6 @@ const calculateLoanDetails = () => {
         const n = loanTerm
         monthlyPayment = (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
       }
-
       formData.product.monthlyPayment = Math.round(monthlyPayment)
     }
 
@@ -815,9 +917,7 @@ const pdfPreviewUrl = ref('')
 
 const printForm = async () => {
   if (isGeneratingPDF.value) return;
-
   isGeneratingPDF.value = true;
-
   try {
     const response = await apiClient.post('/pdf/generate-loan-contract', {
       formData: formData,
@@ -827,7 +927,6 @@ const printForm = async () => {
     const blob = new Blob([response.data], { type: 'application/pdf' });
     pdfPreviewUrl.value = window.URL.createObjectURL(blob);
     showPdfPreview.value = true;
-
   } catch (error: any) {
     console.error('PDF Generation Error:', error);
     alert('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: ' + (error.response?.data?.message || error.message))
@@ -898,11 +997,6 @@ const parseAddress = (addressStr: string) => {
 }
 
 const loadDataFromProps = () => {
-  console.log('🔄 [LoanContractForm] Checking Props...', {
-    loanContract: props.loanContract,
-    loanApplication: props.loanApplication
-  });
-
   let contractData = null;
   let hasRealContract = false;
 
@@ -921,11 +1015,9 @@ const loadDataFromProps = () => {
 
   const isFromContract = hasRealContract;
   const sourceData = isFromContract ? contractData : props.loanApplication;
+  const appDataFallback = props.loanApplication || {};
 
-  if (!sourceData) {
-    console.warn('⚠️ [LoanContractForm] ບໍ່ພົບຂໍ້ມູນທັງ Contract ແລະ Application');
-    return;
-  }
+  if (!sourceData) return;
 
   // -----------------------------------------------------
   // กรณี 1: ดึงจาก Loan Contract ที่เคยบันทึกไว้แล้ว
@@ -945,9 +1037,11 @@ const loadDataFromProps = () => {
     formData.customer.dob = sourceData.cus_date_of_birth || ''
     formData.customer.phone = sourceData.cus_phone || ''
     formData.customer.maritalStatus = sourceData.cus_marital_status || ''
+    formData.customer.occupation = sourceData.cus_occupation || ''
     formData.customer.idCard = sourceData.cus_id_pass_number || ''
     formData.customer.idCardIssueDate = sourceData.cus_id_pass_date || ''
     formData.customer.censusBook = sourceData.cus_census_number || ''
+    formData.customer.idCardExpiryDate = sourceData.cus_census_created || ''
     formData.customer.censusAuthorizeBy = sourceData.cus_census_authorize_by || ''
     formData.customer.houseNumber = sourceData.cus_house_number || ''
     formData.customer.unit = sourceData.cus_unit || ''
@@ -983,8 +1077,9 @@ const loadDataFromProps = () => {
     formData.product.approvedAmount = parseFloat(sourceData.total_amount) || null
     formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply) || null
 
-    formData.product.interestType = sourceData.interest_type || sourceData.product?.interest_type || 'flat_rate'
-    formData.product.interestRateType = sourceData.interest_rate_type || sourceData.product?.interest_rate_type || 'monthly'
+    // 🎯 ดึงประเภทดอกเบี้ยจากใบคำขอเสมอ
+    formData.product.interestType = appDataFallback.interest_type || appDataFallback.interestType || 'flat_rate';
+    formData.product.interestRateType = appDataFallback.interest_rate_type || appDataFallback.interestRateType || 'monthly';
 
     formData.product.loanTerm = sourceData.loan_period || null
     formData.product.totalInterest = parseFloat(sourceData.total_interest) || null
@@ -993,6 +1088,7 @@ const loadDataFromProps = () => {
     formData.product.firstInstallment = parseFloat(sourceData.first_installment_amount) || null
     formData.product.paymentDay = sourceData.payment_day || null
 
+    formData.shop.name = sourceData["partner.shop_name"] || ''
     formData.shop.branch = sourceData.shop_branch || ''
     formData.shop.code = sourceData.shop_id || ''
 
@@ -1006,6 +1102,7 @@ const loadDataFromProps = () => {
       formData.guarantor.idCard = sourceData.ref_id_pass_number || ''
       formData.guarantor.idCardIssueDate = sourceData.ref_id_pass_date || ''
       formData.guarantor.censusBook = sourceData.ref_census_number || ''
+
       formData.guarantor.censusBookIssueDate = sourceData.ref_census_created || ''
       formData.guarantor.censusAuthorizeBy = sourceData.ref_census_authorize_by || ''
       formData.guarantor.houseNumber = sourceData.ref_house_number || ''
@@ -1056,6 +1153,8 @@ const loadDataFromProps = () => {
       formData.customer.phone = sourceData.customer.phone || ''
       formData.customer.idCard = sourceData.customer.identity_number || ''
       formData.customer.censusBook = sourceData.customer.census_number || ''
+      formData.customer.idCardExpiryDate = sourceData.customer.issue_date || ''
+      formData.customer.censusAuthorizeBy = sourceData.customer.issue_place || ''
       formData.customer.idCardPlace = sourceData.customer.issue_place || ''
       formData.customer.idCardIssueDate = sourceData.customer.issue_date || ''
       formData.customer.occupation = sourceData.customer.occupation || ''
@@ -1100,23 +1199,37 @@ const loadDataFromProps = () => {
       }
     }
 
-    formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply) || 0
-    formData.product.downPayment = parseFloat(sourceData.down_payment) || 0
-    formData.product.approvedAmount = parseFloat(sourceData.total_amount) || 0
-    formData.product.loanTerm = sourceData.loan_period || 1
-    formData.product.monthlyPayment = parseFloat(sourceData.monthly_pay) || 0
+    formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply || sourceData.interestRateAtApply) || 0
+    formData.product.downPayment = parseFloat(sourceData.down_payment || sourceData.downPayment) || 0
+    formData.product.approvedAmount = parseFloat(sourceData.total_amount || sourceData.totalAmount) || 0
+    formData.product.loanTerm = sourceData.loan_period || sourceData.loanTerm || 1
+    formData.product.monthlyPayment = parseFloat(sourceData.monthly_pay || sourceData.monthlyPay) || 0
     formData.product.fee = parseFloat(sourceData.fee) || 20000
-    formData.product.paymentDay = sourceData.payment_day || 1
+    formData.product.paymentDay = sourceData.payment_day || sourceData.paymentDay || 1
 
-    formData.product.interestType = sourceData.interest_type || 'flat_rate'
-    formData.product.interestRateType = sourceData.interest_rate_type || 'monthly'
+    // 🎯 แก้บั๊กที่ 2: ดึงประเภทดอกเบี้ยให้ครอบคลุมทั้งแบบ snake_case และ camelCase ป้องกันการหลุดไปใช้ flat_rate ผิดๆ
+    formData.product.interestType = sourceData.interest_type || sourceData.interestType || appDataFallback.interest_type || appDataFallback.interestType || 'flat_rate'
+    formData.product.interestRateType = sourceData.interest_rate_type || sourceData.interestRateType || appDataFallback.interest_rate_type || appDataFallback.interestRateType || 'monthly'
 
-    const guarantor = sourceData.loan_guarantors?.[0]
+    // 🎯 แก้บั๊กกู้คืนข้อมูลผู้ค้ำประกัน (Guarantor) ให้ครบถ้วนทั้งหมด
+    const guarantor = sourceData.loan_guarantors?.[0] || sourceData.loanGuarantors?.[0]
     if (guarantor) {
       formData.hasGuarantor = true
-      formData.guarantor.fullname = guarantor.name || ''
+      formData.guarantor.fullname = guarantor.name || guarantor.fullname || ''
+      formData.guarantor.dob = guarantor.date_of_birth || guarantor.dob || ''
       formData.guarantor.phone = guarantor.phone || ''
-      formData.guarantor.idCard = guarantor.identity_number || ''
+      formData.guarantor.gender = guarantor.sex || guarantor.gender || ''
+      formData.guarantor.maritalStatus = guarantor.marital_status || guarantor.maritalStatus || ''
+      formData.guarantor.idCard = guarantor.identity_number || guarantor.idCard || ''
+      formData.guarantor.idCardIssueDate = guarantor.id_pass_date || guarantor.idCardIssueDate || ''
+      formData.guarantor.censusBook = guarantor.census_number || guarantor.censusBook || ''
+      formData.guarantor.censusBookIssueDate = guarantor.census_created || guarantor.censusBookIssueDate || ''
+      formData.guarantor.censusAuthorizeBy = guarantor.census_authorize_by || guarantor.censusAuthorizeBy || ''
+      formData.guarantor.houseNumber = guarantor.house_number || guarantor.houseNumber || ''
+      formData.guarantor.unit = guarantor.unit || ''
+      formData.guarantor.residenceYears = guarantor.lived_year || guarantor.residenceYears || null
+      formData.guarantor.liveWith = guarantor.lived_with || guarantor.liveWith || ''
+      formData.guarantor.residenceStatus = guarantor.lived_situation || guarantor.residenceStatus || ''
       formData.guarantor.occupation = guarantor.occupation || ''
       formData.guarantor.relationship = guarantor.relationship || ''
 
@@ -1125,11 +1238,17 @@ const loadDataFromProps = () => {
       formData.guarantor.address.district = gAddr.district
       formData.guarantor.address.province = gAddr.province
 
-      formData.guarantorWork.companyName = guarantor.work_company_name || ''
-      formData.guarantorWork.position = guarantor.work_position || ''
-      formData.guarantorWork.salary = parseFloat(guarantor.work_salary) || null
+      formData.guarantorWork.companyName = guarantor.work_company_name || guarantor.companyName || ''
+      formData.guarantorWork.businessType = guarantor.work_business_type || guarantor.businessType || ''
+      formData.guarantorWork.workYears = guarantor.work_year || guarantor.workYears || null
+      formData.guarantorWork.position = guarantor.work_position || guarantor.position || ''
+      formData.guarantorWork.salary = parseFloat(guarantor.work_salary || guarantor.salary) || null
+      formData.guarantorWork.salaryDay = guarantor.payroll_date || guarantor.salaryDay || null
+      formData.guarantorWork.totalEmployees = guarantor.company_emp_number || guarantor.totalEmployees || null
+      formData.guarantorWork.otherIncome = parseFloat(guarantor.income_other || guarantor.otherIncome) || null
+      formData.guarantorWork.otherIncomeSource = guarantor.income_other_source || guarantor.otherIncomeSource || ''
 
-      const gWorkAddr = parseAddress(guarantor.work_location)
+      const gWorkAddr = parseAddress(guarantor.work_location || guarantor.workAddress)
       formData.guarantorWork.address.village = gWorkAddr.village
       formData.guarantorWork.address.district = gWorkAddr.district
       formData.guarantorWork.address.province = gWorkAddr.province
@@ -1149,7 +1268,11 @@ const loadDataFromProps = () => {
     formData.productType.general = true;
   }
 
+  // 🟢 คำนวณค่างวดใหม่ด้วยข้อมูลที่ถูกต้อง (เพื่อให้ยอดโชว์ในฟอร์มตรงเป๊ะ)
   calculateLoanDetails()
+
+  // 🟢 เช็ค Conflict ทันทีหลังจากที่คำนวณเสร็จ (ป้ายเตือนจะหายไปถ้าทุกอย่างตรงกัน)
+  checkProductConflicts()
 }
 
 watch(

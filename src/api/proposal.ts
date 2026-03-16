@@ -1,4 +1,4 @@
-import apiClient from '@/api/apiclient'
+import apiClient from './apiclient'
 import type { WorkInfo, Guarantor } from '@/types/loanApplication'
 
 
