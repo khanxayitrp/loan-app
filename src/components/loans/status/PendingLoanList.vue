@@ -1422,7 +1422,7 @@ const openChecklistModal = async (loan: LoanApplication) => {
   }
 
   // 🟢 ดึง Work Info ให้ถูกต้อง (ใส่เผื่อไว้ทั้ง 2 ชื่อที่คุณเขียนมา)
-  const workInfo = fullDetails.customer?.customer_work_infos?.[0] || fullDetails.customer?.work_info?.[0];
+  const workInfo = (fullDetails.customer as any)?.customer_work_infos?.[0] || (fullDetails.customer as any)?.work_info?.[0];
 
   // ==========================================
   // BASIC VERIFICATION
@@ -1743,7 +1743,7 @@ const openCreditScoreModal = async (loan: LoanApplication) => {
       console.log("Check contract response:", contractRes);
 
       // ຖ້າບໍ່ມີຂໍ້ມູນສັນຍາ
-      if (!contractRes || contractRes.data.data == null) {
+      if (!contractRes || (contractRes as any).data?.data == null) {
         alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
         isCalculating.value = false;
         return;

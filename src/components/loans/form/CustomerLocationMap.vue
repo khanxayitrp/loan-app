@@ -192,7 +192,7 @@ const props = defineProps<{
   canEditLocation?: boolean
   canDeleteLocation?: boolean
   canSetPrimary?: boolean
-  googleMapsApiKey: string // ✅ เพิ่ม prop สำหรับ API Key
+  googleMapsApiKey?: string // ✅ เพิ่ม prop สำหรับ API Key
 }>()
 
 const emit = defineEmits<{

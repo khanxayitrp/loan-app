@@ -1,7 +1,6 @@
 <template>
   <div
-    class="flex h-auto min-h-screen items-center justify-center overflow-x-hidden bg-[url('https://cdn.flyonui.com/fy-assets/blocks/marketing-ui/auth/auth-background-2.png')] bg-cover bg-center bg-no-repeat py-10"
-  >
+    class="flex h-auto min-h-screen items-center justify-center overflow-x-hidden bg-[url('https://cdn.flyonui.com/fy-assets/blocks/marketing-ui/auth/auth-background-2.png')] bg-cover bg-center bg-no-repeat py-10">
     <div class="relative flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <!-- SVG background (เหมือนเดิม) -->
 
@@ -24,51 +23,24 @@
         <form class="mb-4 space-y-4" @submit.prevent="handleLogin">
           <div>
             <label class="label-text" for="userName">ຊື່ຜູ້ໃຊ້ *</label>
-            <input
-              v-model="form.username"
-              type="text"
-              placeholder="ປ້ອນຊື່ຜູ້ໃຊ້"
-              class="input input-bordered w-full"
-              id="userName"
-              required
-              :disabled="loading"
-              autocomplete="username"
-            />
+            <input v-model="form.username" type="text" placeholder="ປ້ອນຊື່ຜູ້ໃຊ້" class="input input-bordered w-full"
+              id="userName" required :disabled="loading" autocomplete="username" />
           </div>
 
           <div>
             <label class="label-text" for="userPassword">ລະຫັດຜ່ານ *</label>
             <div class="input input-bordered flex items-center gap-2">
-              <input
-                v-model="form.password"
-                :type="showPassword ? 'text' : 'password'"
-                placeholder="ປ້ອນລະຫັດຜ່ານ"
-                required
-                :disabled="loading"
-                autocomplete="current-password"
-              />
-              <button
-                type="button"
-                @click="showPassword = !showPassword"
-                class="btn btn-ghost btn-xs"
-                tabindex="-1"
-              >
-                <span
-                  :class="showPassword ? 'icon-[tabler--eye-off]' : 'icon-[tabler--eye]'"
-                  class="size-5"
-                ></span>
+              <input v-model="form.password" :type="showPassword ? 'text' : 'password'" placeholder="ປ້ອນລະຫັດຜ່ານ"
+                required :disabled="loading" autocomplete="current-password" />
+              <button type="button" @click="showPassword = !showPassword" class="btn btn-ghost btn-xs" tabindex="-1">
+                <span :class="showPassword ? 'icon-[tabler--eye-off]' : 'icon-[tabler--eye]'" class="size-5"></span>
               </button>
             </div>
           </div>
 
           <div class="flex items-center justify-between gap-y-2">
             <div class="flex items-center gap-2">
-              <input
-                type="checkbox"
-                class="checkbox checkbox-primary"
-                id="rememberMe"
-                v-model="form.rememberMe"
-              />
+              <input type="checkbox" class="checkbox checkbox-primary" id="rememberMe" v-model="form.rememberMe" />
               <label class="label-text text-base-content/80 p-0 text-base" for="rememberMe">
                 ຈື່ຂ້ອຍໄວ້
               </label>
@@ -76,11 +48,7 @@
             <a href="#" class="link link-animated link-primary font-normal">ລືມລະຫັດຜ່ານ?</a>
           </div>
 
-          <button
-            type="submit"
-            class="btn btn-lg btn-primary btn-gradient btn-block"
-            :disabled="loading"
-          >
+          <button type="submit" class="btn btn-lg btn-primary btn-gradient btn-block" :disabled="loading">
             <span v-if="loading" class="loading loading-spinner loading-xs"></span>
             <span v-else>ເຂົ້າສູ່ລະບົບ INSEE LOAN</span>
           </button>
@@ -94,6 +62,7 @@
 import { ref, reactive } from 'vue'  // ← เพิ่ม nextTick ที่นี่
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { usePermissionStore } from '@/stores/permission'
 
 // Reactive form state
 const form = reactive({
@@ -126,7 +95,7 @@ const handleLogin = async () => {
 
     // รอ Pinia state อัปเดตสักครู่ (ป้องกัน user เป็น null ทันที)
     // await nextTick()
-      // 2. ✅ Verify & reload permissions from cookies
+    // 2. ✅ Verify & reload permissions from cookies
     await authStore.checkAuth()
 
     const user = authStore.currentUser
@@ -147,8 +116,17 @@ const handleLogin = async () => {
       // ถ้าไม่มี → redirect ตาม role
       switch (user.role.toLowerCase()) {
         case 'admin':
-        case 'staff':
           router.push({ name: 'UserManagement' })
+          break
+        case 'staff':
+          const permissionStore = usePermissionStore()
+          if (permissionStore.hasPermission('loan_view_all')) {
+            router.push({ name: 'LoanListAll' })
+          } else if (permissionStore.hasPermission('loan_view_assigned')) {
+            router.push({ name: 'ListLoans' })
+          } else {
+            router.push({ name: 'DashboardHome' }) // ไม่มีสิทธิ์เลยให้ไป Dashboard
+          }
           break
 
         case 'partner':

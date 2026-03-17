@@ -35,7 +35,14 @@ const routes: RouteRecordRaw[] = [
   },
 
   // Protected routes (ต้อง login + layout)
-
+  {
+    path: '/dashboard',
+    name: 'DashboardHome',
+    component: () => import('@/views/dashboard/index.vue'),
+    meta: {
+      requiresAuth: true
+    }
+  },
   {
     path: '/users',
     name: 'UserManagement',
@@ -93,7 +100,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,           // ต้อง login
       // bypassAuth: true,
-      permission: 'loan_view_all'
+      // permission: 'loan_view_all' // ลบออกเพื่อไม่ให้ block ทุก route ลูก
     },
     children: [
       {
@@ -232,7 +239,14 @@ router.beforeEach(async (to, from, next) => {
     if (user?.role === 'admin') {
       next({ name: 'UserManagement' })
     } else if ( user?.role === 'staff') {
-      next({ name: 'LoanList' })
+      const permissionStore = usePermissionStore()
+      if (permissionStore.hasPermission('loan_view_all')) {
+        next({ name: 'LoanListAll' })
+      } else if (permissionStore.hasPermission('loan_view_assigned')) {
+        next({ name: 'ListLoans' })
+      } else {
+        next({ name: 'DashboardHome' }) // ไม่มีสิทธิ์เลยให้ไป Dashboard
+      }
     }
     else if (user?.role === 'partner') {
       next({ name: 'Stores' })

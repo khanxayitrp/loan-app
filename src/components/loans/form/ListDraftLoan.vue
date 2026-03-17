@@ -175,7 +175,7 @@
                 </div>
                 <div>
                   <label class="text-sm font-medium text-gray-500">ຈຳນວນເງິນກູ້ (ຍອດຈັດ)</label>
-                  <p class="font-medium text-primary">{{ formatPrice(selectedDraft.total_amount) }}</p>
+                  <p class="font-medium text-primary">{{ formatPrice(Number(selectedDraft.total_amount || 0) - Number(selectedDraft.down_payment || 0)) }}</p>
                 </div>
                 <div>
                   <label class="text-sm font-medium text-gray-500">ເງິນດາວ</label>
@@ -567,6 +567,7 @@
           </div>
           <div v-else-if="activeTab === 'map'" class="space-y-6">
             <CustomerLocationMap :customer-id="selectedDraft?.customer_id || 0" :locations="customerLocations"
+            :google-maps-api-key="''"
               :is-loading="isLocationLoading" :can-add-location="true" :can-edit-location="true"
               :can-delete-location="true" :can-set-primary="true" @add-location="handleAddLocation"
               @update-location="handleUpdateLocation" @delete-location="handleDeleteLocation"
@@ -1234,14 +1235,15 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusIdPassNumber: formData.customer.idCard,
       cusIdPassDate: formData.customer.idCardIssueDate,
       cusCensusNumber: formData.customer.censusBook,
-      cusCensusCreated: null,
-      cusCensusAuthorizeBy: formData.customer.idCardPlace,
+      cusCensusCreated: formData.customer.idCardExpiryDate,
+      cusCensusAuthorizeBy: formData.customer.censusAuthorizeBy,
       cusHouseNumber: formData.customer.houseNumber,
       cusUnit: Number(formData.customer.unit) || 0,
       cusAddress: formatAddress(formData.customer.address),
       cusLivedYear: Number(formData.customer.residenceYears) || 0,
       cusLivedWith: formData.customer.liveWith,
       cusLivedSituation: formData.customer.residenceStatus,
+      cusOccupation: formData.customer.occupation,
       cusCompanyName: formData.work.companyName,
       cusCompanyBusinessType: formData.work.businessType,
       cusCompanyLocation: formatAddress(formData.work.address),
@@ -1252,6 +1254,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusCompanyEmpNumber: Number(formData.work.totalEmployees) || 0,
       cusIncomeOther: Number(formData.work.otherIncome) || 0,
       cusIncomeOtherSource: formData.work.otherIncomeSource,
+
       productDetail: formData.product.description,
       producttypeId: selectedDraft.value.product?.productType_id || null,
       productBrand: formData.product.brand,
@@ -1266,31 +1269,35 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       monthlyPay: Number(formData.product.monthlyPayment) || 0,
       firstInstallmentAmount: Number(formData.product.firstInstallment) || 0,
       paymentDay: Number(formData.product.paymentDay) || 0,
+
       motorId: formData.product.motorcycle?.engineNo || '',
       motorColor: formData.product.motorcycle?.color || '',
       tankNumber: formData.product.motorcycle?.chassisNo || '',
       motorWarranty: Number(formData.product.motorcycle?.insurance) || 0,
-      partnerId: (selectedDraft.value as any).partner_id || null,
+
+      partnerId: (selectedDraft.value as any).product?.partner?.id || null,
       shopBranch: formData.shop.branch,
       shopId: formData.shop.code,
+
       refName: formData.guarantor.fullname,
       refDateOfBirth: formData.guarantor.dob,
       refPhone: formData.guarantor.phone,
       refSex: formData.guarantor.gender,
-      refMaritalStatus: '',
+      refMaritalStatus: formData.guarantor.maritalStatus,
       refIdPassNumber: formData.guarantor.idCard,
       refIdPassDate: formData.guarantor.idCardIssueDate,
       refCensusNumber: formData.guarantor.censusBook,
       refCensusCreated: formData.guarantor.censusBookIssueDate,
-      refCensusAuthorizeBy: formData.guarantor.idCardPlace,
+      refCensusAuthorizeBy: formData.guarantor.censusAuthorizeBy,
       refHouseNumber: formData.guarantor.houseNumber,
-      refUnit: 0,
+      refUnit: Number(formData.guarantor.unit) || 0,
       refAddress: formatAddress(formData.guarantor.address),
       refLivedYear: Number(formData.guarantor.residenceYears) || 0,
       refLivedWith: formData.guarantor.liveWith,
       refLivedSituation: formData.guarantor.residenceStatus,
       refOccupation: formData.guarantor.occupation,
       refRelationship: formData.guarantor.relationship,
+
       refCompanyName: formData.guarantorWork.companyName,
       refCompanyBusinessType: formData.guarantorWork.businessType,
       refCompanyLocation: formatAddress(formData.guarantorWork.address),
@@ -1301,7 +1308,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       refCompanyEmpNumber: Number(formData.guarantorWork.totalEmployees) || 0,
       refIncomeOther: Number(formData.guarantorWork.otherIncome) || 0,
       refIncomeOtherSource: formData.guarantorWork.otherIncomeSource
-    }
+    } as any;
     await loanContractStore.createContract(selectedDraft.value.id, contractData)
     alert.success('ບັນທຶກສັນຍາສຳເລັດ!')
     isEditingInModal.value = false
@@ -1368,8 +1375,8 @@ const startEditInModal = async () => {
   modalDraftForm.income_per_month = Math.round(Number(draftData.customer?.income_per_month || 0))
   modalDraftForm.other_debts = Math.round(Number(draftData.customer?.other_debts || 0))
 
-  modalDraftForm.interest_type = draftData.interest_type || 'flat_rate'
-  modalDraftForm.interest_rate_type = draftData.interest_rate_type || 'monthly'
+  modalDraftForm.interest_type = (draftData as any).interest_type || 'flat_rate'
+   modalDraftForm.interest_rate_type = (draftData as any).interest_rate_type || 'monthly'
 
   // 🟢 บังคับคำนวณค่างวดทันทีที่เปิด Modal เพื่อไม่ให้แสดงเป็น 0
   modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
@@ -1388,6 +1395,7 @@ const saveDraftFromModal = async () => {
     const firstName = nameParts[0] || modalDraftForm.customer_name
     const lastName = nameParts.slice(1).join(' ') || ''
     const productIdToUpdate = selectedModalProduct.value?.id || selectedDraft.value.product_id
+    const fee = 20000
 
     const updateData: any = {
       product_id: productIdToUpdate,
@@ -1411,10 +1419,7 @@ const saveDraftFromModal = async () => {
       interest_rate_at_apply: modalDraftForm.interest_rate,
       loan_period: modalDraftForm.loan_period,
       monthly_pay: modalDraftForm.monthly_payment,
-
-
-
-
+      first_installment_amount: Number(modalDraftForm.monthly_payment || 0) + Number(fee), // 🟢 เพิ่มฟิeld นี้เพื่อให้แน่ใจว่ามีค่า
     }
 
     await loanApplicationStore.updateDraftLoanApplication(selectedDraft.value.id, updateData)
@@ -1495,7 +1500,7 @@ const submitDraft = async () => {
     const confirmData: ConfirmDraftDto = {
       is_confirmed: 1,
       status: LoanApplicationStatus.PENDING // ຫຼື 'verifying' ແລ້ວແຕ່ Flow ລະບົບທ່ານ
-    };
+    } as any;
 
     await loanApplicationStore.ApplyDraft(draftToSubmit.value.id, confirmData);
 

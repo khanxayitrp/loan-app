@@ -560,11 +560,14 @@ const openDeliveryNoteModal = async (loan: LoanApplication) => {
 
         // ປັບໂຄງສ້າງຂໍ້ມູນໃຫ້ Backend ອ່ານໄດ້
         if (fullLoanData.customer) {
-          if (fullLoanData.customer.customer_work_infos) {
-            fullLoanData.customer.work_info = fullLoanData.customer.customer_work_infos;
+          const customerAny = fullLoanData.customer as any;
+
+          if (customerAny.customer_work_infos) {
+            customerAny.work_info = customerAny.customer_work_infos;
           }
-          if (fullLoanData.customer.customer_locations) {
-            fullLoanData.customer.locations = fullLoanData.customer.customer_locations;
+
+          if (customerAny.customer_locations) {
+            customerAny.locations = customerAny.customer_locations;
           }
         }
       }
@@ -598,7 +601,7 @@ const openDeliveryNoteModal = async (loan: LoanApplication) => {
         if (lastReceiptData && lastReceiptData.receipts_id) {
           const parts = lastReceiptData.receipts_id.split('-');
           if (parts.length === 3) {
-            const num = parseInt(parts[2], 10) + 1;
+            const num = parseInt(parts[2] || '0', 10) + 1;
             nextReceiptId = `DR-${currentYear}-${num.toString().padStart(6, '0')}`;
           } else {
             nextReceiptId = `DR-${currentYear}-000001`;

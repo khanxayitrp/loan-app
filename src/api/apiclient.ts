@@ -3,7 +3,7 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axio
 import { useAuthStore } from '@/stores/auth'
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:15520/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000,
   withCredentials: true, // ⭐ สำคัญมาก! ส่ง cookies ไปทุก request
   headers: {
@@ -60,7 +60,7 @@ apiClient.interceptors.response.use(
 
       // 🟡 1. ถ้ามี API อื่นกำลัง Refresh Token อยู่ ให้ API เส้นนี้ "หยุดรอ" (เข้าคิว)
       if (isRefreshing) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
         }).then(() => {
           // พอมัน Refresh เสร็จ ก็ให้ยิง Request เดิมที่พังไปเมื่อกี้ใหม่อีกครั้ง

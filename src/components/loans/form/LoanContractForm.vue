@@ -813,12 +813,12 @@ const checkProductConflicts = () => {
   const getAVal = (key: string) => Number(app[key]) || 0;
 
   const contractProductPrice = getCVal('product_price');
-  const appProductPrice = getAVal('total_amount');
+  const appProductPrice = getAVal('total_amount'); // ຝັ່ງ App total_amount ຄືລາຄາສິນຄ້າ
 
   const contractDownPayment = getCVal('product_down_payment');
   const appDownPayment = getAVal('down_payment');
 
-  const contractApprovedAmount = getCVal('total_amount');
+  const contractApprovedAmount = getCVal('total_amount'); // ຝັ່ງ Contract total_amount ຄືຍອດຈັດ
   const appApprovedAmount = appProductPrice - appDownPayment;
 
   const checks = [
@@ -848,29 +848,9 @@ const checkProductConflicts = () => {
   hasProductConflict.value = isConflict;
 }
 
-// 🟢 ຟັງຊັນດຶງຄ່າຈາກ Application ມາທັບໃນ Form ອັດຕະໂນມັດ
+// 🟢 ຟັງຊັນດຶງຄ່າຈາກ Application ມາທັບໃນ Form ອັດຕະໂນມັດ (ຍັງເກັບໄວ້ສຳລັບປຸ່ມ Sync ຖ້າຕ້ອງການໃຊ້)
 const syncProductWithApplication = () => {
-  if (!props.loanApplication) return;
-  const app = props.loanApplication;
-
-  const appProductPrice = Number(app.total_amount) || 0;
-  const appDownPayment = Number(app.down_payment) || 0;
-  const appApprovedAmount = appProductPrice - appDownPayment;
-
-  formData.product.price = appProductPrice;
-  formData.product.downPayment = appDownPayment;
-  formData.product.approvedAmount = appApprovedAmount;
-
-  formData.product.interestRate = parseFloat(app.interest_rate_at_apply) || null;
-  formData.product.loanTerm = app.loan_period || null;
-  formData.product.monthlyPayment = parseFloat(app.monthly_pay) || null;
-  formData.product.interestType = app.interest_type || app.interestType || 'flat_rate';
-  formData.product.interestRateType = app.interest_rate_type || app.interestRateType || 'monthly';
-  formData.product.fee = parseFloat(app.fee) || 20000;
-
-  calculateLoanDetails();
-  checkProductConflicts();
-
+  loadDataFromProps();
   alert('ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍສຳເລັດແລ້ວ. ກະລຸນາກວດສອບ ແລະ ກົດບັນທຶກ.');
 }
 
@@ -1015,12 +995,11 @@ const loadDataFromProps = () => {
 
   const isFromContract = hasRealContract;
   const sourceData = isFromContract ? contractData : props.loanApplication;
-  const appDataFallback = props.loanApplication || {};
 
   if (!sourceData) return;
 
   // -----------------------------------------------------
-  // กรณี 1: ดึงจาก Loan Contract ที่เคยบันทึกไว้แล้ว
+  // 1. ดึงข้อมูลส่วนตัว (ลูกค้า และ คนค้ำ)
   // -----------------------------------------------------
   if (isFromContract) {
     formData.contractNumber = sourceData.loan_contract_number || sourceData.contract_number || ''
@@ -1069,26 +1048,7 @@ const loadDataFromProps = () => {
     formData.work.address.district = workAddr.district
     formData.work.address.province = workAddr.province
 
-    formData.product.description = sourceData.product_detail || ''
-    formData.product.brand = sourceData.product_brand || ''
-    formData.product.model = sourceData.product_model || ''
-    formData.product.price = parseFloat(sourceData.product_price) || null
-    formData.product.downPayment = parseFloat(sourceData.product_down_payment) || null
-    formData.product.approvedAmount = parseFloat(sourceData.total_amount) || null
-    formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply) || null
-
-    // 🎯 ดึงประเภทดอกเบี้ยจากใบคำขอเสมอ
-    formData.product.interestType = appDataFallback.interest_type || appDataFallback.interestType || 'flat_rate';
-    formData.product.interestRateType = appDataFallback.interest_rate_type || appDataFallback.interestRateType || 'monthly';
-
-    formData.product.loanTerm = sourceData.loan_period || null
-    formData.product.totalInterest = parseFloat(sourceData.total_interest) || null
-    formData.product.fee = parseFloat(sourceData.fee as string) || 0;
-    formData.product.monthlyPayment = parseFloat(sourceData.monthly_pay) || null
-    formData.product.firstInstallment = parseFloat(sourceData.first_installment_amount) || null
-    formData.product.paymentDay = sourceData.payment_day || null
-
-    formData.shop.name = sourceData["partner.shop_name"] || ''
+    formData.shop.name = sourceData["partner.shop_name"] || sourceData.shop_name || ''
     formData.shop.branch = sourceData.shop_branch || ''
     formData.shop.code = sourceData.shop_id || ''
 
@@ -1102,7 +1062,6 @@ const loadDataFromProps = () => {
       formData.guarantor.idCard = sourceData.ref_id_pass_number || ''
       formData.guarantor.idCardIssueDate = sourceData.ref_id_pass_date || ''
       formData.guarantor.censusBook = sourceData.ref_census_number || ''
-
       formData.guarantor.censusBookIssueDate = sourceData.ref_census_created || ''
       formData.guarantor.censusAuthorizeBy = sourceData.ref_census_authorize_by || ''
       formData.guarantor.houseNumber = sourceData.ref_house_number || ''
@@ -1133,11 +1092,7 @@ const loadDataFromProps = () => {
       formData.guarantorWork.address.district = refWorkAddr.district
       formData.guarantorWork.address.province = refWorkAddr.province
     }
-  }
-  // -----------------------------------------------------
-  // กรณี 2: Fallback ดึงจาก Loan Application (ยังไม่มีสัญญา)
-  // -----------------------------------------------------
-  else {
+  } else {
     formData.contractNumber = sourceData.loan_id || ''
     const sDate = sourceData.createdAt || sourceData.created_at
     if (sDate) {
@@ -1186,32 +1141,12 @@ const loadDataFromProps = () => {
       }
     }
 
-    if (sourceData.product) {
-      formData.product.description = sourceData.product.product_name || ''
-      formData.product.brand = sourceData.product.brand || ''
-      formData.product.model = sourceData.product.model || ''
-      formData.product.price = parseFloat(sourceData.product.price) || null
-
-      if (sourceData.product.partner) {
-        formData.shop.name = sourceData.product.partner.shop_name || ''
-        formData.shop.branch = sourceData.product.partner.address || ''
-        formData.shop.code = sourceData.product.partner.shop_id || ''
-      }
+    if (sourceData.product && sourceData.product.partner) {
+      formData.shop.name = sourceData.product.partner.shop_name || ''
+      formData.shop.branch = sourceData.product.partner.address || ''
+      formData.shop.code = sourceData.product.partner.shop_id || ''
     }
 
-    formData.product.interestRate = parseFloat(sourceData.interest_rate_at_apply || sourceData.interestRateAtApply) || 0
-    formData.product.downPayment = parseFloat(sourceData.down_payment || sourceData.downPayment) || 0
-    formData.product.approvedAmount = parseFloat(sourceData.total_amount || sourceData.totalAmount) || 0
-    formData.product.loanTerm = sourceData.loan_period || sourceData.loanTerm || 1
-    formData.product.monthlyPayment = parseFloat(sourceData.monthly_pay || sourceData.monthlyPay) || 0
-    formData.product.fee = parseFloat(sourceData.fee) || 20000
-    formData.product.paymentDay = sourceData.payment_day || sourceData.paymentDay || 1
-
-    // 🎯 แก้บั๊กที่ 2: ดึงประเภทดอกเบี้ยให้ครอบคลุมทั้งแบบ snake_case และ camelCase ป้องกันการหลุดไปใช้ flat_rate ผิดๆ
-    formData.product.interestType = sourceData.interest_type || sourceData.interestType || appDataFallback.interest_type || appDataFallback.interestType || 'flat_rate'
-    formData.product.interestRateType = sourceData.interest_rate_type || sourceData.interestRateType || appDataFallback.interest_rate_type || appDataFallback.interestRateType || 'monthly'
-
-    // 🎯 แก้บั๊กกู้คืนข้อมูลผู้ค้ำประกัน (Guarantor) ให้ครบถ้วนทั้งหมด
     const guarantor = sourceData.loan_guarantors?.[0] || sourceData.loanGuarantors?.[0]
     if (guarantor) {
       formData.hasGuarantor = true
@@ -1255,10 +1190,35 @@ const loadDataFromProps = () => {
     }
   }
 
-  formData.product.motorcycle.motorId = sourceData.motorId || sourceData.motor_id || ''
-  formData.product.motorcycle.motorColor = sourceData.motorColor || sourceData.motor_color || ''
-  formData.product.motorcycle.tankNumber = sourceData.tankNumber || sourceData.tank_number || ''
-  formData.product.motorcycle.motorWarranty = sourceData.motorWarranty || sourceData.motor_warranty || null
+  // -----------------------------------------------------
+  // 🎯 2. ข้อมูลสินค้าและการคำนวณ (บังคับดึงจาก Application เสมอ!)
+  // -----------------------------------------------------
+  // 🟢 ลบโค้ดเดิมที่ดึงข้อมูลสินค้าจาก Contract ออกทั้งหมด
+  // 🟢 และบังคับใช้ข้อมูลล่าสุดจาก `props.loanApplication` ใส่เข้าฟอร์มทันที!
+  const app = props.loanApplication;
+  if (app && app.id) {
+    formData.product.description = app.product?.product_name || app.product_detail || ''
+    formData.product.brand = app.product?.brand || app.product_brand || ''
+    formData.product.model = app.product?.model || app.product_model || ''
+
+    // ดึงราคาและยอดตั้งต้นจาก Application (ที่พนักงานเพิ่งอัปเดต)
+    formData.product.price = Number(app.total_amount) || 0;
+    formData.product.downPayment = Number(app.down_payment) || 0;
+    formData.product.interestRate = Number(app.interest_rate_at_apply) || 0;
+    formData.product.loanTerm = Number(app.loan_period) || 1;
+    formData.product.fee = Number(app.fee) || 20000;
+    formData.product.paymentDay = Number(app.payment_day) || 1;
+
+    // ดึงประเภทดอกเบี้ย
+    formData.product.interestType = app.interest_type || app.interestType || 'flat_rate';
+    formData.product.interestRateType = app.interest_rate_type || app.interestRateType || 'monthly';
+
+    // ข้อมูลรถ
+    formData.product.motorcycle.motorId = app.motor_id || app.motorId || '';
+    formData.product.motorcycle.motorColor = app.motor_color || app.motorColor || '';
+    formData.product.motorcycle.tankNumber = app.tank_number || app.tankNumber || '';
+    formData.product.motorcycle.motorWarranty = app.motor_warranty || app.motorWarranty || null;
+  }
 
   if (formData.product.motorcycle.motorId || formData.product.motorcycle.tankNumber) {
     formData.productType.motorcycle = true;
@@ -1268,10 +1228,10 @@ const loadDataFromProps = () => {
     formData.productType.general = true;
   }
 
-  // 🟢 คำนวณค่างวดใหม่ด้วยข้อมูลที่ถูกต้อง (เพื่อให้ยอดโชว์ในฟอร์มตรงเป๊ะ)
+  // 🟢 คำนวณค่างวดใหม่ด้วยข้อมูลที่เพิ่งดึงมาจาก Application (เพื่อให้ยอดโชว์ในฟอร์มตรงเป๊ะ)
   calculateLoanDetails()
 
-  // 🟢 เช็ค Conflict ทันทีหลังจากที่คำนวณเสร็จ (ป้ายเตือนจะหายไปถ้าทุกอย่างตรงกัน)
+  // 🟢 เช็ค Conflict ระหว่าง Contract และ Application
   checkProductConflicts()
 }
 

@@ -17,4 +17,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    host: true, // อนุญาตให้เชื่อมต่อจากอุปกรณ์อื่นในเครือข่ายได้
+    proxy: {
+      '/api': {
+        target: 'http://localhost:15520',
+        changeOrigin: true,
+      }
+    }
+  }
 })

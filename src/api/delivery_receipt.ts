@@ -21,7 +21,8 @@ export const createDeliveryReceipt = async (
     const response = await apiClient.post<DeliveryReceiptResponse>(`${BASE_URL}/${applicationId}`, {
       delivery_receipt: data // Backend ຮັບຄ່າຜ່ານ object ຊື່ delivery_receipt
     });
-    return response.data.data;
+    const responseData = response.data.data as any;
+    return Array.isArray(responseData) ? responseData[0] : responseData;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to create delivery receipt');
   }
@@ -38,15 +39,15 @@ export const getDeliveryReceiptByApplicationId = async (
     console.log('API response for getDeliveryReceiptByApplicationId:', response.data.data);
     // ເນື່ອງຈາກເຮົາຕົກລົງກັນວ່າເປັນ 1-to-1 ແຕ່ Backend ໃຊ້ findAll ມັນຈຶ່ງສົ່ງມາເປັນ Array
     // ດັ່ງນັ້ນເຮົາຈະດຶງເອົາ Index ທີ 0 ອອກມາໃຊ້
-     // 🟢 ປັບປຸງການດຶງຂໍ້ມູນໃຫ້ຮອງຮັບທຸກຮູບແບບທີ່ Backend ອາດຈະສົ່ງມາ
+    // 🟢 ປັບປຸງການດຶງຂໍ້ມູນໃຫ້ຮອງຮັບທຸກຮູບແບບທີ່ Backend ອາດຈະສົ່ງມາ
     const rawData = response.data?.data || response.data;
 
     if (rawData) {
-        if (Array.isArray(rawData) && rawData.length > 0) {
-            return rawData[0]; // ຖ້າເປັນ Array ເອົາໂຕທຳອິດ
-        } else if (!Array.isArray(rawData) && rawData.id) {
-            return rawData; // ຖ້າເປັນ Object ກໍ່ Return ເລີຍ
-        }
+      if (Array.isArray(rawData) && rawData.length > 0) {
+        return rawData[0] || null; // ຖ້າເປັນ Array ເອົາໂຕທຳອິດ, ຖ້າບໍ່ມີໃຫ້ສົ່ງ null
+      } else if (!Array.isArray(rawData) && (rawData as any).id) {
+        return rawData; // ຖ້າເປັນ Object ກໍ່ Return ເລີຍ
+      }
     }
 
     return null;
@@ -69,7 +70,7 @@ export const updateDeliveryReceipt = async (
 ): Promise<DeliveryReceipt> => {
   try {
     const response = await apiClient.put<DeliveryReceiptResponse>(`${BASE_URL}/application/${id}`, data);
-    return response.data.data;
+    return response.data.data as any;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to update delivery receipt');
   }
@@ -82,7 +83,7 @@ export const getLatestReceiptId = async (): Promise<DeliveryReceipt | null> => {
   try {
     const response = await apiClient.get<DeliveryReceiptArrayResponse>(`${BASE_URL}/receipt/latest`);
 
-     return response.data.data;
+    return response.data.data[0] || null;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch last receipt ID');
   }

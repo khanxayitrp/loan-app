@@ -209,7 +209,7 @@
                   </div>
                   <div>
                     <label class="text-sm font-medium text-gray-500">ຈຳນວນເງິນກູ້</label>
-                    <p class="font-medium text-xl text-primary">{{ formatPrice(selectedLoan.total_amount) }}</p>
+                    <p class="font-medium text-xl text-primary">{{ formatPrice(selectedLoan.total_amount - selectedLoan.down_payment) }}</p>
                   </div>
                   <div>
                     <label class="text-sm font-medium text-gray-500">ອັດຕາດອກເບ້ຍ</label>
@@ -367,7 +367,8 @@
 
                 <div class="form-control mb-4">
                   <label class="label"><span class="label-text font-medium">ຮ້ານຄ້າ / ຕົວແທນ *</span></label>
-                  <select v-model="modalShopId" class="select select-bordered w-full" @change="handleShopChange" required>
+                  <select v-model="modalShopId" class="select select-bordered w-full" @change="handleShopChange"
+                    required>
                     <option :value="null" disabled>-- ກະລຸນາເລືອກຮ້ານຄ້າ --</option>
                     <option v-for="shop in shopsList" :key="shop.id" :value="shop.id">
                       {{ shop.shop_name }} </option>
@@ -376,7 +377,7 @@
 
                 <div class="form-control">
                   <label class="label">
-                    <span class="label-text font-medium" :class="{'text-gray-400': !modalShopId}">ສິນຄ້າ *</span>
+                    <span class="label-text font-medium" :class="{ 'text-gray-400': !modalShopId }">ສິນຄ້າ *</span>
                     <span v-if="!modalShopId" class="text-xs text-error">ກະລຸນາເລືອກຮ້ານຄ້າກ່ອນ</span>
                   </label>
 
@@ -386,9 +387,11 @@
                       @input="debounceModalProductSearch" @focus="showModalProductDropdown = true"
                       @blur="handleModalProductBlur" />
 
-                    <span class="icon-[tabler--search] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
+                    <span
+                      class="icon-[tabler--search] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
 
-                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    <button type="button"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       :disabled="!selectedModalProduct" @click="clearModalProductSelection">
                       <span class="icon-[tabler--x] size-4"></span>
                     </button>
@@ -407,7 +410,7 @@
                         </div>
                       </div>
                     </div>
-                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -419,22 +422,21 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ລາຄາສິນຄ້າ *</span></label>
-                    <input type="text"
-                      :value="formatCurrencyInput(modalLoanForm.total_amount)"
-                      class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
-                      readonly required />
+                    <input type="text" :value="formatCurrencyInput(modalLoanForm.total_amount)"
+                      class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 cursor-not-allowed" readonly
+                      required />
                   </div>
                   <div class="form-control">
                     <label class="label">
-                      <span class="label-text font-medium">ຈຳນວນເງິນດາວ <span v-if="modalLoanForm.total_amount > 0" class="text-xs text-gray-500">
-                        ຍອດຈັດ: {{ formatPrice(Math.max(0, modalLoanForm.total_amount - (modalLoanForm.down_payment || 0))) }}
-                      </span></span>
+                      <span class="label-text font-medium">ຈຳນວນເງິນດາວ <span v-if="modalLoanForm.total_amount > 0"
+                          class="text-xs text-gray-500">
+                          ຍອດຈັດ: {{ formatPrice(Math.max(0, modalLoanForm.total_amount - (modalLoanForm.down_payment ||
+                          0))) }}
+                        </span></span>
 
                     </label>
-                    <input type="text"
-                      :value="formatCurrencyInput(modalLoanForm.down_payment)"
-                      @input="handleModalCurrencyInput('down_payment', $event)"
-                      class="input input-bordered w-full"
+                    <input type="text" :value="formatCurrencyInput(modalLoanForm.down_payment)"
+                      @input="handleModalCurrencyInput('down_payment', $event)" class="input input-bordered w-full"
                       :class="{ 'input-error': modalFormErrors.down_payment }" />
                     <label v-if="modalFormErrors.down_payment" class="label text-error">
                       <span class="label-text-alt">{{ modalFormErrors.down_payment }}</span>
@@ -452,9 +454,10 @@
 
                   <div class="form-control">
                     <label class="label">
-                      <span class="label-text font-medium">ອັດຕາດອກເບ້ຍ * <span class="badge badge-primary badge-sm badge-soft">
-                        {{ modalLoanForm.interest_rate_type === 'yearly' ? '% ຕໍ່ປີ' : '% ຕໍ່ເດືອນ' }}
-                      </span></span>
+                      <span class="label-text font-medium">ອັດຕາດອກເບ້ຍ * <span
+                          class="badge badge-primary badge-sm badge-soft">
+                          {{ modalLoanForm.interest_rate_type === 'yearly' ? '% ຕໍ່ປີ' : '% ຕໍ່ເດືອນ' }}
+                        </span></span>
                     </label>
                     <input v-model.number="modalLoanForm.interest_rate" type="number"
                       class="input input-bordered w-full" :class="{ 'input-error': modalFormErrors.interest_rate }"
@@ -480,10 +483,8 @@
 
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ລາຍຮັບຕໍ່ເດືອນ *</span></label>
-                    <input type="text"
-                      :value="formatCurrencyInput(modalLoanForm.monthly_income)"
-                      @input="handleModalCurrencyInput('monthly_income', $event)"
-                      class="input input-bordered w-full"
+                    <input type="text" :value="formatCurrencyInput(modalLoanForm.monthly_income)"
+                      @input="handleModalCurrencyInput('monthly_income', $event)" class="input input-bordered w-full"
                       :class="{ 'input-error': modalFormErrors.monthly_income }" />
                     <label v-if="modalFormErrors.monthly_income" class="label text-error">
                       <span class="label-text-alt">{{ modalFormErrors.monthly_income }}</span>
@@ -492,10 +493,8 @@
 
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ໜີ້ສິນອື່ນໆ</span></label>
-                    <input type="text"
-                      :value="formatCurrencyInput(modalLoanForm.other_debts)"
-                      @input="handleModalCurrencyInput('other_debts', $event)"
-                      class="input input-bordered w-full" />
+                    <input type="text" :value="formatCurrencyInput(modalLoanForm.other_debts)"
+                      @input="handleModalCurrencyInput('other_debts', $event)" class="input input-bordered w-full" />
                   </div>
                 </div>
               </div>
@@ -731,23 +730,28 @@
             </button>
           </div>
 
-          <div v-if="hasScheduleConflict" class="alert alert-warning shadow-sm mb-4 flex-row items-start p-4 border border-warning/50">
+          <div v-if="hasScheduleConflict"
+            class="alert alert-warning shadow-sm mb-4 flex-row items-start p-4 border border-warning/50">
             <span class="icon-[tabler--alert-triangle] size-6 shrink-0 mt-0.5"></span>
             <div class="w-full">
               <h3 class="font-bold text-base">⚠️ ຕາຕະລາງຜ່ອນຊຳລະບໍ່ກົງກັບຂໍ້ມູນໃບຄຳຂໍຫຼ້າສຸດ!</h3>
               <div class="text-sm mt-2 grid grid-cols-1 gap-y-2">
                 <template v-for="(diff, key) in scheduleDifferences" :key="key">
-                  <div class="flex flex-col sm:flex-row sm:justify-between border-b border-warning/20 border-dashed pb-1">
+                  <div
+                    class="flex flex-col sm:flex-row sm:justify-between border-b border-warning/20 border-dashed pb-1">
                     <span class="font-medium">{{ diff.label }}:</span>
                     <span class="mt-1 sm:mt-0">
-                      <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal) }}</span>
+                      <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal)
+                        }}</span>
                       <span class="font-bold text-success">👉 ໃບຄຳຂໍປັດຈຸບັນ: {{ formatPrice(diff.appVal) }}</span>
                     </span>
                   </div>
                 </template>
               </div>
               <div class="mt-3 text-sm font-semibold text-error bg-error/10 p-2 rounded">
-                * ກະລຸນາກົດປຸ່ມ <span class="badge badge-warning badge-sm"><span class="icon-[tabler--refresh] mr-1"></span> ຣີເຊັດຄ່າເລີ່ມຕົ້ນ</span> ເພື່ອສ້າງຕາຕະລາງໃໝ່ໃຫ້ກົງກັນ, ແລ້ວກົດບັນທຶກ.
+                * ກະລຸນາກົດປຸ່ມ <span class="badge badge-warning badge-sm"><span
+                    class="icon-[tabler--refresh] mr-1"></span>
+                  ຣີເຊັດຄ່າເລີ່ມຕົ້ນ</span> ເພື່ອສ້າງຕາຕະລາງໃໝ່ໃຫ້ກົງກັນ, ແລ້ວກົດບັນທຶກ.
               </div>
             </div>
           </div>
@@ -763,7 +767,7 @@
                 <p class="text-sm text-gray-600 mt-1">
                   ຍອດຈັດ (ຕົ້ນທຶນ): <span class="font-medium text-black">{{
                     formatPrice(Number(selectedLoan?.total_amount || 0) - Number(selectedLoan?.down_payment || 0))
-                  }}</span> |
+                    }}</span> |
                   ດອກເບ້ຍ: <span class="font-medium text-black">{{ selectedLoan?.interest_rate_at_apply }}%
                     {{ selectedLoan?.interest_rate_type === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>
                 </p>
@@ -913,12 +917,12 @@ const showModalProductDropdown = ref(false)
 const selectedModalProduct = ref<any | null>(null)
 const modalShopId = ref<number | null>(null)
 
-  // ✅ Schedule States
+// ✅ Schedule States
 const isScheduleSaved = ref(false);
 const hasScheduleConflict = ref(false); // 🟢 ເພີ່ມຕົວແປນີ້
 const scheduleDifferences = reactive<Record<string, any>>({}); // 🟢 ເພີ່ມຕົວແປນີ້
 
-  // 🟢 ດຶງລາຍຊື່ຮ້ານຄ້າມາຈາກ ShopStore
+// 🟢 ດຶງລາຍຊື່ຮ້ານຄ້າມາຈາກ ShopStore
 const shopsList = computed(() => shopStore.shops)
 
 // ✅ Map & Location States
@@ -956,6 +960,7 @@ const modalLoanForm = reactive({
   monthly_payment: 0,
   monthly_income: 0,
   other_debts: 0,
+  first_month_payment: 0,
   // 🟢 ເພີ່ມ 2 ຕົວແປນີ້ເຂົ້າໄປ
   interest_type: 'flat_rate',
   interest_rate_type: 'monthly'
@@ -1012,6 +1017,7 @@ const handleShopChange = async () => {
   modalLoanForm.interest_rate = 0
   modalLoanForm.loan_period = 0
   modalLoanForm.monthly_payment = 0
+  modalLoanForm.first_month_payment = 0
 
   // 2. ໂຫຼດສິນຄ້າໃໝ່ສະເພາະຮ້ານທີ່ເລືອກ
   if (modalShopId.value) {
@@ -1037,7 +1043,7 @@ const filteredLoans = computed(() => {
     filtered = filtered.filter(loan =>
     (loan.customer?.first_name?.toLowerCase().includes(query) ||
       loan.customer?.last_name?.toLowerCase().includes(query) ||
-      loan.customer?.full_name?.toLowerCase().includes(query) ||
+      (loan.customer as any)?.full_name?.toLowerCase().includes(query) ||
       loan.customer?.phone?.includes(query) ||
       loan.loan_id?.toLowerCase().includes(query))
     )
@@ -1049,12 +1055,13 @@ const filteredLoans = computed(() => {
 
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
-      const dateTarget = loan.createdAt || (loan as any).created_at || '';
-      if (!dateTarget) return false
-      const loanDate = new Date(dateTarget).toISOString().split('T')[0]
-      const fromDate = dateFrom.value || '1970-01-01'
-      const toDate = dateTo.value || '9999-12-31'
-      return loanDate >= fromDate && loanDate <= toDate
+      const dateTarget = loan.createdAt || (loan as any).created_at;
+      if (!dateTarget) return false;
+      const loanDate = new Date(dateTarget).toISOString().split('T')[0];
+      if (!loanDate) return false; // 🟢 ເພີ່ມບັອກນີ້ກັນໜຽວ
+      const fromDate = dateFrom.value || '1970-01-01';
+      const toDate = dateTo.value || '9999-12-31';
+      return loanDate >= fromDate && loanDate <= toDate;
     })
   }
   return filtered
@@ -1144,6 +1151,8 @@ const checkScheduleConflicts = () => {
 
   const loan = selectedLoan.value;
   const firstRow = scheduleRows.value[0]; // ດຶງແຖວທີ 1 ມາທຽບ
+
+  if (!firstRow) return; // 🟢 ເພີ່ມແຖວນີ້ເພື່ອບອກ TypeScript ວ່າຖ້າມັນວ່າງໃຫ້ຢຸດເລີຍ
 
   // 1. ຄ່າຈາກໃບຄຳຂໍ (Application)
   const appPrincipal = Number(loan.total_amount || 0) - Number(loan.down_payment || 0);
@@ -1264,7 +1273,7 @@ watch(
     modalLoanForm.interest_rate,
     modalLoanForm.loan_period,
     modalLoanForm.interest_type,
-    modalLoanForm.interest_rate_type
+    modalLoanForm.interest_rate_type,
   ],
   () => {
     modalLoanForm.monthly_payment = calculateModalMonthlyPayment()
@@ -1384,8 +1393,8 @@ const fetchSavedSchedule = async () => {
 
       // 3. ກວດສອບ Conflict
       const isConflict = Math.abs(appPrincipal - schedPrincipal) > 10 ||
-                         Math.abs(appMonthlyPay - schedMonthlyPay) > 10 ||
-                         appTerm !== schedTerm;
+        Math.abs(appMonthlyPay - schedMonthlyPay) > 10 ||
+        appTerm !== schedTerm;
 
       if (isConflict) {
         console.log("🔄 Data conflict detected! Auto-regenerating schedule...");
@@ -1417,32 +1426,64 @@ const viewSchedule = async (loan: any) => {
     // ==========================================
     // 🟢 1. ກວດສອບວ່າມີ "ສັນຍາກູ້ຢືມ (Loan Contract)" ແລ້ວຫຼືຍັງ
     // ==========================================
+    let contractData = null;
     try {
-      // ພະຍາຍາມດຶງຂໍ້ມູນສັນຍາ ຖ້າບໍ່ມີມັກຈະ Return null ຫຼື Throw Error
+      // ພະຍາຍາມດຶງຂໍ້ມູນສັນຍາ
       const contractRes = await loanContractStore.fetchContract(loan.id);
-      console.log("Fetched contract for loan ID", loan.id, ":", contractRes);
+      contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
+
       // ຖ້າບໍ່ມີຂໍ້ມູນສັນຍາ
-      if (!contractRes || contractRes.data.data == null) {
+      if (!contractRes || (contractRes as any).data?.data == null) {
         alert.error('ບໍ່ສາມາດເປີດຕາຕະລາງໄດ້', 'ກະລຸນາສ້າງ "ສັນຍາກູ້ຢືມ" ໃຫ້ລູກຄ້າຮັບຮູ້ເງື່ອນໄຂກ່ອນ!');
         return; // ຢຸດການເຮັດວຽກ ບໍ່ໃຫ້ເປີດ Modal
       }
     } catch (error) {
       console.warn("Error checking loan contract:", error);
-      // ຖ້າ API ສົ່ງ 404 Not Found ກັບມາ (ຫາສັນຍາບໍ່ພົບ)
       alert.error('ບໍ່ສາມາດເປີດຕາຕະລາງໄດ້', 'ກະລຸນາສ້າງ "ສັນຍາກູ້ຢືມ" ໃຫ້ລູກຄ້າຮັບຮູ້ເງື່ອນໄຂກ່ອນ!');
-      return; // ຢຸດການເຮັດວຽກ ບໍ່ໃຫ້ເປີດ Modal
+      return;
     }
 
     // ==========================================
-    // 🟢 2. ຖ້າມີສັນຍາແລ້ວ ຈຶ່ງດຳເນີນການໂຫຼດຂໍ້ມູນ ແລະ ເປີດຕາຕະລາງປົກກະຕິ
+    // 🟢 2. ດຶງຂໍ້ມູນໃບຄຳຂໍຫຼ້າສຸດ (Full Loan Application)
     // ==========================================
     const fullLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id);
+
+    // ==========================================
+    // 🟢 3. ກວດສອບຄວາມຂັດແຍ້ງກັນລະຫວ່າງ "ໃບຄຳຂໍ" ແລະ "ສັນຍາ"
+    // ==========================================
+    // ຄ່າຈາກໃບຄຳຂໍ (ຍອດຈັດ = ລາຄາ - ເງິນດາວ)
+    const appPrincipal = Number(fullLoan.total_amount || 0) - Number(fullLoan.down_payment || 0);
+    const appMonthlyPay = Number(fullLoan.monthly_pay || 0);
+    const appTerm = Number(fullLoan.loan_period || 0);
+
+    // ຄ່າຈາກສັນຍາເກົ່າ (ໃນຕາຕະລາງສັນຍາ total_amount ຄືຍອດຈັດທີ່ຫັກດາວແລ້ວ)
+    const contractPrincipal = Number(contractData.total_amount || 0);
+    const contractMonthlyPay = Number(contractData.monthly_pay || 0);
+    const contractTerm = Number(contractData.loan_period || 0);
+
+    // ທຽບຄ່າ ຖ້າຕ່າງກັນເກີນ 1 ກີບ ຖືວ່າຂັດແຍ້ງກັນ
+    const isConflict =
+      Math.abs(appPrincipal - contractPrincipal) > 1 ||
+      Math.abs(appMonthlyPay - contractMonthlyPay) > 1 ||
+      appTerm !== contractTerm;
+
+    if (isConflict) {
+      // 🛑 ຖ້າຂໍ້ມູນບໍ່ກົງກັນ ບລັອກບໍ່ໃຫ້ເປີດຕາຕະລາງ ແລະ ແຈ້ງເຕືອນໃຫ້ໄປແກ້ໄຂສັນຍາກ່ອນ
+      alert.error(
+        'ຂໍ້ມູນສັນຍາບໍ່ອັບເດດ! ⚠️',
+        'ຂໍ້ມູນສິນເຊື່ອມີການປ່ຽນແປງຫຼັງຈາກສ້າງສັນຍາໄປແລ້ວ.\n\n👉 ກະລຸນາກົດເຂົ້າ "ລາຍລະອຽດສິນເຊື່ອ" > ແຖບ "ສັນຍາກູ້ຢືມ" > ກົດແກ້ໄຂ ແລະ ກົດ "ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍ" ກ່ອນຈຶ່ງຈະເປີດຕາຕະລາງໄດ້.'
+      );
+      return;
+    }
+
+    // ==========================================
+    // 🟢 4. ຖ້າຂໍ້ມູນກົງກັນດີ ຈຶ່ງດຳເນີນການໂຫຼດຂໍ້ມູນ ແລະ ເປີດຕາຕະລາງປົກກະຕິ
+    // ==========================================
     selectedLoan.value = fullLoan;
-
     await fetchSavedSchedule();
-
     showScheduleModal.value = true;
-  } catch (error) {
+
+  } catch (error: any) {
     console.error(error);
     alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້');
   }
@@ -1753,7 +1794,7 @@ const handleDeleteLocation = async (id: number) => {
 const handleSetPrimary = async (id: number) => {
   try {
     const { updateCustomerLocation } = await import('@/api/customer')
-    await updateCustomerLocation(id, { is_primary: true })
+    await updateCustomerLocation(id, { is_primary: 1 })
     alert.success('ຕັ້ງເປັນທີ່ຢູ່ຫຼັກສຳເລັດ!')
     if (selectedLoan.value?.customer_id) {
       await loadCustomerLocations(selectedLoan.value.customer_id)
@@ -1897,7 +1938,7 @@ const saveLoanFromModal = async () => {
     const nameParts = modalLoanForm.customer_name.trim().split(' ')
     const firstName = nameParts[0] || modalLoanForm.customer_name
     const lastName = nameParts.slice(1).join(' ') || ''
-
+    const fee = 20000
     const updateData: any = {
       product_id: selectedModalProduct.value?.id || selectedLoan.value.product_id,
       customer_id: selectedLoan.value.customer_id,
@@ -1912,7 +1953,7 @@ const saveLoanFromModal = async () => {
 
       income_per_month: modalLoanForm.monthly_income,
       other_debts: modalLoanForm.other_debts,
-       interest_type: modalLoanForm.interest_type, // 🟢 ເພີ່ມບັນທັດນີ້
+      interest_type: modalLoanForm.interest_type, // 🟢 ເພີ່ມບັນທັດນີ້
       interest_rate_type: modalLoanForm.interest_rate_type, // 🟢 ເພີ່ມບັນທັດນີ້
 
 
@@ -1921,7 +1962,7 @@ const saveLoanFromModal = async () => {
       interest_rate_at_apply: modalLoanForm.interest_rate,
       loan_period: modalLoanForm.loan_period,
       monthly_pay: modalLoanForm.monthly_payment,
-
+      first_installment_amount: Number(modalLoanForm.monthly_payment || 0) + Number(fee),
     }
 
     await loanApplicationStore.updateDraftLoanApplication(selectedLoan.value.id, updateData)
@@ -2029,9 +2070,9 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       total_amount: formData.product.price,
       interest_rate_at_apply: formData.product.interestRate,
 
-       interest_type: modalLoanForm.interest_type, // 🟢 ເພີ່ມບັນທັດນີ້
+      interest_type: modalLoanForm.interest_type, // 🟢 ເພີ່ມບັນທັດນີ້
       interest_rate_type: modalLoanForm.interest_rate_type, // 🟢 ເພີ່ມບັນທັດນີ້
-      
+
       monthly_pay: formData.product.monthlyPayment,
       loan_period: formData.product.loanTerm,
       down_payment: formData.product.downPayment,
@@ -2080,7 +2121,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusIdPassDate: formData.customer.idCardIssueDate,
       cusCensusNumber: formData.customer.censusBook,
       cusCensusCreated: formData.customer.idCardExpiryDate,
-      cusCensusAuthorizeBy: formData.customer.idCardPlace,
+      cusCensusAuthorizeBy: formData.customer.censusAuthorizeBy,
       cusHouseNumber: formData.customer.houseNumber,
       cusUnit: Number(formData.customer.unit) || 0,
       cusAddress: formatAddress(formData.customer.address),
@@ -2152,7 +2193,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       refCompanyEmpNumber: Number(formData.guarantorWork.totalEmployees) || 0,
       refIncomeOther: Number(formData.guarantorWork.otherIncome) || 0,
       refIncomeOtherSource: formData.guarantorWork.otherIncomeSource
-    }
+    } as any;
 
     await loanContractStore.createContract(selectedLoan.value.id, contractData)
     alert.success('ບັນທຶກສັນຍາສຳເລັດ!')
@@ -2221,12 +2262,12 @@ const getDocumentTypeName = (type: string): string => {
   return typeMap[type] || type
 }
 
-const getFullImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
-  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-};
+// const getFullImageUrl = (url: string | null | undefined): string => {
+//   if (!url) return '';
+//   if (url.startsWith('http')) return url;
+//   const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+//   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+// };
 
 const formatFileSize = (size: number | string): string => {
   if (!size) return 'ບໍ່ຮູ້ຈັກ'

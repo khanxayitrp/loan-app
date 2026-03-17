@@ -50,7 +50,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('การเข้าสู่ระบบสำเร็จ:', response)
 
         // 🔥 ไม่เก็บ token แล้ว - เก็บแค่ user data
-        this.user = response.user
+        this.user = { ...response.user, role: response.user.role?.toLowerCase() as any }
         this.permissions = response.permissions
         this.expiresAt = response.expiresAt || null
 
@@ -174,7 +174,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const response = await getCurrentUser()
 
-        this.user = response.user
+        this.user = { ...response.user, role: response.user.role?.toLowerCase() as any }
         this.permissions = response.permissions
         this.expiresAt = response.expiresAt || null
 
