@@ -70,7 +70,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,           // ต้อง login
       // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
-      permission: 'user_manage'
+      permission: 'user_changepass'
     }
   },
   {

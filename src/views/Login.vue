@@ -93,27 +93,37 @@ const handleLogin = async () => {
       return
     }
 
-    // รอ Pinia state อัปเดตสักครู่ (ป้องกัน user เป็น null ทันที)
-    // await nextTick()
     // 2. ✅ Verify & reload permissions from cookies
     await authStore.checkAuth()
 
     const user = authStore.currentUser
-    console.log('User after login:', user) // debug เพื่อดู role จริง ๆ
+    console.log('User after login:', user)
 
     if (!user || !user.role) {
       errorMessage.value = 'ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ ກະລຸນາລອງໃໝ່'
       return
     }
 
-    // 3. ✅ ตรวจสอบว่ามี redirect query หรือไม่
+    // ==========================================
+    // 🟢 3. เพิ่ม Logic เช็คล็อกอินครั้งแรกตรงนี้
+    // ==========================================
+    const loginCount = await authStore.checkFirstLogin()
+
+    // หมายเหตุ: ขึ้นอยู่กับ Backend ว่าจังหวะนี้มันบวกค่าเข้าไปเป็น 1 แล้วหรือยัง
+    // ถ้า Backend นับการล็อกอินครั้งนี้ไปแล้ว count จะเป็น 1 ถ้ายังไม่นับจะเป็น 0
+    // เพื่อความชัวร์ เราเช็คว่าถ้าน้อยกว่าหรือเท่ากับ 1 คือครั้งแรกแน่นอน
+    if (loginCount === 0 || loginCount === 1) {
+       router.push({ name: 'ChangeMyPassword' })
+       return // 🛑 บังคับหยุดการทำงานตรงนี้เลย ไม่ให้ลงไปรันเงื่อนไข Redirect ด้านล่าง
+    }
+    // ==========================================
+
+    // 4. ✅ ตรวจสอบว่ามี redirect query หรือไม่ (สำหรับคนที่ล็อกอินมาเกิน 1 ครั้งแล้ว)
     const redirect = router.currentRoute.value.query.redirect as string | undefined
 
     if (redirect) {
-      // ถ้า guard redirect มา → กลับไปหน้าเดิม
       router.push(redirect)
     } else {
-      // ถ้าไม่มี → redirect ตาม role
       switch (user.role.toLowerCase()) {
         case 'admin':
           router.push({ name: 'UserManagement' })
@@ -125,21 +135,18 @@ const handleLogin = async () => {
           } else if (permissionStore.hasPermission('loan_view_assigned')) {
             router.push({ name: 'ListLoans' })
           } else {
-            router.push({ name: 'DashboardHome' }) // ไม่มีสิทธิ์เลยให้ไป Dashboard
+            router.push({ name: 'DashboardHome' })
           }
           break
-
         case 'partner':
           router.push({ name: 'Stores' })
           break
-
         case 'customer':
           router.push({ name: 'PendingLoans' })
           break
-
         default:
           console.warn('Role ไม่รู้จัก:', user.role)
-          router.push({ name: 'LoanListAll' }) // fallback
+          router.push({ name: 'LoanListAll' })
           errorMessage.value = `ບົດບາດບໍ່ຮອງຮັບ: ${user.role}`
       }
     }

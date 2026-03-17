@@ -35,15 +35,33 @@ export const usePermissionStore = defineStore('permission', {
     /**
      * ตั้งค่า permissions หลัง login
      */
-    setPermissions(permissions: string[]) {
-      this.userPermissions = permissions
+    setPermissions(permissions: any[]) {
+      if (!permissions || !Array.isArray(permissions)) {
+        this.userPermissions = []
+        return
+      }
+      
+      // แปลงให้อยู่ในรูปแบบ string เสมอ
+      this.userPermissions = permissions.map(p => {
+        if (typeof p === 'string') return p
+        if (p && p.feature_name) return p.feature_name
+        if (p && p.feature && p.feature.feature_name) return p.feature.feature_name
+        return String(p)
+      })
     },
 
     /**
      * ตรวจสอบว่าผู้ใช้มีสิทธิ์นี้หรือไม่
      */
     hasPermission(permission: string): boolean {
-      return this.userPermissions.includes(permission)
+      if (!this.userPermissions || !Array.isArray(this.userPermissions)) return false
+      
+      return this.userPermissions.some((p: any) => {
+        if (typeof p === 'string') return p === permission
+        if (p && p.feature_name) return p.feature_name === permission
+        if (p && p.feature && p.feature.feature_name) return p.feature.feature_name === permission
+        return false
+      })
     },
     /**
      * ดึงสิทธิ์ของผู้ใช้เฉพาะคน

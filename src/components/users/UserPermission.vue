@@ -550,7 +550,8 @@ const getFeatureDisplayName = (featureName: string): string => {
     'user_create': 'ສ້າງຜູ້ໃຊ້ໃໝ່',
     'payment_view': 'ດູການຊຳລະ',
     'payment_create': 'ບັນທຶກການຊຳລະ',
-    'payment_verify': 'ກວດສອບການຊຳລະ'
+    'payment_verify': 'ກວດສອບການຊຳລະ',
+    'user_changepass': 'ປ່ຽນລະຫັດຜ່ານ'
   }
 
   return displayNames[featureName] || featureName

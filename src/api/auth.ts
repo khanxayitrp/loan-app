@@ -121,3 +121,13 @@ export const changePassword = async (passwordData: {
   const response = await apiClient.post<{ message: string }>('/auth/change-password', passwordData)
   return response.data
 }
+
+export const LoginCount = async (): Promise<{ count: number }> => {
+  try {
+    const response = await apiClient.get<{ count: number }>('/auth/checkLogin')
+    return response.data
+  } catch (error: any) {
+    console.error('Error fetching login count:', error)
+    throw new Error(error.response?.data?.message || 'Failed to fetch login count')
+  }
+}

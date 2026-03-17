@@ -125,10 +125,10 @@
               </a>
             </li>
             <li>
-              <a class="dropdown-item" href="/changeMyPassword">
+              <router-link class="dropdown-item" to="/changeMyPassword">
                 <span class="icon-[tabler--password-user]"></span>
                 Change My Password
-              </a>
+              </router-link>
             </li>
             <li>
               <a class="dropdown-item" href="#">

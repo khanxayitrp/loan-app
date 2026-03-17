@@ -1,6 +1,7 @@
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
 import { usePermissionStore } from './permission'
+import apiClient from '@/api/apiclient'
 import {
   signIn as apiSignIn,
   signOut as apiSignOut,
@@ -166,6 +167,17 @@ export const useAuthStore = defineStore('auth', {
         console.error('Error updating user status:', error)
       }
     },
+    // 🟢 เพิ่ม Action ใหม่สำหรับเช็คจำนวนการเข้าสู่ระบบ
+    async checkFirstLogin(): Promise<number> {
+      try {
+        const response = await apiClient.get<{ count: number }>('/auth/checkLogin')
+        console.log('Login count response:', response.data)
+        return (response.data as any).data
+      } catch (error: any) {
+        console.error('Error fetching login count:', error)
+        return -1 // ส่งค่าติดลบกลับไปเพื่อบอกว่า Error จะได้ข้ามเงื่อนไขไปก่อน
+      }
+    },
     /**
      * ตรวจสอบว่าผู้ใช้ยังล็อกอินอยู่หรือไม่
      * เรียก API /auth/me เพื่อดึงข้อมูลจาก token ใน cookies
@@ -182,7 +194,7 @@ export const useAuthStore = defineStore('auth', {
         permissionStore.setPermissions(response.permissions)
 
         return true
-      } catch (error) {
+      } catch (error: any) {
         // ถ้า error แสดงว่า token หมดอายุหรือไม่ valid
         this.signOut()
         return false
