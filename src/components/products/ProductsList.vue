@@ -89,7 +89,7 @@
             <td class="text-center">
               <div v-if="product.image_url"
                 class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                <img :src="product.image_url" alt="Product image" class="w-full h-full object-contain" />
+                <img :src="getFullImageUrl(product.image_url)" alt="Product image" class="w-full h-full object-contain" />
               </div>
               <div v-else class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                 <span class="icon-[tabler--box] size-6 text-gray-400"></span>
@@ -217,7 +217,7 @@
                     <p class="text-xs text-gray-400 mt-1">JPG, PNG (ສູງສຸດ 2MB)</p>
                   </div>
 
-                  <img v-else :src="form.image_url" alt="Product preview"
+                  <img v-else :src="getFullImageUrl(form.image_url)" alt="Product preview"
                     class="w-full h-full object-contain rounded" />
                 </div>
 
