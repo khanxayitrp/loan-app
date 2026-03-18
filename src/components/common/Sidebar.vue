@@ -265,6 +265,12 @@ const menuItems = [
         to: '/approvedLoans',
         permission: 'loan_approve'
       },
+      {
+        label: 'Repayment',
+        icon: 'icon-[material-symbols--paid-outline]',
+        to: '/repaymentLoans',
+        permission: 'loan_approve'
+      },
 
     ]
   },

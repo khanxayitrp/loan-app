@@ -740,12 +740,12 @@ const isVerifying = ref(false)
 const customerLocations = ref<CustomerLocation[]>([])
 const isLocationLoading = ref(false)
 
-// Mock staff list
-const mockStaffList = [
-  { id: 1, name: 'ສົມຊາຍ ພົນສຸກ' },
-  { id: 2, name: 'ສົມສິງ ດຳດີ' },
-  { id: 3, name: 'ອຸດົມ ສີສົມບັດ' }
-]
+// // Mock staff list
+// const mockStaffList = [
+//   { id: 1, name: 'ສົມຊາຍ ພົນສຸກ' },
+//   { id: 2, name: 'ສົມສິງ ດຳດີ' },
+//   { id: 3, name: 'ອຸດົມ ສີສົມບັດ' }
+// ]
 
 // ✅ Documents
 interface Document { id: string, name: string, description: string, required: boolean, file: File | null, preview: string | null }
@@ -760,6 +760,50 @@ const optionalDocuments = ref<Document[]>([
 const isUploadingDocuments = ref(false)
 const allRequiredDocumentsUploaded = computed(() => draftDocuments.value.every(doc => doc.file !== null))
 
+
+// Data Extractors
+const getDraftDisplayName = (draft: LoanApplication): string => draft.customer ? `${draft.customer.first_name || ''} ${draft.customer.last_name || ''}`.trim() : '-'
+const isDraft = (draft: LoanApplication): boolean => draft.is_confirmed === 0 || !draft.is_confirmed
+const getStatusLabel = (draft: LoanApplication): string => {
+  if (isDraft(draft)) return 'ຮ່າງ'
+  switch (draft.status) {
+    case LoanApplicationStatus.PENDING: return 'ລໍຖ້າ'
+    case LoanApplicationStatus.VERIFYING: return 'ກຳລັງກວດ'
+    case LoanApplicationStatus.APPROVED: return 'ອະນຸມັດ'
+    case LoanApplicationStatus.REJECTED: return 'ປະຕິເສດ'
+    default: return draft.status
+  }
+}
+const getDraftPhone = (draft: LoanApplication): string => draft.customer?.phone || '-'
+const getDraftAddress = (draft: LoanApplication): string => draft.customer?.address || '-'
+const getProductName = (draft: LoanApplication): string => draft.product?.product_name || '-'
+const getRequesterName = (draft: LoanApplication): string => (draft.requester as any)?.full_name || (draft.requester as any)?.name || '-'
+const formatDate = (dateString: string): string => new Date(dateString).toLocaleDateString('lo-LA')
+
+
+// ==========================================
+// Computed properties
+// ==========================================
+const staffList = computed(() => {
+  const drafts = loanApplicationStore.loanApplications || []
+  const staffMap = new Map<number, string>()
+
+  drafts.forEach(draft => {
+    if (draft.requester_id) {
+      const name = getRequesterName(draft)
+      // ຖ້າຍັງບໍ່ມີເຈົ້າໜ້າທີ່ຄົນນີ້ໃນ Map, ໃຫ້ເພີ່ມເຂົ້າໄປ (ເພື່ອປ້ອງກັນການຊ້ຳກັນ)
+      if (!staffMap.has(draft.requester_id)) {
+        staffMap.set(
+          draft.requester_id,
+          name !== '-' ? name : `ID ເຈົ້າໜ້າທີ່: ${draft.requester_id}`
+        )
+      }
+    }
+  })
+
+  // ແປງຈາກ Map ກັບມາເປັນ Array Object ເພື່ອໃຫ້ Dropdown ເອົາໄປ Loop ໄດ້
+  return Array.from(staffMap.entries()).map(([id, name]) => ({ id, name }))
+})
 // 🟢 Updated Form for editing (Added missing fields)
 const modalDraftForm = reactive({
   customer_name: '',
@@ -917,7 +961,7 @@ const validateModalForm = (): boolean => {
 }
 
 // Computed properties
-const staffList = computed(() => mockStaffList)
+// const staffList = computed(() => mockStaffList)
 const filteredDrafts = computed(() => {
   let filtered = loanApplicationStore.loanApplications || []
   if (searchQuery.value) {
@@ -964,25 +1008,6 @@ const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
 const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalDrafts.value))
 const hasPreviousPage = computed(() => currentPage.value > 1)
 const hasNextPage = computed(() => currentPage.value < totalPages.value)
-
-// Data Extractors
-const getDraftDisplayName = (draft: LoanApplication): string => draft.customer ? `${draft.customer.first_name || ''} ${draft.customer.last_name || ''}`.trim() : '-'
-const isDraft = (draft: LoanApplication): boolean => draft.is_confirmed === 0 || !draft.is_confirmed
-const getStatusLabel = (draft: LoanApplication): string => {
-  if (isDraft(draft)) return 'ຮ່າງ'
-  switch (draft.status) {
-    case LoanApplicationStatus.PENDING: return 'ລໍຖ້າ'
-    case LoanApplicationStatus.VERIFYING: return 'ກຳລັງກວດ'
-    case LoanApplicationStatus.APPROVED: return 'ອະນຸມັດ'
-    case LoanApplicationStatus.REJECTED: return 'ປະຕິເສດ'
-    default: return draft.status
-  }
-}
-const getDraftPhone = (draft: LoanApplication): string => draft.customer?.phone || '-'
-const getDraftAddress = (draft: LoanApplication): string => draft.customer?.address || '-'
-const getProductName = (draft: LoanApplication): string => draft.product?.product_name || '-'
-const getRequesterName = (draft: LoanApplication): string => (draft.requester as any)?.full_name || (draft.requester as any)?.name || '-'
-const formatDate = (dateString: string): string => new Date(dateString).toLocaleDateString('lo-LA')
 
 // 🟢 ຄຳນວນຄ່າງວດ (Advance formula handling down payment & rate types)
 const calculateModalMonthlyPayment = (): number => {
@@ -1187,18 +1212,18 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       issue_date: formData.customer.issueDate,
 
       product_id: selectedDraft.value.product_id,
-      total_amount: formData.product.price,
-      interest_rate_at_apply: formData.product.interestRate,
+      total_amount: Number(formData.product.price) || 0,
+      interest_rate_at_apply: Number(formData.product.interestRate) || 0,
 
       interest_type: formData.product.interestType, // 🟢 ເພີ່ມບັນທັດນີ້
       interest_rate_type: formData.product.interestRateType, // 🟢 ເພີ່ມບັນທັດນີ້
 
-      monthly_pay: formData.product.monthlyPayment,
-      loan_period: formData.product.loanTerm,
-      down_payment: formData.product.downPayment,
-      fee: formData.product.fee,
-      first_installment_amount: formData.product.firstInstallment || null,
-      payment_day: formData.product.paymentDay,
+      monthly_pay: Number(formData.product.monthlyPayment) || 0,
+      loan_period: Number(formData.product.loanTerm) || 0,
+      down_payment: Number(formData.product.downPayment) || 0,
+      fee: Number(formData.product.fee) || 0,
+      first_installment_amount: Number(formData.product.firstInstallment) || null,
+      payment_day: Number(formData.product.paymentDay) || null,
       borrower_signature_date: formData.signatures.borrowerDate || null,
       guarantor_signature_date: formData.signatures.guarantorDate || null,
       staff_signature_date: formData.signatures.staffDate || null
@@ -1414,11 +1439,11 @@ const saveDraftFromModal = async () => {
       interest_type: modalDraftForm.interest_type,
       interest_rate_type: modalDraftForm.interest_rate_type,
 
-      total_amount: modalDraftForm.total_amount,
-      down_payment: modalDraftForm.down_payment,
-      interest_rate_at_apply: modalDraftForm.interest_rate,
-      loan_period: modalDraftForm.loan_period,
-      monthly_pay: modalDraftForm.monthly_payment,
+      total_amount: Number(modalDraftForm.total_amount) || 0,
+      down_payment: Number(modalDraftForm.down_payment) || 0,
+      interest_rate_at_apply: Number(modalDraftForm.interest_rate) || 0,
+      loan_period: Number(modalDraftForm.loan_period) || 0,
+      monthly_pay: Number(modalDraftForm.monthly_payment) || 0,
       first_installment_amount: Number(modalDraftForm.monthly_payment || 0) + Number(fee), // 🟢 เพิ่มฟิeld นี้เพื่อให้แน่ใจว่ามีค่า
     }
 

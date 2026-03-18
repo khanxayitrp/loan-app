@@ -807,7 +807,12 @@ const saveProduct = async () => {
         const blob = await base64Response.blob()
         if (blob.size < 1024) throw new Error('Image file too small')
         const file = new File([blob], 'main-image.jpg', { type: 'image/jpeg' })
-        await productStore.uploadProductImage(productId, file)
+         const uploadResp = await productStore.uploadProductImage(productId, file)
+
+        if (uploadResp.success) {
+          const imageUrl = uploadResp.data.file_url
+          await productStore.updateProduct(productId, { image_url: imageUrl })
+        }
       } catch (error) {
         console.error('Error uploading main image:', error)
       }

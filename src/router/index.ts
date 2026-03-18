@@ -137,6 +137,16 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
+        path: '/repaymentLoans',        // /loans/repaymentLoans
+        name: 'RepaymentLoans',
+        component: () => import('@/components/loans/status/RepaymentLoanList.vue'),
+        meta: {
+          requiresAuth: true,
+          // bypassAuth: true,
+          permission: 'loan_approve'
+        }
+      },
+      {
         path: '/createDraftLoan',        // /loans/createDraftLoan
         name: 'CreateDraftLoan',
         component: () => import('@/components/loans/form/CreateDraftLoan.vue'),
@@ -165,7 +175,8 @@ const routes: RouteRecordRaw[] = [
           // bypassAuth: true,
           permission: 'loan_view_assigned'
         }
-      }
+      },
+
     ]
   },
   {

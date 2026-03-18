@@ -1957,11 +1957,11 @@ const saveLoanFromModal = async () => {
       interest_rate_type: modalLoanForm.interest_rate_type, // 🟢 ເພີ່ມບັນທັດນີ້
 
 
-      total_amount: modalLoanForm.total_amount,
-      down_payment: modalLoanForm.down_payment, // 🟢 ເພີ່ມບັນທັດນີ້
-      interest_rate_at_apply: modalLoanForm.interest_rate,
-      loan_period: modalLoanForm.loan_period,
-      monthly_pay: modalLoanForm.monthly_payment,
+      total_amount: Number(modalLoanForm.total_amount) || 0,
+      down_payment: Number(modalLoanForm.down_payment) || 0, // 🟢 ເພີ່ມບັນທັດນີ້
+      interest_rate_at_apply: Number(modalLoanForm.interest_rate) || 0,
+      loan_period: Number(modalLoanForm.loan_period) || 0,
+      monthly_pay: Number(modalLoanForm.monthly_payment) || 0,
       first_installment_amount: Number(modalLoanForm.monthly_payment || 0) + Number(fee),
     }
 
@@ -2067,18 +2067,18 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       issue_date: formData.customer.issueDate,
 
       product_id: selectedLoan.value.product_id,
-      total_amount: formData.product.price,
-      interest_rate_at_apply: formData.product.interestRate,
+      total_amount: Number(formData.product.price) || 0,
+      interest_rate_at_apply: Number(formData.product.interestRate) || 0,
 
       interest_type: modalLoanForm.interest_type, // 🟢 ເພີ່ມບັນທັດນີ້
       interest_rate_type: modalLoanForm.interest_rate_type, // 🟢 ເພີ່ມບັນທັດນີ້
 
-      monthly_pay: formData.product.monthlyPayment,
-      loan_period: formData.product.loanTerm,
-      down_payment: formData.product.downPayment,
-      fee: formData.product.fee,
-      first_installment_amount: formData.product.firstInstallment || null,
-      payment_day: formData.product.paymentDay,
+      monthly_pay: Number(formData.product.monthlyPayment) || 0,
+      loan_period: Number(formData.product.loanTerm) || 0,
+      down_payment: Number(formData.product.downPayment) || 0,
+      fee: Number(formData.product.fee) || 0,
+      first_installment_amount: Number(formData.product.firstInstallment) || null,
+      payment_day: Number(formData.product.paymentDay) || null,
       borrower_signature_date: formData.signatures.borrowerDate || null,
       guarantor_signature_date: formData.signatures.guarantorDate || null,
       staff_signature_date: formData.signatures.staffDate || null
