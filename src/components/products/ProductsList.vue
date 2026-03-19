@@ -217,7 +217,7 @@
                     <p class="text-xs text-gray-400 mt-1">JPG, PNG (ສູງສຸດ 2MB)</p>
                   </div>
 
-                  <img v-else :src="getFullImageUrl(form.image_url)" alt="Product preview"
+                  <img v-else :src="getProductImageUrl(form.image_url)" alt="Product preview"
                     class="w-full h-full object-contain rounded" />
                 </div>
 
@@ -528,11 +528,21 @@ const isBase64 = (str: string): boolean => {
   return str.startsWith('data:') || str.startsWith('data:image/')
 }
 
+// 🟢 อัปเดตฟังก์ชันนี้: เราเขียน override getFullImageUrl ในไฟล์นี้ไปเลย
+// (หรือคุณจะไปแก้ไฟล์ @/utils/url ที่คุณ import มาก็ได้ แต่วิธีนี้ชัวร์กว่าสำหรับหน้านี้)
+const getProductImageUrl = (url: string): string => {
+  if (!url) return '';
+  // 1. ถ้าเป็น Base64 ให้แสดงผลได้เลยไม่ต้องเติมโดเมน
+  if (isBase64(url)) return url;
+  // 2. ถ้าเป็น http/https เต็มรูปแบบแล้ว ก็แสดงผลได้เลย
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+
+  // 3. ถ้าเป็นพาร์ทจาก Database (เช่น /uploads/...) ให้ใช้ฟังก์ชันเดิมของคุณ
+  return getFullImageUrl(url) || '';
+}
+
 const getGalleryImageUrl = (url: string): string => {
-  if (!url) return ''
-  if (isBase64(url)) return url
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return getFullImageUrl(url) || ''
+  return getProductImageUrl(url); // ใช้ logic เดียวกัน
 }
 
 const handleImageError = (e: Event) => {
