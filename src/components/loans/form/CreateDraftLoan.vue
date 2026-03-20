@@ -396,9 +396,15 @@
             <label class="label">
               <span class="label-text font-medium">ລາຍຮັບຕໍ່ເດືອນ (ກີບ) *</span>
             </label>
-            <input v-model.number="customerForm.monthly_income" type="number" placeholder="ປ້ອນລາຍຮັບຕໍ່ເດືອນ"
-              class="input input-bordered w-full" :class="{ 'input-error': customerErrors.monthly_income }" min="0"
-              required />
+            <input
+              :value="formatCurrencyInput(customerForm.monthly_income)"
+              @input="handleCurrencyInput('monthly_income', $event)"
+              type="text"
+              placeholder="ປ້ອນລາຍຮັບຕໍ່ເດືອນ"
+              class="input input-bordered w-full"
+              :class="{ 'input-error': customerErrors.monthly_income }"
+              required
+            />
             <div class="text-xs text-gray-500 mt-1">
               <div>ລາຍຮັບຕໍ່ເດືອນ (ກີບ): {{ formatPrice(customerForm.monthly_income) }}</div>
             </div>
@@ -411,13 +417,19 @@
             <label class="label">
               <span class="label-text font-medium">ໜີ້ສິນອື່ນໆ (ກີບ)</span>
             </label>
-            <input v-model.number="customerForm.other_debts" type="number" placeholder="ປ້ອນຈຳນວນໜີ້ສິນອື່ນໆ"
-              class="input input-bordered w-full" min="0" />
+            <input
+              :value="formatCurrencyInput(customerForm.other_debts)"
+              @input="handleCurrencyInput('other_debts', $event)"
+              type="text"
+              placeholder="ປ້ອນຈຳນວນໜີ້ສິນອື່ນໆ"
+              class="input input-bordered w-full"
+            />
             <div class="text-xs text-gray-500 mt-1">
               <div>ໜີ້ສິນອື່ນໆ (ກີບ): {{ formatPrice(customerForm.other_debts) }}</div>
             </div>
           </div>
         </div>
+
       </div>
 
       <div class="flex justify-end mt-8">
@@ -548,7 +560,7 @@
             </button>
           </div>
 
-          <div class="text-center mb-6">
+          <div class="text-center mb-4">
             <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <span class="icon-[tabler--message] size-6 text-primary"></span>
             </div>
@@ -556,9 +568,19 @@
               ພວກເຮົາໄດ້ສົ່ງລະຫັດ OTP ໄປຫາເບີ
               <span class="font-medium">{{ maskPhone(customerForm.phone) }}</span>
             </p>
+
             <p class="text-sm text-gray-500 mt-2">
-              ລະຫັດຈະໝົດອາຍຸໃນອີກ {{ otpCountdown }} ວິນາທີ
+              ລະຫັດຈະໝົດອາຍຸໃນອີກ <span class="font-bold text-primary">{{ otpCountdown }}</span> ວິນາທີ
             </p>
+
+            <div v-if="otpCountdown < 40" class="mt-3">
+              <button type="button" class="btn btn-sm btn-outline btn-primary w-full"
+                :disabled="isResendingOtp" @click="resendOtp">
+                <span v-if="isResendingOtp" class="loading loading-spinner loading-xs"></span>
+                <span v-else class="icon-[tabler--refresh] size-4 mr-1"></span>
+                ຂໍລະຫັດ OTP ໃໝ່
+              </button>
+            </div>
           </div>
 
           <div class="form-control mb-6">
@@ -740,6 +762,50 @@ const calculateMonthlyPayment = (): number => {
   return Math.round(monthlyPayment)
 }
 
+// ==========================================
+// 🟢 ຟັງຊັນສຳລັບຈັດການ Input ຕົວເລກໃຫ້ມີໝາຍຈຸດ (,)
+// ==========================================
+
+// 1. ແປງຕົວເລກດິບ ໃຫ້ເປັນ String ທີ່ມີໝາຍຈຸດ ເພື່ອສະແດງໃນ Input
+const formatCurrencyInput = (val: number | string | null | undefined): string => {
+  if (val === null || val === undefined || val === '') return '';
+  // ລຶບໝາຍຈຸດອອກກ່ອນ ແລ້ວແປງເປັນ Number (ຕັດທົດສະນິຍົມອອກ ຖ້າມີ)
+  const num = typeof val === 'string' ? parseInt(val.replace(/,/g, ''), 10) : Math.floor(Number(val));
+  if (isNaN(num)) return '';
+  // ຄືນຄ່າເປັນ String ທີ່ມີໝາຍຈຸດ
+  return num.toLocaleString('en-US');
+};
+
+// 2. ຮັບຄ່າຈາກ Input, ລຶບໝາຍຈຸດອອກ, ແລ້ວບັນທຶກລົງ State ຕົວຈິງ
+const handleCurrencyInput = (field: 'monthly_income' | 'other_debts', event: Event) => {
+  const target = event.target as HTMLInputElement;
+
+  // ຈື່ຕຳແໜ່ງ Cursor ເກົ່າໄວ້
+  const cursorPosition = target.selectionStart;
+  const originalLength = target.value.length;
+
+  // ລຶບທຸກຢ່າງທີ່ບໍ່ແມ່ນຕົວເລກອອກ
+  const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
+  const numericValue = parseInt(rawValue, 10);
+
+  // ອັບເດດຄ່າລົງໃນ State
+  if (!isNaN(numericValue) && rawValue !== '') {
+    customerForm[field] = numericValue;
+  } else {
+    customerForm[field] = 0;
+  }
+
+  // ບັງຄັບອັບເດດຄ່າໃນຊ່ອງ Input ທັນທີໃຫ້ມີໝາຍຈຸດ
+  target.value = formatCurrencyInput(customerForm[field]) || '';
+
+  // ຄືນຕຳແໜ່ງ Cursor ໃຫ້ຖືກຕ້ອງ (ປ້ອງກັນ Cursor ເດັ້ງໄປທາງຫຼັງສຸດຕອນພິມ)
+  const newLength = target.value.length;
+  const lengthDiff = newLength - originalLength;
+  if (cursorPosition !== null) {
+    target.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
+  }
+};
+
 // ຄິດໄລ່ຍອດຊຳລະທັງໝົດ
 const calculateTotalPayment = (): number => {
   // ເອົາຄ່າງວດຕໍ່ເດືອນທີ່ປັດເສດແລ້ວ ມາຄູນຈຳນວນເດືອນ
@@ -833,7 +899,11 @@ const searchCustomerByPhone = async () => {
       customerForm.id_card = customer.identity_number || ''
       customerForm.address = customer.address || ''
       customerForm.occupation = customer.occupation || ''
-      customerForm.monthly_income = customer.income_per_month || 0
+      // customerForm.monthly_income = customer.income_per_month || 0
+      // 🟢 ປັດເສດທົດສະນິຍົມຖິ້ມ (Math.floor)
+      customerForm.monthly_income = Math.floor(Number(customer.income_per_month)) || 0
+      // ຖ້າມີໜີ້ສິນອື່ນໆ ກໍປັດເສດຄືກັນ (ຖ້າ API ສົ່ງມາ)
+      customerForm.other_debts = Math.floor(Number(customer.other_debts)) || 0
       customerForm.age = customer.age || 18
 
       Object.keys(customerErrors).forEach(key => {
@@ -918,8 +988,10 @@ const showSuccessModal = ref(false)
 // OTP verification
 const otpCode = ref('')
 const otpError = ref('')
-const otpCountdown = ref(5)
+const otpCountdown = ref(300)
 let otpTimer: NodeJS.Timeout | null = null
+// 🟢 ເພີ່ມ state ສຳລັບການໂຫຼດຕອນຂໍ OTP ໃໝ່
+const isResendingOtp = ref(false)
 
 const filteredShops = computed(() => {
   let shopsArray = shopStore.shops
@@ -1130,7 +1202,7 @@ const setupPinInputs = async () => {
 }
 
 const startOtpCountdown = () => {
-  otpCountdown.value = 5
+  otpCountdown.value = 300
   if (otpTimer) clearInterval(otpTimer)
   otpTimer = setInterval(() => {
     otpCountdown.value--
@@ -1143,6 +1215,31 @@ const startOtpCountdown = () => {
   }, 1000)
 }
 
+// 🟢 ຟັງຊັນຂໍລະຫັດ OTP ໃໝ່
+const resendOtp = async () => {
+  if (!customerForm.phone) return;
+  isResendingOtp.value = true;
+  otpError.value = '';
+
+  try {
+    await requestOtpForCustomer({ phone: customerForm.phone.trim() });
+    alert.success('ສົ່ງລະຫັດ OTP ໃໝ່ສຳເລັດແລ້ວ!');
+
+    // ຣີເຊັດຊ່ອງປ້ອນ OTP
+    otpCode.value = '';
+    const inputs = document.querySelectorAll<HTMLInputElement>('[data-pin-input-item]');
+    inputs.forEach(input => input.value = '');
+    inputs[0]?.focus(); // ເອົາ cursor ກັບໄປຊ່ອງທຳອິດ
+
+    startOtpCountdown(); // ເລີ່ມນັບເວລາໃໝ່
+  } catch (error: any) {
+    console.error('❌ Failed to resend OTP:', error);
+    otpError.value = 'ບໍ່ສາມາດສົ່ງ OTP ໃໝ່ໄດ້, ກະລຸນາລອງອີກຄັ້ງ';
+  } finally {
+    isResendingOtp.value = false;
+  }
+};
+
 watch(showOtpModal, async (newValue) => {
   if (newValue) {
     otpCode.value = ''
@@ -1154,7 +1251,7 @@ watch(showOtpModal, async (newValue) => {
 const openOtpModal = async () => {
   if (!selectedShop.value || !selectedProduct.value || !validateCustomerForm()) return
   try {
-    await requestOtpForCustomer({ phone: customerForm.phone });
+    await requestOtpForCustomer({ phone: customerForm.phone.trim() });
   } catch (error) {
     console.error('❌ Failed to request OTP:', error);
     return;

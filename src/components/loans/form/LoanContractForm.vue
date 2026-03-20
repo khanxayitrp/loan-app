@@ -899,6 +899,7 @@ const printForm = async () => {
   if (isGeneratingPDF.value) return;
   isGeneratingPDF.value = true;
   try {
+   console.log('Generating PDF with data:', formData);
     const response = await apiClient.post('/pdf/generate-loan-contract', {
       formData: formData,
       contractId: props.loanContract?.id || props.loanContractId || props.loanApplication?.id
@@ -1093,6 +1094,7 @@ const loadDataFromProps = () => {
       formData.guarantorWork.address.province = refWorkAddr.province
     }
   } else {
+    // โค้ดดึงข้อมูลลูกค้าจาก Application (คงเดิม)
     formData.contractNumber = sourceData.loan_id || ''
     const sDate = sourceData.createdAt || sourceData.created_at
     if (sDate) {
@@ -1191,23 +1193,34 @@ const loadDataFromProps = () => {
   }
 
   // -----------------------------------------------------
-  // 🎯 2. ข้อมูลสินค้าและการคำนวณ (บังคับดึงจาก Application เสมอ!)
+  // 🎯 2. ข้อมูลสินค้าและการคำนวณ
   // -----------------------------------------------------
-  // 🟢 ลบโค้ดเดิมที่ดึงข้อมูลสินค้าจาก Contract ออกทั้งหมด
-  // 🟢 และบังคับใช้ข้อมูลล่าสุดจาก `props.loanApplication` ใส่เข้าฟอร์มทันที!
   const app = props.loanApplication;
-  if (app && app.id) {
-    formData.product.description = app.product?.product_name || app.product_detail || ''
-    formData.product.brand = app.product?.brand || app.product_brand || ''
-    formData.product.model = app.product?.model || app.product_model || ''
 
-    // ดึงราคาและยอดตั้งต้นจาก Application (ที่พนักงานเพิ่งอัปเดต)
+  // 🟢 2.1 ดึง Description, Brand, Model จาก "สัญญาเดิม (Contract)" เป็นหลักก่อน!
+  // ถ้าไม่มีสัญญา (เปิดฟอร์มครั้งแรก) ค่อยไปดึงจาก Application / Product
+  if (isFromContract && contractData) {
+    formData.product.description = contractData.product_detail || contractData.productDetail || '';
+    formData.product.type = contractData["producttype.type_name"] || '';
+    formData.product.brand = contractData.product_brand || contractData.productBrand || '';
+    formData.product.model = contractData.product_model || contractData.productModel || '';
+  } else if (app && app.id) {
+    formData.product.description = app.product?.product_name || app.product_detail || '';
+    formData.product.type = app.product?.type || app.product_type || '';
+    formData.product.brand = app.product?.brand || app.product_brand || '';
+    formData.product.model = app.product?.model || app.product_model || '';
+  }
+
+  // 🟢 2.2 ข้อมูลตัวเลขเงิน/ดอกเบี้ย บังคับดึงจาก Application เสมอ!
+  // (เพราะนี่คือค่าอัปเดตล่าสุดที่พนักงานแก้ไขในฟอร์มอนุมัติ)
+  if (app && app.id) {
     formData.product.price = Number(app.total_amount) || 0;
     formData.product.downPayment = Number(app.down_payment) || 0;
     formData.product.interestRate = Number(app.interest_rate_at_apply) || 0;
     formData.product.loanTerm = Number(app.loan_period) || 1;
     formData.product.fee = Number(app.fee) || 20000;
     formData.product.paymentDay = Number(app.payment_day) || 1;
+    formData.product.monthlyPayment = Number(app.monthly_pay) || 0;
 
     // ดึงประเภทดอกเบี้ย
     formData.product.interestType = app.interest_type || app.interestType || 'flat_rate';

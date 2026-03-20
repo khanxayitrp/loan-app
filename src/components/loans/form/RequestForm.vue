@@ -213,18 +213,16 @@
             <div class="product-row">
               <div class="form-group">
                 <label>2. ລາຄາສິນຄ້າ: <span class="required">*</span></label>
-                <input v-model.number="formData.product.price" type="number" required :readonly="!isEditing"
-                  :class="{ 'has-data': formData.product.price, 'readonly-field': !isEditing }"
-                  @input="calculateLoanDetails" />
+                <input v-model.number="formData.product.price" type="number" required readonly
+                  class="readonly-field" :class="{ 'has-data': formData.product.price }" />
                 <div class="text-xs text-gray-500 mt-1" v-if="formData.product.price">
                   {{ formatPrice(formData.product.price) }} ກີບ
                 </div>
               </div>
               <div class="form-group">
                 <label>8. ວາງດາວ:</label>
-                <input v-model.number="formData.product.downPayment" type="number" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.product.downPayment, 'readonly-field': !isEditing }"
-                  @input="calculateLoanDetails" />
+                <input v-model.number="formData.product.downPayment" type="number" readonly
+                  class="readonly-field" :class="{ 'has-data': formData.product.downPayment }" />
                 <div class="text-xs text-gray-500 mt-1" v-if="formData.product.downPayment">
                   {{ formatPrice(formData.product.downPayment) }} ກີບ
                 </div>
@@ -238,13 +236,12 @@
                 </div>
               </div>
             </div>
+
             <div class="product-row">
               <div class="form-group">
                 <label>3. ໄລະຍະເວລາກູ້: <span class="required">*</span></label>
-                <input v-model.number="formData.product.loanTerm" type="number" placeholder="ເດືອນ" required
-                  :readonly="!isEditing"
-                  :class="{ 'has-data': formData.product.loanTerm, 'readonly-field': !isEditing }"
-                  @input="calculateLoanDetails" />
+                <input v-model.number="formData.product.loanTerm" type="number" placeholder="ເດືອນ" required readonly
+                  class="readonly-field" :class="{ 'has-data': formData.product.loanTerm }" />
               </div>
               <div class="form-group">
                 <label>
@@ -253,9 +250,8 @@
                     {{ formData.product.interestRateType === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}
                   </span>:
                 </label>
-                <input v-model.number="formData.product.interestRate" type="number" step="0.01" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.product.interestRate, 'readonly-field': !isEditing }"
-                  @input="calculateLoanDetails" />
+                <input v-model.number="formData.product.interestRate" type="number" step="0.01" readonly
+                  class="readonly-field" :class="{ 'has-data': formData.product.interestRate }" />
               </div>
               <div class="form-group">
                 <label>14. ຈຳນວນດອກເບ້ຍທັງຫມົດ:</label>
@@ -266,11 +262,12 @@
                 </div>
               </div>
             </div>
+
             <div class="product-row">
               <div class="form-group">
                 <label>4. ຄ່າທຳນຽມ/(CIB):</label>
-                <input v-model.number="formData.product.fee" type="number" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.product.fee, 'readonly-field': !isEditing }" @input="calculateLoanDetails" />
+                <input v-model.number="formData.product.fee" type="number" readonly
+                  class="readonly-field" :class="{ 'has-data': formData.product.fee }" />
                 <div class="text-xs text-gray-500 mt-1" v-if="formData.product.fee">
                   {{ formatPrice(formData.product.fee) }} ກີບ
                 </div>
@@ -612,7 +609,8 @@ const formData = reactive({
     durationYears: null as number | null, department: '', position: '', salary: null as number | null
   },
   product: {
-    type: '', price: null as number | null, loanTerm: null as number | null, fee: 20000,
+    type: '',
+    productType: '', price: null as number | null, loanTerm: null as number | null, fee: 20000,
     monthlyPayment: null as number | null, store: '', brand: '', downPayment: null as number | null,
     interestRate: null as number | null,
     interestType: 'flat_rate',       // Hidden State
@@ -712,7 +710,7 @@ const loadDataFromProps = () => {
   }
 
   if (loan.product) {
-    formData.product.type = loan.product.product_name || ''
+    formData.product.type = loan.product?.productType?.type_name || ''
     formData.product.price = safeNumber(loan.product.price) || safeNumber(loan.total_amount) || null
     formData.product.store = loan.product.partner?.shop_name?.toString() || ''
     formData.product.brand = loan.product.brand || ''
