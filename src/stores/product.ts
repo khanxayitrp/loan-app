@@ -75,83 +75,48 @@ export const useProductStore = defineStore('product', {
 
   actions: {
     /**
-     * โหลดรายการสินค้า
+     * โหลดรายการสินค้า (Clean Version)
      */
     async fetchProducts(params: GetProductsParams = {}) {
-      this.isLoading = true
-      this.error = null
+      this.isLoading = true;
+      this.error = null;
 
       try {
-        const page = params.page || this.currentPage
-        const limit = params.limit || this.pageSize
-        const shopId = params.shop_id
+        const page = params.page || this.currentPage;
+        const limit = params.limit || this.pageSize;
+        const shopId = params.shop_id;
 
-        this.currentPage = page
-        this.pageSize = limit
+        this.currentPage = page;
+        this.pageSize = limit;
 
+        // เคลียร์ข้อมูลเดิมทิ้งหากมีการเปลี่ยนร้านค้า
         if (shopId !== undefined && shopId !== this.currentShopId) {
-          console.log('🔄 [ProductStore] Shop changed, clearing old products')
-          console.log('  Old shop:', this.currentShopId)
-          console.log('  New shop:', shopId)
-
-          this.products = []
-          this.total = 0
-          this.currentShopId = shopId
+          this.products = [];
+          this.total = 0;
+          this.currentShopId = shopId;
         }
 
-        console.log('📡 [ProductStore] Fetching products:', {
-          shop_id: shopId,
-          page,
-          limit
-        })
-
+        // 🟢 1. ยิง API (API จะส่งค่าที่จัด Format มาให้แล้วอย่างสวยงาม)
         const response = await getProducts({
           ...params,
           page,
           limit
-        })
+        });
 
-        console.log('📥 [ProductStore] API response:', response)
+        // 🟢 2. เอาค่ามาใส่ State ได้ตรงๆ เลย! (ไม่ต้องมุดหาชั้น .data.data อีกแล้ว)
+        this.products = response.products || [];
+        this.total = response.total || 0;
 
-        const productsArray = Array.isArray(response.products)
-          ? response.products
-          : []
-
-        const totalCount = response.total || productsArray.length
-
-        console.log('📦 [ProductStore] Loaded products:', {
-          count: productsArray.length,
-          total: totalCount,
-          shop_id: shopId
-        })
-
-        if (productsArray.length > 0) {
-          const sample = productsArray[0]
-          console.log('🔍 [ProductStore] First product:', {
-            id: sample.id,
-            name: sample.product_name,
-            has_productType_id: 'productType_id' in sample,
-            productType_id: sample.productType_id,
-            keys: Object.keys(sample)
-          })
-        }
-
-        this.products = productsArray
-        this.total = totalCount
-
-        console.log('✅ [ProductStore] Products updated:', {
-          count: this.products.length,
-          total: this.total
-        })
+        console.log('✅ [ProductStore] Products loaded successfully:', this.products.length);
 
       } catch (error: any) {
-        console.error('❌ [ProductStore] Failed to fetch products:', error)
-        this.error = error.message || 'Failed to fetch products'
-        this.products = []
-        this.total = 0
-        throw error
+        console.error('❌ [ProductStore] Failed to fetch products:', error);
+        this.error = error.message || 'Failed to fetch products';
+        this.products = [];
+        this.total = 0;
+        throw error;
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
 

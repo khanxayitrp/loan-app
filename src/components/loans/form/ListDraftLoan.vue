@@ -1207,6 +1207,7 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       age: formData.customer.age,
       occupation: formData.customer.occupation,
       income_per_month: selectedDraft.value.customer?.income_per_month,
+      other_debt: selectedDraft.value.customer?.other_debts,
       unit: formData.customer.unit,
       issue_place: formData.customer.issuePlace,
       issue_date: formData.customer.issueDate,

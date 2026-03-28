@@ -9,6 +9,7 @@ export type { CustomerLocation };
 export enum LoanApplicationStatus {
   PENDING = 'pending',
   VERIFYING = 'verifying',
+  VERIFIED = 'verified',
   APPROVED = 'approved',
   REJECTED = 'rejected',
   CANCELLED = 'cancelled',

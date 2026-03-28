@@ -162,7 +162,7 @@
             </select>
           </div>
 
-          <div class="form-control">
+          <!-- <div class="form-control">
             <label class="label">
               <span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span>
             </label>
@@ -175,9 +175,23 @@
             <div class="text-xs text-gray-500 mt-1">
               ໄລຍະເວລາ: {{ loanDetails.termMonths }} ເດືອນ
             </div>
+          </div> -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span>
+            </label>
+            <input v-model.number="loanDetails.termMonths" type="number" placeholder="ຈຳນວນງວດ"
+              class="input input-bordered w-full" :class="{ 'input-error': loanErrors.termMonths }" min="1" max="36"
+              @input="handleTermChange" />
+            <label v-if="loanErrors.termMonths" class="label text-error">
+              <span class="label-text-alt">{{ loanErrors.termMonths }}</span>
+            </label>
+            <div class="text-xs text-gray-500 mt-1">
+              ໄລຍະເວລາ: {{ loanDetails.termMonths }} ເດືອນ
+            </div>
           </div>
 
-          <div class="form-control">
+          <!-- <div class="form-control">
             <label class="label">
               <span class="label-text font-medium">ເງີນດາວ (ກີບ)</span>
             </label>
@@ -193,9 +207,31 @@
                 ເງິນກູ້: {{ formatPrice(loanDetails.totalAmount - loanDetails.downPayment) }}
               </div>
             </div>
+          </div> -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">ເງີນດາວ (ກີບ)</span>
+            </label>
+            <input
+              :value="formatCurrencyInput(loanDetails.downPayment)"
+              @input="handleDownPaymentInput"
+              type="text"
+              placeholder="ປ້ອນເງີນດາວ"
+              class="input input-bordered w-full"
+              :class="{ 'input-error': loanErrors.downPayment }"
+            />
+            <label v-if="loanErrors.downPayment" class="label text-error">
+              <span class="label-text-alt">{{ loanErrors.downPayment }}</span>
+            </label>
+            <div class="text-xs text-gray-500 mt-1">
+              <div>ເງີນດາວ (ກີບ): {{ formatPrice(loanDetails.downPayment) }}</div>
+              <div class="text-primary font-medium">
+                ເງິນກູ້: {{ formatPrice(loanDetails.totalAmount - loanDetails.downPayment) }}
+              </div>
+            </div>
           </div>
 
-          <div class="form-control">
+          <!-- <div class="form-control">
             <label class="label">
               <span class="label-text font-medium">
                 ດອກເບ້ຍ (%)
@@ -211,6 +247,21 @@
             <label v-if="loanErrors.interestRate" class="label text-error">
               <span class="label-text-alt">{{ loanErrors.interestRate }}</span>
             </label>
+          </div> -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">
+                ດອກເບ້ຍ (%) ອັດຕະໂນມັດ
+                <span class="text-primary ml-1">
+                  {{ selectedProduct?.interest_rate_type === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}
+                </span>
+                *
+              </span>
+            </label>
+            <input v-model.number="loanDetails.interestRate" type="number" placeholder="ປ້ອນດອກເບ້ຍ"
+              class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
+              :class="{ 'input-error': loanErrors.interestRate }" min="0" max="100"
+              step="0.01" readonly />
           </div>
 
           <div class="form-control md:col-span-2">
@@ -690,6 +741,27 @@ const canAccessDocuments = ref(false)
 // Loan number (auto-generated)
 const loanNumber = ref('LN' + Date.now().toString().slice(-6))
 
+// ==========================================
+// 🟢 ຟັງຊັນດຶງອັດຕາດອກເບ້ຍຕາມນະໂຍບາຍ (ຈາກຕາຕະລາງ)
+// ==========================================
+const getInterestRateByTerm = (months: number): number => {
+  if (!months || months <= 6) return 2.50;
+  if (months <= 12) return 2.00;
+  if (months <= 18) return 1.89;
+  if (months <= 24) return 1.75;
+  return 1.69; // ສຳລັບ 25-36 ເດືອນຂຶ້ນໄປ
+}
+
+// 🟢 ຟັງຊັນຈັດການເມື່ອມີການປ່ຽນແປງຈຳນວນເດືອນ
+const handleTermChange = () => {
+  if (loanDetails.termMonths > 0) {
+    // ອັບເດດດອກເບ້ຍອັດຕະໂນມັດຕາມຈຳນວນເດືອນ
+    loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths);
+  }
+  // ຄິດໄລ່ຄ່າງວດໃໝ່
+  handleCalculationChange();
+}
+
 // 🟢 ເພີ່ມ state: interestType ສໍາລັບຮອງຮັບປະເພດດອກເບ້ຍ
 const loanDetails = reactive({
   totalAmount: 0,
@@ -710,12 +782,16 @@ const loanErrors = reactive({
 const calculateInitialLoanDetails = () => {
   if (!selectedProduct.value) return
 
-  const { price, interest_rate, term, interest_type } = selectedProduct.value
+  const { price, term, interest_type } = selectedProduct.value
 
-  loanDetails.totalAmount = Number(price)
-  loanDetails.interestRate = Number(interest_rate)
+  loanDetails.totalAmount = Number(price || 0)
+  // loanDetails.interestRate = Number(interest_rate)
   loanDetails.termMonths = Number(term || 12)
   loanDetails.downPayment = 0
+
+  // 🟢 ດຶງອັດຕາດອກເບ້ຍຈາກເງື່ອນໄຂໜ້າເວັບ (Frontend Logic)
+  loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths)
+
   // ດຶງປະເພດດອກເບ້ຍຈາກສິນຄ້າ (ຖ້າມີ) ຫຼື ໃຫ້ເປັນ flat_rate ຄືເກົ່າ
   loanDetails.interestType = interest_type || 'flat_rate'
   loanDetails.monthlyPayment = calculateMonthlyPayment()
@@ -804,6 +880,44 @@ const handleCurrencyInput = (field: 'monthly_income' | 'other_debts', event: Eve
   if (cursorPosition !== null) {
     target.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
   }
+};
+
+// 🟢 ຟັງຊັນຈັດການ Input ເງິນດາວ ໃຫ້ມີໝາຍຈຸດອັດຕະໂນມັດ
+const handleDownPaymentInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+
+  // ຈື່ຕຳແໜ່ງ Cursor ເກົ່າໄວ້
+  const cursorPosition = target.selectionStart;
+  const originalLength = target.value.length;
+
+  // ລຶບທຸກຢ່າງທີ່ບໍ່ແມ່ນຕົວເລກອອກ
+  const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
+  const numericValue = parseInt(rawValue, 10);
+
+  // ອັບເດດຄ່າລົງໃນ State ຂອງເງິນດາວ
+  if (!isNaN(numericValue) && rawValue !== '') {
+    // ປ້ອງກັນບໍ່ໃຫ້ປ້ອນເງິນດາວເກີນລາຄາສິນຄ້າ (ຖ້າເກີນ ໃຫ້ເທົ່າກັບລາຄາສິນຄ້າ)
+    if (numericValue > loanDetails.totalAmount) {
+      loanDetails.downPayment = loanDetails.totalAmount;
+    } else {
+      loanDetails.downPayment = numericValue;
+    }
+  } else {
+    loanDetails.downPayment = 0;
+  }
+
+  // ບັງຄັບອັບເດດຄ່າໃນຊ່ອງ Input ທັນທີໃຫ້ມີໝາຍຈຸດ
+  target.value = formatCurrencyInput(loanDetails.downPayment) || '';
+
+  // ຄືນຕຳແໜ່ງ Cursor ໃຫ້ຖືກຕ້ອງ
+  const newLength = target.value.length;
+  const lengthDiff = newLength - originalLength;
+  if (cursorPosition !== null) {
+    target.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
+  }
+
+  // 🟢 ເອີ້ນໃຊ້ຟັງຊັນຄິດໄລ່ຄ່າງວດໃໝ່ທັນທີ ຫຼັງຈາກປ່ຽນເງິນດາວ
+  handleCalculationChange();
 };
 
 // ຄິດໄລ່ຍອດຊຳລະທັງໝົດ

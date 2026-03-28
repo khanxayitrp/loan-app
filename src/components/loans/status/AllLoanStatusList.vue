@@ -505,6 +505,7 @@ const getStatusBadgeClass = (status: string): string => {
   const map: Record<string, string> = {
     'pending': 'badge-warning',
     'verifying': 'badge-info',
+    'verified': 'badge-primary',
     'approved': 'badge-success',
     'rejected': 'badge-error',
     'completed': 'badge-neutral',
@@ -516,8 +517,9 @@ const getStatusBadgeClass = (status: string): string => {
 // 📝 Status Text (Lao)
 const getStatusText = (status: string): string => {
   const map: Record<string, string> = {
-    'pending': 'ລໍຖ້າການອະນຸມັດ',
+    'pending': 'ລໍຖ້າການກວດສອບ',
     'verifying': 'ກຳລັງກວດສອບ',
+    'verified': 'ກວດສອບແລ້ວ',
     'approved': 'ອະນຸມັດແລ້ວ',
     'rejected': 'ປະຕິເສດ',
     'completed': 'ສຳເລັດ',

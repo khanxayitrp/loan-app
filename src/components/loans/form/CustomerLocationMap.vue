@@ -1,13 +1,10 @@
-<!-- src/components/CustomerLocationMap.vue -->
 <template>
   <div class="space-y-6">
-    <!-- Loading State -->
     <div v-if="isLoading" class="text-center py-12">
       <div class="loading loading-spinner loading-lg text-primary"></div>
       <p class="mt-2 text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນແຜນທີ່...</p>
     </div>
 
-    <!-- No Locations -->
     <div v-else-if="locations.length === 0 && !canAddLocation" class="text-center py-12 text-gray-500">
       <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
         <span class="icon-[tabler--map-pin-off] size-8 text-gray-400"></span>
@@ -16,9 +13,7 @@
       <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີຂໍ້ມູນແຜນທີ່ສຳລັບລູກຄ້ານີ້</p>
     </div>
 
-    <!-- Map Container -->
     <div v-else class="space-y-4">
-      <!-- Map Controls -->
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-2 text-sm text-gray-500">
           <span class="icon-[tabler--map-pin] size-4"></span>
@@ -32,13 +27,11 @@
         </button>
       </div>
 
-      <!-- Map Container -->
       <div class="card bg-base-200 p-4 rounded-lg border border-base-content/10 relative">
         <div ref="mapContainer" class="w-full rounded-lg overflow-hidden map-container" style="height: 384px;"
           :class="{ 'cursor-crosshair': isAddingLocation }"></div>
       </div>
 
-      <!-- Instruction Box -->
       <Teleport to="body">
         <div v-if="isAddingLocation" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md px-4">
           <div
@@ -55,7 +48,6 @@
         </div>
       </Teleport>
 
-      <!-- Location List -->
       <div v-if="locations.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div v-for="location in locations" :key="location.id"
           class="card bg-base-100 p-4 rounded-lg border border-base-content/10"
@@ -107,15 +99,33 @@
       </div>
     </div>
 
-    <!-- Add/Edit Location Modal -->
     <teleport to="body">
-      <div v-if="showLocationModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+      <div v-if="showLocationModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
           <h3 class="text-lg font-bold mb-4">
             {{ editingLocation ? 'ແກ້ໄຂທີ່ຢູ່' : 'ເພີ່ມທີ່ຢູ່ໃໝ່' }}
           </h3>
 
           <div class="space-y-4">
+
+            <div class="form-control bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+              <label class="label pt-0">
+                <span class="label-text font-medium text-blue-700 dark:text-blue-300">
+                  <span class="icon-[tabler--link] size-4 inline mr-1 align-text-bottom"></span>
+                  ວາງລີ້ງແຜນທີ່ (Paste Google Maps Link)
+                </span>
+              </label>
+              <input
+                v-model="pastedMapUrl"
+                @input="handleMapLinkPaste"
+                type="text"
+                class="input input-bordered border-blue-200 focus:border-blue-400 w-full"
+                placeholder="ຕົວຢ່າງ: https://maps.google.com/maps?q=17.9757,102.6331..."
+              />
+              <label class="label pb-0">
+                <span class="label-text-alt text-gray-500">ລະບົບຈະດຶງຄ່າ Lat/Lng ແລະ ປັກໝຸດອັດຕະໂນມັດ</span>
+              </label>
+            </div>
             <div class="form-control">
               <label class="label">
                 <span class="label-text font-medium">ປະເພດທີ່ຢູ່ *</span>
@@ -136,7 +146,7 @@
               <label class="label">
                 <span class="label-text-alt text-info">
                   <span class="icon-[tabler--bulb] size-3 inline"></span>
-                  ຫຼື <button type="button" @click="reverseGeocode" class="link link-info">ດຶງທີ່ຢູ່ຈາກຕຳແໜ່ງ</button>
+                  ຫຼື <button type="button" @click="reverseGeocode" class="link link-info">ດຶງທີ່ຢູ່ຈາກຕຳແໜ່ງ (Auto fill)</button>
                 </span>
               </label>
             </div>
@@ -144,34 +154,35 @@
             <div class="grid grid-cols-2 gap-4">
               <div class="form-control">
                 <label class="label">
-                  <span class="label-text font-medium">ລາຕິຈູດ</span>
+                  <span class="label-text font-medium">ລາຕິຈູດ (Lat)</span>
                 </label>
                 <input v-model="locationForm.latitude" type="text" class="input input-bordered w-full" readonly />
               </div>
               <div class="form-control">
                 <label class="label">
-                  <span class="label-text font-medium">ລອງຈິຈູດ</span>
+                  <span class="label-text font-medium">ລອງຈິຈູດ (Lng)</span>
                 </label>
                 <input v-model="locationForm.longitude" type="text" class="input input-bordered w-full" readonly />
               </div>
             </div>
 
             <div class="form-control">
-              <label class="flex items-center gap-2 cursor-pointer">
+              <label class="flex items-center gap-2 cursor-pointer mt-2">
                 <input v-model="locationForm.is_primary" type="checkbox" class="checkbox checkbox-primary"
                   :checked="locationForm.is_primary === 1" @change="toggleIsPrimary" />
-                <span class="label-text">ຕັ້ງເປັນທີ່ຢູ່ຫຼັກ</span>
+                <span class="label-text font-medium">ຕັ້ງເປັນທີ່ຢູ່ຫຼັກ (Primary)</span>
               </label>
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 mt-6">
+          <div class="flex justify-end gap-3 mt-8">
             <button class="btn btn-soft btn-secondary" @click="closeLocationModal">
               ຍົກເລີກ
             </button>
             <button class="btn btn-primary" @click="saveLocation"
               :disabled="!locationForm.latitude || !locationForm.longitude">
-              {{ editingLocation ? 'ບັນທຶກ' : 'ເພີ່ມ' }}
+              <span class="icon-[tabler--device-floppy] size-4 mr-1"></span>
+              {{ editingLocation ? 'ບັນທຶກການແກ້ໄຂ' : 'ບັນທຶກທີ່ຢູ່' }}
             </button>
           </div>
         </div>
@@ -192,7 +203,7 @@ const props = defineProps<{
   canEditLocation?: boolean
   canDeleteLocation?: boolean
   canSetPrimary?: boolean
-  googleMapsApiKey?: string // ✅ เพิ่ม prop สำหรับ API Key
+  googleMapsApiKey?: string
 }>()
 
 const emit = defineEmits<{
@@ -212,6 +223,9 @@ const isAddingLocation = ref(false)
 const showLocationModal = ref(false)
 const editingLocation = ref<CustomerLocation | null>(null)
 const isMapLoaded = ref(false)
+
+// 🟢 ປະກາດຕົວແປສຳລັບຊ່ອງ Paste Link
+const pastedMapUrl = ref('')
 
 let clickListener: google.maps.MapsEventListener | null = null
 
@@ -235,23 +249,84 @@ const getLocationTypeLabel = (type: string): string => {
 }
 
 const getGoogleMapsLink = (lat: number | string, lng: number | string): string => {
-  return `https://www.google.com/maps?q=${Number(lat)},${Number(lng)}`
+  return `http://maps.google.com/maps?q=${Number(lat)},${Number(lng)}`
 }
 
 const toggleIsPrimary = () => {
   locationForm.value.is_primary = locationForm.value.is_primary === 1 ? 0 : 1
 }
 
+// ✅ ຟັງຊັນດຶງພິກັດຈາກ Link ທີ່ວາງ (Paste Link Logic)
+const handleMapLinkPaste = () => {
+  const url = pastedMapUrl.value.trim();
+  if (!url) return;
+
+  let lat: number | null = null;
+  let lng: number | null = null;
+
+  // 1. ແຍກພິກັດຈາກຮູບແບບ @lat,lng (Google Maps ເທິງເວັບ)
+  // ຕົວຢ່າງ: https://www.google.com/maps/place/.../@17.9757,102.6331,15z
+  const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (atMatch) {
+    lat = parseFloat(atMatch[1]);
+    lng = parseFloat(atMatch[2]);
+  }
+
+  // 2. ແຍກພິກັດຈາກຮູບແບບ ?q=lat,lng ຫລື &q=lat,lng
+  // ຕົວຢ່າງ: https://maps.google.com/?q=17.9757,102.6331
+  if (!lat || !lng) {
+    const qMatch = url.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (qMatch) {
+      lat = parseFloat(qMatch[1]);
+      lng = parseFloat(qMatch[2]);
+    }
+  }
+
+  // 3. ແຍກພິກັດຈາກຮູບແບບທີ່ພິມຕົວເລກລ້ວນໆ "17.9757, 102.6331"
+  if (!lat || !lng) {
+    const rawMatch = url.match(/^(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)$/);
+    if (rawMatch) {
+      lat = parseFloat(rawMatch[1]);
+      lng = parseFloat(rawMatch[2]);
+    }
+  }
+
+  if (lat && lng) {
+    // ບັນທຶກຄ່າລົງຟອມ
+    locationForm.value.latitude = lat;
+    locationForm.value.longitude = lng;
+
+    // ເລື່ອນແຜນທີ່ ແລະ ສ້າງ/ຍ້າຍ ໝຸດໄປຫາຕຳແໜ່ງໃໝ່ທັນທີ
+    if (map.value) {
+      const position = { lat, lng };
+
+      if (tempMarker.value) {
+        tempMarker.value.setPosition(position);
+      } else {
+        tempMarker.value = new google.maps.Marker({
+          position,
+          map: map.value,
+          animation: google.maps.Animation.DROP,
+        });
+      }
+
+      map.value.panTo(position);
+      map.value.setZoom(16);
+    }
+  } else if (url.includes('maps.app.goo.gl')) {
+    // ກໍລະນີເປັນ Short Link (ເຊິ່ງ JavaScript ບໍ່ສາມາດອ່ານ redirect ໄດ້ໂດຍກົງ)
+    alert('ລະບົບບໍ່ສາມາດດຶງພິກັດຈາກ Short link ໄດ້ອັດຕະໂນມັດ, ກະລຸນາເປີດລີ້ງໃນ Browser ກ່ອນ ແລ້ວກັອບປີ້ລີ້ງຍາວ (URL) ດ້ານເທິງມາໃສ່ແທນ');
+  }
+}
+
 // ✅ โหลด Google Maps Script
 const loadGoogleMapsScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    // ตรวจสอบว่าโหลดแล้วหรือยัง
     if (window.google && window.google.maps) {
       resolve()
       return
     }
 
-    // ตรวจสอบว่ามี script อยู่แล้วหรือไม่
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
     if (existingScript) {
       existingScript.addEventListener('load', () => resolve())
@@ -259,7 +334,6 @@ const loadGoogleMapsScript = (): Promise<void> => {
       return
     }
 
-    // สร้าง script ใหม่
     const script = document.createElement('script')
     script.src = `https://maps.googleapis.com/maps/api/js?key=${props.googleMapsApiKey}&libraries=places`
     script.async = true
@@ -275,16 +349,13 @@ const initMap = async () => {
   if (!mapContainer.value) return
 
   try {
-    // รอให้ Google Maps โหลดเสร็จ
     await loadGoogleMapsScript()
 
-    // ลบ map เก่าถ้ามี
     if (map.value) {
       google.maps.event.clearInstanceListeners(map.value)
       map.value = null
     }
 
-    // สร้าง map ใหม่ (ศูนย์กลางที่เวียงจันทน์)
     map.value = new google.maps.Map(mapContainer.value, {
       center: { lat: 17.9757, lng: 102.6331 },
       zoom: 13,
@@ -294,16 +365,13 @@ const initMap = async () => {
       zoomControl: true,
     })
 
-    // สร้าง Geocoder
     geocoder.value = new google.maps.Geocoder()
-
     isMapLoaded.value = true
 
-    // เพิ่ม markers ที่มีอยู่แล้ว
     updateMarkers()
   } catch (error) {
     console.error('Error initializing Google Maps:', error)
-    alert('ບໍ່สາມາດໂຫຼດແຜນທີ່ໄດ້ ກະລຸນາກວດສອບ API Key')
+    alert('ບໍ່ສາມາດໂຫຼດແຜນທີ່ໄດ້ ກະລຸນາກວດສອບ API Key')
   }
 }
 
@@ -314,12 +382,10 @@ const handleMapClick = (e: google.maps.MapMouseEvent) => {
   const lat = e.latLng.lat()
   const lng = e.latLng.lng()
 
-  // ลบ temp marker เก่า
   if (tempMarker.value) {
     tempMarker.value.setMap(null)
   }
 
-  // สร้าง temp marker ใหม่
   tempMarker.value = new google.maps.Marker({
     position: { lat, lng },
     map: map.value,
@@ -334,6 +400,8 @@ const handleMapClick = (e: google.maps.MapMouseEvent) => {
   locationForm.value.address = ''
   locationForm.value.location_type = 'home'
   locationForm.value.is_primary = locations.value.length === 0 ? 1 : 0
+
+  pastedMapUrl.value = '' // ເຄຼຍຊ່ອງ Paste ລີ້ງ ເມື່ອປັກໝຸດເອງ
 
   showLocationModal.value = true
 }
@@ -354,7 +422,6 @@ const reverseGeocode = async () => {
     })
 
     if (response.results && response.results.length > 0) {
-      // 🟢 แก้ไขตรงนี้: เติม ?. เพื่อดักจับกรณีที่ results[0] ไม่มีอยู่จริง
       locationForm.value.address = response.results[0]?.formatted_address || 'ບໍ່ສາມາດອ່ານທີ່ຢູ່ໄດ້'
     } else {
       alert('ບໍ່ພົບຂໍ້ມູນທີ່ຢູ່')
@@ -369,11 +436,9 @@ const reverseGeocode = async () => {
 const updateMarkers = () => {
   if (!map.value || !isMapLoaded.value) return
 
-  // ลบ markers เก่า
   markers.value.forEach(marker => marker.setMap(null))
   markers.value = []
 
-  // เพิ่ม markers ใหม่
   const bounds = new google.maps.LatLngBounds()
 
   locations.value.forEach(location => {
@@ -391,7 +456,6 @@ const updateMarkers = () => {
         }
       })
 
-      // สร้าง InfoWindow
       const infoWindow = new google.maps.InfoWindow({
         content: `
           <div style="padding: 8px; min-width: 200px;">
@@ -411,27 +475,20 @@ const updateMarkers = () => {
     }
   })
 
-  // ปรับมุมมองให้พอดีกับ markers ทั้งหมด
   if (markers.value.length > 0) {
-    // 🟢 แก้ไขตรงนี้: เปลี่ยนจากการส่ง Object { padding: 50 } เป็นส่งตัวเลข 50 ตรงๆ
     map.value!.fitBounds(bounds, 50)
   }
 }
 
-// ✅ เปิดโหมดเพิ่มที่อยู่
 const enableAddLocationMode = () => {
   isAddingLocation.value = true
 
   if (map.value) {
-    // เปลี่ยน cursor
     mapContainer.value!.style.cursor = 'crosshair'
-
-    // เพิ่ม click listener
     clickListener = map.value.addListener('click', handleMapClick)
   }
 }
 
-// ✅ ปิดโหมดเพิ่มที่อยู่
 const disableAddLocationMode = () => {
   isAddingLocation.value = false
 
@@ -439,13 +496,11 @@ const disableAddLocationMode = () => {
     mapContainer.value.style.cursor = ''
   }
 
-  // ลบ click listener
   if (clickListener) {
     google.maps.event.removeListener(clickListener)
     clickListener = null
   }
 
-  // ลบ temp marker ถ้ามี
   if (tempMarker.value) {
     tempMarker.value.setMap(null)
     tempMarker.value = null
@@ -461,6 +516,7 @@ const editLocation = (location: CustomerLocation) => {
     longitude: location.longitude || 0,
     is_primary: location.is_primary || 0
   }
+  pastedMapUrl.value = '' // ເຄຼຍຊ່ອງຕອນກົດແກ້ໄຂ
   showLocationModal.value = true
 }
 
@@ -513,6 +569,9 @@ const closeLocationModal = () => {
   editingLocation.value = null
   disableAddLocationMode()
 
+  // 🟢 ເຄຼຍຊ່ອງ Paste Link ນຳ
+  pastedMapUrl.value = ''
+
   locationForm.value = {
     location_type: 'home',
     address: '',
@@ -522,12 +581,10 @@ const closeLocationModal = () => {
   }
 }
 
-// ✅ เมื่อ component ถูก mount
 onMounted(() => {
   initMap()
 })
 
-// ✅ เมื่อ component ถูก unmount (ทำความสะอาด)
 onUnmounted(() => {
   if (clickListener) {
     google.maps.event.removeListener(clickListener)
@@ -548,7 +605,6 @@ onUnmounted(() => {
   }
 })
 
-// ✅ ติดตามการเปลี่ยนแปลงของ props.isLoading
 watch(() => props.isLoading, async (loading) => {
   if (!loading && !map.value) {
     await nextTick()
@@ -556,7 +612,6 @@ watch(() => props.isLoading, async (loading) => {
   }
 }, { immediate: true })
 
-// ✅ ติดตามการเปลี่ยนแปลงของ locations เพื่ออัปเดต markers
 watch(() => props.locations, () => {
   updateMarkers()
 }, { deep: true })

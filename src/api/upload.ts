@@ -172,3 +172,43 @@ export const uploadPaymentProof = async (
     )
   }
 }
+
+/**
+ * อัปโหลดรูปภาพย่อย (Variant Image) แบบ Pre-upload
+ * @param file - ไฟล์รูปภาพของ Variant
+ */
+export const uploadVariantImage = async (file: File): Promise<any> => {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    // หมายเหตุ: ตรวจสอบให้แน่ใจว่า Base URL ของ router ฝั่ง Backend คือ /upload หรือไม่
+    // ถ้าระบบของคุณ mount เป็น app.use('/api/upload', ...) ให้ใช้ '/upload/variant-image'
+    // แต่ถ้า mount เป็น app.use('/api', ...) ให้ใช้ '/variant-image'
+    const response = await apiClient.post(
+      '/upload/variant-image',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      }
+    )
+
+    console.log('[Upload API] Variant image uploaded:', response.data)
+    return response.data
+  } catch (error: any) {
+    console.error('[Upload API] Upload variant image failed:', error)
+
+    // ดักจับกรณี Backend พ่น Error ออกมาเป็นหน้า HTML
+    if (error.response?.data instanceof Blob) {
+      const contentType = error.response.headers['content-type']
+      if (contentType?.includes('text/html')) {
+        throw new Error('ເຊີບເວີສົ່ງຄືນໜ້າ HTML ແທນ JSON (ອາດຈະເກີດຈາກ Route ຜິດ)')
+      }
+    }
+
+    throw new Error(
+      error.response?.data?.message ||
+      'ອັບໂຫຼດຮູບພາບຕົວເລືອກລົ້ມເຫຼວ'
+    )
+  }
+}

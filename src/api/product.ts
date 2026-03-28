@@ -14,15 +14,20 @@ import type {
 export const getProducts = async (params?: GetProductsParams) => {
   try {
     const response = await apiClient.get('/products', { params })
-    if (response.data.products) {
-      return {
-        products: response.data.products.data || [],
-        total: response.data.products.total || 0
-      }
-    }
+    const resData = response.data;
+
+    // Backend ส่งมาเป็น: { success: true, data: { data: [...], total: X, page: Y, limit: Z } }
+    const payload = resData.data || resData;
+
+    // ดึง Array และ Total ออกมาให้ตรงชั้น
+    const productsArray = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload) ? payload : []);
+    const totalCount = payload.total !== undefined ? payload.total : productsArray.length;
+
     return {
-      products: response.data.data || [],
-      total: response.data.total || 0
+      products: productsArray,
+      total: totalCount,
+      page: payload.page || 1,
+      totalPages: payload.totalPages || 1
     }
   } catch (error: any) {
     console.error('Error fetching products:', error)
@@ -31,21 +36,15 @@ export const getProducts = async (params?: GetProductsParams) => {
 }
 
 /**
- * 🟢 ดึงข้อมูลสินค้าเฉพาะ (แก้ไขการดึงข้อมูลให้แม่นยำขึ้น)
+ * 🟢 ดึงข้อมูลสินค้าเฉพาะ
  */
 export const getProductById = async (id: number) => {
   try {
     const response = await apiClient.get(`/products/${id}`)
     console.log('[API] Product by ID response:', response.data)
 
-    // คืนค่าเฉพาะ object ตัวสินค้า
-    if (response.data?.product) {
-      return response.data.product
-    }
-    if (response.data?.data) {
-      return response.data.data
-    }
-    return response.data
+    // Backend ส่งมาเป็น: { success: true, data: { ... } }
+    return response.data.data || response.data.product || response.data
   } catch (error: any) {
     console.error(`Error fetching product ${id}:`, error)
     throw error
@@ -57,13 +56,10 @@ export const getProductById = async (id: number) => {
  */
 export const createProduct = async (data: CreateProductDto) => {
   try {
-    // 💡 data ตอนนี้จะมี description และ interest_rate_type ถูกส่งไปให้แล้ว
     const response = await apiClient.post('/products', data)
-    let productData = null
 
-    if (response.data?.product) productData = response.data.product
-    else if (response.data?.data) productData = response.data.data
-    else productData = response.data
+    // Backend ส่งมาเป็น: { success: true, message: '...', data: { ... } }
+    const productData = response.data.data || response.data.product || response.data
 
     if (!productData?.id) {
       throw new Error('ไม่พบ ID สินค้าในข้อมูลที่ได้รับจากเซิร์ฟเวอร์')
@@ -82,9 +78,9 @@ export const createProduct = async (data: CreateProductDto) => {
 export const updateProduct = async (id: number, data: UpdateProductDto) => {
   try {
     const response = await apiClient.put(`/products/${id}`, data)
-    if (response.data?.product) return response.data.product
-    if (response.data?.data) return response.data.data
-    return response.data
+
+    // Backend ส่งมาเป็น: { success: true, message: '...', data: { ... } }
+    return response.data.data || response.data.product || response.data
   } catch (error: any) {
     console.error(`Error updating product ${id}:`, error)
     throw error
@@ -108,20 +104,12 @@ export const uploadProductImage = async (productId: number, file: File) => {
     )
     return response.data
   } catch (error: any) {
-    console.error('❌ Upload product image error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    })
-
-    // ✅ ตรวจสอบว่าเป็น HTML Error
     if (error.response?.data instanceof Blob) {
       const contentType = error.response.headers['content-type']
       if (contentType?.includes('text/html')) {
         throw new Error('เซิร์ฟเวอร์คืนค่า HTML Error Page แทน JSON')
       }
     }
-
     throw error
   }
 }
@@ -132,13 +120,8 @@ export const uploadProductImage = async (productId: number, file: File) => {
 export const uploadProductGallery = async (productId: number, files: File[]) => {
   try {
     const formData = new FormData()
-    files.forEach((file, index) => {
+    files.forEach((file) => {
       formData.append('files', file)
-      console.log(`📤 Adding file ${index}:`, {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      })
     })
 
     const response = await apiClient.post(
@@ -150,32 +133,21 @@ export const uploadProductGallery = async (productId: number, files: File[]) => 
     )
     return response.data
   } catch (error: any) {
-    console.error('❌ Upload gallery error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    })
-
-    // ✅ ตรวจสอบว่าเป็น HTML Error
     if (error.response?.data instanceof Blob) {
       const contentType = error.response.headers['content-type']
       if (contentType?.includes('text/html')) {
         throw new Error('เซิร์ฟเวอร์คืนค่า HTML Error Page แทน JSON')
       }
     }
-
     throw error
   }
 }
+
 /**
- * Sync ຂໍ້ມູນ Gallery (ບັນທຶກ URL ລົງຖານຂໍ້ມູນ)
- * @param productId ໄອດີສິນຄ້າ
- * @param images ລາຍການ Object ຂອງ URL { file_url: string }
+ * Sync ຂໍ້ມູນ Gallery
  */
 export const saveProductGallery = async (productId: number, images: { file_url: string }[]) => {
   try {
-    // ອ້າງອີງຕາມ Route Backend: router.post('/:productId/gallery', product_galleryController.saveImageToGallery)
-    // ໝາຍເຫດ: ຕ້ອງກວດສອບວ່າ Base path ຂອງ Router ແມ່ນຫຍັງ (ສົມມຸດວ່າແມ່ນ /products)
     const response = await apiClient.post(`/images/${productId}/gallery`, {
       uploadResult: {
         success: true,
@@ -185,109 +157,109 @@ export const saveProductGallery = async (productId: number, images: { file_url: 
         }
       }
     })
-
-    console.log('📥 [API] Save gallery response:', response.data)
     return response.data
   } catch (error: any) {
     console.error(`❌ [API] Error syncing product gallery:`, error)
-    console.error('Error details:', error.response?.data)
     throw error
   }
 }
+
 /**
  * ດຶງຂໍ້ມູນ Gallery ຂອງສິນຄ້າຕາມ ID
  */
 export const getProductGallery = async (productId: number) => {
   try {
     const response = await apiClient.get(`/images/${productId}/gallery`);
-    // ສົມມຸດວ່າ Backend ສົ່ງມາເປັນ { success: true, data: [...] }
     return response.data.data || [];
   } catch (error: any) {
     console.error(`Error fetching gallery for product ${productId}:`, error);
     throw error;
   }
 };
-// export const saveImageGallery = async (productId: number, )
+
 /**
- * เปลี่ยนสถานะสินค้า
+ * เปลี่ยนสถานะสินค้า (อิงตาม Controller ที่ไม่พ่น Data กลับมา)
  */
 export const toggleProductStatus = async (id: number, isActive: boolean) => {
   try {
-    console.log('🔄 Toggling product status:', { id, isActive });
-
-    // ✅ แก้ไข: ใช้ () แทน template literal ``
     const response = await apiClient.patch(`/products/${id}`, {
       is_active: isActive ? 1 : 0
     });
 
-    console.log('✅ Toggle response:', response.data);
-
-    // ✅ ตรวจสอบโครงสร้าง response ให้ชัดเจน
-    if (response.data.product) {
-      return {
-        success: response.data.success ?? true,
-        message: response.data.message ?? (isActive ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
-        product: response.data.product
-      }
-    }
-
+    const resData = response.data;
     return {
-      success: response.data.success ?? true,
-      message: response.data.message ?? (isActive ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
-      product: response.data.product || response.data
+      success: resData.success ?? true,
+      message: resData.message ?? (isActive ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
+      // Controller deActivatedOneProduct ไม่ได้ส่ง data กลับมา เราจำลอง Object ให้ Store ทำงานต่อได้
+      product: resData.data || { id, is_active: isActive ? 1 : 0 }
     };
   } catch (error: any) {
     const errMsg = error.response?.data?.message || 'ປ່ຽນສະຖານະມີບັນຫາ';
-    console.error(`❌ Toggle product ${id} failed:`, errMsg, error);
     throw new Error(errMsg);
   }
 };
 
 /**
  * 🟢 ປ່ຽນສະຖານະສິນຄ້າແບບຫຼາຍລາຍການພ້ອມກັນ (Bulk Toggle)
- * @param productIds - Array ຂອງ ID ສິນຄ້າທີ່ຕ້ອງການປ່ຽນສະຖານະ [1, 2, 3]
- * @param isActive - ສະຖານະໃໝ່ (true = 1 (Active), false = 0 (Inactive))
  */
 export const toggleMultipleProductStatus = async (productIds: number[], isActive: boolean) => {
   try {
-    console.log('🔄 Bulk toggling product status:', { productIds, isActive });
-
-    // ສົ່ງ Request ໄປຫາ Endpoint ໃໝ່ທີ່ເຮົາສ້າງໃນ Backend (ສົມມຸດວ່າຕັ້ງຊື່ /bulk-status)
     const response = await apiClient.patch('/products/bulk-status', {
       productIds: productIds,
       is_active: isActive ? 1 : 0
     });
 
-    console.log('✅ Bulk toggle response:', response.data);
-
+    const resData = response.data;
     return {
-      success: response.data.success ?? true,
-      message: response.data.message ?? `ອັບເດດສະຖານະສຳເລັດ ${response.data.updatedCount || 0} ລາຍການ`,
-      updatedCount: response.data.updatedCount || 0
+      success: resData.success ?? true,
+      message: resData.message ?? `ອັບເດດສະຖານະສຳເລັດ`,
+      // Backend ส่งมาเป็น data: { updatedCount: X }
+      updatedCount: resData.data?.updatedCount || resData.updatedCount || 0
     };
   } catch (error: any) {
     const errMsg = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການປ່ຽນສະຖານະຫຼາຍລາຍການ';
-    console.error(`❌ Bulk toggle products failed:`, errMsg, error);
     throw new Error(errMsg);
   }
 };
+
 /**
  * ดึงประเภทสินค้าทั้งหมด
  */
 export const getProductTypes = async () => {
   try {
     const response = await apiClient.get('/productTypes')
-    console.log('[API] Product types response:', response.data)
-
-    if (response.data?.productTypes) {
-      return response.data.productTypes
-    }
-    if (response.data?.data) {
-      return response.data.data
-    }
-    return response.data
+    // Backend ส่งมาเป็น { success: true, data: [...] }
+    return response.data.data || response.data.productTypes || response.data
   } catch (error: any) {
     console.error('Error fetching product types:', error)
     throw error
   }
 }
+/**
+ * 🟢 นำเข้าข้อมูลสินค้าจากไฟล์ Excel (Smart Bulk Import)
+ * @param file - ไฟล์ Excel (.xlsx, .xls, .csv)
+ * @param shopId - รหัสร้านค้า (Partner ID)
+ */
+export const importProductsFromExcel = async (file: File, shopId: number) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('shop_id', shopId.toString()); // เผื่อ Backend ต้องใช้เช็คสิทธิ์หรืออ้างอิง
+
+    // ยิง API ไปที่ Endpoint /products/import (หรือ /import ขึ้นอยู่กับการตั้งค่า Base URL ของ Router)
+    const response = await apiClient.post('/products/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    console.log('[API] Import Excel Response:', response.data);
+
+    // Backend ส่งมาเป็น: { success: true, message: '...', importedCount: X }
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ [API] Error importing products from Excel:', error);
+
+    // ดักจับ Error Message จาก Backend เพื่อส่งไปแสดงที่หน้า UI
+    const errMsg = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການນຳເຂົ້າຂໍ້ມູນສິນຄ້າ';
+    throw new Error(errMsg);
+  }
+};
