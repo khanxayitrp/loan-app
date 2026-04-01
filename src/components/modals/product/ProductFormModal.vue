@@ -368,10 +368,10 @@ const resetForm = () => {
 
 const addVariantOption = () => { if (variantOptions.value.length < 2) variantOptions.value.push({ id: Date.now(), name: 'ຂະໜາດ (Size)', values: [''] }) }
 const removeVariantOption = (index: number) => { variantOptions.value.splice(index, 1); generateVariantMatrix() }
-const addVariantValue = (optIndex: number) => { variantOptions.value[optIndex].values.push('') }
+const addVariantValue = (optIndex: number) => { variantOptions.value[optIndex]!.values.push('') }
 const removeVariantValue = (optIndex: number, valIndex: number) => {
-  variantOptions.value[optIndex].values.splice(valIndex, 1)
-  if (variantOptions.value[optIndex].values.length === 0) variantOptions.value[optIndex].values.push('')
+  variantOptions.value[optIndex]!.values.splice(valIndex, 1)
+  if (variantOptions.value[optIndex]!.values.length === 0) variantOptions.value[optIndex]!.values.push('')
   generateVariantMatrix()
 }
 
@@ -512,7 +512,7 @@ const saveProduct = async () => {
         const uploadGalleryResp = await productStore.uploadProductGallery(productId, galleryFiles)
 
         if (uploadGalleryResp.success) {
-          const uploadedUrls = uploadGalleryResp.data?.uploaded || uploadGalleryResp.uploaded || []
+          const uploadedUrls = uploadGalleryResp.data?.uploaded || []
           if (uploadedUrls.length > 0) {
             const allGalleryUrls = [...existingUrls, ...uploadedUrls.map((img: any) => ({ file_url: img.file_url }))];
             await productStore.addProductGallery(productId, allGalleryUrls as any)

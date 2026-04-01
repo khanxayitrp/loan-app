@@ -46,7 +46,7 @@
               <div class="font-medium">{{ getCustomerName(loan) }}</div>
               <div class="text-xs text-gray-500">{{ loan.customer?.phone || '-' }}</div>
             </td>
-            <td>{{ formatPrice((loan.total_amount || 0) - (loan.down_payment || 0)) }}</td>
+            <td>{{ formatPrice((Number(loan.total_amount) || 0) - (Number(loan.down_payment) || 0)) }}</td>
             <td class="font-semibold text-blue-600">{{ formatPrice(loan.monthly_pay) }}</td>
             <td>
               <span class="badge badge-sm badge-success text-white">ອະນຸມັດແລ້ວ</span>

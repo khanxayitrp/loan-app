@@ -721,7 +721,7 @@ const saveChecklist = async () => {
           const uploadedOrder = [];
           if (visit.photo_1_file) { imgFormData.append('files', visit.photo_1_file); uploadedOrder.push('photo1'); }
           if (visit.photo_2_file) { imgFormData.append('files', visit.photo_2_file); uploadedOrder.push('photo2'); }
-          const res = await apiClient.post(`/upload/location/${props.loan.customer_id}/image`, imgFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
+          const res = await apiClient.post(`/upload/location/${props.loan.customer_id}/image/${loanId}`, imgFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
           const urls = res.data?.data.uploaded || res.data?.urls || [];
           uploadedOrder.forEach((t, i) => {
             if (urls[i]) { if (t === 'photo1') f1 = urls[i].file_url; if (t === 'photo2') f2 = urls[i].file_url; }

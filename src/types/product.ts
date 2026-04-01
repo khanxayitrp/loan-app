@@ -30,6 +30,9 @@ export interface Product {
   description?: string | null;
   interest_type?: 'flat_rate' | 'effective_rate';
   interest_rate_type?: 'monthly' | 'yearly';
+  merchant_sku?: string | null;
+  system_sku?: string | null;
+  stock_quantity?: number;
 }
 
 export interface CreateProductDto {

@@ -566,13 +566,13 @@ const removeVariantOption = (index: number) => {
 }
 
 const addVariantValue = (optIndex: number) => {
-  variantOptions.value[optIndex].values.push('')
+  variantOptions.value[optIndex]!.values.push('')
 }
 
 const removeVariantValue = (optIndex: number, valIndex: number) => {
-  variantOptions.value[optIndex].values.splice(valIndex, 1)
-  if (variantOptions.value[optIndex].values.length === 0) {
-    variantOptions.value[optIndex].values.push('')
+  variantOptions.value[optIndex]!.values.splice(valIndex, 1)
+  if (variantOptions.value[optIndex]!.values.length === 0) {
+    variantOptions.value[optIndex]!.values.push('')
   }
   generateVariantMatrix()
 }
@@ -1144,7 +1144,7 @@ const saveProduct = async () => {
         )
         const uploadGalleryResp = await productStore.uploadProductGallery(productId, galleryFiles)
         if (uploadGalleryResp.success) {
-          const uploadedUrls = uploadGalleryResp.data?.uploaded || uploadGalleryResp.uploaded || []
+          const uploadedUrls = uploadGalleryResp.data?.uploaded || []
           if (uploadedUrls.length > 0) {
             const existingUrls = form.gallery.filter(img => img.startsWith('http'))
             const allGalleryUrls = [

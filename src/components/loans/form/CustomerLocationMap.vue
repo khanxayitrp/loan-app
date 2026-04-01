@@ -100,7 +100,8 @@
     </div>
 
     <teleport to="body">
-      <div v-if="showLocationModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div v-if="showLocationModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
           <h3 class="text-lg font-bold mb-4">
             {{ editingLocation ? 'ແກ້ໄຂທີ່ຢູ່' : 'ເພີ່ມທີ່ຢູ່ໃໝ່' }}
@@ -108,20 +109,17 @@
 
           <div class="space-y-4">
 
-            <div class="form-control bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+            <div
+              class="form-control bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
               <label class="label pt-0">
                 <span class="label-text font-medium text-blue-700 dark:text-blue-300">
                   <span class="icon-[tabler--link] size-4 inline mr-1 align-text-bottom"></span>
                   ວາງລີ້ງແຜນທີ່ (Paste Google Maps Link)
                 </span>
               </label>
-              <input
-                v-model="pastedMapUrl"
-                @input="handleMapLinkPaste"
-                type="text"
+              <input v-model="pastedMapUrl" @input="handleMapLinkPaste" type="text"
                 class="input input-bordered border-blue-200 focus:border-blue-400 w-full"
-                placeholder="ຕົວຢ່າງ: https://maps.google.com/maps?q=17.9757,102.6331..."
-              />
+                placeholder="ຕົວຢ່າງ: https://maps.google.com/maps?q=17.9757,102.6331..." />
               <label class="label pb-0">
                 <span class="label-text-alt text-gray-500">ລະບົບຈະດຶງຄ່າ Lat/Lng ແລະ ປັກໝຸດອັດຕະໂນມັດ</span>
               </label>
@@ -146,7 +144,8 @@
               <label class="label">
                 <span class="label-text-alt text-info">
                   <span class="icon-[tabler--bulb] size-3 inline"></span>
-                  ຫຼື <button type="button" @click="reverseGeocode" class="link link-info">ດຶງທີ່ຢູ່ຈາກຕຳແໜ່ງ (Auto fill)</button>
+                  ຫຼື <button type="button" @click="reverseGeocode" class="link link-info">ດຶງທີ່ຢູ່ຈາກຕຳແໜ່ງ (Auto
+                    fill)</button>
                 </span>
               </label>
             </div>
@@ -268,8 +267,9 @@ const handleMapLinkPaste = () => {
   // ຕົວຢ່າງ: https://www.google.com/maps/place/.../@17.9757,102.6331,15z
   const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (atMatch) {
-    lat = parseFloat(atMatch[1]);
-    lng = parseFloat(atMatch[2]);
+    // ຖ້າ atMatch[1] ເປັນ undefined, ມັນຈະເອົາ '0' ໄປແປງເປັນຕົວເລກແທນ
+    lat = parseFloat(atMatch[1] || '0');
+    lng = parseFloat(atMatch[2] || '0');
   }
 
   // 2. ແຍກພິກັດຈາກຮູບແບບ ?q=lat,lng ຫລື &q=lat,lng
@@ -277,8 +277,8 @@ const handleMapLinkPaste = () => {
   if (!lat || !lng) {
     const qMatch = url.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
     if (qMatch) {
-      lat = parseFloat(qMatch[1]);
-      lng = parseFloat(qMatch[2]);
+      lat = parseFloat(qMatch[1] || '0');
+      lng = parseFloat(qMatch[2] || '0');
     }
   }
 
@@ -286,8 +286,8 @@ const handleMapLinkPaste = () => {
   if (!lat || !lng) {
     const rawMatch = url.match(/^(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)$/);
     if (rawMatch) {
-      lat = parseFloat(rawMatch[1]);
-      lng = parseFloat(rawMatch[2]);
+      lat = parseFloat(rawMatch[1] || '0');
+      lng = parseFloat(rawMatch[2] || '0');
     }
   }
 

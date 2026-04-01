@@ -108,14 +108,14 @@
                   </button>
                 </div>
 
-                <div v-if="loan.credit_score && loan.status === 'verified' && isDeputy" class="tooltip tooltip-top"
+                <!-- <div v-if="loan.credit_score && loan.status === 'verified' && isDeputy" class="tooltip tooltip-top"
                   data-tip="ຮອງຜູ້ອຳນວຍການຢືນຢັນ">
                   <button class="btn btn-circle btn-text btn-sm text-info hover:bg-info/10" @click="verifyLoan(loan)">
                     <span class="icon-[tabler--user-check] size-5"></span>
                   </button>
-                </div>
+                </div> -->
 
-                <div v-if="loan.credit_score && loan.credit_score >= 65 && loan.status === 'verified' && isDirector"
+                <div v-if="loan.credit_score && loan.credit_score >= 65 && loan.status === 'verified' && (isManager || isDeputy || isDirector)"
                   class="tooltip tooltip-top" data-tip="ອະນຸມັດສິນເຊື່ອ">
                   <button class="btn btn-circle btn-text btn-sm text-success hover:bg-success/10"
                     @click="approveLoan(loan)">
@@ -356,7 +356,7 @@ import { LoanApplicationStatus } from '@/types/loanApplication';
 import ScoringGuideModal from '@/components/modals/loan/pending/ScoringGuideModal.vue';
 import VerifyLoanModal from '@/components/modals/loan/pending/VerifyLoanModal.vue';
 import PrintSummaryModal from '@/components/modals/loan/pending/PrintSummaryModal.vue';
-import ChecklistModal from '@/components/modals/loan/pending/ChecklistModal.vue';
+import ChecklistModal from '@/components/modals/loan/pending/CheckListModal.vue';
 import CreditScoreModal from '@/components/modals/loan/pending/CreditScoreModal.vue';
 import ExternalSignatureModal from '@/components/modals/loan/pending/ExternalSignatureModal.vue';
 
@@ -438,6 +438,7 @@ const filteredLoans = computed(() => {
       const loanDate = loan.createdAt ? new Date(loan.createdAt).toISOString().split('T')[0] : '';
       const fromDate = dateFrom.value || '1970-01-01';
       const toDate = dateTo.value || '9999-12-31';
+      if (!loanDate) return false;
       return loanDate >= fromDate && loanDate <= toDate;
     });
   }
@@ -555,7 +556,7 @@ const openPrintSummary = async (loan: any) => {
 const openCreditScoreModal = async (loan: any) => {
   try {
     const contractRes = await loanContractStore.fetchContract(loan.id);
-    if (!contractRes?.data?.data) return alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
+    if (!contractRes) return alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
 
     const repaymentRes = await loanApplicationStore.fetchRepaymentSchedule(loan.id);
     const hasRepayments = Array.isArray(repaymentRes) ? repaymentRes.length > 0 : (repaymentRes?.data ? true : false);
