@@ -53,18 +53,25 @@ export const getAllShop = async (): Promise<shopType[] | null> => {
  * อัปเดตข้อมูลร้านค้า
  */
 export const updateShop = (id: number, data: shopTypeForm, file?: File): Promise<shopType> => {
-  const formData = new FormData()
-  Object.keys(data).forEach(key => {
-    formData.append(key, (data as any)[key])
-  })
+
+  // 🟢 1. ກໍລະນີ "ມີໄຟລ໌ຮູບ" ສົ່ງມາພ້ອມ (ຈຶ່ງໃຊ້ FormData)
   if (file) {
+    const formData = new FormData()
+    Object.keys(data).forEach(key => {
+      formData.append(key, (data as any)[key])
+    })
     formData.append('logo', file)
+
+    return apiClient.put(`/shops/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }).then(res => res.data)
   }
-  return apiClient.put(`/shops/${id}`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }).then(res => res.data)
+
+  // 🌟 2. ກໍລະນີ "ບໍ່ມີໄຟລ໌" (ຄືກັບທີ່ທ່ານກຳລັງເຮັດຕອນນີ້)
+  // ໃຫ້ສົ່ງ data ເປັນ JSON ປົກກະຕິເລີຍ Node.js ຈະໄດ້ອ່ານ req.body ໄດ້!
+  return apiClient.put(`/shops/${id}`, data).then(res => res.data)
 }
 
 export const createShop = async (shopData: shopTypeForm): Promise<shopType> => {
