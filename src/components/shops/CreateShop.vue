@@ -567,6 +567,7 @@ const handleFileUpload = (event: Event) => {
     alert.error('ບໍ່ສາມາດອ່ານໄຟລ໌ໄດ້')
   }
   reader.readAsDataURL(file)
+  console.log('📁 File selected:', file.name, formatFileSize(file.size))
 }
 
 const removeLogo = async () => {
@@ -609,18 +610,21 @@ const handleSubmit = async () => {
   if (!validateForm()) {
     return
   }
-
+  console.log('Submitting form with data:', { ...form })
   // 🟢 ตรวจสอบว่า currentUser มีค่าหรือไม่ ป้องกัน authStore.currentUser is possibly null
   if (!authStore.currentUser?.id && !isEditMode.value) {
-      alert.error('ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ ລະບົບຈະບໍ່ສາມາດສ້າງຮ້ານໄດ້');
-      return;
+    alert.error('ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ ລະບົບຈະບໍ່ສາມາດສ້າງຮ້ານໄດ້');
+    return;
   }
-
+  // 🟢 1. เຊັດຂໍ້ມູນຮູບເກັບໃນຕົວແປນີ້ກ່ອນທີ່ໂຄດຈະພັງ/ຖືກລ้าง!
+  const logoDataToUpload = form.logo;
   loading.value = true
   try {
     let response
 
     if (isEditMode.value && props.initialData) {
+
+      console.log('Submitting form with data edit mode:', { ...form })
       // Edit mode
       response = await shopStore.updateShop(props.initialData.id, {
         shop_name: form.shop_name,
@@ -635,13 +639,19 @@ const handleSubmit = async () => {
         is_active: form.is_active
       } as any)
       console.log('Update Shop ', response)
-      // Handle logo upload
-      if (form.logo) {
-        await uploadLogo(response.id)
+      // 🚨 2. เปลี่ยนจาก form.logo มาใช้ logoDataToUpload แทน
+      if (logoDataToUpload) {
+        const targetId = response?.id || props.initialData.id;
+        console.log('🔥 กำลังจะเริ่มอัปโหลดรูปโลโก้สำหรับ ID:', targetId)
+
+        // 🚨 3. ส่งตัวรูปภาพเข้าไปในฟังก์ชันด้วย
+        await uploadLogo(targetId, logoDataToUpload)
       }
 
     } else {
       // Create mode
+
+      console.log('Submitting form with data create mode:', { ...form })
       response = await shopStore.saveShop({
         user_id: authStore.currentUser!.id,
         shop_name: form.shop_name,
@@ -656,9 +666,9 @@ const handleSubmit = async () => {
         is_active: form.is_active
       } as any)
       console.log('this response is', response)
-      // Handle logo upload
-      if (form.logo) {
-        await uploadLogo(response.id)
+      // 🚨 4. เปลี่ยนตรงนี้ด้วยเหมือนกันครับ
+      if (logoDataToUpload) {
+        await uploadLogo(response.id, logoDataToUpload)
       }
     }
     // ✅ ตรวจสอบว่า store มี currentShop แล้ว
@@ -688,10 +698,54 @@ const handleSubmit = async () => {
   }
 }
 
-const uploadLogo = async (partner_id: number) => {
-  if (!form.logo) return
+// const uploadLogo = async (partner_id: number) => {
+//   if (!form.logo) return
 
-  const base64Response = await fetch(form.logo)
+//   const base64Response = await fetch(form.logo)
+//   const blob = await base64Response.blob()
+
+//   const formData = new FormData()
+//   const fileExtension = logoFileInfo.type.split('/')[1] || 'png'
+//   const fileName = `shop_${partner_id}_logo.${fileExtension}`
+//   const file = new File([blob], fileName, { type: logoFileInfo.type })
+
+//   formData.append('file', file)
+
+//   try {
+//     const response = await apiClient.post(`/upload/shop/${partner_id}/logo`, formData, {
+//       headers: { 'Content-Type': 'multipart/form-data' }
+//     })
+
+//     console.log('file upload for update partner shop_logo_url', response)
+
+//     // จาก response ตัวอย่างของคุณ → ใช้ path นี้
+//     const newLogoUrl = response.data?.data?.file_url;
+
+//     if (newLogoUrl) {
+//       form.shop_logo_url = newLogoUrl
+//       console.log('this id is', partner_id)
+//       await shopStore.updateShop(partner_id, { shop_logo_url: newLogoUrl } as any);
+//       // ถ้ามี preview URL สร้างจาก createObjectURL อยู่ → revoke ได้ที่นี่
+//       // URL.revokeObjectURL(form.logo); // ถ้าเคยสร้างไว้
+//     } else {
+//       console.warn('No file_url returned from server');
+//     }
+
+//     // return newLogoUrl; // optional: return url ใหม่ให้ใช้ต่อ
+
+//   } catch (error) {
+//     console.error('Failed to upload logo:', error)
+//     throw new Error('Failed to upload shop logo')
+//   }
+// }
+
+// 🟢 1. ເພີ່ມ parameter base64Data ເຂົ້າມາ
+const uploadLogo = async (partner_id: number, base64Data: string) => {
+  // 🟢 2. ປ່ຽນມາເຊັກຈາກ base64Data ແທນ form.logo
+  if (!base64Data) return
+
+  // 🟢 3. ປ່ຽນມາ fetch ຈາກ base64Data ແທນ
+  const base64Response = await fetch(base64Data)
   const blob = await base64Response.blob()
 
   const formData = new FormData()
@@ -699,6 +753,7 @@ const uploadLogo = async (partner_id: number) => {
   const fileName = `shop_${partner_id}_logo.${fileExtension}`
   const file = new File([blob], fileName, { type: logoFileInfo.type })
 
+  // ໝາຍເຫດ: ໃຫ້ແນ່ໃຈວ່າຝັ່ງ Backend ຮັບຊື່ field ເປັນ 'file' (ຖ້າ Backend ຮັບເປັນ 'logo' ໃຫ້ປ່ຽນບ່ອນນີ້)
   formData.append('file', file)
 
   try {
@@ -708,20 +763,15 @@ const uploadLogo = async (partner_id: number) => {
 
     console.log('file upload for update partner shop_logo_url', response)
 
-    // จาก response ตัวอย่างของคุณ → ใช้ path นี้
     const newLogoUrl = response.data?.data?.file_url;
 
     if (newLogoUrl) {
       form.shop_logo_url = newLogoUrl
       console.log('this id is', partner_id)
       await shopStore.updateShop(partner_id, { shop_logo_url: newLogoUrl } as any);
-      // ถ้ามี preview URL สร้างจาก createObjectURL อยู่ → revoke ได้ที่นี่
-      // URL.revokeObjectURL(form.logo); // ถ้าเคยสร้างไว้
     } else {
       console.warn('No file_url returned from server');
     }
-
-    // return newLogoUrl; // optional: return url ใหม่ให้ใช้ต่อ
 
   } catch (error) {
     console.error('Failed to upload logo:', error)
