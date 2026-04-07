@@ -50,15 +50,22 @@ apiClient.interceptors.response.use(
     // จัดการกรณี 401 Unauthorized (Access Token หมดอายุ หรือ ไม่มีสิทธิ์)
     if (error.response?.status === 401 && !originalRequest._retry) {
 
-      // ❌ หลีกเลี่ยง Loop อนันต์: ถ้าเรียก Logout หรือ Refresh แล้วยังได้ 401 ให้เตะออกเลย
-      if (originalRequest.url?.includes('/auth/logout') || originalRequest.url?.includes('/auth/refresh')) {
+      // 🌟 1. ด่านสกัดกั้น (ตัวแก้ปัญหาหน้า Refresh!):
+      // ถ้ายิง API เข้าสู่ระบบ (login/signin) แล้วรหัสผิด ให้โยน Error กลับไปโชว์ที่หน้าเว็บเลย
+      const url = originalRequest.url?.toLowerCase() || '';
+      if (url.includes('/login') || url.includes('/signin')) {
+        return Promise.reject(error);
+      }
+
+      // ❌ 2. หลีกเลี่ยง Loop อนันต์: ถ้าเรียก Logout หรือ Refresh แล้วยังได้ 401 ให้เตะออกเลย
+      if (url.includes('/auth/logout') || url.includes('/auth/refresh')) {
         const authStore = useAuthStore()
         authStore.signOut()
         window.location.href = '/login'
         return Promise.reject(error)
       }
 
-      // 🟡 1. ถ้ามี API อื่นกำลัง Refresh Token อยู่ ให้ API เส้นนี้ "หยุดรอ" (เข้าคิว)
+      // 🟡 3. ถ้ามี API อื่นกำลัง Refresh Token อยู่ ให้ API เส้นนี้ "หยุดรอ" (เข้าคิว)
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
@@ -70,7 +77,7 @@ apiClient.interceptors.response.use(
         });
       }
 
-      // 🟢 2. ถ้ายังไม่มีใคร Refresh ให้ API เส้นนี้เป็น "ตัวเปิด"
+      // 🟢 4. ถ้ายังไม่มีใคร Refresh ให้ API เส้นนี้เป็น "ตัวเปิด"
       originalRequest._retry = true;
       isRefreshing = true;
 

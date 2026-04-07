@@ -96,9 +96,12 @@
           <div class="relative">
             <select v-model="form.staff_level" class="select select-bordered w-full pl-10"
               :class="{ 'select-error': errors.staff_level }" required>
-              <option value="none">ທົ່ວໄປ</option>
-              <option value="requester">ຜູ້ຮ້ອງຂໍ (Requester)</option>
-              <option value="approver">ຜູ້ອະນຸມັດ (Approver)</option>
+              <option value="none">ທົ່ວໄປ (None)</option>
+              <option value="sales">ພະນັກງານຂາຍ (Sales)</option>
+              <option value="credit_officer">ພະນັກງານສິນເຊື່ອ (Credit Officer)</option>
+              <option value="credit_manager">ຫົວໜ້າພະແນກສິນເຊື່ອ (Credit Manager)</option>
+              <option value="deputy_director">ຮອງຜູ້ອຳນວຍການ (Deputy Director)</option>
+              <option value="director">ຜູ້ອຳນວຍການ (Director)</option>
             </select>
             <span class="icon-[tabler--hierarchy] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
           </div>
@@ -164,7 +167,8 @@ const form = reactive({
   username: '',
   password: '',
   role: '' as 'admin' | 'staff' | 'partner' | 'customer',
-  staff_level: 'none' as 'requester' | 'approver' | 'none',
+  // 👇 ປ່ຽນ type ຂອງ staff_level ໃຫ້ຄົບຕາມ Database
+  staff_level: 'none' as  'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'none',
   is_active: 1,
   created_at: ''
 })

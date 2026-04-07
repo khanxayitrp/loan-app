@@ -608,7 +608,14 @@ const confirmApproveLoan = async () => {
     showApproveModal.value = false;
     fetchData();
   } catch (error: any) {
-    alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!', error.response?.data?.message || error.message);
+    // alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!', error.response?.data?.message || error.message);
+    // 🟢 ດັກຈັບ Error ຈາກທຸກໆຮູບແບບທີ່ Backend ອາດຈະສົ່ງມາ
+    const errorMsg = error.response?.data?.message
+                  || error.response?.data?.error
+                  || error.message
+                  || 'ເກີດຂໍ້ຜິດພາດໃນການອະນຸມັດ';
+
+    alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!', errorMsg);
   } finally { loanToAction.value = null; }
 }
 
