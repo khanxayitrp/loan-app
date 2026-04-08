@@ -412,11 +412,17 @@ const fetchLoans = async () => {
 }
 
 const openRepaymentHub = async (loan: LoanApplication) => {
+  // 🟢 1. ເຄຼຍຄ່າເກົ່າຖິ້ມກ່ອນສະເໝີ ເພື່ອປ້ອງກັນຂໍ້ມູນລູກຄ້າຄົນກ່ອນໜ້າຄ້າງ
+  currentSchedules.value = [];
+  selectedSchedule.value = null;
+  isEarlyPayoff.value = false;
+
   selectedLoan.value = loan;
   showRepaymentHub.value = true;
   isScheduleLoading.value = true;
 
   try {
+    // 🟢 2. ຍິງ API ໄປດຶງ "ຕາຕະລາງປົກກະຕິ (Array)" ມາສະແດງ
     const res = await loanAppStore.fetchRepaymentSchedule(loan.id);
     const data = res?.data || res || [];
     currentSchedules.value = Array.isArray(data) ? data : [];
@@ -434,34 +440,77 @@ const closeRepaymentHub = () => {
   currentSchedules.value = [];
 }
 
-const openPaymentModal = (schedule: any | null, earlyPayoff = false) => {
+const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
   isEarlyPayoff.value = earlyPayoff;
   selectedSchedule.value = schedule;
 
-  // 🟢 ดึงยอดตามจริงจาก API
-  const expectedPrincipal = earlyPayoff ? summary.value.remainingBalance : Number(schedule.principal_amount);
-  const expectedInterest = earlyPayoff ? 0 : Number(schedule.interest_amount);
-  const expectedPenalty = schedule ? Number(schedule.penalty || 0) : 0; // 🟢 ดึงค่าปรับจาก Backend (ถ้ามี)
+  if (earlyPayoff) {
+    // ==========================================
+    // 🔴 1. กรณีปิดบัญชีก่อนกำหนด (ยิง API ไปถามตัวเลขจริงจาก Backend)
+    // ==========================================
+    try {
+      isProcessing.value = true;
 
-  Object.assign(paymentForm, {
-    payment_date: new Date().toISOString().split('T')[0],
-    payment_method: 'cash',
-    reference_number: '',
-    remarks: '',
+      // ยิงไปถาม Backend ว่า "ยอดปิดบัญชีของสัญญาอ้างอิงนี้คือเท่าไหร่?"
+      const res = await apiClient.get(`repayments/early-payoff/${selectedLoan.value?.id}`);
+      const payoffData = res.data.data;
 
-    expected_principal: expectedPrincipal,
-    expected_interest: expectedInterest,
-    expected_penalty: expectedPenalty,
+      // นำตัวเลขที่ Backend คำนวณเสร็จแล้วมาใส่ Form
+      Object.assign(paymentForm, {
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: 'cash',
+        reference_number: '',
+        remarks: 'ປິດບັນຊີກ່ອນກຳນົດ (Early Payoff)',
 
-    principal_paid: expectedPrincipal,
-    interest_paid: expectedInterest,
-    penalty_paid: expectedPenalty,
-    discount_given: 0,
+        // ยอดที่ควรจะจ่าย (Expected)
+        expected_principal: Number(payoffData.remaining_principal),
+        expected_interest: Number(payoffData.calculated_interest),
+        expected_penalty: Number(payoffData.total_penalty),
 
-    installment_number: earlyPayoff ? 0 : schedule.installment_no
-  });
+        // ตั้งค่ายอดจ่ายจริงให้ตรงกับยอด Expected เป็นค่าเริ่มต้น
+        principal_paid: Number(payoffData.remaining_principal),
+        interest_paid: Number(payoffData.calculated_interest),
+        penalty_paid: Number(payoffData.total_penalty),
+        discount_given: 0,
 
-  showPaymentModal.value = true;
+        installment_number: 0
+      });
+
+      showPaymentModal.value = true;
+    } catch (error: any) {
+      alert.error('ເກີດຂໍ້ຜິດພາດ', error.response?.data?.message || 'ບໍ່ສາມາດຄຳນວນຍອດປິດບັນຊີໄດ້');
+    } finally {
+      isProcessing.value = false;
+    }
+
+  } else {
+    // ==========================================
+    // 🟢 2. กรณีจ่ายค่างวดปกติ (ดึงข้อมูลจากตารางมาใช้ได้เลย)
+    // ==========================================
+    const expectedPrincipal = Number(schedule.principal_amount) || 0;
+    const expectedInterest = Number(schedule.interest_amount) || 0;
+    const expectedPenalty = Number(schedule.penalty || 0);
+
+    Object.assign(paymentForm, {
+      payment_date: new Date().toISOString().split('T')[0],
+      payment_method: 'cash',
+      reference_number: '',
+      remarks: '',
+
+      expected_principal: expectedPrincipal,
+      expected_interest: expectedInterest,
+      expected_penalty: expectedPenalty,
+
+      principal_paid: expectedPrincipal,
+      interest_paid: expectedInterest,
+      penalty_paid: expectedPenalty,
+      discount_given: 0,
+
+      installment_number: schedule.installment_no
+    });
+
+    showPaymentModal.value = true;
+  }
 }
 
 // 🟢 ບັນທຶກການຊຳລະເງິນ
@@ -469,7 +518,7 @@ const submitPayment = async () => {
   isProcessing.value = true;
   try {
     const payload = {
-      loan_id: selectedLoan.value?.id,
+      application_id: selectedLoan.value?.id,
       schedule_id: selectedSchedule.value?.id || null,
       is_early_payoff: isEarlyPayoff.value,
 
