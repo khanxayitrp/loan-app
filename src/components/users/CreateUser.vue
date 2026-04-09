@@ -78,7 +78,7 @@
               <option value="admin">Admin</option>
               <option value="staff">Staff</option>
               <option value="partner">Partner</option>
-              <option value="customer">Customer</option>
+              <!-- <option value="customer">Customer</ฦoption> -->
             </select>
             <span
               class="icon-[tabler--shield-check] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
@@ -113,8 +113,14 @@
         <!-- Is Active Toggle -->
         <div class="form-control col-span-1 md:col-span-2">
           <label class="label cursor-pointer justify-start gap-4">
-            <input type="checkbox" v-model="form.is_active" :true-value="1" :false-value="0"
-              class="toggle toggle-primary" />
+            <!-- <input type="checkbox" v-model="form.is_active" :true-value="1" :false-value="0"
+              class="toggle toggle-primary" /> -->
+              <input 
+              type="checkbox" 
+              :checked="form.is_active === true" 
+              @change="form.is_active = ($event.target as HTMLInputElement).checked"
+              class="toggle toggle-primary" 
+            />
             <span class="label-text font-medium">ສະຖານະຜູ້ໃຊ້ (Active/Inactive)</span>
           </label>
         </div>
@@ -169,7 +175,7 @@ const form = reactive({
   role: '' as 'admin' | 'staff' | 'partner' | 'customer',
   // 👇 ປ່ຽນ type ຂອງ staff_level ໃຫ້ຄົບຕາມ Database
   staff_level: 'none' as  'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'none',
-  is_active: 1,
+  is_active: false,
   created_at: ''
 })
 
@@ -178,7 +184,9 @@ watch(() => props.initialUser, (user) => {
   if (user) {
     Object.assign(form, {
       ...user,
-      password: '' // ไม่โหลด password เก่า
+      password: '', // ไม่โหลด password เก่า
+      // ✅ ใช้ !! เพื่อแปลงค่า (ถ้าเป็น 1 หรือ true จะได้ true / ถ้าเป็น 0 หรือ undefined จะได้ false)
+      is_active: !!user.is_active
     })
   } else {
     // โหมด Add → reset form
@@ -188,7 +196,7 @@ watch(() => props.initialUser, (user) => {
       password: '',
       role: '',
       staff_level: 'none',
-      is_active: 1,
+      is_active: true,
       created_at: ''
     })
   }
@@ -263,7 +271,8 @@ const handleSubmit = async () => {
       username: form.username.trim(),
       role: form.role,
       staff_level: form.role === 'staff' ? form.staff_level : 'none',
-      is_active: form.is_active,
+      // is_active: form.is_active,
+      is_active: form.is_active ? 1 : 0,
       ...(form.password && { password: form.password }) // ส่ง password ถ้ามี
     }
 

@@ -5,7 +5,7 @@ export interface User {
   full_name: string
   role: 'admin' | 'staff' | 'partner' | 'customer'
   staff_level?: 'requester' | 'approver' | 'credit_manager' | 'deputy_director' | 'none' ;
-  is_active?: number
+  is_active?: boolean | number 
   created_at?: string
   updated_at?: string
   createdAt?: string
