@@ -12,7 +12,7 @@ export const updateUser = async (userId: number, userData: {
   full_name?: string
   staff_level?: 'requester' | 'approver' | 'none'
 }): Promise<{ message: string; user: User }> => {
-  const response = await apiClient.put<{ message: string; user: User }>(`/users/${userId}/edit`, userData)
+  const response = await apiClient.put<{ message: string; user: User }>(`/users/${userId}`, userData)
   return response.data
 }
 
@@ -22,7 +22,7 @@ export const getAllUsers = async (): Promise<{ users: User[] }> => {
 }
 
 export const updateUserStatus = async (userId: number, isActive: boolean): Promise<{ message: string; user: User }> => {
-  const response = await apiClient.patch<{ message: string; user: User }>(`/users/${userId}/change-status`, {
+  const response = await apiClient.patch<{ message: string; user: User }>(`/users/${userId}`, {
     is_active: isActive ? 1 : 0
   })
   return response.data
