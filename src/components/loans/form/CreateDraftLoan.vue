@@ -101,7 +101,8 @@
             </div>
             <div class="text-right">
               <div class="font-medium text-primary">{{ formatPrice(product.price) }}</div>
-              <div class="text-xs text-gray-500">{{ product.interest_rate }}% {{ product.interest_rate_type === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</div>
+              <div class="text-xs text-gray-500">{{ product.interest_rate }}% {{ product.interest_rate_type === 'yearly'
+                ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</div>
             </div>
           </div>
         </div>
@@ -156,27 +157,14 @@
             <label class="label">
               <span class="label-text font-medium">ປະເພດການຄິດໄລ່ດອກເບ້ຍ *</span>
             </label>
-            <select v-model="loanDetails.interestType" class="select select-bordered w-full" @change="handleCalculationChange">
+            <select v-model="loanDetails.interestType" class="select select-bordered w-full"
+              @change="handleCalculationChange">
               <option value="flat_rate">ດອກເບ້ຍຄົງທີ່ (Flat Rate)</option>
               <option value="effective_rate">ຫຼຸດຕົ້ນຫຼຸດດອກ (Effective Rate)</option>
             </select>
           </div>
 
           <!-- <div class="form-control">
-            <label class="label">
-              <span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span>
-            </label>
-            <input v-model.number="loanDetails.termMonths" type="number" placeholder="ຈຳນວນງວດ"
-              class="input input-bordered w-full" :class="{ 'input-error': loanErrors.termMonths }" min="1" max="60"
-              @input="handleCalculationChange" />
-            <label v-if="loanErrors.termMonths" class="label text-error">
-              <span class="label-text-alt">{{ loanErrors.termMonths }}</span>
-            </label>
-            <div class="text-xs text-gray-500 mt-1">
-              ໄລຍະເວລາ: {{ loanDetails.termMonths }} ເດືອນ
-            </div>
-          </div> -->
-          <div class="form-control">
             <label class="label">
               <span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span>
             </label>
@@ -189,37 +177,33 @@
             <div class="text-xs text-gray-500 mt-1">
               ໄລຍະເວລາ: {{ loanDetails.termMonths }} ເດືອນ
             </div>
+          </div> -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span>
+            </label>
+            <select v-model.number="loanDetails.termMonths" class="select select-bordered w-full"
+              :class="{ 'select-error': loanErrors.termMonths }" @change="handleTermChange">
+              <option value="0" disabled>ເລືອກຈຳນວນງວດ</option>
+              <option value="6">6 ເດືອນ</option>
+              <option value="12">12 ເດືອນ</option>
+              <option value="18">18 ເດືອນ</option>
+              <option value="24">24 ເດືອນ</option>
+              <option value="36">36 ເດືອນ</option>
+              <option value="48">48 ເດືອນ</option>
+            </select>
+            <label v-if="loanErrors.termMonths" class="label text-error">
+              <span class="label-text-alt">{{ loanErrors.termMonths }}</span>
+            </label>
           </div>
 
-          <!-- <div class="form-control">
-            <label class="label">
-              <span class="label-text font-medium">ເງີນດາວ (ກີບ)</span>
-            </label>
-            <input v-model.number="loanDetails.downPayment" type="number" placeholder="ປ້ອນເງີນດາວ"
-              class="input input-bordered w-full" :class="{ 'input-error': loanErrors.downPayment }" min="0"
-              :max="selectedProduct.price" @input="handleCalculationChange" />
-            <label v-if="loanErrors.downPayment" class="label text-error">
-              <span class="label-text-alt">{{ loanErrors.downPayment }}</span>
-            </label>
-            <div class="text-xs text-gray-500 mt-1">
-              <div>ເງີນດາວ (ກີບ): {{ formatPrice(loanDetails.downPayment) }}</div>
-              <div class="text-primary font-medium">
-                ເງິນກູ້: {{ formatPrice(loanDetails.totalAmount - loanDetails.downPayment) }}
-              </div>
-            </div>
-          </div> -->
           <div class="form-control">
             <label class="label">
               <span class="label-text font-medium">ເງີນດາວ (ກີບ)</span>
             </label>
-            <input
-              :value="formatCurrencyInput(loanDetails.downPayment)"
-              @input="handleDownPaymentInput"
-              type="text"
-              placeholder="ປ້ອນເງີນດາວ"
-              class="input input-bordered w-full"
-              :class="{ 'input-error': loanErrors.downPayment }"
-            />
+            <input :value="formatCurrencyInput(loanDetails.downPayment)" @input="handleDownPaymentInput" type="text"
+              placeholder="ປ້ອນເງີນດາວ" class="input input-bordered w-full"
+              :class="{ 'input-error': loanErrors.downPayment }" />
             <label v-if="loanErrors.downPayment" class="label text-error">
               <span class="label-text-alt">{{ loanErrors.downPayment }}</span>
             </label>
@@ -231,23 +215,6 @@
             </div>
           </div>
 
-          <!-- <div class="form-control">
-            <label class="label">
-              <span class="label-text font-medium">
-                ດອກເບ້ຍ (%)
-                <span class="text-primary ml-1">
-                  {{ selectedProduct?.interest_rate_type === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}
-                </span>
-                *
-              </span>
-            </label>
-            <input v-model.number="loanDetails.interestRate" type="number" placeholder="ປ້ອນດອກເບ້ຍ"
-              class="input input-bordered w-full" :class="{ 'input-error': loanErrors.interestRate }" min="0" max="100"
-              step="0.01" @input="handleCalculationChange" />
-            <label v-if="loanErrors.interestRate" class="label text-error">
-              <span class="label-text-alt">{{ loanErrors.interestRate }}</span>
-            </label>
-          </div> -->
           <div class="form-control">
             <label class="label">
               <span class="label-text font-medium">
@@ -260,8 +227,7 @@
             </label>
             <input v-model.number="loanDetails.interestRate" type="number" placeholder="ປ້ອນດອກເບ້ຍ"
               class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
-              :class="{ 'input-error': loanErrors.interestRate }" min="0" max="100"
-              step="0.01" readonly />
+              :class="{ 'input-error': loanErrors.interestRate }" min="0" max="100" step="0.01" readonly />
           </div>
 
           <div class="form-control md:col-span-2">
@@ -269,7 +235,8 @@
               <span class="label-text font-medium">ຄ່າງວດຕໍ່ເດືອນ (ກີບ) - ປະມານການ</span>
             </label>
             <input :value="formatPrice(loanDetails.monthlyPayment)" type="text"
-              class="input input-bordered w-full bg-primary/5 text-primary font-bold dark:bg-gray-700 cursor-not-allowed" readonly />
+              class="input input-bordered w-full bg-primary/5 text-primary font-bold dark:bg-gray-700 cursor-not-allowed"
+              readonly />
             <div class="text-xs text-gray-500 mt-1">
               ຄ່າງວດ: {{ formatPrice(loanDetails.monthlyPayment) }}/ເດືອນ
             </div>
@@ -290,7 +257,7 @@
             <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
               <span class="font-medium">ເງິນກູ້ (Principal):</span>
               <span class="font-medium text-primary">{{ formatPrice(loanDetails.totalAmount - loanDetails.downPayment)
-                }}</span>
+              }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-400">ດອກເບ້ຍທັງໝົດ:</span>
@@ -447,15 +414,9 @@
             <label class="label">
               <span class="label-text font-medium">ລາຍຮັບຕໍ່ເດືອນ (ກີບ) *</span>
             </label>
-            <input
-              :value="formatCurrencyInput(customerForm.monthly_income)"
-              @input="handleCurrencyInput('monthly_income', $event)"
-              type="text"
-              placeholder="ປ້ອນລາຍຮັບຕໍ່ເດືອນ"
-              class="input input-bordered w-full"
-              :class="{ 'input-error': customerErrors.monthly_income }"
-              required
-            />
+            <input :value="formatCurrencyInput(customerForm.monthly_income)"
+              @input="handleCurrencyInput('monthly_income', $event)" type="text" placeholder="ປ້ອນລາຍຮັບຕໍ່ເດືອນ"
+              class="input input-bordered w-full" :class="{ 'input-error': customerErrors.monthly_income }" required />
             <div class="text-xs text-gray-500 mt-1">
               <div>ລາຍຮັບຕໍ່ເດືອນ (ກີບ): {{ formatPrice(customerForm.monthly_income) }}</div>
             </div>
@@ -468,13 +429,9 @@
             <label class="label">
               <span class="label-text font-medium">ໜີ້ສິນອື່ນໆ (ກີບ)</span>
             </label>
-            <input
-              :value="formatCurrencyInput(customerForm.other_debts)"
-              @input="handleCurrencyInput('other_debts', $event)"
-              type="text"
-              placeholder="ປ້ອນຈຳນວນໜີ້ສິນອື່ນໆ"
-              class="input input-bordered w-full"
-            />
+            <input :value="formatCurrencyInput(customerForm.other_debts)"
+              @input="handleCurrencyInput('other_debts', $event)" type="text" placeholder="ປ້ອນຈຳນວນໜີ້ສິນອື່ນໆ"
+              class="input input-bordered w-full" />
             <div class="text-xs text-gray-500 mt-1">
               <div>ໜີ້ສິນອື່ນໆ (ກີບ): {{ formatPrice(customerForm.other_debts) }}</div>
             </div>
@@ -485,7 +442,7 @@
 
       <div class="flex justify-end mt-8">
         <button type="button" class="btn btn-primary" :disabled="!selectedShop || !selectedProduct || isSubmitting"
-          @click="openOtpModal">
+          @click="handleDirectSubmit">
           <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>
           <span v-else>ສົ່ງຄຳຂໍສິນເຊື່ອ</span>
         </button>
@@ -602,76 +559,6 @@
     </div>
 
     <teleport to="body">
-      <div v-if="showOtpModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold">ຢືນຢັນເບີໂທລະສັບ</h3>
-            <button @click="closeOtpModal" class="text-gray-400 hover:text-gray-600">
-              <span class="icon-[tabler--x] size-5"></span>
-            </button>
-          </div>
-
-          <div class="text-center mb-4">
-            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span class="icon-[tabler--message] size-6 text-primary"></span>
-            </div>
-            <p class="text-gray-600 dark:text-gray-400">
-              ພວກເຮົາໄດ້ສົ່ງລະຫັດ OTP ໄປຫາເບີ
-              <span class="font-medium">{{ maskPhone(customerForm.phone) }}</span>
-            </p>
-
-            <p class="text-sm text-gray-500 mt-2">
-              ລະຫັດຈະໝົດອາຍຸໃນອີກ <span class="font-bold text-primary">{{ otpCountdown }}</span> ວິນາທີ
-            </p>
-
-            <div v-if="otpCountdown < 40" class="mt-3">
-              <button type="button" class="btn btn-sm btn-outline btn-primary w-full"
-                :disabled="isResendingOtp" @click="resendOtp">
-                <span v-if="isResendingOtp" class="loading loading-spinner loading-xs"></span>
-                <span v-else class="icon-[tabler--refresh] size-4 mr-1"></span>
-                ຂໍລະຫັດ OTP ໃໝ່
-              </button>
-            </div>
-          </div>
-
-          <div class="form-control mb-6">
-            <label class="label">
-              <span class="label-text font-medium">ລະຫັດ OTP *</span>
-            </label>
-            <div class="flex space-x-3" data-pin-input='{"availableCharsRE": "^[0-9]+$"}'>
-              <input type="tel" class="pin-input input input-bordered w-full text-center text-2xl" placeholder="○"
-                data-pin-input-item autocomplete="one-time-code" required />
-              <input type="tel" class="pin-input input input-bordered w-full text-center text-2xl" placeholder="○"
-                data-pin-input-item required />
-              <input type="tel" class="pin-input input input-bordered w-full text-center text-2xl" placeholder="○"
-                data-pin-input-item required />
-              <input type="tel" class="pin-input input input-bordered w-full text-center text-2xl" placeholder="○"
-                data-pin-input-item required />
-              <input type="tel" class="pin-input input input-bordered w-full text-center text-2xl" placeholder="○"
-                data-pin-input-item required />
-              <input type="tel" class="pin-input input input-bordered w-full text-center text-2xl" placeholder="○"
-                data-pin-input-item required />
-            </div>
-            <label v-if="otpError" class="label text-error">
-              <span class="label-text-alt">{{ otpError }}</span>
-            </label>
-          </div>
-
-          <div class="flex justify-between gap-3">
-            <button type="button" class="btn btn-soft btn-secondary" @click="closeOtpModal">
-              ຍົກເລີກ
-            </button>
-            <button type="button" class="btn btn-primary" :disabled="!otpCode || otpCode.length !== 6 || isVerifying"
-              @click="verifyAndSubmit">
-              <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
-              <span v-else>ຢືນຢັນ ແລະ ສົ່ງ</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </teleport>
-
-    <teleport to="body">
       <div v-if="showSuccessModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <div class="text-center">
@@ -693,13 +580,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useShopStore } from '@/stores/shop'
 import { useProductStore } from '@/stores/product'
 import { useProductTypeStore } from '@/stores/productType'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
-import { requestOtpForCustomer } from '@/api/customer';
 import { alert } from '@/utils/alert'
 import type { CreateWithCustomerDto } from '@/types/loanApplication'
 import { formatPrice } from '@/utils/formatters'
@@ -735,7 +621,6 @@ const loanApplicationStore = useLoanApplicationStore()
 const router = useRouter()
 const activeTab = ref<'application' | 'documents'>('application')
 const isSubmitting = ref(false)
-const isVerifying = ref(false)
 const canAccessDocuments = ref(false)
 
 // Loan number (auto-generated)
@@ -749,7 +634,7 @@ const getInterestRateByTerm = (months: number): number => {
   if (months <= 12) return 2.00;
   if (months <= 18) return 1.89;
   if (months <= 24) return 1.75;
-  return 1.69; // ສຳລັບ 25-36 ເດືອນຂຶ້ນໄປ
+  return 1.69; // 🟢 ສຳລັບ 25-48 ເດືອນ (36 ແລະ 48 ຈະໄດ້ 1.69 ເທົ່າກັນ)
 }
 
 // 🟢 ຟັງຊັນຈັດການເມື່ອມີການປ່ຽນແປງຈຳນວນເດືອນ
@@ -785,7 +670,6 @@ const calculateInitialLoanDetails = () => {
   const { price, term, interest_type } = selectedProduct.value
 
   loanDetails.totalAmount = Number(price || 0)
-  // loanDetails.interestRate = Number(interest_rate)
   loanDetails.termMonths = Number(term || 12)
   loanDetails.downPayment = 0
 
@@ -956,8 +840,8 @@ const validateLoanDetails = (): boolean => {
     isValid = false
   }
 
-  if (loanDetails.termMonths < 1 || loanDetails.termMonths > 60) {
-    loanErrors.termMonths = 'ຈຳນວນງວດຕ້ອງຢູ່ລະຫວ່າງ 1-60 ເດືອນ'
+  if (!loanDetails.termMonths || loanDetails.termMonths <= 0) {
+    loanErrors.termMonths = 'ກະລຸນາເລືອກຈຳນວນງວດ'
     isValid = false
   }
 
@@ -1013,7 +897,6 @@ const searchCustomerByPhone = async () => {
       customerForm.id_card = customer.identity_number || ''
       customerForm.address = customer.address || ''
       customerForm.occupation = customer.occupation || ''
-      // customerForm.monthly_income = customer.income_per_month || 0
       // 🟢 ປັດເສດທົດສະນິຍົມຖິ້ມ (Math.floor)
       customerForm.monthly_income = Math.floor(Number(customer.income_per_month)) || 0
       // ຖ້າມີໜີ້ສິນອື່ນໆ ກໍປັດເສດຄືກັນ (ຖ້າ API ສົ່ງມາ)
@@ -1051,7 +934,6 @@ const clearFoundCustomer = () => {
   customerForm.other_debts = 0
 }
 
-// 🟢 ໃຊ້ Watcher ເພື່ອອັບເດດອັດຕະໂນມັດ (ສຳຮອງ)
 watch(() => [loanDetails.downPayment, loanDetails.interestRate, loanDetails.termMonths, loanDetails.interestType], () => {
   loanDetails.monthlyPayment = calculateMonthlyPayment()
 })
@@ -1096,16 +978,7 @@ const optionalDocuments = ref<Document[]>([
 ])
 
 // Modals
-const showOtpModal = ref(false)
 const showSuccessModal = ref(false)
-
-// OTP verification
-const otpCode = ref('')
-const otpError = ref('')
-const otpCountdown = ref(300)
-let otpTimer: NodeJS.Timeout | null = null
-// 🟢 ເພີ່ມ state ສຳລັບການໂຫຼດຕອນຂໍ OTP ໃໝ່
-const isResendingOtp = ref(false)
 
 const filteredShops = computed(() => {
   let shopsArray = shopStore.shops
@@ -1139,13 +1012,6 @@ const filteredProducts = computed(() => {
 const allRequiredDocumentsUploaded = computed(() => {
   return requiredDocuments.value.every(doc => doc.file !== null)
 })
-
-const maskPhone = (phone: string): string => {
-  if (phone.length <= 4) return phone
-  const visible = phone.slice(-4)
-  const masked = '*'.repeat(phone.length - 4)
-  return `${masked}${visible}`
-}
 
 const switchTab = (tab: 'application' | 'documents') => {
   if (tab === 'documents' && !canAccessDocuments.value) return
@@ -1290,125 +1156,20 @@ const validateCustomerForm = (): boolean => {
   return isValid
 }
 
-const setupPinInputs = async () => {
-  await nextTick()
-  const inputs = document.querySelectorAll<HTMLInputElement>('[data-pin-input-item]')
-  if (inputs.length === 0) return
-
-  let code = ''
-  inputs.forEach((input, index) => {
-    input.value = ''
-    input.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement;
-      if (target.value.length === 1 && index < inputs.length - 1) {
-        inputs[index + 1]?.focus()
-      }
-      code = Array.from(inputs).map(inp => inp.value).join('')
-      otpCode.value = code
-      if (otpError.value) otpError.value = ''
-    })
-    input.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Backspace' && input.value === '' && index > 0) {
-        inputs[index - 1]?.focus()
-      }
-    })
-  })
-}
-
-const startOtpCountdown = () => {
-  otpCountdown.value = 300
-  if (otpTimer) clearInterval(otpTimer)
-  otpTimer = setInterval(() => {
-    otpCountdown.value--
-    if (otpCountdown.value <= 0) {
-      if (otpTimer) {
-        clearInterval(otpTimer)
-        otpTimer = null
-      }
-    }
-  }, 1000)
-}
-
-// 🟢 ຟັງຊັນຂໍລະຫັດ OTP ໃໝ່
-const resendOtp = async () => {
-  if (!customerForm.phone) return;
-  isResendingOtp.value = true;
-  otpError.value = '';
-
-  try {
-    await requestOtpForCustomer({ phone: customerForm.phone.trim() });
-    alert.success('ສົ່ງລະຫັດ OTP ໃໝ່ສຳເລັດແລ້ວ!');
-
-    // ຣີເຊັດຊ່ອງປ້ອນ OTP
-    otpCode.value = '';
-    const inputs = document.querySelectorAll<HTMLInputElement>('[data-pin-input-item]');
-    inputs.forEach(input => input.value = '');
-    inputs[0]?.focus(); // ເອົາ cursor ກັບໄປຊ່ອງທຳອິດ
-
-    startOtpCountdown(); // ເລີ່ມນັບເວລາໃໝ່
-  } catch (error: any) {
-    console.error('❌ Failed to resend OTP:', error);
-    otpError.value = 'ບໍ່ສາມາດສົ່ງ OTP ໃໝ່ໄດ້, ກະລຸນາລອງອີກຄັ້ງ';
-  } finally {
-    isResendingOtp.value = false;
-  }
-};
-
-watch(showOtpModal, async (newValue) => {
-  if (newValue) {
-    otpCode.value = ''
-    otpError.value = ''
-    await setupPinInputs()
-  }
-})
-
-const openOtpModal = async () => {
+// 🟢 ປ່ຽນແປງຟັງຊັນບັນທຶກຂໍ້ມູນໂດຍກົງ ໂດຍບໍ່ຕ້ອງຜ່ານການຢືນຢັນ OTP
+const handleDirectSubmit = async () => {
   if (!selectedShop.value || !selectedProduct.value || !validateCustomerForm()) return
-  try {
-    await requestOtpForCustomer({ phone: customerForm.phone.trim() });
-  } catch (error) {
-    console.error('❌ Failed to request OTP:', error);
-    return;
-  }
-  showOtpModal.value = true
-  startOtpCountdown()
-}
 
-const closeOtpModal = () => {
-  showOtpModal.value = false
-  otpCode.value = ''
-  otpError.value = ''
-  if (otpTimer) {
-    clearInterval(otpTimer)
-    otpTimer = null
-  }
-}
-
-const verifyAndSubmit = async () => {
-  if (!otpCode.value || otpCode.value.length !== 6) {
-    otpError.value = 'ກະລຸນາປ້ອນລະຫັດ OTP 6 ຕົວ'
-    return
-  }
-  if (!customerForm.phone) {
-    otpError.value = 'ບໍ່ພົບເບີໂທລະສັບ'
-    return
-  }
-
-  isVerifying.value = true
-  otpError.value = ''
-
+  isSubmitting.value = true
   try {
     await submitLoanApplication()
-    showOtpModal.value = false
     showSuccessModal.value = true
     canAccessDocuments.value = true
   } catch (error: any) {
-    let errorMessage = 'ເກີດຂໍ້ຜິດພາດການຢືນຢັນ OTP'
-    if (error.message) errorMessage = error.message
-    if (error.includes?.('OTP')) errorMessage = 'ລະຫັດ OTP ບໍ່ຖືກຕ້ອງ ຫຼື ໝົດອາຍຸ'
-    otpError.value = errorMessage
+    console.error('❌ Failed to submit loan application:', error)
+    alert.error('ເກີດຂໍ້ຜິດພາດການສົ່ງຄຳຂໍ', error.message || 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ')
   } finally {
-    isVerifying.value = false
+    isSubmitting.value = false
   }
 }
 
@@ -1423,7 +1184,7 @@ const submitLoanApplication = async () => {
 
     const data: CreateWithCustomerDto = {
       phone: customerForm.phone.trim(),
-      otp: otpCode.value.trim(),
+      otp: '', // 🟢 ຂ້າມການສົ່ງ OTP, ຖ້າລະບົບຫຼັງບ້ານຮຽກຮ້ອງອາດຈະຕ້ອງແກ້ໄຂ API ໃຫ້ບໍ່ຈຳເປັນຕ້ອງໃຊ້
       identity_number: customerForm.id_card.trim(),
       first_name: firstName,
       last_name: lastName,
@@ -1438,7 +1199,6 @@ const submitLoanApplication = async () => {
       interest_rate_at_apply: loanDetails.interestRate,
       monthly_pay: loanDetails.monthlyPayment,
 
-      // 🟢 ສົ່ງປະເພດດອກເບ້ຍໄປໃຫ້ Backend ບັນທຶກ
       interest_type: loanDetails.interestType,
       interest_rate_type: selectedProduct.value?.interest_rate_type || 'monthly',
 
@@ -1485,8 +1245,8 @@ const handleFileSelect = (index: number, event: Event) => {
 const removeDocument = (index: number) => {
   const allDocs = [...requiredDocuments.value, ...optionalDocuments.value]
   if (allDocs[index]) {
-      allDocs[index].file = null
-      allDocs[index].preview = null
+    allDocs[index].file = null
+    allDocs[index].preview = null
   }
   if (index < requiredDocuments.value.length) {
     requiredDocuments.value = [...allDocs.slice(0, requiredDocuments.value.length)]
@@ -1527,10 +1287,6 @@ const submitDocuments = async () => {
 
 onMounted(async () => {
   await shopStore.fetchAllShop()
-})
-
-onUnmounted(() => {
-  if (otpTimer) clearInterval(otpTimer)
 })
 </script>
 

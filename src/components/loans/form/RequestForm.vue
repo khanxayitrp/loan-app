@@ -51,7 +51,8 @@
             <div class="form-group">
               <label>ວັນເດືອນປີເກີດ: <span class="required">*</span></label>
               <input v-model="formData.customer.dob" type="date" required :readonly="!isEditing"
-                :class="{ 'has-data': formData.customer.dob, 'readonly-field': !isEditing }" @change="calculateAge" />
+                :class="{ 'has-data': formData.customer.dob, 'readonly-field': !isEditing }"
+                @input="handleCustomerDobChange" />
             </div>
             <div class="form-group">
               <label>ອາຍຸ: <span class="required">*</span></label>
@@ -213,16 +214,16 @@
             <div class="product-row">
               <div class="form-group">
                 <label>2. ລາຄາສິນຄ້າ: <span class="required">*</span></label>
-                <input v-model.number="formData.product.price" type="number" required readonly
-                  class="readonly-field" :class="{ 'has-data': formData.product.price }" />
+                <input v-model.number="formData.product.price" type="number" required readonly class="readonly-field"
+                  :class="{ 'has-data': formData.product.price }" />
                 <div class="text-xs text-gray-500 mt-1" v-if="formData.product.price">
                   {{ formatPrice(formData.product.price) }} ກີບ
                 </div>
               </div>
               <div class="form-group">
                 <label>8. ວາງດາວ:</label>
-                <input v-model.number="formData.product.downPayment" type="number" readonly
-                  class="readonly-field" :class="{ 'has-data': formData.product.downPayment }" />
+                <input v-model.number="formData.product.downPayment" type="number" readonly class="readonly-field"
+                  :class="{ 'has-data': formData.product.downPayment }" />
                 <div class="text-xs text-gray-500 mt-1" v-if="formData.product.downPayment">
                   {{ formatPrice(formData.product.downPayment) }} ກີບ
                 </div>
@@ -266,8 +267,8 @@
             <div class="product-row">
               <div class="form-group">
                 <label>4. ຄ່າທຳນຽມ/(CIB):</label>
-                <input v-model.number="formData.product.fee" type="number" readonly
-                  class="readonly-field" :class="{ 'has-data': formData.product.fee }" />
+                <input v-model.number="formData.product.fee" type="number" readonly class="readonly-field"
+                  :class="{ 'has-data': formData.product.fee }" />
                 <div class="text-xs text-gray-500 mt-1" v-if="formData.product.fee">
                   {{ formatPrice(formData.product.fee) }} ກີບ
                 </div>
@@ -329,7 +330,8 @@
             <div class="form-group">
               <label>ວັນເດືອນປີເກີດ:</label>
               <input v-model="formData.guarantor.dob" type="date" :readonly="!isEditing"
-                :class="{ 'has-data': formData.guarantor.dob, 'readonly-field': !isEditing }" />
+                :class="{ 'has-data': formData.guarantor.dob, 'readonly-field': !isEditing }"
+                @input="handleGuarantorDobChange" />
             </div>
             <div class="form-group">
               <label>ອາຍຸ:</label>
@@ -766,17 +768,23 @@ const loadDataFromProps = () => {
   formData.signatures.staffDate = loan.staff_signature_date ? (new Date(loan.staff_signature_date).toISOString().split('T')[0] || '') : ''
 }
 
-const calculateAge = () => {
-  if (formData.customer.dob) {
-    const today = new Date()
-    const birthDate = new Date(formData.customer.dob)
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--
-    }
-    formData.customer.age = age
+const calculateAge = (dobString: string): number | null => {
+  if (!dobString) return null;
+  const today = new Date();
+  const birthDate = new Date(dobString);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
   }
+  return age;
+}
+
+const handleCustomerDobChange = () => {
+  formData.customer.age = calculateAge(formData.customer.dob);
+}
+const handleGuarantorDobChange = () => {
+  formData.guarantor.age = calculateAge(formData.guarantor.dob);
 }
 
 // 🟢 ສູດການຄິດໄລ່ດອກເບ້ຍ ຮອງຮັບທັງ Flat ແລະ Effective
@@ -864,58 +872,374 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.print-button-container { position: fixed; top: 80px; right: 20px; z-index: 100; }
-.edit-button-container { position: fixed; top: 140px; right: 20px; z-index: 100; }
-.request-form-container { max-width: 1200px; margin: 0 auto; padding: 20px; background: white; font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif; }
-.loan-request-form { background: white; padding: 40px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: 8px; }
-.form-header { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; text-align: center; }
-.emblem { display: flex; align-items: center; justify-content: center; }
-.header-text h2 { margin: 0; font-size: 18px; font-weight: bold; }
-.header-text p { margin: 5px 0 0; font-size: 14px; }
-.form-title { text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0 10px; text-decoration: underline; }
-.form-subtitle { text-align: center; font-size: 18px; margin-bottom: 20px; }
-.recipient-section { margin-bottom: 30px; line-height: 1.8; }
-.form-section { margin-bottom: 30px; border: 1px solid #333; padding: 20px; }
-.section-title { margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; }
-.subsection-title { font-weight: 600; margin: 10px 0; font-size: 14px; }
-.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-.form-group { display: flex; flex-direction: column; }
-.form-group.full-width { grid-column: 1 / -1; }
-.form-group label { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-.required { color: red; }
-.form-group input, .form-group select, .form-group textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; transition: all 0.3s ease; }
-.form-group input:focus, .form-group select:focus { outline: none; border-color: #0066cc; box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1); }
-.has-data { background-color: #e8f5e9 !important; border-color: #4caf50 !important; }
-.readonly-field { background-color: #f5f5f5 !important; cursor: not-allowed; }
-.calculated-field { background-color: #e3f2fd !important; font-weight: 600; color: #1976d2; }
-.address-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.address-group span { white-space: nowrap; font-size: 14px; }
-.address-group input { flex: 1; min-width: 100px; }
-.duration-group { display: flex; gap: 10px; width: 100%; max-width: 100%; }
-.duration-group input { flex: 1; min-width: 0; width: 1%; }
-.product-grid { display: flex; flex-direction: column; gap: 15px; }
-.product-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-.checkbox-label { display: inline-flex; align-items: center; gap: 5px; margin-right: 15px; font-weight: normal; }
-.relationship-group { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-.relationship-group label { display: flex; align-items: center; gap: 5px; font-weight: normal; }
-.consent-section { margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 4px solid #333; }
-.conclusion { text-align: center; font-weight: bold; margin: 20px 0; }
-.signatures-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
-.signature-box { text-align: center; }
-.signature-box h4 { margin-bottom: 60px; border-bottom: 1px solid #333; padding-bottom: 10px; font-weight: bold; }
-.signature-line { border-bottom: 1px solid #000; margin-bottom: 10px; }
-.signature-box input { max-width: 150px; margin-left: 10px; }
-.form-actions { display: flex; gap: 15px; justify-content: center; margin-top: 40px; padding: 20px; }
-.btn { padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s ease; }
-.btn-primary { background: #0066cc; color: white; }
-.btn-primary:hover { background: #0052a3; }
-.btn-warning { background: #ffc107; color: #000; }
-.btn-warning:hover { background: #e0a800; }
-.btn-success { background: #28a745; color: white; }
-.btn-success:hover:not(:disabled) { background: #218838; transform: translateY(-2px); }
-.btn-secondary { background: #6c757d; color: white; }
-.btn-secondary:hover { background: #5a6268; }
-.btn:disabled { opacity: 0.6; cursor: not-allowed; }
-@media print { .print-button-container, .edit-button-container, .form-actions, .no-print { display: none !important; } .loan-request-form { box-shadow: none; padding: 0; } .form-section { break-inside: avoid; } .signatures-section { break-inside: avoid; } }
-@media (max-width: 768px) { .print-button-container { top: 10px; right: 10px; } .edit-button-container { top: 60px; right: 10px; } .loan-request-form { padding: 20px; } .product-row { grid-template-columns: 1fr; } .signatures-section { grid-template-columns: 1fr; } .address-group { flex-direction: column; align-items: stretch; } }
+.print-button-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 100;
+}
+
+.edit-button-container {
+  position: fixed;
+  top: 140px;
+  right: 20px;
+  z-index: 100;
+}
+
+.request-form-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif;
+}
+
+.loan-request-form {
+  background: white;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-text h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.header-text p {
+  margin: 5px 0 0;
+  font-size: 14px;
+}
+
+.form-title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  margin: 20px 0 10px;
+  text-decoration: underline;
+}
+
+.form-subtitle {
+  text-align: center;
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.recipient-section {
+  margin-bottom: 30px;
+  line-height: 1.8;
+}
+
+.form-section {
+  margin-bottom: 30px;
+  border: 1px solid #333;
+  padding: 20px;
+}
+
+.section-title {
+  margin-top: 0;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.subsection-title {
+  font-weight: 600;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.required {
+  color: red;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.has-data {
+  background-color: #e8f5e9 !important;
+  border-color: #4caf50 !important;
+}
+
+.readonly-field {
+  background-color: #f5f5f5 !important;
+  cursor: not-allowed;
+}
+
+.calculated-field {
+  background-color: #e3f2fd !important;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.address-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.address-group span {
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.address-group input {
+  flex: 1;
+  min-width: 100px;
+}
+
+.duration-group {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.duration-group input {
+  flex: 1;
+  min-width: 0;
+  width: 1%;
+}
+
+.product-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.product-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 15px;
+  font-weight: normal;
+}
+
+.relationship-group {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.relationship-group label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: normal;
+}
+
+.consent-section {
+  margin: 20px 0;
+  padding: 15px;
+  background: #f9f9f9;
+  border-left: 4px solid #333;
+}
+
+.conclusion {
+  text-align: center;
+  font-weight: bold;
+  margin: 20px 0;
+}
+
+.signatures-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.signature-box {
+  text-align: center;
+}
+
+.signature-box h4 {
+  margin-bottom: 60px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+  font-weight: bold;
+}
+
+.signature-line {
+  border-bottom: 1px solid #000;
+  margin-bottom: 10px;
+}
+
+.signature-box input {
+  max-width: 150px;
+  margin-left: 10px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 40px;
+  padding: 20px;
+}
+
+.btn {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #0066cc;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0052a3;
+}
+
+.btn-warning {
+  background: #ffc107;
+  color: #000;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media print {
+
+  .print-button-container,
+  .edit-button-container,
+  .form-actions,
+  .no-print {
+    display: none !important;
+  }
+
+  .loan-request-form {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .form-section {
+    break-inside: avoid;
+  }
+
+  .signatures-section {
+    break-inside: avoid;
+  }
+}
+
+@media (max-width: 768px) {
+  .print-button-container {
+    top: 10px;
+    right: 10px;
+  }
+
+  .edit-button-container {
+    top: 60px;
+    right: 10px;
+  }
+
+  .loan-request-form {
+    padding: 20px;
+  }
+
+  .product-row {
+    grid-template-columns: 1fr;
+  }
+
+  .signatures-section {
+    grid-template-columns: 1fr;
+  }
+
+  .address-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
 </style>

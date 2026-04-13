@@ -1,14 +1,14 @@
 <template>
   <teleport to="body">
     <div v-if="isOpen" class="fixed inset-0 z-[105] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
 
-        <div class="flex justify-between items-center p-5 border-b border-base-200 bg-indigo-50/50 rounded-t-xl">
-          <h3 class="text-xl font-bold flex items-center gap-2 text-indigo-700">
+        <div class="flex justify-between items-center p-5 border-b border-base-200 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-t-xl">
+          <h3 class="text-xl font-bold flex items-center gap-2 text-indigo-700 dark:text-indigo-400">
             <span class="icon-[tabler--signature] size-6"></span>
-            ອັບໂຫຼດລາຍເຊັນເອກະສານຕົວຈິງ (Physical Signatures)
+            ບັນທຶກຫຼັກຖານການລົງລາຍເຊັນ (Physical Signatures)
           </h3>
-          <button @click="close" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:bg-gray-200">
+          <button @click="close" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700">
             <span class="icon-[tabler--x] size-5"></span>
           </button>
         </div>
@@ -17,70 +17,92 @@
 
           <div class="alert alert-info shadow-sm mb-6 text-sm">
             <span class="icon-[tabler--info-circle] size-5"></span>
-            <span>ກະລຸນາອັບໂຫຼດຮູບພາບສັນຍາ ຫຼື ເອກະສານທີ່ລູກຄ້າ ແລະ ພາກສ່ວນກ່ຽວຂ້ອງໄດ້ລົງລາຍເຊັນແລ້ວ ເພື່ອເປັນຫຼັກຖານໃຫ້ຜູ້ບໍລິຫານກວດກາກ່ອນອະນຸມັດ.</span>
+            <span>ເລືອກປະເພດເອກະສານ ແລະ ບົດບາດຂອງຜູ້ເຊັນ ເພື່ອອັບໂຫຼດຮູບພາບຫຼັກຖານການລົງລາຍເຊັນຕົວຈິງ.</span>
           </div>
 
-          <div v-if="isLoading" class="flex justify-center py-8">
-            <span class="loading loading-spinner loading-md text-primary"></span>
-          </div>
+          <div class="space-y-5 bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
 
-          <div v-else-if="signatures.length === 0" class="text-center py-8 text-gray-500">
-            ຍັງບໍ່ມີຂໍ້ມູນລາຍເຊັນທີ່ຕ້ອງການ (ກະລຸນາສ້າງສັນຍາກູ້ຢືມກ່ອນ)
-          </div>
+            <div class="form-control w-full">
+              <label class="label"><span class="label-text font-bold">ປະເພດເອກະສານ *</span></label>
+              <select v-model="form.document_type" class="select select-bordered w-full" @change="fetchReferenceId">
+                <option value="" disabled>-- ກະລຸນາເລືອກເອກະສານ --</option>
+                <option value="contract">ສັນຍາກູ້ຢືມ (Loan Contract)</option>
+                <option value="repayment_schedule">ຕາຕະລາງຜ່ອນ (Repayment Schedule)</option>
+                <option value="delivery_note">ໃບສົ່ງມອບສິນຄ້າ (Delivery Note)</option>
+              </select>
+            </div>
 
-          <div v-else class="space-y-4">
-            <div v-for="sig in signatures" :key="sig.id"
-                 class="border rounded-xl p-4 bg-white shadow-sm transition-all"
-                 :class="sig.status === 'signed' ? 'border-success border-l-4' : 'border-gray-200 border-l-4 border-l-warning'">
+            <div v-if="form.reference_id" class="form-control w-full animate-in fade-in duration-300">
+              <label class="label">
+                <span class="label-text font-bold text-gray-600">ລະຫັດອ້າງອີງເອກະສານ</span>
+                <span class="badge badge-success badge-sm text-white">ພົບເອກະສານແລ້ວ</span>
+              </label>
+              <div class="flex items-center">
+                <span class="bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 border-r-0 px-3 py-3 rounded-l-lg text-gray-500">
+                  <span class="icon-[tabler--link] size-5"></span>
+                </span>
+                <input type="text" :value="form.display_reference || `ID: ${form.reference_id}`"
+                       class="input input-bordered w-full rounded-l-none bg-gray-50 dark:bg-gray-800/50 text-gray-600 font-mono font-semibold" readonly />
+              </div>
+            </div>
 
-              <div class="flex flex-col md:flex-row justify-between gap-4">
-                <div class="flex-1">
-                  <h4 class="font-bold text-lg flex items-center gap-2" :class="sig.status === 'signed' ? 'text-success' : 'text-gray-700'">
-                    <span v-if="sig.status === 'signed'" class="icon-[tabler--circle-check-filled]"></span>
-                    <span v-else class="icon-[tabler--clock] text-warning"></span>
-                    {{ getRoleName(sig.role_type) }}
-                  </h4>
+            <div v-if="isFetchingRef" class="text-sm text-info flex items-center gap-2 mt-2">
+              <span class="loading loading-spinner loading-xs"></span> ກຳລັງຄົ້ນຫາຂໍ້ມູນເອກະສານ...
+            </div>
+            <div v-else-if="form.document_type && !form.reference_id" class="text-sm text-error flex items-center gap-2 mt-2 p-3 bg-error/10 rounded-lg">
+              <span class="icon-[tabler--alert-circle] size-5"></span>
+              <span>ບໍ່ພົບເອກະສານນີ້ໃນລະບົບ (ກະລຸນາສ້າງເອກະສານກ່ອນຈຶ່ງຈະສາມາດອັບໂຫຼດລາຍເຊັນໄດ້)</span>
+            </div>
 
-                  <div class="mt-2 space-y-2">
-                    <div class="form-control w-full max-w-xs">
-                      <label class="label py-1"><span class="label-text text-xs text-gray-500">ຊື່ຜູ້ເຊັນຕົວຈິງ (Signer Name)</span></label>
-                      <input v-model="sig.signer_name" type="text" class="input input-sm input-bordered w-full" :disabled="sig.status === 'signed'" placeholder="ປ້ອນຊື່..." />
-                    </div>
-                  </div>
+            <div class="form-control w-full" :class="{ 'opacity-50 pointer-events-none': !form.reference_id }">
+              <label class="label"><span class="label-text font-bold">ບົດບາດຜູ້ເຊັນ (Role) *</span></label>
+              <select v-model="form.role_type" class="select select-bordered w-full">
+                <option value="" disabled>-- ກະລຸນາເລືອກບົດບາດ --</option>
+                <option value="borrower">ລູກຄ້າຜູ້ກູ້ (Borrower)</option>
+                <option value="guarantor">ຜູ້ຄ້ຳປະກັນ (Guarantor)</option>
+                <option value="village_chief">ນາຍບ້ານ (Village Chief)</option>
+                <option value="partner_shop">ຮ້ານຄ້າຕົວແທນ (Partner Shop)</option>
+              </select>
+            </div>
+
+            <div class="form-control w-full" :class="{ 'opacity-50 pointer-events-none': !form.reference_id }">
+              <label class="label">
+                <span class="label-text font-bold">ຊື່ຜູ້ເຊັນຕົວຈິງ *</span>
+                <span class="text-xs text-gray-500 font-normal">ປ້ອນຊື່ ແລະ ນາມສະກຸນ</span>
+              </label>
+              <input v-model="form.signer_name" type="text" class="input input-bordered w-full" placeholder="ເຊັ່ນ: ທ້າວ ສົມຊາຍ ໃຈດີ" />
+            </div>
+
+            <div class="form-control w-full" :class="{ 'opacity-50 pointer-events-none': !form.reference_id }">
+              <label class="label"><span class="label-text font-bold">ຮູບພາບຫຼັກຖານລາຍເຊັນ *</span></label>
+
+              <div class="flex flex-col sm:flex-row gap-4 items-start">
+                <div class="flex-1 w-full">
+                  <input type="file" class="file-input file-input-bordered file-input-primary w-full"
+                         accept="image/*" @change="handleFileUpload" />
+                  <p class="text-xs text-gray-500 mt-2">ຮອງຮັບໄຟລ໌ JPG, PNG (ບໍ່ເກີນ 5MB)</p>
                 </div>
 
-                <div class="flex-1 flex flex-col items-start md:items-end justify-center border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-4 mt-4 md:mt-0 border-gray-100">
-
-                  <div v-if="sig.signature_image_url" class="flex flex-col items-center gap-2">
-                    <a :href="getFullImageUrl(sig.signature_image_url)" target="_blank" class="w-24 h-24 rounded-lg border overflow-hidden hover:opacity-80 transition cursor-pointer block">
-                      <img :src="getFullImageUrl(sig.signature_image_url)" class="w-full h-full object-cover" alt="Signature" />
-                    </a>
-                    <span class="text-xs text-success font-medium">ອັບໂຫຼດແລ້ວ</span>
-                    </div>
-
-                  <div v-else class="w-full">
-                    <div class="form-control w-full">
-                      <label class="label py-1"><span class="label-text text-xs text-gray-500">ອັບໂຫຼດຮູບຫຼັກຖານ (Image)</span></label>
-                      <input type="file" class="file-input file-input-sm file-input-bordered file-input-primary w-full" accept="image/*" @change="(e) => handleFileUpload(e, sig)" />
-                    </div>
-                  </div>
-
-                  <button v-if="sig.status === 'pending'"
-                          @click="saveSignature(sig)"
-                          class="btn btn-sm btn-primary mt-3 w-full"
-                          :disabled="!sig.fileToUpload || !sig.signer_name">
-                    <span class="icon-[tabler--upload] size-4"></span> ບັນທຶກລາຍເຊັນນີ້
+                <div v-if="previewUrl" class="relative w-32 h-32 rounded-lg border-2 border-primary border-dashed overflow-hidden shrink-0">
+                  <img :src="previewUrl" class="w-full h-full object-cover" alt="Preview" />
+                  <button @click="removeFile" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition shadow-md">
+                    <span class="icon-[tabler--x] size-4"></span>
                   </button>
-
                 </div>
               </div>
             </div>
+
           </div>
 
         </div>
 
-        <div class="p-4 border-t border-base-200 bg-base-100 flex justify-end rounded-b-xl">
-          <button class="btn btn-ghost" @click="close">ປິດໜ້າຈໍ</button>
+        <div class="p-4 border-t border-base-200 bg-base-100 flex justify-end gap-3 rounded-b-xl">
+          <button class="btn btn-soft btn-secondary" @click="close" :disabled="isSaving">ຍົກເລີກ</button>
+          <button class="btn btn-primary" @click="submitSignature" :disabled="!isFormValid || isSaving">
+            <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
+            <span v-else class="icon-[tabler--device-floppy] size-4"></span>
+            ບັນທຶກຂໍ້ມູນ
+          </button>
         </div>
 
       </div>
@@ -89,80 +111,203 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import apiClient from '@/api/apiclient';
 import { alert } from '@/utils/alert';
-import { getFullImageUrl } from '@/utils/url';
 
 const props = defineProps<{ isOpen: boolean; loanId: number | null }>();
 const emit = defineEmits<{ (e: 'close'): void; (e: 'updated'): void }>();
 
-const isLoading = ref(false);
-const signatures = ref<any[]>([]);
+// 🟢 Form State
+const form = reactive({
+  document_type: '',
+  reference_id: null as number | null,
+  display_reference: '',
+  role_type: '',
+  signer_name: '',
+});
 
-// ແປພາສາ Role ໃຫ້ອ່ານງ່າຍ
-const getRoleName = (role: string) => {
-  const roles: any = {
-    borrower: 'ລູກຄ້າ (Borrower)',
-    guarantor: 'ຜູ້ຄ້ຳປະກັນ (Guarantor)',
-    village_chief: 'ນາຍບ້ານ (Village Chief)'
-  };
-  return roles[role] || role;
-};
+const fileToUpload = ref<File | null>(null);
+const previewUrl = ref<string | null>(null);
 
-// ໂຫຼດຂໍ້ມູນຈາກ DB ຕອນເປີດ Modal
-watch(() => props.isOpen, async (newVal) => {
-  if (newVal && props.loanId) {
-    await fetchSignatures();
+const isFetchingRef = ref(false);
+const isSaving = ref(false);
+
+// 🟢 Validation ກວດສອບກ່ອນໃຫ້ກົດບັນທຶກ
+const isFormValid = computed(() => {
+  return form.document_type !== '' &&
+         form.reference_id !== null &&
+         form.role_type !== '' &&
+         form.signer_name.trim() !== '' &&
+         fileToUpload.value !== null;
+});
+
+// Reset ຟອມເມື່ອປິດ ຫຼື ເປີດໃໝ່
+watch(() => props.isOpen, (newVal) => {
+  if (newVal) {
+    resetForm();
   }
 });
 
-const fetchSignatures = async () => {
-  isLoading.value = true;
+const resetForm = () => {
+  form.document_type = '';
+  form.reference_id = null;
+  form.role_type = '';
+  form.signer_name = '';
+  fileToUpload.value = null;
+  previewUrl.value = null;
+};
+
+// 🟢 ຟັງຊັນຊອກຫາ Reference ID ອັດຕະໂນມັດ
+const fetchReferenceId = async () => {
+  if (!form.document_type || !props.loanId) return;
+
+  isFetchingRef.value = true;
+  form.reference_id = null;
+  form.display_reference = '';
+
   try {
-    // ຍິງ API ໄປດຶງ document_signatures ທີ່ເປັນຂອງຄົນນອກ (ລູກຄ້າ, ຄົນຄ້ຳ, ນາຍບ້ານ) ສຳລັບ loanId ນີ້
-    const res = await apiClient.get(`/document-signatures/external/${props.loanId}`);
-    signatures.value = res.data.data.map((sig: any) => ({
-      ...sig,
-      temp_signer_name: sig.signer_name || '',
-      fileToUpload: null // ເກັບ File object ໄວ້ລໍຖ້າອັບໂຫຼດ
-    }));
+    let endpoint = '';
+
+    switch (form.document_type) {
+      case 'contract':
+        endpoint = `/loan-contract/${props.loanId}`;
+        break;
+      case 'repayment_schedule':
+        endpoint = `/repayments/schedule/${props.loanId}`;
+        break;
+      case 'delivery_note':
+        endpoint = `/delivery-receipt/application/${props.loanId}`;
+        break;
+    }
+
+    if (endpoint) {
+      const res = await apiClient.get(endpoint);
+
+      // ==============================================
+      // 🟢 ໂລຈິກປອກເປືອກຂໍ້ມູນແບບໄຮ້ທຽມທານ (Invincible Unwrapping)
+      // ມັນຈະແກະ .data ເຂົ້າໄປເລິກໆ ຈົນກວ່າຈະຮອດຂໍ້ມູນແທ້ໆ
+      // ==============================================
+      let extractedData: any = res;
+
+      // ວົນ Loop ແກະໄປເລື້ອຍໆ ຕາບໃດທີ່ຍັງມີຊັ້ນ 'data' ຫໍ່ຢູ່ຂ້າງໃນ
+      while (extractedData && typeof extractedData === 'object' && 'data' in extractedData && extractedData.data !== undefined && extractedData.data !== null) {
+         extractedData = extractedData.data;
+      }
+
+      console.log(`[Debug] ຂໍ້ມູນສຸດທ້າຍຫຼັງຈາກແກະແລ້ວ:`, extractedData);
+
+      if (!extractedData || (typeof extractedData === 'object' && Object.keys(extractedData).length === 0)) {
+         throw new Error('ບໍ່ພົບຂໍ້ມູນ (Data is empty)');
+      }
+
+      // ==============================================
+      // 🟢 ດຶງຄ່າ ID ແລະ ສະແດງຜົນ
+      // ==============================================
+      switch (form.document_type) {
+        case 'contract':
+          form.reference_id = extractedData.id || extractedData.loan_contract_id;
+          form.display_reference = extractedData.loan_contract_number || `ສັນຍາ ID: ${form.reference_id}`;
+          break;
+
+        case 'repayment_schedule':
+          if (Array.isArray(extractedData) && extractedData.length > 0) {
+             form.reference_id = extractedData[0].loan_application_id || extractedData[0].id || props.loanId;
+             form.display_reference = `ຕາຕະລາງຜ່ອນ (ງວດ ${extractedData.length})`;
+          } else {
+             form.reference_id = extractedData.id || props.loanId;
+             form.display_reference = `ຕາຕະລາງຜ່ອນສິນເຊື່ອ`;
+          }
+          break;
+
+        case 'delivery_note':
+          form.reference_id = extractedData.receipts_id || extractedData.id;
+          form.display_reference = extractedData.delivery_number || extractedData.receipt_number || `ໃບນຳສົ່ງ (ID: ${form.reference_id})`;
+          break;
+      }
+
+      if (!form.reference_id) {
+         console.error("[Error] Object ທີ່ແກະໄດ້ ບໍ່ມີ id:", extractedData);
+         throw new Error('ດຶງ ID ບໍ່ສຳເລັດ (Mapping Failed)');
+      }
+    }
   } catch (error) {
-    console.error('Error fetching signatures:', error);
+    console.error(`Error fetching reference ID for ${form.document_type}:`, error);
+    form.reference_id = null; // ໃຫ້ UI ແຈ້ງເຕືອນສີແດງ
   } finally {
-    isLoading.value = false;
+    isFetchingRef.value = false;
   }
 };
 
-const handleFileUpload = (event: Event, sig: any) => {
+const handleFileUpload = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    sig.fileToUpload = target.files[0];
+    const file = target.files[0];
+
+    // 🛡️ STEP 1: ป้องกัน 'undefined' ด้วย Guard Clause
+    if (!file) {
+        console.warn("No file selected");
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert.error('ຂະໜາດໄຟລ໌ໃຫຍ່ເກີນໄປ (ສູງສຸດ 5MB)');
+      target.value = '';
+      return;
+    }
+
+    fileToUpload.value = file;
+    previewUrl.value = URL.createObjectURL(file);
   }
 };
 
-const saveSignature = async (sig: any) => {
+const removeFile = () => {
+  fileToUpload.value = null;
+  previewUrl.value = null;
+  // ເຄຼຍ input file ໂດຍການເຂົ້າເຖິງ DOM (ຫຼືປ່ອຍໄວ້ກໍໄດ້ເພາະ v-model ບໍ່ໄດ້ຜູກກັບ input type=file)
+};
+
+// 🟢 ຟັງຊັນບັນທຶກຂໍ້ມູນ
+const submitSignature = async () => {
+  if (!isFormValid.value || !props.loanId) return;
+
+  isSaving.value = true;
+
   try {
-    // 1. ອັບໂຫຼດຮູບພາບກ່ອນ
+    // 1. ອັບໂຫຼດຮູບພາບ
     const formData = new FormData();
-    formData.append('file', sig.fileToUpload);
-    // (ສົມມຸດມີ API ອັບໂຫຼດຮູບທົ່ວໄປ)
+    formData.append('file', fileToUpload.value as Blob);
     const uploadRes = await apiClient.post('/upload/image', formData);
     const imageUrl = uploadRes.data.file_url;
 
-    // 2. ອັບເດດຂໍ້ມູນໃນຕາຕະລາງ document_signatures
-    await apiClient.put(`/document-signatures/${sig.id}/external-sign`, {
-      signer_name: sig.signer_name,
+    // 2. ສ້າງ Payload ສຳລັບບັນທຶກລົງຕາຕະລາງ document_signatures
+    const payload = {
+      application_id: props.loanId,
+      document_type: form.document_type,
+      reference_id: form.reference_id,
+      role_type: form.role_type,
+      signer_name: form.signer_name,
       signature_image_url: imageUrl,
       status: 'signed'
-    });
+    };
 
-    alert.success('ບັນທຶກລາຍເຊັນສຳເລັດ!');
-    await fetchSignatures(); // ໂຫຼດໃໝ່ໃຫ້ຂຶ້ນສີຂຽວ
-    emit('updated'); // ບອກໜ້າຫຼັກວ່າອັບເດດແລ້ວ
+    // 3. ຍິງ API ບັນທຶກ (Backend ຄວນໃຊ້ UPSERT ເພື່ອປ້ອງກັນ Duplicate Key)
+    await apiClient.post(`/document-signatures`, payload);
 
-  } catch (error) {
-    alert.error('ບໍ່ສາມາດບັນທຶກລາຍເຊັນໄດ້');
+    alert.success('ບັນທຶກຫຼັກຖານລາຍເຊັນສຳເລັດ!');
+    emit('updated');
+    close();
+
+  } catch (error: any) {
+    console.error('Submit error:', error);
+    // ດັກຈັບ Error ຈາກ Backend ຖ້າເກີດ Duplicate
+    if (error.response?.status === 409 || error.response?.data?.message?.includes('Duplicate')) {
+      alert.error('ຂໍ້ມູນຊ້ຳຊ້ອນ', 'ບົດບາດນີ້ໄດ້ລົງລາຍເຊັນໃນເອກະສານນີ້ໄປແລ້ວ.');
+    } else {
+      alert.error('ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້', error.message || 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ');
+    }
+  } finally {
+    isSaving.value = false;
   }
 };
 

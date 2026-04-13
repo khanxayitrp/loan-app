@@ -191,7 +191,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
 import type { CustomerLocation } from '@/types/loanApplication'
 
 const props = defineProps<{
@@ -212,11 +212,11 @@ const emit = defineEmits<{
   (e: 'set-primary', id: number): void
 }>()
 
-const mapContainer = ref<HTMLElement | null>(null)
-const map = ref<google.maps.Map | null>(null)
-const markers = ref<google.maps.Marker[]>([])
-const tempMarker = ref<google.maps.Marker | null>(null)
-const geocoder = ref<google.maps.Geocoder | null>(null)
+// const mapContainer = ref<HTMLElement | null>(null)
+// const map = ref<google.maps.Map | null>(null)
+// const markers = ref<google.maps.Marker[]>([])
+// const tempMarker = ref<google.maps.Marker | null>(null)
+// const geocoder = ref<google.maps.Geocoder | null>(null)
 
 const isAddingLocation = ref(false)
 const showLocationModal = ref(false)
@@ -344,6 +344,15 @@ const loadGoogleMapsScript = (): Promise<void> => {
   })
 }
 
+
+// 🟢 ແກ້ໄຂການປະກາດຕົວແປແຜນທີ່ ໃຫ້ໃຊ້ shallowRef ແທນ
+const mapContainer = ref<HTMLElement | null>(null) // ອັນນີ້ໃຊ້ ref ຄືເກົ່າໄດ້ ເພາະມັນເປັນ HTML
+const map = shallowRef<google.maps.Map | null>(null)
+const markers = shallowRef<google.maps.Marker[]>([])
+const tempMarker = shallowRef<google.maps.Marker | null>(null)
+const geocoder = shallowRef<google.maps.Geocoder | null>(null)
+
+
 // ✅ สร้างแผนที่
 const initMap = async () => {
   if (!mapContainer.value) return
@@ -432,23 +441,30 @@ const reverseGeocode = async () => {
   }
 }
 
-// ✅ อัปเดต markers จาก props.locations
 const updateMarkers = () => {
   if (!map.value || !isMapLoaded.value) return
 
-  markers.value.forEach(marker => marker.setMap(null))
-  markers.value = []
+  // 1. ລຶບໝຸດເກົ່າອອກໃຫ້ໝົດຢ່າງສະອາດ
+  markers.value.forEach(marker => {
+    google.maps.event.clearInstanceListeners(marker); // ເຄຼຍ Event ຂອງໝຸດເກົ່າກ່ອນ
+    marker.setMap(null);
+  })
 
+  const newMarkers: google.maps.Marker[] = []
   const bounds = new google.maps.LatLngBounds()
+  let validCount = 0
+  let lastPosition: { lat: number; lng: number } | null = null
 
   locations.value.forEach(location => {
     if (location.latitude && location.longitude) {
       const position = { lat: Number(location.latitude), lng: Number(location.longitude) }
+      lastPosition = position
 
       const marker = new google.maps.Marker({
         position,
         map: map.value,
         title: getLocationTypeLabel(location.location_type),
+        // ປິດ Animation DROP ສຳລັບໝຸດທີ່ໂຫຼດມາແລ້ວ ເພື່ອຄວາມລື່ນໄຫຼ
         icon: {
           url: location.is_primary
             ? 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
@@ -470,14 +486,33 @@ const updateMarkers = () => {
         infoWindow.open(map.value, marker)
       })
 
-      markers.value.push(marker)
+      newMarkers.push(marker)
       bounds.extend(position)
+      validCount++
     }
   })
 
-  if (markers.value.length > 0) {
-    map.value!.fitBounds(bounds, 50)
-  }
+  markers.value = newMarkers
+
+  // 🟢 ໂລຈິກປັບມຸມມອງ + ແກ້ຈໍຂາວ
+  // ໃຊ້ nextTick ເພື່ອໃຫ້ແນ່ໃຈວ່າ DOM ຖືກອັບເດດແລ້ວ ກ່ອນສັ່ງແຜນທີ່ໃຫ້ອັບເດດ
+  nextTick(() => {
+    if (!map.value) return;
+
+    // ບັງຄັບໃຫ້ແຜນທີ່ຄຳນວນຂະໜາດໃໝ່ (ແກ້ອາການຈໍຂາວຫຼັງຈາກ Modal ປິດ)
+    google.maps.event.trigger(map.value, 'resize');
+
+    if (validCount === 1 && lastPosition) {
+      map.value.setCenter(lastPosition);
+      map.value.setZoom(16);
+    } else if (validCount > 1) {
+      map.value.fitBounds(bounds, 50); // padding 50 pixels
+    } else {
+       // ຖ້າລຶບໝຸດອອກໝົດ ໃຫ້ກັບໄປຄ່າເລີ່ມຕົ້ນ
+       map.value.setCenter({ lat: 17.9757, lng: 102.6331 });
+       map.value.setZoom(13);
+    }
+  });
 }
 
 const enableAddLocationMode = () => {

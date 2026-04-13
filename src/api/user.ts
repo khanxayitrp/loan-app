@@ -27,3 +27,9 @@ export const updateUserStatus = async (userId: number, isActive: boolean): Promi
   })
   return response.data
 }
+
+// 🟢 เพิ่มฟังก์ชันลบผู้ใช้ (สำหรับ Delete User)
+export const deleteUser = async (userId: number): Promise<{ message: string }> => {
+  const response = await apiClient.delete<{ message: string }>(`/users/${userId}`)
+  return response.data
+}

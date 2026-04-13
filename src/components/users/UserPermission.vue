@@ -6,9 +6,9 @@
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ຈັດການສິດທິ</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການສິດທິການເຂົ້າເຖິງຂອງຜູ້ໃຊ້</p>
       </div>
-      <button class="btn btn-gradient btn-primary" @click="openAddPermissionModal">
+      <!-- <button class="btn btn-gradient btn-primary" @click="openAddPermissionModal">
         <span class="icon-[tabler--shield-plus] size-5"></span> ເພີ່ມສິດທິ
-      </button>
+      </button> -->
     </div>
 
     <!-- Loading State -->
@@ -191,7 +191,7 @@
           </div>
 
           <!-- ✅ Debug Panel -->
-          <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
+          <!-- <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
             <div class="font-bold mb-2">🔍 Debug Info:</div>
             <div>Selected User: {{ addModal.selectedUser?.username || 'None' }}</div>
             <div>Selected Count: {{ addModal.selectedPermissions.length }}</div>
@@ -202,7 +202,7 @@
                 - {{allFeatures.find(f => f.id === id)?.feature_name || `Unknown(${id})`}}
               </div>
             </div>
-          </div>
+          </div> -->
 
           <div class="flex justify-end gap-3">
             <button class="btn btn-soft btn-secondary" @click="closeAddModal">
@@ -259,7 +259,7 @@
           </div>
 
           <!-- ✅ Debug Panel -->
-          <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
+          <!-- <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
             <div class="font-bold mb-2">🔍 Debug Info:</div>
             <div>User: {{ editModal.user?.username || 'None' }}</div>
             <div>Selected Count: {{ editModal.selectedPermissions.length }}</div>
@@ -270,7 +270,7 @@
                 - {{allFeatures.find(f => f.id === id)?.feature_name || `Unknown(${id})`}}
               </div>
             </div>
-          </div>
+          </div> -->
 
           <div class="flex justify-end gap-3">
             <button class="btn btn-soft btn-secondary" @click="closeEditModal">

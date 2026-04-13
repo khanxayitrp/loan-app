@@ -176,7 +176,6 @@ import CreateUser from './CreateUser.vue'
 import { useAuthStore } from '@/stores/auth'
 import { alert } from '@/utils/alert'
 
-// ✅ ใช้ auth store
 const authStore = useAuthStore()
 
 // Reactive state
@@ -194,131 +193,94 @@ const sortDirection = ref<'asc' | 'desc'>('asc')
 const showStatusModal = ref(false)
 const userToToggle = ref<User | null>(null)
 
-// ✅ ดึงข้อมูล users จาก store
+// ດຶງຂໍ້ມູນ users ຈາກ store
 const users = computed(() => authStore.allUsers)
 
-
-// ✅ Fetch users จาก API เมื่อ component โหลด
+// Fetch users
 const fetchUsers = async () => {
   isLoading.value = true
   try {
     await authStore.fetchAllUsers()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching users:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນຜູ້ໃຊ້')
+    // 🟢 ດຶງຂໍ້ຄວາມຈາກ API ຖ້າມີ
+    const errorMsg = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດການດຶງຂໍ້ມູນຜູ້ໃຊ້'
+    alert.error('ຜິດພາດ', errorMsg)
   } finally {
     isLoading.value = false
   }
 }
 
-// ✅ เรียกครั้งแรกเมื่อ component mount
 onMounted(() => {
   fetchUsers()
-  console.log('ListUsers component mounted, fetching users...', users.value)
-  console.log('Current user from store:', authStore.allUsers) // debug เพื่อดูข้อมูล users ที่ได้จาก store
-
 })
 
-// ฟังก์ชันเปิด modal เปิด/ปิดสถานະ
+// ຟັງຊັນເປີດ modal ເປີດ/ປິດສະຖານະ
 const toggleUserStatus = (user: User) => {
-  console.log('toggleUserStatus called with user:', user)
   userToToggle.value = { ...user }
   showStatusModal.value = true
 }
 
-// ยืนยันการเปิด/ปิดสถานะ
+// ຢືນຢັນການເປີດ/ປິດສະຖານະ
 const confirmToggleStatus = async () => {
   if (!userToToggle.value) return
 
   try {
-    // 🟢 ແກ້ໄຂ: ກວດສອບຈາກຕົວເລກ 1 ແລ້ວກຳນົດຄ່າເປັນ Boolean ເພື່ອສົ່ງໃຫ້ Store
-    const isActiveCurrently = userToToggle.value.is_active === 1;
+    const isActiveCurrently = !!userToToggle.value.is_active;
     const newStatusBoolean = !isActiveCurrently;
 
-    // ✅ เรียก API update user status
+    // await authStore.updateUserStatus(userToToggle.value.id, newStatusBoolean ? 1 : 0)
     await authStore.updateUserStatus(userToToggle.value.id, newStatusBoolean)
     alert.success('ປ່ຽນສະຖານະສຳເລັດ!')
-    // ✅ Refresh data
+
     await fetchUsers()
 
     showStatusModal.value = false
     userToToggle.value = null
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error toggling user status:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ')
+    // 🟢 ດຶງຂໍ້ຄວາມແຈ້ງເຕືອນຈາກ Backend
+    const errorMsg = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ'
+    alert.error('ຜິດພາດ', errorMsg)
   }
 }
 
-// เปิดฟอร์มเพิ่มผู้ใช้ใหม่
 const openCreateUser = () => {
   editingUser.value = null
   isCreatingUser.value = true
 }
 
-// Action handlers
 const editUser = (user: User) => {
-  console.log('Edit user:', user)
   editingUser.value = { ...user }
   isCreatingUser.value = true
 }
 
-// // เมื่อบันทึก (ทั้ง add และ edit)
-// const handleSaveUser = async (updatedUser: User) => {
-//   try {
-//     if (editingUser.value) {
-//       // โหมดแก้ไข
-//       await authStore.updateUser(updatedUser.id, updatedUser)
-//     } else {
-//       // โหมดเพิ่มใหม่
-//       await authStore.createUser(updatedUser)
-//     }
-
-//     // ✅ Refresh data
-//     await fetchUsers()
-
-//     isCreatingUser.value = false
-//     editingUser.value = null
-//   } catch (error) {
-//     console.error('Error saving user:', error)
-//     alert('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ')
-//   }
-// }
-
-// เมื่อบันทึก (ทั้ง add และ edit)
+// 🟢 ປັບປຸງ: ການຈັບ Error ທີ່ຖືກຕ້ອງຕາມ Best Practice
 const handleSaveUser = async (userData: any) => {
-  // ✅ ป้องกันการเรียก API ซ้ำ
-  if (isLoading.value) {
-    console.log('[ListUsers] Already processing, ignoring...')
-    return
-  }
-
+  if (isLoading.value) return
   isLoading.value = true
 
   try {
-    console.log('[ListUsers] Received user data:', userData)
-
     if (editingUser.value && userData.id) {
-      // โหมดแก้ไข
-      console.log('[ListUsers] Updating user:', userData.id)
+      // ໂໝດແກ້ໄຂ
       await authStore.updateUser(userData.id, userData)
     } else {
-      // โหมดเพิ่มใหม่
-      console.log('[ListUsers] Creating new user')
+      // ໂໝດເພີ່ມໃໝ່
       await authStore.createUser(userData)
     }
 
-    // ✅ Refresh data
     await fetchUsers()
     alert.success('ບັນທຶກຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ!')
-    // ปิดฟอร์ม
+
     isCreatingUser.value = false
     editingUser.value = null
-
-    console.log('[ListUsers] User saved successfully')
-    alert.success('ບັນທຶກຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ!')
   } catch (error: any) {
     console.error('[ListUsers] Error saving user:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ', error.message || '')
+    // 🌟 ສຳຄັນ: ດຶງຂໍ້ຄວາມ Error ທີ່ Backend ສົ່ງມາ (ເຊັ່ນ "ບໍ່ອະນຸຍາດໃຫ້ປ່ຽນແປງ Role")
+    const errorMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ'
+
+    // ແຈ້ງເຕືອນໃຫ້ຜູ້ໃຊ້ຮູ້ ແຕ່ບໍ່ປິດ Modal ເພື່ອໃຫ້ຜູ້ໃຊ້ແກ້ໄຂຂໍ້ມູນໄດ້
+    alert.error('ບໍ່ສາມາດບັນທຶກໄດ້', errorMsg)
   } finally {
     isLoading.value = false
   }
@@ -329,25 +291,20 @@ const handleCancelCreateUser = () => {
   editingUser.value = null
 }
 
-// Debounced search query
+// Debounced search
 const debouncedSearch = ref('')
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(searchQuery, (newValue) => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-  }
+  if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
     debouncedSearch.value = newValue
     currentPage.value = 1
   }, 300)
 })
 
-// Filter users based on search
 const filteredUsers = computed(() => {
-  if (!debouncedSearch.value) {
-    return users.value
-  }
+  if (!debouncedSearch.value) return users.value
 
   const search = debouncedSearch.value.toLowerCase()
   return users.value.filter(user =>
@@ -359,43 +316,31 @@ const filteredUsers = computed(() => {
   )
 })
 
-// Sort users
 const sortedUsers = computed(() => {
-  if (!sortColumn.value) {
-    return filteredUsers.value
-  }
+  if (!sortColumn.value) return filteredUsers.value
 
-  const sorted = [...filteredUsers.value].sort((a, b) => {
+  return [...filteredUsers.value].sort((a, b) => {
     const aVal = a[sortColumn.value!] ?? ''
     const bVal = b[sortColumn.value!] ?? ''
-
     if (aVal < bVal) return sortDirection.value === 'asc' ? -1 : 1
     if (aVal > bVal) return sortDirection.value === 'asc' ? 1 : -1
     return 0
   })
-
-  return sorted
 })
 
-// Paginated data
 const displayedUsers = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
   return sortedUsers.value.slice(start, end)
 })
 
-// Total counts
 const totalUsers = computed(() => filteredUsers.value.length)
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value) || 1)
-const startIndex = computed(() => {
-  if (totalUsers.value === 0) return 0
-  return (currentPage.value - 1) * pageSize.value + 1
-})
+const startIndex = computed(() => totalUsers.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1)
 const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalUsers.value))
 const hasPreviousPage = computed(() => currentPage.value > 1)
 const hasNextPage = computed(() => currentPage.value < totalPages.value)
 
-// Selected rows logic
 const allRowsSelected = computed(() => {
   return displayedUsers.value.length > 0 &&
     displayedUsers.value.every(user => selectedRows.value.includes(user.id))
@@ -425,7 +370,6 @@ const toggleRow = (userId: number) => {
   }
 }
 
-// Sorting
 const toggleSort = (column: keyof User) => {
   if (sortColumn.value === column) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -435,32 +379,14 @@ const toggleSort = (column: keyof User) => {
   }
 }
 
-// Pagination methods
-const previousPage = () => {
-  if (hasPreviousPage.value) {
-    currentPage.value--
-  }
-}
+const previousPage = () => { if (hasPreviousPage.value) currentPage.value-- }
+const nextPage = () => { if (hasNextPage.value) currentPage.value++ }
 
-const nextPage = () => {
-  if (hasNextPage.value) {
-    currentPage.value++
-  }
-}
-
-// Watch page size changes
-watch(pageSize, () => {
-  currentPage.value = 1
-})
-
-// Watch total pages to ensure current page is valid
+watch(pageSize, () => { currentPage.value = 1 })
 watch(totalPages, (newTotal) => {
-  if (currentPage.value > newTotal) {
-    currentPage.value = Math.max(1, newTotal)
-  }
+  if (currentPage.value > newTotal) currentPage.value = Math.max(1, newTotal)
 })
 
-// Utility functions
 const getIsActiveBadgeClass = (isActive: boolean | undefined) => {
   switch (isActive) {
     case true: return 'badge-success'
@@ -484,25 +410,29 @@ const formatDate = (dateString: string | undefined) => {
   return new Date(dateString).toLocaleDateString('lo-LA')
 }
 
+// 🟢 ลบผู้ใช้งาน
 const deleteUser = async (userId: number) => {
   if (await alert.confirm('ຕ້ອງການລຶບຜູ້ໃຊ້ນີ້ບໍ?')) {
     try {
-      // TODO: เรียก API delete user
-      // await authStore.deleteUser(userId)
+      // ✅ เปิดใช้งานคำสั่งลบผ่าน Store
+      await authStore.deleteUser(userId)
+
       alert.success('ລຶບຜູ້ໃຊ້ສຳເລັດແລ້ວ!')
-      // ✅ Refresh data
+
+      // ดึงข้อมูลผู้ใช้งานมาใหม่เพื่อให้ตารางเป็นข้อมูลล่าสุด
       await fetchUsers()
 
+      // เอา ID ที่เพิ่งถูกลบออกจากรายการที่ถูกติ๊กเลือก (Checkbox)
       selectedRows.value = selectedRows.value.filter(id => id !== userId)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting user:', error)
-      alert.error('Error deleting user:', (error as Error).message);
-      alert.error('ເກີດຂໍ້ຜິດພາດໃນການລຶບຜູ້ໃຊ້');
+      // ดึงข้อความแจ้งเตือนจาก Backend มาโชว์ (ถ้าหาไม่ได้ให้โชว์ error.message)
+      const errorMsg = error.response?.data?.message || error.message
+      alert.error('ບໍ່ສາມາດລຶບໄດ້', errorMsg);
     }
   }
 }
 
-// Export CSV
 const exportToCSV = () => {
   if (!displayedUsers.value.length) return
 

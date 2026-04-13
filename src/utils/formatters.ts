@@ -1,4 +1,5 @@
 // utils/formatters.ts
+
 export const getConfirmedStyle = (status: any) => {
   const isTrue = !!status && (status === true || status === 1 || status === 'true');
   return {
@@ -16,4 +17,57 @@ export const formatPrice = (price: number | string | undefined | null): string =
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(numPrice);
+};
+
+// 🟢 Helper function ສຳລັບແປງຕົວເລກໃຫ້ມີໝາຍຈຸດ (,) ໃນຊ່ອງ Input
+export const formatCurrencyInput = (val: number | string | null | undefined): string => {
+  if (val === null || val === undefined || val === '') return '0';
+
+  // ເຄຼຍໝາຍຈຸດອອກກ່ອນ (ຖ້າມີ) ແລ້ວແປງເປັນຕົວເລກ
+  const num = typeof val === 'string' ? Number(val.replace(/,/g, '')) : Number(val);
+
+  if (isNaN(num)) return '0';
+  return num.toLocaleString('en-US');
+};
+
+// 🟢 Helper function ສຳລັບແປງສະຖານະເປັນສີຂອງ Badge
+export const getStatusBadgeClass = (status: string): string => {
+  switch (status) {
+    case 'pending': return 'badge-warning';
+    case 'verifying': return 'badge-info';
+    case 'approved': return 'badge-success';
+    case 'rejected': return 'badge-error';
+    case 'disbursed': return 'badge-primary';
+    case 'closed': return 'badge-neutral';
+    default: return 'badge-neutral';
+  }
+};
+
+// 🟢 Helper function ສຳລັບແປງສະຖານະພາສາອັງກິດເປັນພາສາລາວ
+export const getStatusText = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    'pending': 'ລໍຖ້າ',
+    'verifying': 'ກຳລັງກວດ',
+    'approved': 'ອະນຸມັດ',
+    'rejected': 'ປະຕິເສດ',
+    'disbursed': 'ຈ່າຍເງິນແລ້ວ',
+    'closed': 'ປິດສິນເຊື່ອ'
+  };
+  return statusMap[status] || status;
+};
+
+// 🟢 Helper function ສຳລັບແປງຊື່ປະເພດເອກະສານໃຫ້ເປັນພາສາລາວ
+export const getDocumentTypeName = (type: string): string => {
+  if (!type) return 'ບໍ່ລະບຸ';
+
+  const typeMap: Record<string, string> = {
+    'id_card': 'ບັດປະຈຳຕົວ',
+    'house_reg': 'ໃບຄອບຄົວ',
+    'household': 'ໃບຄອບຄົວ',
+    'salary_slip': 'ຫຼັກຖານລາຍຮັບ',
+    'income': 'ຫຼັກຖານລາຍຮັບ',
+    'other': 'ເອກະສານອື່ນໆ'
+  };
+
+  return typeMap[type.toLowerCase()] || type;
 };

@@ -8,7 +8,7 @@ import {
   registerUser as apiCreateUser,
   getCurrentUser
 } from '@/api/auth'
-import { getAllUsers as apiAllUsers, updateUser, updateUserStatus } from '@/api/user'
+import { getAllUsers as apiAllUsers, updateUser, updateUserStatus, deleteUser as apiDeleteUser } from '@/api/user'
 import type { SignInRequest, SignInResponse } from '@/types/auth'
 
 export const useAuthStore = defineStore('auth', {
@@ -165,6 +165,24 @@ export const useAuthStore = defineStore('auth', {
         }
       } catch (error) {
         console.error('Error updating user status:', error)
+      }
+    },
+    // ==========================================
+    // 🟢 Action สำหรับลบผู้ใช้งาน (Soft Delete)
+    // ==========================================
+    async deleteUser(userId: number): Promise<void> {
+      try {
+        console.log('[AUTH STORE] Deleting user ID:', userId)
+
+        // เรียก API ไปลบผู้ใช้งาน
+        await apiDeleteUser(userId)
+
+        // อัปเดต state ทันทีเพื่อความรวดเร็ว (เอาตัวที่ถูกลบออกจาก Array)
+        this.users = this.users.filter((u) => u.id !== userId)
+
+      } catch (error: any) {
+        console.error('[AUTH STORE] Error deleting user:', error)
+        throw error // โยน Error กลับไปให้ ListUsers.vue จัดการแจ้งเตือน
       }
     },
     // 🟢 เพิ่ม Action ใหม่สำหรับเช็คจำนวนการเข้าสู่ระบบ

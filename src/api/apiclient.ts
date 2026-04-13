@@ -113,7 +113,7 @@ apiClient.interceptors.response.use(
 
     // จัดการกรณี 403 Forbidden (มี Token แต่สิทธิ์ไม่ถึง)
     if (error.response?.status === 403) {
-      window.location.href = '/unauthorized'
+      // window.location.href = '/unauthorized'
     }
 
     return Promise.reject(error)
@@ -124,6 +124,11 @@ export default apiClient
 
 // Utility function to handle API errors in components
 export const handleApiError = (error: any, fallbackMessage = 'ເກີດຂໍ້ຜິດພາດ') => {
+  // ดึงข้อความจาก Backend ออกมาโชว์ถ้ามี
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+
   if (error?.message) {
     return error.message
   }

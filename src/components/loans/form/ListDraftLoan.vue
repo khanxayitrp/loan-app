@@ -71,13 +71,8 @@
             <td class="font-medium">{{ formatPrice(draft.total_amount) }}</td>
             <td>{{ getRequesterName(draft) || `ID: ${draft.requester_id || '-'}` }}</td>
             <td>
-              <span class="badge badge-soft" :class="{
-                'badge-warning': draft.is_confirmed === 0,
-                'badge-info': draft.is_confirmed === 1 && draft.status === LoanApplicationStatus.PENDING,
-                'badge-success': draft.status === LoanApplicationStatus.APPROVED,
-                'badge-error': draft.status === LoanApplicationStatus.REJECTED
-              }">
-                {{ getStatusLabel(draft) }}
+              <span class="badge badge-soft" :class="getStatusBadgeClass(draft.status)">
+                {{ getStatusText(draft.status) }}
               </span>
             </td>
             <td>{{ draft.createdAt ? formatDate(draft.createdAt) : '-' }}</td>
@@ -284,8 +279,7 @@
                 <div class="form-control mt-4">
                   <label class="label">
                     <span class="label-text font-medium">ອາຊີບ *</span>
-                    <span class="text-xs text-gray-500 ml-1">(ຕົວຢ່າງ: ພະນັກງານລັດ, ທຸລະກິດສ່ວນຕົວ, ກະສິກອນ,
-                      ແຮງງານ)</span>
+                    <span class="text-xs text-gray-500 ml-1">(ຕົວຢ່າງ: ພະນັກງານລັດ, ທຸລະກິດສ່ວນຕົວ, ກະສິກອນ, ແຮງງານ)</span>
                   </label>
                   <input v-model="modalDraftForm.occupation" type="text" class="input input-bordered w-full"
                     :class="{ 'input-error': modalFormErrors.occupation }" required />
@@ -367,22 +361,26 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ລາຄາສິນຄ້າ *</span></label>
-                    <input type="text" :value="formatPrice(modalDraftForm.total_amount)"
-                      class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 cursor-not-allowed" readonly
-                      required />
+                    <input type="text" :value="formatCurrencyInput(modalDraftForm.total_amount)"
+                      @input="handleModalPriceInput"
+                      class="input input-bordered w-full font-bold text-primary"
+                      :class="{ 'input-error': modalFormErrors.total_amount }" required placeholder="ປ້ອນລາຄາສິນຄ້າ" />
+                    <label v-if="modalFormErrors.total_amount" class="label text-error">
+                      <span class="label-text-alt">{{ modalFormErrors.total_amount }}</span>
+                    </label>
                   </div>
 
                   <div class="form-control">
                     <label class="label">
                       <span class="label-text font-medium">ຈຳນວນເງິນດາວ
                         <span v-if="modalDraftForm.total_amount > 0" class="text-xs text-gray-500">
-                          ຍອດຈັດ: {{ formatPrice(Math.max(0, modalDraftForm.total_amount - (modalDraftForm.down_payment
-                            || 0))) }}
-                        </span></span>
+                          ຍອດຈັດ: {{ formatPrice(Math.max(0, modalDraftForm.total_amount - (modalDraftForm.down_payment || 0))) }}
+                        </span>
+                      </span>
                     </label>
                     <input type="text" :value="formatCurrencyInput(modalDraftForm.down_payment)"
-                      @input="handleModalCurrencyInput('down_payment', $event)" class="input input-bordered w-full"
-                      :class="{ 'input-error': modalFormErrors.down_payment }" />
+                      @input="handleModalDownPaymentInput" class="input input-bordered w-full"
+                      :class="{ 'input-error': modalFormErrors.down_payment }" placeholder="ປ້ອນເງິນດາວ" />
                     <label v-if="modalFormErrors.down_payment" class="label text-error">
                       <span class="label-text-alt">{{ modalFormErrors.down_payment }}</span>
                     </label>
@@ -390,8 +388,16 @@
 
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ໄລຍະເວລາ (ເດືອນ) *</span></label>
-                    <input v-model.number="modalDraftForm.loan_period" type="number" class="input input-bordered w-full"
-                      :class="{ 'input-error': modalFormErrors.loan_period }" min="1" max="60" required />
+                    <select v-model.number="modalDraftForm.loan_period" class="select select-bordered w-full"
+                      :class="{ 'select-error': modalFormErrors.loan_period }" required @change="handleModalTermChange">
+                      <option value="0" disabled>-- ເລືອກຈຳນວນງວດ --</option>
+                      <option value="6">6 ເດືອນ</option>
+                      <option value="12">12 ເດືອນ</option>
+                      <option value="18">18 ເດືອນ</option>
+                      <option value="24">24 ເດືອນ</option>
+                      <option value="36">36 ເດືອນ</option>
+                      <option value="48">48 ເດືອນ</option>
+                    </select>
                     <label v-if="modalFormErrors.loan_period" class="label text-error">
                       <span class="label-text-alt">{{ modalFormErrors.loan_period }}</span>
                     </label>
@@ -399,13 +405,14 @@
 
                   <div class="form-control">
                     <label class="label">
-                      <span class="label-text font-medium">ອັດຕາດອກເບ້ຍ * <span
+                      <span class="label-text font-medium">ອັດຕາດອກເບ້ຍ (ອັດຕະໂນມັດ) * <span
                           class="badge badge-primary badge-sm badge-soft">
                           {{ modalDraftForm.interest_rate_type === 'yearly' ? '% ຕໍ່ປີ' : '% ຕໍ່ເດືອນ' }}
                         </span></span>
                     </label>
                     <input v-model.number="modalDraftForm.interest_rate" type="number"
-                      class="input input-bordered w-full" :class="{ 'input-error': modalFormErrors.interest_rate }"
+                      class="input input-bordered w-full bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
+                      :class="{ 'input-error': modalFormErrors.interest_rate }"
                       min="0" max="100" step="0.01" readonly required />
                   </div>
 
@@ -510,10 +517,14 @@
                       <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
                         class="w-full h-full object-contain p-2" />
                       <button type="button"
-                        class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                        @click="removeDocument(index)">
+                        class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
+                        @click="removeDocument(index)" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
                         <span class="icon-[tabler--x] size-4"></span>
                       </button>
+                      <div class="absolute bottom-2 left-2 pointer-events-none">
+                        <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
+                        <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
+                      </div>
                     </div>
                     <div v-else class="mt-3">
                       <label
@@ -545,10 +556,14 @@
                       <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
                         class="w-full h-full object-contain p-2" />
                       <button type="button"
-                        class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                        @click="removeDocument(index + draftDocuments.length)">
+                        class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
+                        @click="removeDocument(index + draftDocuments.length)" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
                         <span class="icon-[tabler--x] size-4"></span>
                       </button>
+                      <div class="absolute bottom-2 left-2 pointer-events-none">
+                        <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
+                        <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
+                      </div>
                     </div>
                     <div v-else class="mt-3">
                       <label
@@ -604,57 +619,6 @@
       </div>
     </teleport>
 
-    <!-- <teleport to="body">
-      <div v-if="showOtpModal && draftToSubmit"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold">ຢືນຢັນເບີໂທລະສັບ</h3>
-            <button @click="closeOtpModal" class="text-gray-400 hover:text-gray-600">
-              <span class="icon-[tabler--x] size-5"></span>
-            </button>
-          </div>
-          <div class="text-center mb-6">
-            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span class="icon-[tabler--message] size-6 text-primary"></span>
-            </div>
-            <p class="text-gray-600 dark:text-gray-400">ພວກເຮົາໄດ້ສົ່ງລະຫັດ OTP ໄປຫາເບີ</p>
-            <p class="font-medium text-lg mt-2">{{ getDraftPhone(draftToSubmit) }}</p>
-          </div>
-          <div class="form-control mb-6">
-            <input v-model="otpCode" type="text" inputmode="numeric" placeholder="ປ້ອນລະຫັດ OTP 6 ຕົວ"
-              class="input input-bordered w-full text-center text-2xl tracking-widest"
-              :class="{ 'input-error': otpError }" maxlength="6" @keyup.enter="verifyAndSubmitDraft" />
-            <label v-if="otpError" class="label text-error">
-              <span class="label-text-alt">{{ otpError }}</span>
-            </label>
-          </div>
-          <div class="flex justify-between gap-3">
-            <button type="button" class="btn btn-soft btn-secondary flex-1" @click="closeOtpModal">ຍົກເລີກ</button>
-            <button type="button" class="btn btn-success flex-1" @click="verifyAndSubmitDraft" :disabled="isVerifying || otpCode.length !== 6">
-              <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
-              <span v-else>ຢືນຢັນ</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </teleport> -->
-
-    <!-- <teleport to="body">
-      <div v-if="showSubmitModal && draftToSubmit"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-          <h3 class="font-bold text-lg mb-4 text-success">ສົ່ງຮ່າງສິນເຊື່ອ</h3>
-          <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການສົ່ງຮ່າງສິນເຊື່ອເລກທີ {{ draftToSubmit.loan_id }} ?
-          </p>
-          <div class="flex justify-end gap-3 mt-6">
-            <button class="btn btn-soft btn-secondary" @click="showSubmitModal = false">ຍົກເລີກ</button>
-            <button class="btn btn-success" @click="submitDraft">ສົ່ງຮ່າງ</button>
-          </div>
-        </div>
-      </div>
-    </teleport> -->
     <teleport to="body">
       <div v-if="showSubmitModal && draftToSubmit"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -679,18 +643,27 @@
 </template>
 
 <script setup lang="ts">
-import { formatPrice } from '@/utils/formatters'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useProductStore } from '@/stores/product'
 import { useLoanContractStore } from '@/stores/loanContract'
-import { useShopStore } from '@/stores/shop' // 🟢 ເພີ່ມ Store ຮ້ານຄ້າ
+import { useShopStore } from '@/stores/shop'
 import { LoanApplicationStatus } from '@/types/loanApplication'
 import type { LoanApplication, CustomerLocation, ConfirmDraftDto } from '@/types/loanApplication'
 import type { CreateLoanContractRequest } from '@/types/loanContract'
-import { requestOtpForCustomer } from '@/api/customer'
+
+// 🟢 Import ຟັງຊັນທັງໝົດທີ່ເຮົາຍ້າຍໄປໄວ້ໃນ utils/formatters
+import {
+  formatPrice,
+  formatCurrencyInput,
+  getStatusBadgeClass,
+  getStatusText,
+  getDocumentTypeName
+} from '@/utils/formatters'
+
 import Papa from 'papaparse'
-import { getConfirmedStyle } from '@/utils/formatters'
+import apiClient from '@/api/apiclient'
 import { getFullImageUrl } from '@/utils/url'
 import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue'
 import LoanRequestForm from '@/components/loans/form/RequestForm.vue'
@@ -701,22 +674,26 @@ import { alert } from '@/utils/alert'
 const loanApplicationStore = useLoanApplicationStore()
 const productStore = useProductStore()
 const loanContractStore = useLoanContractStore()
-const shopStore = useShopStore() // 🟢 ເພີ່ມຕົວແປ Store ຮ້ານຄ້າ
+const shopStore = useShopStore()
+const router = useRouter()
 
 // Reactive state
 const isLoading = computed(() => loanApplicationStore.isLoading)
-const isSaving = computed(() => loanApplicationStore.isSaving)
+const isSaving = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchQuery = ref('')
-const staffFilter = ref('')
+// const statusFilter = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
+
+
+// 🟢 ເພີ່ມຕົວແປ staffFilter ເຂົ້າໄປບ່ອນນີ້
+const staffFilter = ref('')
 
 // Modal states
 const showDetailsModal = ref(false)
 const showSubmitModal = ref(false)
-const showOtpModal = ref(false)
 const selectedDraft = ref<LoanApplication | null>(null)
 const draftToSubmit = ref<LoanApplication | null>(null)
 const activeTab = ref<'details' | 'documents' | 'map' | 'requestForm' | 'loanContract'>('details')
@@ -731,21 +708,11 @@ const modalShopId = ref<number | null>(null)
 // 🟢 ດຶງລາຍຊື່ຮ້ານຄ້າມາຈາກ ShopStore
 const shopsList = computed(() => shopStore.shops)
 
-// OTP
-const otpCode = ref('')
-const otpError = ref('')
 const isVerifying = ref(false)
 
 // Map states
 const customerLocations = ref<CustomerLocation[]>([])
 const isLocationLoading = ref(false)
-
-// // Mock staff list
-// const mockStaffList = [
-//   { id: 1, name: 'ສົມຊາຍ ພົນສຸກ' },
-//   { id: 2, name: 'ສົມສິງ ດຳດີ' },
-//   { id: 3, name: 'ອຸດົມ ສີສົມບັດ' }
-// ]
 
 // ✅ Documents
 interface Document { id: string, name: string, description: string, required: boolean, file: File | null, preview: string | null }
@@ -758,28 +725,16 @@ const optionalDocuments = ref<Document[]>([
   { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
 ])
 const isUploadingDocuments = ref(false)
-const allRequiredDocumentsUploaded = computed(() => draftDocuments.value.every(doc => doc.file !== null))
-
 
 // Data Extractors
 const getDraftDisplayName = (draft: LoanApplication): string => draft.customer ? `${draft.customer.first_name || ''} ${draft.customer.last_name || ''}`.trim() : '-'
 const isDraft = (draft: LoanApplication): boolean => draft.is_confirmed === 0 || !draft.is_confirmed
-const getStatusLabel = (draft: LoanApplication): string => {
-  if (isDraft(draft)) return 'ຮ່າງ'
-  switch (draft.status) {
-    case LoanApplicationStatus.PENDING: return 'ລໍຖ້າ'
-    case LoanApplicationStatus.VERIFYING: return 'ກຳລັງກວດ'
-    case LoanApplicationStatus.APPROVED: return 'ອະນຸມັດ'
-    case LoanApplicationStatus.REJECTED: return 'ປະຕິເສດ'
-    default: return draft.status
-  }
-}
+
 const getDraftPhone = (draft: LoanApplication): string => draft.customer?.phone || '-'
 const getDraftAddress = (draft: LoanApplication): string => draft.customer?.address || '-'
 const getProductName = (draft: LoanApplication): string => draft.product?.product_name || '-'
 const getRequesterName = (draft: LoanApplication): string => (draft.requester as any)?.full_name || (draft.requester as any)?.name || '-'
 const formatDate = (dateString: string): string => new Date(dateString).toLocaleDateString('lo-LA')
-
 
 // ==========================================
 // Computed properties
@@ -791,7 +746,6 @@ const staffList = computed(() => {
   drafts.forEach(draft => {
     if (draft.requester_id) {
       const name = getRequesterName(draft)
-      // ຖ້າຍັງບໍ່ມີເຈົ້າໜ້າທີ່ຄົນນີ້ໃນ Map, ໃຫ້ເພີ່ມເຂົ້າໄປ (ເພື່ອປ້ອງກັນການຊ້ຳກັນ)
       if (!staffMap.has(draft.requester_id)) {
         staffMap.set(
           draft.requester_id,
@@ -801,10 +755,9 @@ const staffList = computed(() => {
     }
   })
 
-  // ແປງຈາກ Map ກັບມາເປັນ Array Object ເພື່ອໃຫ້ Dropdown ເອົາໄປ Loop ໄດ້
   return Array.from(staffMap.entries()).map(([id, name]) => ({ id, name }))
 })
-// 🟢 Updated Form for editing (Added missing fields)
+
 const modalDraftForm = reactive({
   customer_name: '',
   customer_phone: '',
@@ -815,17 +768,16 @@ const modalDraftForm = reactive({
   product_name: '',
   product_type: '',
   total_amount: 0,
-  down_payment: 0, // ເພີ່ມເງິນດາວ
+  down_payment: 0,
   interest_rate: 0,
   loan_period: 0,
   monthly_payment: 0,
   income_per_month: 0,
   other_debts: 0,
-  interest_type: 'flat_rate', // Flat Rate vs Effective Rate
-  interest_rate_type: 'monthly' // Monthly vs Yearly
+  interest_type: 'flat_rate',
+  interest_rate_type: 'monthly'
 })
 
-// 🟢 Updated Validation errors
 const modalFormErrors = reactive({
   customer_name: '',
   customer_phone: '',
@@ -842,26 +794,8 @@ const modalFormErrors = reactive({
 
 // ✅ Helper functions
 const isImage = (url: string) => /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url.toLowerCase())
-const getDocumentTypeName = (type: string): string => {
-  const typeMap: Record<string, string> = { 'id_card': 'ບັດປະຈຳຕົວ', 'house_reg': 'ໃບຄອບຄົວ', 'salary_slip': 'ຫຼັກຖານລາຍຮັບ', 'other': 'ເອກະສານອື່ນໆ' }
-  return typeMap[type] || type
-}
-const formatFileSize = (size: number | string): string => {
-  if (!size) return 'ບໍ່ຮູ້ຈັກ'
-  const numSize = typeof size === 'string' ? parseInt(size) : size
-  if (numSize < 1024) return `${numSize} B`
-  if (numSize < 1024 * 1024) return `${(numSize / 1024).toFixed(1)} KB`
-  return `${(numSize / (1024 * 1024)).toFixed(1)} MB`
-}
 
-// 🟢 ຟັງຊັນສຳລັບຈັດການ Input ທີ່ເປັນເງິນ ໃຫ້ມີໝາຍຈຸດ (,) อัตโนมัติ (จาก ListLoan.vue)
-// 🟢 แก้ไขการ Format เงิน ให้บังคับปัดเศษทศนิยมออก
-const formatCurrencyInput = (val: number | null | undefined): string => {
-  if (val === null || val === undefined || isNaN(val)) return '0';
-  return Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
-};
-
-const handleModalCurrencyInput = (field: 'total_amount' | 'down_payment' | 'income_per_month' | 'other_debts', event: Event) => {
+const handleModalCurrencyInput = (field: 'down_payment' | 'income_per_month' | 'other_debts', event: Event) => {
   const target = event.target as HTMLInputElement;
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
   const numericValue = Number(rawValue);
@@ -874,7 +808,135 @@ const handleModalCurrencyInput = (field: 'total_amount' | 'down_payment' | 'inco
   target.value = formatCurrencyInput(modalDraftForm[field]);
 };
 
-// 🟢 ຟັງຊັນເມື່ອແອັດມິນປ່ຽນຮ້ານຄ້າໃນ Dropdown
+// 🟢 0. ຟັງຊັນຈັດການປ່ຽນແປງລາຄາສິນຄ້າ
+const handleModalPriceInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const cursorPosition = target.selectionStart;
+  const originalLength = target.value.length;
+
+  const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
+  const numericValue = parseInt(rawValue, 10);
+
+  if (!isNaN(numericValue) && rawValue !== '') {
+    modalDraftForm.total_amount = numericValue;
+    // 🟢 ປັບເງິນດາວບໍ່ໃຫ້ກາຍລາຄາສິນຄ້າ
+    if (modalDraftForm.down_payment > modalDraftForm.total_amount) {
+      modalDraftForm.down_payment = modalDraftForm.total_amount;
+    }
+  } else {
+    modalDraftForm.total_amount = 0;
+  }
+
+  target.value = formatCurrencyInput(modalDraftForm.total_amount);
+
+  const newLength = target.value.length;
+  const lengthDiff = newLength - originalLength;
+  if (cursorPosition !== null) {
+    target.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
+  }
+};
+
+// ==========================================
+// 🟢 1. ຟັງຊັນດຶງອັດຕາດອກເບ້ຍຕາມນະໂຍບາຍ
+// ==========================================
+const getInterestRateByTerm = (months: number): number => {
+  if (!months || months <= 6) return 2.50;
+  if (months <= 12) return 2.00;
+  if (months <= 18) return 1.89;
+  if (months <= 24) return 1.75;
+  // 🟢 ສຳລັບ 25 ເດືອນຂຶ້ນໄປ (ເຊັ່ນ 36 ແລະ 48 ຈະໄດ້ 1.69 ເທົ່າກັນ)
+  return 1.69;
+}
+
+// ==========================================
+// 🟢 2. ຈັດການເມື່ອປ່ຽນໄລຍະເວລາ (ເດືອນ) ໃຫ້ອັບເດດດອກເບ້ຍອັດຕະໂນມັດ
+// ==========================================
+const handleModalTermChange = () => {
+  if (modalDraftForm.loan_period > 0) {
+    modalDraftForm.interest_rate = getInterestRateByTerm(modalDraftForm.loan_period);
+  }
+}
+
+// ==========================================
+// 🟢 3. ຈັດການເງິນດາວ (ບັງຄັບບໍ່ໃຫ້ເກີນຍອດຈັດ ແລະ ໃສ່ໝາຍຈຸດ)
+// ==========================================
+const handleModalDownPaymentInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const cursorPosition = target.selectionStart;
+  const originalLength = target.value.length;
+
+  const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
+  const numericValue = parseInt(rawValue, 10);
+
+  if (!isNaN(numericValue) && rawValue !== '') {
+    if (numericValue > modalDraftForm.total_amount) {
+      modalDraftForm.down_payment = modalDraftForm.total_amount;
+    } else {
+      modalDraftForm.down_payment = numericValue;
+    }
+  } else {
+    modalDraftForm.down_payment = 0;
+  }
+
+  target.value = formatCurrencyInput(modalDraftForm.down_payment);
+
+  const newLength = target.value.length;
+  const lengthDiff = newLength - originalLength;
+  if (cursorPosition !== null) {
+    target.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
+  }
+};
+
+// ==========================================
+// 🟢 4. ອັບເດດຟັງຊັນ Validation
+// ==========================================
+const validateModalForm = (): boolean => {
+  Object.keys(modalFormErrors).forEach(key => { modalFormErrors[key as keyof typeof modalFormErrors] = '' })
+  let isValid = true
+
+  if (!modalDraftForm.customer_name.trim()) { modalFormErrors.customer_name = 'ກະລຸນາປ້ອນຊື່ລູກຄ້າ'; isValid = false }
+  const phoneRegex = /^[\d\-\+\(\)\s]{8,15}$/
+  if (!modalDraftForm.customer_phone.trim()) { modalFormErrors.customer_phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'; isValid = false }
+  else if (!phoneRegex.test(modalDraftForm.customer_phone)) { modalFormErrors.customer_phone = 'ເບີໂທລະສັບບໍ່ຖືກຕ້ອງ'; isValid = false }
+  if (!modalDraftForm.customer_id_card.trim()) { modalFormErrors.customer_id_card = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ'; isValid = false }
+  if (!modalDraftForm.customer_address.trim()) { modalFormErrors.customer_address = 'ກະລຸນາປ້ອນທີ່ຢູ່'; isValid = false }
+  if (!modalDraftForm.occupation.trim()) { modalFormErrors.occupation = 'ກະລຸນາປ້ອນອາຊີບ'; isValid = false }
+  if (!modalDraftForm.age || modalDraftForm.age < 18 || modalDraftForm.age > 100) { modalFormErrors.age = 'ອາຍຸຕ້ອງຢູ່ລະຫວ່າງ 18-100 ປີ'; isValid = false }
+  if (!modalDraftForm.total_amount || modalDraftForm.total_amount <= 0) { modalFormErrors.total_amount = 'ມູນຄ່າຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
+
+  if (modalDraftForm.down_payment < 0) { modalFormErrors.down_payment = 'ເງິນດາວຕ້ອງບໍ່ຕິດລົບ'; isValid = false }
+  if (modalDraftForm.down_payment > modalDraftForm.total_amount) { modalFormErrors.down_payment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າ ຫຼື ເທົ່າກັບລາຄາສິນຄ້າ'; isValid = false }
+  if (!modalDraftForm.income_per_month || modalDraftForm.income_per_month <= 0) { modalFormErrors.income_per_month = 'ລາຍຮັບຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
+
+  // 🟢 ປ່ຽນການກວດສອບງວດ ເປັນການກວດວ່າໄດ້ເລືອກແລ້ວຫຼືຍັງ
+  if (!modalDraftForm.loan_period || modalDraftForm.loan_period <= 0) {
+    modalFormErrors.loan_period = 'ກະລຸນາເລືອກຈຳນວນງວດ';
+    isValid = false
+  }
+
+  return isValid
+}
+
+// ==========================================
+// 🟢 5. ອັບເດດຕອນເລືອກສິນຄ້າໃໝ່ (ໃຫ້ຄິດໄລ່ດອກເບ້ຍເລີຍ)
+// ==========================================
+const selectModalProduct = (product: any) => {
+  selectedModalProduct.value = product
+  modalProductSearch.value = product.product_name
+  showModalProductDropdown.value = false
+  modalDraftForm.product_name = product.product_name
+  modalDraftForm.product_type = product.productType?.type_name || product.type_name || ''
+  modalDraftForm.total_amount = product.price
+  modalDraftForm.down_payment = 0
+  modalDraftForm.loan_period = product.term || 12
+
+  modalDraftForm.interest_rate = getInterestRateByTerm(modalDraftForm.loan_period)
+
+  modalDraftForm.interest_type = product.interest_type || 'flat_rate'
+  modalDraftForm.interest_rate_type = product.interest_rate_type || 'monthly'
+  modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
+}
+
 const handleShopChange = async () => {
   clearModalProductSelection()
   modalDraftForm.total_amount = 0
@@ -925,6 +987,7 @@ const handleDocumentUpload = (index: number, event: Event) => {
   }
   reader.readAsDataURL(file)
 }
+
 const removeDocument = (index: number) => {
   const allDocs = [...draftDocuments.value, ...optionalDocuments.value]
   if (allDocs[index]) {
@@ -938,30 +1001,6 @@ const removeDocument = (index: number) => {
   }
 }
 
-// 🟢 Validation function Updated
-const validateModalForm = (): boolean => {
-  Object.keys(modalFormErrors).forEach(key => { modalFormErrors[key as keyof typeof modalFormErrors] = '' })
-  let isValid = true
-
-  if (!modalDraftForm.customer_name.trim()) { modalFormErrors.customer_name = 'ກະລຸນາປ້ອນຊື່ລູກຄ້າ'; isValid = false }
-  const phoneRegex = /^[\d\-\+\(\)\s]{8,15}$/
-  if (!modalDraftForm.customer_phone.trim()) { modalFormErrors.customer_phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'; isValid = false }
-  else if (!phoneRegex.test(modalDraftForm.customer_phone)) { modalFormErrors.customer_phone = 'ເບີໂທລະສັບບໍ່ຖືກຕ້ອງ'; isValid = false }
-  if (!modalDraftForm.customer_id_card.trim()) { modalFormErrors.customer_id_card = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ'; isValid = false }
-  if (!modalDraftForm.customer_address.trim()) { modalFormErrors.customer_address = 'ກະລຸນາປ້ອນທີ່ຢູ່'; isValid = false }
-  if (!modalDraftForm.occupation.trim()) { modalFormErrors.occupation = 'ກະລຸນາປ້ອນອາຊີບ'; isValid = false }
-  if (!modalDraftForm.age || modalDraftForm.age < 18 || modalDraftForm.age > 100) { modalFormErrors.age = 'ອາຍຸຕ້ອງຢູ່ລະຫວ່າງ 18-100 ປີ'; isValid = false }
-  if (!modalDraftForm.total_amount || modalDraftForm.total_amount <= 0) { modalFormErrors.total_amount = 'ມູນຄ່າຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
-  if (modalDraftForm.down_payment >= modalDraftForm.total_amount) { modalFormErrors.down_payment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າລາຄາສິນຄ້າ'; isValid = false }
-  if (modalDraftForm.interest_rate < 0 || modalDraftForm.interest_rate > 100) { modalFormErrors.interest_rate = 'ດອກເບ້ຍຕ້ອງຢູ່ລະຫວ່າງ 0-100%'; isValid = false }
-  if (!modalDraftForm.loan_period || modalDraftForm.loan_period < 1 || modalDraftForm.loan_period > 60) { modalFormErrors.loan_period = 'ໄລຍະເວລາຕ້ອງຢູ່ລະຫວ່າງ 1-60 ເດືອນ'; isValid = false }
-  if (!modalDraftForm.income_per_month || modalDraftForm.income_per_month <= 0) { modalFormErrors.income_per_month = 'ລາຍຮັບຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
-
-  return isValid
-}
-
-// Computed properties
-// const staffList = computed(() => mockStaffList)
 const filteredDrafts = computed(() => {
   let filtered = loanApplicationStore.loanApplications || []
   if (searchQuery.value) {
@@ -988,6 +1027,7 @@ const filteredDrafts = computed(() => {
   }
   return filtered
 })
+
 const filteredModalProducts = computed(() => {
   if (!modalProductSearch.value) return productStore.products
   const query = modalProductSearch.value.toLowerCase()
@@ -997,6 +1037,7 @@ const filteredModalProducts = computed(() => {
     product.id.toString().includes(query)
   )
 })
+
 const displayedDrafts = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
@@ -1009,7 +1050,6 @@ const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, tot
 const hasPreviousPage = computed(() => currentPage.value > 1)
 const hasNextPage = computed(() => currentPage.value < totalPages.value)
 
-// 🟢 ຄຳນວນຄ່າງວດ (Advance formula handling down payment & rate types)
 const calculateModalMonthlyPayment = (): number => {
   const { total_amount, down_payment, interest_rate, loan_period, interest_type, interest_rate_type } = modalDraftForm
 
@@ -1047,21 +1087,6 @@ watch(
   () => { modalDraftForm.monthly_payment = calculateModalMonthlyPayment() }
 )
 
-// 🟢 เลือกสินค้า
-const selectModalProduct = (product: any) => {
-  selectedModalProduct.value = product
-  modalProductSearch.value = product.product_name
-  showModalProductDropdown.value = false
-  modalDraftForm.product_name = product.product_name
-  modalDraftForm.product_type = product.productType?.type_name || product.type_name || ''
-  modalDraftForm.total_amount = product.price
-  modalDraftForm.down_payment = 0
-  modalDraftForm.interest_rate = product.interest_rate
-  modalDraftForm.loan_period = product.term
-  modalDraftForm.interest_type = product.interest_type || 'flat_rate'
-  modalDraftForm.interest_rate_type = product.interest_rate_type || 'monthly'
-  modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
-}
 const clearModalProductSelection = () => {
   selectedModalProduct.value = null
   modalProductSearch.value = ''
@@ -1074,7 +1099,19 @@ let debounceTimer: NodeJS.Timeout | null = null
 const debounceSearch = () => { if (debounceTimer) clearTimeout(debounceTimer); debounceTimer = setTimeout(() => currentPage.value = 1, 300) }
 let modalProductSearchTimer: NodeJS.Timeout | null = null
 const debounceModalProductSearch = () => { if (modalProductSearchTimer) clearTimeout(modalProductSearchTimer); modalProductSearchTimer = setTimeout(() => { }, 300) }
-const applyDateFilter = () => currentPage.value = 1
+
+const applyDateFilter = () => {
+  if (dateFrom.value && dateTo.value) {
+    const from = new Date(dateFrom.value).getTime()
+    const to = new Date(dateTo.value).getTime()
+    if (from > to) {
+      alert.error('ວັນທີບໍ່ຖືກຕ້ອງ', 'ວັນທີເລີ່ມຕົ້ນຕ້ອງນ້ອຍກວ່າ ຫຼື ເທົ່າກັບວັນທີສິ້ນສຸດ')
+      dateTo.value = ''
+      return
+    }
+  }
+  currentPage.value = 1
+}
 
 const selectedContract = ref<any | null>(null)
 
@@ -1216,8 +1253,8 @@ const handleRequestFormSave = async (customerId: number, formData: any) => {
       total_amount: Number(formData.product.price) || 0,
       interest_rate_at_apply: Number(formData.product.interestRate) || 0,
 
-      interest_type: formData.product.interestType, // 🟢 ເພີ່ມບັນທັດນີ້
-      interest_rate_type: formData.product.interestRateType, // 🟢 ເພີ່ມບັນທັດນີ້
+      interest_type: formData.product.interestType,
+      interest_rate_type: formData.product.interestRateType,
 
       monthly_pay: Number(formData.product.monthlyPayment) || 0,
       loan_period: Number(formData.product.loanTerm) || 0,
@@ -1246,7 +1283,6 @@ const handleRequestFormUpdated = (updatedData: any) => {
   })
 }
 
-// Contract Form
 const handleSaveContract = async (customerId: number, formData: any) => {
   if (!selectedDraft.value) return
   try {
@@ -1393,7 +1429,6 @@ const startEditInModal = async () => {
   modalDraftForm.age = draftData.customer?.age || 0
   modalDraftForm.product_name = getProductName(draftData)
 
-  // 🟢 บังคับให้ปัดเศษและเป็น Number ที่ถูกต้อง
   modalDraftForm.total_amount = Math.round(Number(draftData.total_amount || 0))
   modalDraftForm.down_payment = Math.round(Number(draftData.down_payment || 0))
   modalDraftForm.interest_rate = Number(draftData.interest_rate_at_apply || 0)
@@ -1404,8 +1439,22 @@ const startEditInModal = async () => {
   modalDraftForm.interest_type = (draftData as any).interest_type || 'flat_rate'
    modalDraftForm.interest_rate_type = (draftData as any).interest_rate_type || 'monthly'
 
-  // 🟢 บังคับคำนวณค่างวดทันทีที่เปิด Modal เพื่อไม่ให้แสดงเป็น 0
   modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
+
+  // 🟢 ດຶງເອກະສານເດີມມາສະແດງ
+  draftDocuments.value.forEach(doc => { doc.file = null; doc.preview = null })
+  optionalDocuments.value.forEach(doc => { doc.file = null; doc.preview = null })
+
+  if (loanApplicationStore.currentDocuments && loanApplicationStore.currentDocuments.length > 0) {
+    const allFormDocs = [...draftDocuments.value, ...optionalDocuments.value]
+    loanApplicationStore.currentDocuments.forEach(serverDoc => {
+      const docType = serverDoc.document_type || serverDoc.doc_type
+      const targetDoc = allFormDocs.find(d => d.id === docType)
+      if (targetDoc && serverDoc.file_url) {
+        targetDoc.preview = serverDoc.file_url
+      }
+    })
+  }
 
   isEditingInModal.value = true
   activeTab.value = 'details'
@@ -1445,21 +1494,22 @@ const saveDraftFromModal = async () => {
       interest_rate_at_apply: Number(modalDraftForm.interest_rate) || 0,
       loan_period: Number(modalDraftForm.loan_period) || 0,
       monthly_pay: Number(modalDraftForm.monthly_payment) || 0,
-      first_installment_amount: Number(modalDraftForm.monthly_payment || 0) + Number(fee), // 🟢 เพิ่มฟิeld นี้เพื่อให้แน่ใจว่ามีค่า
+      first_installment_amount: Number(modalDraftForm.monthly_payment || 0) + Number(fee),
     }
 
     await loanApplicationStore.updateDraftLoanApplication(selectedDraft.value.id, updateData)
 
     if (selectedDraft.value.id) {
-      isUploadingDocuments.value = true
-      const allDocs = [...draftDocuments.value, ...optionalDocuments.value].filter(doc => doc.file)
-      for (const doc of allDocs) {
-        if (doc.file) {
-          await loanApplicationStore.uploadDocument(selectedDraft.value.id, doc.file, doc.id)
+      // 🟢 ອັບໂຫຼດສະເພາະເອກະສານໃໝ່ທີ່ຖືກເລືອກແທນຮູບເດີມ
+      const newDocs = [...draftDocuments.value, ...optionalDocuments.value].filter(doc => doc.file !== null)
+      if (newDocs.length > 0) {
+        isUploadingDocuments.value = true
+        for (const doc of newDocs) {
+          await loanApplicationStore.uploadDocument(selectedDraft.value.id, doc.file!, doc.id)
         }
+        await loanApplicationStore.fetchDocuments(selectedDraft.value.id)
+        isUploadingDocuments.value = false
       }
-      await loanApplicationStore.fetchDocuments(selectedDraft.value.id)
-      isUploadingDocuments.value = false
     }
 
     alert.success('ບັນທຶກການປ່ຽນແປງສຳເລັດ!')
@@ -1477,16 +1527,14 @@ const deleteDraft = async (draftId: number) => {
     await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
   } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.message) }
 }
-// 🟢 ເພີ່ມຟັງຊັນກວດສອບເອກະສານກ່ອນສົ່ງຮ່າງ
+
 const confirmSubmitDraft = async (draft: LoanApplication) => {
   if (!draft.id) return;
 
   try {
-    // 1. ໂຫຼດຂໍ້ມູນເອກະສານຫຼ້າສຸດຂອງຮ່າງນີ້ມາກວດສອບກ່ອນ
     await loanApplicationStore.fetchDocuments(draft.id);
     const uploadedDocs = loanApplicationStore.currentDocuments || [];
 
-    // 2. ກວດສອບວ່າອັບໂຫຼດຄົບຕາມເງື່ອນໄຂແລ້ວຫຼືຍັງ (id_card, house_reg, salary_slip)
     const hasIdCard = uploadedDocs.some(doc => doc.document_type === 'id_card' || doc.doc_type === 'id_card');
     const hasHouseReg = uploadedDocs.some(doc => doc.document_type === 'house_reg' || doc.doc_type === 'house_reg');
     const hasSalarySlip = uploadedDocs.some(doc => doc.document_type === 'salary_slip' || doc.doc_type === 'salary_slip');
@@ -1496,7 +1544,6 @@ const confirmSubmitDraft = async (draft: LoanApplication) => {
     if (!hasHouseReg) missingDocs.push('ໃບຄອບຄົວ');
     if (!hasSalarySlip) missingDocs.push('ຫຼັກຖານລາຍຮັບ (ໃບເງິນເດືອນ)');
 
-    // 3. ຖ້າບໍ່ຄົບ ໃຫ້ແຈ້ງເຕືອນ ແລະ ຢຸດການເຮັດວຽກ (ບໍ່ເປີດ Modal)
     if (missingDocs.length > 0) {
       alert.error(
         'ເອກະສານບໍ່ຄົບຖ້ວນ',
@@ -1505,7 +1552,6 @@ const confirmSubmitDraft = async (draft: LoanApplication) => {
       return;
     }
 
-    // 4. ຖ້າເອກະສານຄົບແລ້ວ ຈຶ່ງອະນຸຍາດໃຫ້ເປີດ Modal ຢືນຢັນ
     draftToSubmit.value = draft;
     showSubmitModal.value = true;
 
@@ -1515,17 +1561,14 @@ const confirmSubmitDraft = async (draft: LoanApplication) => {
   }
 }
 
-// 🟢 ຟັງຊັນສົ່ງຮ່າງ (Submit Draft) ແບບບໍ່ຕ້ອງໃຊ້ OTP
 const submitDraft = async () => {
   if (!draftToSubmit.value) return;
 
   isVerifying.value = true;
   try {
-    // ອັບເດດສະຖານະແຈ້ງ Backend ວ່າ Confirm ແລ້ວ (is_confirmed: 1)
-    // ທ່ານສາມາດປັບຊື່ Endpoint API ຕາມທີ່ Backend ທ່ານຮອງຮັບໄດ້ເລີຍ (ApplyDraft ຫຼື updateStatus)
     const confirmData: ConfirmDraftDto = {
       is_confirmed: 1,
-      status: LoanApplicationStatus.PENDING // ຫຼື 'verifying' ແລ້ວແຕ່ Flow ລະບົບທ່ານ
+      status: LoanApplicationStatus.PENDING
     } as any;
 
     await loanApplicationStore.ApplyDraft(draftToSubmit.value.id, confirmData);
@@ -1534,14 +1577,12 @@ const submitDraft = async () => {
 
     showSubmitModal.value = false;
 
-    // ປິດ Modal ລາຍລະອຽດ ຖ້າມັນເປີດຢູ່
     if (selectedDraft.value?.id === draftToSubmit.value.id) {
       closeDetailsModal();
     }
 
     draftToSubmit.value = null;
 
-    // Refresh ໜ້າຈໍ ດຶງຂໍ້ມູນໃໝ່ (ເຫຼືອແຕ່ອັນທີ່ຍັງບໍ່ Submit)
     await loanApplicationStore.fetchLoanApplications({
       status: LoanApplicationStatus.PENDING,
       is_confirmed: 0
@@ -1553,29 +1594,7 @@ const submitDraft = async () => {
     isVerifying.value = false;
   }
 }
-const requestOtp = async () => {
-  if (!draftToSubmit.value?.customer?.phone) { alert.error('ບໍ່ພົບເບີໂທລະສັບ'); return }
-  try { await requestOtpForCustomer({ phone: draftToSubmit.value.customer.phone }) }
-  catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດການສົ່ງ OTP', error.message) }
-}
-const verifyAndSubmitDraft = async () => {
-  if (!otpCode.value || otpCode.value.length !== 6) { otpError.value = 'ກະລຸນາປ້ອນລະຫັດ OTP 6 ຕົວ'; return }
-  if (!draftToSubmit.value || !draftToSubmit.value.customer?.phone) { alert.error('ຂໍ້ມູນລູກຄ້າບໍ່ຄົບຖ້ວນ'); return }
 
-  isVerifying.value = true
-  otpError.value = ''
-  try {
-    const confirmData: ConfirmDraftDto = { phone: draftToSubmit.value.customer.phone, otp: otpCode.value.trim(), is_confirmed: 1 }
-    await loanApplicationStore.ApplyDraft(draftToSubmit.value.id, confirmData)
-    alert.success('ສົ່ງຮ່າງສິນເຊື່ອສຳເລັດ!')
-    showOtpModal.value = false
-    if (selectedDraft.value?.id === draftToSubmit.value.id) closeDetailsModal()
-    draftToSubmit.value = null
-    otpCode.value = ''
-    await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
-  } catch (error: any) { otpError.value = error.message || 'ເກີດຂໍ້ຜິດພາດການຢືນຢັນ OTP' } finally { isVerifying.value = false }
-}
-const closeOtpModal = () => { showOtpModal.value = false; otpCode.value = ''; otpError.value = ''; draftToSubmit.value = null }
 const exportToCSV = () => {
   if (!displayedDrafts.value.length) return
   const csvData = displayedDrafts.value.map(draft => ({
@@ -1590,6 +1609,7 @@ const exportToCSV = () => {
   link.download = `draft_loans_${new Date().toISOString().split('T')[0]}.csv`
   link.click()
 }
+
 const previousPage = () => { if (hasPreviousPage.value) currentPage.value-- }
 const nextPage = () => { if (hasNextPage.value) currentPage.value++ }
 watch(pageSize, () => currentPage.value = 1)
@@ -1598,7 +1618,7 @@ onMounted(async () => {
     await Promise.all([
       loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 }),
       productStore.fetchProductTypes(),
-      shopStore.fetchAllShop() // 🟢 ໂຫຼດຮ້ານຄ້າໃນຕອນເລີ່ມຕົ້ນ
+      shopStore.fetchAllShop()
     ])
   } catch (error) { console.error('❌ Failed to load applications:', error) }
 })

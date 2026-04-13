@@ -226,7 +226,7 @@ const menuItems = [
         label: 'Manage User',
         icon: 'icon-[tabler--users]',
         to: '/users',
-        permission: 'user_manage'
+        permission: 'user_view'
       },
       {
         label: 'Change Password',
