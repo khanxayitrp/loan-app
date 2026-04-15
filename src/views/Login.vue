@@ -2,11 +2,8 @@
   <div
     class="flex h-auto min-h-screen items-center justify-center overflow-x-hidden bg-[url('https://cdn.flyonui.com/fy-assets/blocks/marketing-ui/auth/auth-background-2.png')] bg-cover bg-center bg-no-repeat py-10">
     <div class="relative flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      <!-- SVG background (เหมือนเดิม) -->
-
       <div class="bg-base-100 shadow-base-300/20 z-1 w-full space-y-6 rounded-xl p-6 shadow-md sm:min-w-md lg:p-8">
         <div class="flex items-center gap-3">
-          <!-- ✅ แก้ไข path รูปภาพ -->
           <img src="/image/LOGO INSEE.png" class="size-8" alt="brand-logo" />
           <h2 class="text-base-content text-xl font-bold">ສະຖາບັນການເງິນຈຸລະພາກທີ່ບໍ່ຮັບເງິນຝາກອິນຊີ</h2>
         </div>
@@ -15,7 +12,6 @@
           <h3 class="text-base-content mb-1.5 text-2xl font-semibold">ເຂົ້າສູ່ລະບົບ InSee Loan</h3>
         </div>
 
-        <!-- แสดง error จาก API หรือ validation -->
         <div v-if="errorMessage" class="alert alert-error shadow-lg">
           <span>{{ errorMessage }}</span>
         </div>
@@ -59,12 +55,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'  // ← เพิ่ม nextTick ที่นี่
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
 
-// Reactive form state
 const form = reactive({
   username: '',
   password: '',
@@ -77,6 +72,7 @@ const showPassword = ref(false)
 
 const router = useRouter()
 const authStore = useAuthStore()
+const permissionStore = usePermissionStore()
 
 const handleLogin = async () => {
   errorMessage.value = ''
@@ -93,66 +89,49 @@ const handleLogin = async () => {
       return
     }
 
-    // 2. ✅ Verify & reload permissions from cookies
+    // 2. ໂຫຼດຂໍ້ມູນ Auth ຄືນໃໝ່ໃຫ້ໝັ້ນໃຈ
     await authStore.checkAuth()
-
     const user = authStore.currentUser
-    console.log('User after login:', user)
 
     if (!user || !user.role) {
       errorMessage.value = 'ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ ກະລຸນາລອງໃໝ່'
       return
     }
 
-    // ==========================================
-    // 🟢 3. เพิ่ม Logic เช็คล็อกอินครั้งแรกตรงนี้
-    // ==========================================
+    // 3. 🛡️ ຖ້າເປັນການລັອກອິນຄັ້ງທຳອິດ -> ບັງຄັບປ່ຽນລະຫັດ
     const loginCount = await authStore.checkFirstLogin()
-
-    // หมายเหตุ: ขึ้นอยู่กับ Backend ว่าจังหวะนี้มันบวกค่าเข้าไปเป็น 1 แล้วหรือยัง
-    // ถ้า Backend นับการล็อกอินครั้งนี้ไปแล้ว count จะเป็น 1 ถ้ายังไม่นับจะเป็น 0
-    // เพื่อความชัวร์ เราเช็คว่าถ้าน้อยกว่าหรือเท่ากับ 1 คือครั้งแรกแน่นอน
     if (loginCount === 0 || loginCount === 1) {
-       router.push({ name: 'ChangeMyPassword' })
-       return // 🛑 บังคับหยุดการทำงานตรงนี้เลย ไม่ให้ลงไปรันเงื่อนไข Redirect ด้านล่าง
+       router.replace({ name: 'ChangeMyPassword' }) // ⚡️ ໃຊ້ replace
+       return
     }
-    // ==========================================
 
-    // 4. ✅ ตรวจสอบว่ามี redirect query หรือไม่ (สำหรับคนที่ล็อกอินมาเกิน 1 ครั้งแล้ว)
+    // 4. ✅ ກວດສອບ Redirect Query ຫຼື Redirect ຕາມ Role
     const redirect = router.currentRoute.value.query.redirect as string | undefined
 
     if (redirect) {
-      router.push(redirect)
+      router.replace(redirect) // ⚡️ ໃຊ້ replace
     } else {
-      switch (user.role.toLowerCase()) {
-        case 'admin':
-          router.push({ name: 'UserManagement' })
-          break
-        case 'staff':
-          const permissionStore = usePermissionStore()
-          if (permissionStore.hasPermission('loan_view_all')) {
-            router.push({ name: 'LoanListAll' })
-          } else if (permissionStore.hasPermission('loan_view_assigned')) {
-            router.push({ name: 'ListLoans' })
-          } else {
-            router.push({ name: 'DashboardHome' })
-          }
-          break
-        case 'partner':
-          router.push({ name: 'Stores' })
-          break
-        case 'customer':
-          router.push({ name: 'PendingLoans' })
-          break
-        default:
-          console.warn('Role ไม่รู้จัก:', user.role)
-          router.push({ name: 'LoanListAll' })
-          errorMessage.value = `ບົດບາດບໍ່ຮອງຮັບ: ${user.role}`
+      // Logic ການ Redirect ຕາມ Role
+      const role = user.role.toLowerCase()
+
+      if (role === 'admin') {
+        router.replace({ name: 'UserManagement' })
+      } else if (role === 'staff') {
+        if (permissionStore.hasPermission('loan_view_all')) {
+          router.replace({ name: 'LoanListAll' })
+        } else if (permissionStore.hasPermission('loan_view_assigned')) {
+          router.replace({ name: 'ListLoans' })
+        } else {
+          router.replace({ name: 'DashboardHome' })
+        }
+      } else if (role === 'partner') {
+        router.replace({ name: 'Stores' })
+      } else {
+        router.replace({ name: 'PendingLoans' })
       }
     }
   } catch (error: any) {
     errorMessage.value = error.message || 'ເກີດຂໍ້ຜິດພາດໃນການເຂົ້າສູ່ລະບົບ'
-    console.error('Login error:', error)
   } finally {
     loading.value = false
   }

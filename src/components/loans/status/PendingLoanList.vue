@@ -67,7 +67,7 @@
               <div class="flex items-center gap-2">
                 <span class="font-medium" :class="!loan.credit_score ? 'text-gray-400' : ''">{{ loan.credit_score || '-'
                 }}</span>
-                <div v-if="loan.status !== 'approved' && loan.status !== 'rejected'" class="tooltip tooltip-top"
+                <div v-if="loan.status !== 'approved' && loan.status !== 'rejected' && isSalesOrOfficer" class="tooltip tooltip-top"
                   data-tip="ຄຳນວນຄະແນນ">
                   <button class="btn btn-circle btn-text btn-xs transition-all text-primary hover:bg-primary/10"
                     @click="openCreditScoreModal(loan)">
@@ -93,7 +93,8 @@
                     <span class="icon-[tabler--eye] size-4"></span>
                   </button>
                 </div>
-                <div v-if="hasContract(loan) && isMaker" class="tooltip tooltip-top"
+
+                <div v-if="hasContract(loan) && isSalesOrOfficer" class="tooltip tooltip-top"
                   data-tip="ຈັດການລາຍເຊັນເອກະສານ (ລູກຄ້າ/ນາຍບ້ານ)">
                   <button class="btn btn-circle btn-text btn-sm text-indigo-500 hover:bg-indigo-50"
                     @click="openSignatureModal(loan)">
@@ -108,14 +109,7 @@
                   </button>
                 </div>
 
-                <!-- <div v-if="loan.credit_score && loan.status === 'verified' && isDeputy" class="tooltip tooltip-top"
-                  data-tip="ຮອງຜູ້ອຳນວຍການຢືນຢັນ">
-                  <button class="btn btn-circle btn-text btn-sm text-info hover:bg-info/10" @click="verifyLoan(loan)">
-                    <span class="icon-[tabler--user-check] size-5"></span>
-                  </button>
-                </div> -->
-
-                <div v-if="loan.credit_score && loan.credit_score >= 65 && loan.status === 'verified' && (isManager || isDeputy || isDirector)"
+                <div v-if="loan.credit_score && loan.credit_score >= 65 && loan.status === 'verified' && isApproverGroup"
                   class="tooltip tooltip-top" data-tip="ອະນຸມັດສິນເຊື່ອ">
                   <button class="btn btn-circle btn-text btn-sm text-success hover:bg-success/10"
                     @click="approveLoan(loan)">
@@ -124,21 +118,21 @@
                 </div>
 
                 <div
-                  v-if="loan.status !== 'approved' && loan.status !== 'rejected' && (isManager || isDeputy || isDirector)"
+                  v-if="loan.status !== 'approved' && loan.status !== 'rejected' && isApproverGroup"
                   class="tooltip tooltip-top" data-tip="ປະຕິເສດ">
                   <button class="btn btn-circle btn-text btn-sm text-error hover:bg-error/10" @click="rejectLoan(loan)">
                     <span class="icon-[tabler--x] size-5"></span>
                   </button>
                 </div>
 
-                <div class="tooltip tooltip-top" data-tip="ແບບຟອມ Checklist">
+                <div v-if="isSalesOrOfficer" class="tooltip tooltip-top" data-tip="ແບບຟອມ Checklist">
                   <button class="btn btn-circle btn-text btn-sm text-primary hover:bg-primary/10"
                     @click="openChecklistModal(loan)">
                     <span class="icon-[tabler--clipboard-check] size-5"></span>
                   </button>
                 </div>
 
-                <div v-if="loan.credit_score" class="tooltip tooltip-top" data-tip="ພິມໃບສະຫຼຸບ">
+                <div v-if="loan.credit_score && isSalesOrOfficer" class="tooltip tooltip-top" data-tip="ພິມໃບສະຫຼຸບ">
                   <button class="btn btn-circle btn-text btn-sm text-gray-500 hover:text-primary hover:bg-gray-100"
                     @click="openPrintSummary(loan)">
                     <span class="icon-[tabler--printer] size-5"></span>
@@ -171,8 +165,6 @@
     </div>
 
     <ScoringGuideModal :is-open="showScoringGuideModal" @close="showScoringGuideModal = false" />
-
-
 
     <VerifyLoanModal :is-open="showVerifyModal" :loan="loanToAction"
       @close="showVerifyModal = false; loanToAction = null" @success="fetchData" />
@@ -372,12 +364,13 @@ const searchQuery = ref('');
 const dateFrom = ref('');
 const dateTo = ref('');
 
-// --- Role ຂອງຜູ້ໃຊ້ປັດຈຸບັນ (Maker-Checker-Approver) ---
+// 🟢 --- Role ຂອງຜູ້ໃຊ້ປັດຈຸບັນ ---
 const currentUserLevel = computed(() => authStore.user?.staff_level || '');
-const isMaker = computed(() => ['sales', 'credit_officer', 'approver', 'credit_manager'].includes(currentUserLevel.value));
+
+const isSalesOrOfficer = computed(() => ['sales', 'credit_officer'].includes(currentUserLevel.value));
 const isManager = computed(() => currentUserLevel.value === 'credit_manager');
-const isDeputy = computed(() => currentUserLevel.value === 'deputy_director');
-const isDirector = computed(() => ['director', 'approver'].includes(currentUserLevel.value));
+const isApproverGroup = computed(() => ['credit_manager', 'deputy_director', 'director'].includes(currentUserLevel.value));
+
 
 // --- Modal States ---
 const showDetailsModal = ref(false);
@@ -388,7 +381,6 @@ const showVerifyModal = ref(false);
 const showPrintModal = ref(false);
 const showChecklistModal = ref(false);
 const showCreditScoreModal = ref(false);
-// 🟢 2. ສ້າງ State ສຳລັບຄວບຄຸມ Modal (ວາງໄວ້ກຸ່ມດຽວກັບ Modal States ເກົ່າ)
 const showSignatureModal = ref(false);
 const loanForSignature = ref<any>(null);
 
@@ -413,7 +405,7 @@ const getStatusBadge = (status: string) => {
   }
 }
 
-// 🟢 2. ກວດສອບສັນຍາ: ສິນເຊື່ອນີ້ມີການສ້າງສັນຍາແລ້ວຫຼືຍັງ?
+// 🟢 กวดสอวสับยา: สิลเชื่อนี้มีการสร้างสับยาแล้วหรือยัง?
 const hasContract = (loan: any): boolean => {
   return !!(loan.loan_contracts && loan.loan_contracts.length > 0);
 };
@@ -490,7 +482,6 @@ const viewLoanDetails = async (loan: any) => {
 }
 const closeDetailsModal = () => { showDetailsModal.value = false; selectedLoan.value = null; }
 
-// 🟢 3. ສ້າງຟັງຊັນສຳລັບເປີດ Modal ເວລາກົດປຸ່ມຮູບປາກກາ
 const openSignatureModal = (loan: any) => {
   loanForSignature.value = loan;
   showSignatureModal.value = true;
@@ -587,7 +578,7 @@ const openCreditScoreModal = async (loan: any) => {
   }
 }
 
-// --- Approve / Reject (Approver & Veto Power) ---
+// --- Approve / Reject ---
 const isConditionalApproval = computed(() => {
   if (!loanToAction.value || !loanToAction.value.credit_score) return false;
   return loanToAction.value.credit_score >= 65 && loanToAction.value.credit_score <= 79;
@@ -608,8 +599,6 @@ const confirmApproveLoan = async () => {
     showApproveModal.value = false;
     fetchData();
   } catch (error: any) {
-    // alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!', error.response?.data?.message || error.message);
-    // 🟢 ດັກຈັບ Error ຈາກທຸກໆຮູບແບບທີ່ Backend ອາດຈະສົ່ງມາ
     const errorMsg = error.response?.data?.message
                   || error.response?.data?.error
                   || error.message
@@ -621,7 +610,6 @@ const confirmApproveLoan = async () => {
 
 const confirmRejectLoan = async () => {
   if (!loanToAction.value) return;
-  // ເຖິງຄະແນນຈະດີ ແຕ່ຖ້າປະຕິເສດ ຄວນບັງຄັບໃຫ້ໃສ່ເຫດຜົນສະເໝີ
   if (!actionRemark.value.trim()) return alert.error('ກະລຸນາປ້ອນເຫດຜົນ', 'ການປະຕິເສດສິນເຊື່ອຈຳເປັນຕ້ອງລະບຸເຫດຜົນເພື່ອແຈ້ງໃຫ້ພະນັກງານຊາບ!');
 
   try {
@@ -656,7 +644,6 @@ const exportToCSV = () => {
 const fetchData = async () => {
   try {
     await loanApplicationStore.fetchLoanApplications({
-      // ດຶງທຸກສະຖານະທີ່ກ່ຽວຂ້ອງກັບການລໍຖ້າ (ລວມເຖິງທີ່ Verified ແລ້ວ)
       status: [
         LoanApplicationStatus.PENDING,
         LoanApplicationStatus.VERIFYING,
@@ -671,3 +658,4 @@ const fetchData = async () => {
 
 onMounted(() => { fetchData(); });
 </script>
+

@@ -227,72 +227,125 @@ const router = createRouter({
   routes
 })
 
-// Global Navigation Guard: Auth + Permission Check
+// // Global Navigation Guard: Auth + Permission Check
+// router.beforeEach(async (to, from, next) => {
+//   const authStore = useAuthStore()
+
+//   // 1. ✅ ข้ามการเช็ค auth สำหรับ blank layout pages
+//   if (to.meta.layout === 'blank' && !to.meta.requiresAuth) {
+//     next()
+//     return
+//   }
+
+//   // 1. ข้ามการเช็ค auth ถ้า route นี้ bypassAuth = true
+//   if (to.meta.bypassAuth) {
+//     next()
+//     return
+//   }
+
+//   // 2. ถ้าไปหน้า login แต่ login อยู่แล้ว → redirect ตาม role
+//   if (to.path === '/login' && authStore.isAuthenticated) {
+//     const user = authStore.currentUser
+
+//     if (user?.role === 'admin') {
+//       next({ name: 'UserManagement' })
+//     } else if ( user?.role === 'staff') {
+//       const permissionStore = usePermissionStore()
+//       if (permissionStore.hasPermission('loan_view_all')) {
+//         next({ name: 'LoanListAll' })
+//       } else if (permissionStore.hasPermission('loan_view_assigned')) {
+//         next({ name: 'ListLoans' })
+//       } else {
+//         next({ name: 'DashboardHome' }) // ไม่มีสิทธิ์เลยให้ไป Dashboard
+//       }
+//     }
+//     else if (user?.role === 'partner') {
+//       next({ name: 'Stores' })
+//     } else {
+//       next({ name: 'PendingLoans' })
+//     }
+//     return
+//   }
+
+//   // 2. เช็คว่าต้อง login ก่อนไหม
+//   if (to.meta.requiresAuth) {
+//     // ถ้ายังไม่ login → redirect ไป login
+//     if (!authStore.isAuthenticated || authStore.isTokenExpired) {
+//       const isValid = await authStore.checkAuth()
+//       if (!isValid) {
+//         // ยังไม่ login หรือ token ไม่ valid
+//         next({ path: '/login', query: { redirect: to.fullPath } })
+//         return
+//       }
+
+//     }
+
+//     // ถ้า login แล้ว แต่มี permission → เช็คสิทธิ์
+//     if (to.meta.permission) {
+//       const permissionStore = usePermissionStore()
+//       const required = to.meta.permission as string
+
+//       if (!permissionStore.hasPermission(required)) {
+//         next('/unauthorized')
+//         return
+//       }
+//     }
+//   }
+
+//   // ถ้าผ่านทุกอย่าง → ไปต่อ
+//   next()
+// })
+// ປັບປຸງສ່ວນ router.beforeEach ໃນ src/router/index.ts
+
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  const permissionStore = usePermissionStore()
 
-  // 1. ✅ ข้ามการเช็ค auth สำหรับ blank layout pages
-  if (to.meta.layout === 'blank' && !to.meta.requiresAuth) {
-    next()
-    return
+  // 1. 🛡️ ໂຫຼດສະຖານະ Auth ຖ້າຍັງບໍ່ມີ (ກໍລະນີ Refresh ໜ້າຈໍ)
+  if (authStore.isAuthenticated && authStore.isTokenExpired) {
+    await authStore.checkAuth()
   }
 
-  // 1. ข้ามการเช็ค auth ถ้า route นี้ bypassAuth = true
-  if (to.meta.bypassAuth) {
-    next()
-    return
-  }
+  const isAuthenticated = authStore.isAuthenticated
 
-  // 2. ถ้าไปหน้า login แต่ login อยู่แล้ว → redirect ตาม role
-  if (to.path === '/login' && authStore.isAuthenticated) {
+  // 2. 🚫 ຖ້າ Login ແລ້ວ ແຕ່ພະຍາຍາມຈະເຂົ້າໜ້າ Login (ຫຼື ກົດ Back ກັບມາ)
+  if (to.path === '/login' && isAuthenticated) {
     const user = authStore.currentUser
+    const role = user?.role?.toLowerCase()
 
-    if (user?.role === 'admin') {
-      next({ name: 'UserManagement' })
-    } else if ( user?.role === 'staff') {
-      const permissionStore = usePermissionStore()
-      if (permissionStore.hasPermission('loan_view_all')) {
-        next({ name: 'LoanListAll' })
-      } else if (permissionStore.hasPermission('loan_view_assigned')) {
-        next({ name: 'ListLoans' })
-      } else {
-        next({ name: 'DashboardHome' }) // ไม่มีสิทธิ์เลยให้ไป Dashboard
-      }
+    // ບັງຄັບ Redirect ໄປໜ້າທີ່ຄວນຈະຢູ່ຕາມ Role (ໃຊ້ return ເພື່ອຢຸດການເຮັດວຽກ)
+    if (role === 'admin') return next({ name: 'UserManagement' })
+    if (role === 'staff') {
+      if (permissionStore.hasPermission('loan_view_all')) return next({ name: 'LoanListAll' })
+      if (permissionStore.hasPermission('loan_view_assigned')) return next({ name: 'ListLoans' })
+      return next({ name: 'DashboardHome' })
     }
-    else if (user?.role === 'partner') {
-      next({ name: 'Stores' })
-    } else {
-      next({ name: 'PendingLoans' })
-    }
-    return
+    if (role === 'partner') return next({ name: 'Stores' })
+
+    return next({ name: 'PendingLoans' })
   }
 
-  // 2. เช็คว่าต้อง login ก่อนไหม
+  // 3. ✅ ອະນຸຍາດ Public Pages
+  if (to.meta.layout === 'blank' || to.meta.bypassAuth) {
+    return next()
+  }
+
+  // 4. 🔐 ເຊັກ Requires Auth
   if (to.meta.requiresAuth) {
-    // ถ้ายังไม่ login → redirect ไป login
-    if (!authStore.isAuthenticated || authStore.isTokenExpired) {
-      const isValid = await authStore.checkAuth()
-      if (!isValid) {
-        // ยังไม่ login หรือ token ไม่ valid
-        next({ path: '/login', query: { redirect: to.fullPath } })
-        return
-      }
-
+    if (!isAuthenticated) {
+      // ຖ້າຍັງບໍ່ລັອກອິນ ສົ່ງໄປໜ້າ Login
+      return next({ path: '/login', query: { redirect: to.fullPath } })
     }
 
-    // ถ้า login แล้ว แต่มี permission → เช็คสิทธิ์
+    // ເຊັກ Permission
     if (to.meta.permission) {
-      const permissionStore = usePermissionStore()
       const required = to.meta.permission as string
-
       if (!permissionStore.hasPermission(required)) {
-        next('/unauthorized')
-        return
+        return next('/unauthorized')
       }
     }
   }
 
-  // ถ้าผ่านทุกอย่าง → ไปต่อ
   next()
 })
 
