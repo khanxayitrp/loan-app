@@ -381,6 +381,7 @@
           </div>
         </div>
 
+        <!--
         <div class="form-control">
           <label class="label">
             <span class="label-text font-medium">ທີ່ຢູ່ *</span>
@@ -392,6 +393,53 @@
             <span class="label-text-alt">{{ customerErrors.address }}</span>
           </label>
         </div>
+        -->
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+  <div class="form-control">
+    <label class="label">
+      <span class="label-text font-medium">ແຂວງ *</span>
+    </label>
+    <select v-model="customerForm.province_id" class="select select-bordered w-full" 
+            :class="{ 'select-error': customerErrors.province_id }">
+      <option value="" disabled>-- ເລືອກແຂວງ --</option>
+      <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
+        {{ p.province_name }}
+      </option>
+    </select>
+    <label v-if="customerErrors.province_id" class="label text-error">
+      <span class="label-text-alt">{{ customerErrors.province_id }}</span>
+    </label>
+  </div>
+
+  <div class="form-control">
+    <label class="label">
+      <span class="label-text font-medium">ເມືອງ *</span>
+    </label>
+    <select v-model="customerForm.district_id" class="select select-bordered w-full"
+            :disabled="!customerForm.province_id || addressStore.loading"
+            :class="{ 'select-error': customerErrors.district_id }">
+      <option value="" disabled>{{ addressStore.loading ? 'ກຳລັງໂຫຼດ...' : '-- ເລືອກເມືອງ --' }}</option>
+      <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">
+        {{ d.district_name }}
+      </option>
+    </select>
+    <label v-if="customerErrors.district_id" class="label text-error">
+      <span class="label-text-alt">{{ customerErrors.district_id }}</span>
+    </label>
+  </div>
+</div>
+
+<div class="form-control mt-4">
+  <label class="label">
+    <span class="label-text font-medium">ບ້ານ / ໜ່ວຍ / ເຮືອນເລກທີ *</span>
+  </label>
+  <input v-model="customerForm.address" type="text" placeholder="ຕົວຢ່າງ: ບ້ານໂພນໄຊ, ໜ່ວຍ 15"
+         class="input input-bordered w-full" :class="{ 'input-error': customerErrors.address }" />
+  <label v-if="customerErrors.address" class="label text-error">
+    <span class="label-text-alt">{{ customerErrors.address }}</span>
+  </label>
+</div>
 
         <div class="form-control">
           <label class="label">
@@ -591,12 +639,15 @@ import type { CreateWithCustomerDto } from '@/types/loanApplication'
 import { formatPrice } from '@/utils/formatters'
 import type { shopType } from '@/types/shop'
 import type { Product } from '@/types/product'
+import { useAddressStore } from '@/stores/address';
 
 interface Customer {
   full_name: string
   phone: string
   id_card: string
   age: number
+  province_id: string
+  district_id: string
   address: string
   monthly_income: number
   other_debts: number
@@ -616,6 +667,7 @@ const shopStore = useShopStore()
 const productStore = useProductStore()
 const productTypeStore = useProductTypeStore()
 const loanApplicationStore = useLoanApplicationStore()
+const addressStore = useAddressStore();
 
 // Reactive state
 const router = useRouter()
@@ -950,6 +1002,8 @@ const customerForm = reactive({
   phone: '',
   id_card: '',
   age: 18,
+  province_id: '',
+  district_id: '',
   address: '',
   occupation: '',
   monthly_income: 0,
@@ -960,6 +1014,8 @@ const customerErrors = reactive({
   full_name: '',
   phone: '',
   id_card: '',
+  province_id: '',
+  district_id: '',
   age: '',
   address: '',
   occupation: '',
@@ -1034,6 +1090,16 @@ const debounceProductSearch = () => {
   if (productSearchTimer) clearTimeout(productSearchTimer)
   productSearchTimer = setTimeout(() => { }, 300)
 }
+
+// 4. Watcher ເມື່ອປ່ຽນແຂວງ ໃຫ້ໄປດຶງຂໍ້ມູນເມືອງ
+watch(() => customerForm.province_id, async (newVal) => {
+  customerForm.district_id = ''; // ລ້າງຄ່າເມືອງທຸກຄັ້ງທີ່ປ່ຽນແຂວງ
+  if (newVal) {
+    await addressStore.fetchDistricts(newVal);
+  } else {
+    addressStore.districts = [];
+  }
+});
 
 const selectShop = async (shop: shopType) => {
   selectedShop.value = shop
@@ -1182,12 +1248,21 @@ const submitLoanApplication = async () => {
     const firstName = nameParts[0] || customerForm.full_name
     const lastName = nameParts.slice(1).join(' ') || ''
 
+    // ຊອກຫາຂໍ້ມູນເມືອງ ແລະ ແຂວງ ເພື່ອເອົາຊື່ໄປເຮັດ Snapshot (ຖ້າ Backend ຕ້ອງການໃຫ້ Frontend ໂຍນໄປເລີຍ)
+    const selectedProvince = addressStore.provinces.find(p => p.province_id === customerForm.province_id);
+    const selectedDistrict = addressStore.districts.find(d => d.district_id === customerForm.district_id);
+
     const data: CreateWithCustomerDto = {
       phone: customerForm.phone.trim(),
       otp: '', // 🟢 ຂ້າມການສົ່ງ OTP, ຖ້າລະບົບຫຼັງບ້ານຮຽກຮ້ອງອາດຈະຕ້ອງແກ້ໄຂ API ໃຫ້ບໍ່ຈຳເປັນຕ້ອງໃຊ້
       identity_number: customerForm.id_card.trim(),
       first_name: firstName,
       last_name: lastName,
+
+      // ໂຍນ ID ຕາມ Best Practice
+      province_id: customerForm.province_id,
+      district_id: customerForm.district_id,
+
       address: customerForm.address.trim(),
       occupation: customerForm.occupation?.trim() || 'ບໍ່ລະບຸ',
       income_per_month: customerForm.monthly_income,
@@ -1287,6 +1362,10 @@ const submitDocuments = async () => {
 
 onMounted(async () => {
   await shopStore.fetchAllShop()
+  console.log('2. Fetching Provinces...'); // ຖ້າ Log ນີ້ບໍ່ຂຶ້ນ ສະແດງວ່າຕິດຢູ່ຂັ້ນຕອນເທິງ
+    await addressStore.fetchProvinces();
+    
+    console.log('3. Provinces Data:', addressStore.provinces);
 })
 </script>
 

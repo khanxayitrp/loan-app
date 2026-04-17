@@ -251,6 +251,8 @@ export interface CreateWithCustomerDto {
   first_name: string
   last_name: string
   address: string
+  province_id?: string | number 
+  district_id?: string | number
   occupation: string
   income_per_month: number
   product_id: number
