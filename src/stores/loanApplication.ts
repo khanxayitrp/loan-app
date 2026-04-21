@@ -558,15 +558,15 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     /**
     * อัปโหลดเอกสารเดี่ยวสำหรับ Loan Application
     */
-    async uploadDocument(applicationId: number, file: File, docType: string) {
+    async uploadDocument(customerId: number, file: File, docType: string) {
       this.isUploadingDocuments = true
       this.documentError = null
 
       try {
-        const result = await uploadApplicationDocument(applicationId, file, docType)
+        const result = await uploadApplicationDocument(customerId, file, docType)
 
         // อัปเดตเอกสารใน currentDocuments
-        if (this.currentLoanApplication?.id === applicationId) {
+        if (this.currentLoanApplication?.customer_id === customerId) {
           this.currentDocuments.push(result.document)
         }
 

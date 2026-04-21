@@ -8,7 +8,7 @@ import apiClient from './apiclient'
  * @param docType - ประเภทเอกสาร (id_card, household, income, other)
  */
 export const uploadApplicationDocument = async (
-  applicationId: number,
+  customerId: number,
   file: File,
   docType: string
 ): Promise<any> => {
@@ -18,7 +18,7 @@ export const uploadApplicationDocument = async (
     formData.append('doc_type', docType)
 
     const response = await apiClient.post(
-      `/upload/application/${applicationId}/document`,
+      `/upload/application/${customerId}/document`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' }

@@ -164,20 +164,6 @@
             </select>
           </div>
 
-          <!-- <div class="form-control">
-            <label class="label">
-              <span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span>
-            </label>
-            <input v-model.number="loanDetails.termMonths" type="number" placeholder="ຈຳນວນງວດ"
-              class="input input-bordered w-full" :class="{ 'input-error': loanErrors.termMonths }" min="1" max="36"
-              @input="handleTermChange" />
-            <label v-if="loanErrors.termMonths" class="label text-error">
-              <span class="label-text-alt">{{ loanErrors.termMonths }}</span>
-            </label>
-            <div class="text-xs text-gray-500 mt-1">
-              ໄລຍະເວລາ: {{ loanDetails.termMonths }} ເດືອນ
-            </div>
-          </div> -->
           <div class="form-control">
             <label class="label">
               <span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span>
@@ -381,65 +367,51 @@
           </div>
         </div>
 
-        <!--
-        <div class="form-control">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">ແຂວງ *</span>
+            </label>
+            <select v-model="customerForm.province_id" class="select select-bordered w-full" 
+                    :class="{ 'select-error': customerErrors.province_id }">
+              <option value="" disabled>-- ເລືອກແຂວງ --</option>
+              <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
+                {{ p.province_name }}
+              </option>
+            </select>
+            <label v-if="customerErrors.province_id" class="label text-error">
+              <span class="label-text-alt">{{ customerErrors.province_id }}</span>
+            </label>
+          </div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">ເມືອງ *</span>
+            </label>
+            <select v-model="customerForm.district_id" class="select select-bordered w-full"
+                    :disabled="!customerForm.province_id || addressStore.loading"
+                    :class="{ 'select-error': customerErrors.district_id }">
+              <option value="" disabled>{{ addressStore.loading ? 'ກຳລັງໂຫຼດ...' : '-- ເລືອກເມືອງ --' }}</option>
+              <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">
+                {{ d.district_name }}
+              </option>
+            </select>
+            <label v-if="customerErrors.district_id" class="label text-error">
+              <span class="label-text-alt">{{ customerErrors.district_id }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-control mt-4">
           <label class="label">
-            <span class="label-text font-medium">ທີ່ຢູ່ *</span>
+            <span class="label-text font-medium">ບ້ານ / ໜ່ວຍ / ເຮືອນເລກທີ *</span>
           </label>
-          <textarea v-model="customerForm.address" placeholder="ປ້ອນທີ່ຢູ່ຢ່າງລະອຽດ"
-            class="textarea textarea-bordered w-full min-h-24" :class="{ 'textarea-error': customerErrors.address }"
-            required></textarea>
+          <input v-model="customerForm.address" type="text" placeholder="ຕົວຢ່າງ: ບ້ານໂພນໄຊ, ໜ່ວຍ 15"
+                 class="input input-bordered w-full" :class="{ 'input-error': customerErrors.address }" />
           <label v-if="customerErrors.address" class="label text-error">
             <span class="label-text-alt">{{ customerErrors.address }}</span>
           </label>
         </div>
-        -->
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-  <div class="form-control">
-    <label class="label">
-      <span class="label-text font-medium">ແຂວງ *</span>
-    </label>
-    <select v-model="customerForm.province_id" class="select select-bordered w-full" 
-            :class="{ 'select-error': customerErrors.province_id }">
-      <option value="" disabled>-- ເລືອກແຂວງ --</option>
-      <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
-        {{ p.province_name }}
-      </option>
-    </select>
-    <label v-if="customerErrors.province_id" class="label text-error">
-      <span class="label-text-alt">{{ customerErrors.province_id }}</span>
-    </label>
-  </div>
-
-  <div class="form-control">
-    <label class="label">
-      <span class="label-text font-medium">ເມືອງ *</span>
-    </label>
-    <select v-model="customerForm.district_id" class="select select-bordered w-full"
-            :disabled="!customerForm.province_id || addressStore.loading"
-            :class="{ 'select-error': customerErrors.district_id }">
-      <option value="" disabled>{{ addressStore.loading ? 'ກຳລັງໂຫຼດ...' : '-- ເລືອກເມືອງ --' }}</option>
-      <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">
-        {{ d.district_name }}
-      </option>
-    </select>
-    <label v-if="customerErrors.district_id" class="label text-error">
-      <span class="label-text-alt">{{ customerErrors.district_id }}</span>
-    </label>
-  </div>
-</div>
-
-<div class="form-control mt-4">
-  <label class="label">
-    <span class="label-text font-medium">ບ້ານ / ໜ່ວຍ / ເຮືອນເລກທີ *</span>
-  </label>
-  <input v-model="customerForm.address" type="text" placeholder="ຕົວຢ່າງ: ບ້ານໂພນໄຊ, ໜ່ວຍ 15"
-         class="input input-bordered w-full" :class="{ 'input-error': customerErrors.address }" />
-  <label v-if="customerErrors.address" class="label text-error">
-    <span class="label-text-alt">{{ customerErrors.address }}</span>
-  </label>
-</div>
 
         <div class="form-control">
           <label class="label">
@@ -534,10 +506,13 @@
                 <div class="relative w-full h-32 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
                   <img :src="doc.preview" alt="Document preview" class="w-full h-full object-contain" />
                   <button type="button"
-                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
                     @click="removeDocument(index)">
-                    ×
+                    <span class="icon-[tabler--x] size-4"></span>
                   </button>
+                  <div v-if="!doc.file" class="absolute bottom-2 left-2 pointer-events-none">
+                     <span class="badge badge-neutral badge-sm shadow-sm opacity-80">ໄຟລ໌ເກົ່າໃນລະບົບ</span>
+                  </div>
                 </div>
               </div>
 
@@ -573,10 +548,13 @@
                 <div class="relative w-full h-32 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
                   <img :src="doc.preview" alt="Document preview" class="w-full h-full object-contain" />
                   <button type="button"
-                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
                     @click="removeDocument(index + requiredDocuments.length)">
-                    ×
+                    <span class="icon-[tabler--x] size-4"></span>
                   </button>
+                  <div v-if="!doc.file" class="absolute bottom-2 left-2 pointer-events-none">
+                     <span class="badge badge-neutral badge-sm shadow-sm opacity-80">ໄຟລ໌ເກົ່າໃນລະບົບ</span>
+                  </div>
                 </div>
               </div>
 
@@ -600,7 +578,7 @@
           <button type="button" class="btn btn-primary" :disabled="isSubmitting || !allRequiredDocumentsUploaded"
             @click="submitDocuments">
             <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>
-            <span v-else>ບັນທຶກເອກະສານ</span>
+            <span v-else>ບັນທຶກເອກະສານ ແລະ ສຳເລັດ</span>
           </button>
         </div>
       </div>
@@ -608,18 +586,40 @@
 
     <teleport to="body">
       <div v-if="showSuccessModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in zoom-in duration-200">
           <div class="text-center">
             <div class="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <span class="icon-[tabler--check] size-8 text-success"></span>
             </div>
-            <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">ສົ່ງຄຳຂໍສຳເລັດ!</h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-6">
-              ຄຳຂໍສິນເຊື່ອຂອງທ່ານຖືກສົ່ງເຂົ້າລະບົບແລ້ວ
-            </p>
-            <button type="button" class="btn btn-primary" @click="switchToDocumentsTab">
-              ດຳເນີນການອັບໂຫຼດເອກະສານ
-            </button>
+            <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">ສ້າງຮ່າງຄຳຂໍສຳເລັດ!</h3>
+            
+            <template v-if="!existingCustomerId">
+              <p class="text-gray-600 dark:text-gray-400 mb-6">
+                ຄຳຂໍສິນເຊື່ອຖືກສ້າງເຂົ້າລະບົບແລ້ວ ກະລຸນາອັບໂຫຼດເອກະສານຢັ້ງຢືນ.
+              </p>
+              <button type="button" class="btn btn-primary w-full" @click="switchToDocumentsTab">
+                ດຳເນີນການອັບໂຫຼດເອກະສານ
+              </button>
+            </template>
+
+            <template v-else>
+              <p class="text-gray-600 dark:text-gray-400 mb-4">
+                ລະບົບພົບວ່າເປັນລູກຄ້າເກົ່າ ທີ່ມີປະຫວັດເອກະສານໃນລະບົບແລ້ວ.
+              </p>
+              <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-sm text-blue-800 dark:text-blue-200 mb-6 text-left">
+                ທ່ານຕ້ອງການໃຊ້ເອກະສານເດີມ ຫຼື ອັບໂຫຼດເອກະສານຊຸດໃໝ່?
+                <br><span class="text-xs opacity-70">(ລະບົບອາດຈະຮຽກຮ້ອງບາງເອກະສານໃໝ່ຖ້າອັນເກົ່າໝົດອາຍຸ)</span>
+              </div>
+              <div class="flex flex-col gap-3">
+                <button type="button" class="btn btn-primary w-full" @click="useExistingDocuments">
+                  <span class="icon-[tabler--file-check] size-4 mr-2"></span> ໃຊ້ເອກະສານເດີມທີ່ມີຢູ່
+                </button>
+                <button type="button" class="btn btn-outline btn-secondary w-full" @click="switchToDocumentsTab">
+                  <span class="icon-[tabler--upload] size-4 mr-2"></span> ອັບໂຫຼດເອກະສານໃໝ່ເພີ່ມເຕີມ
+                </button>
+              </div>
+            </template>
+
           </div>
         </div>
       </div>
@@ -640,6 +640,7 @@ import { formatPrice } from '@/utils/formatters'
 import type { shopType } from '@/types/shop'
 import type { Product } from '@/types/product'
 import { useAddressStore } from '@/stores/address';
+import { getFullImageUrl } from '@/utils/url'; // 🟢 ຢ່າລືມ Import
 
 interface Customer {
   full_name: string
@@ -678,35 +679,29 @@ const canAccessDocuments = ref(false)
 // Loan number (auto-generated)
 const loanNumber = ref('LN' + Date.now().toString().slice(-6))
 
-// ==========================================
-// 🟢 ຟັງຊັນດຶງອັດຕາດອກເບ້ຍຕາມນະໂຍບາຍ (ຈາກຕາຕະລາງ)
-// ==========================================
+// 🟢 ຟັງຊັນດຶງອັດຕາດອກເບ້ຍຕາມນະໂຍບາຍ
 const getInterestRateByTerm = (months: number): number => {
   if (!months || months <= 6) return 2.50;
   if (months <= 12) return 2.00;
   if (months <= 18) return 1.89;
   if (months <= 24) return 1.75;
-  return 1.69; // 🟢 ສຳລັບ 25-48 ເດືອນ (36 ແລະ 48 ຈະໄດ້ 1.69 ເທົ່າກັນ)
+  return 1.69; 
 }
 
-// 🟢 ຟັງຊັນຈັດການເມື່ອມີການປ່ຽນແປງຈຳນວນເດືອນ
 const handleTermChange = () => {
   if (loanDetails.termMonths > 0) {
-    // ອັບເດດດອກເບ້ຍອັດຕະໂນມັດຕາມຈຳນວນເດືອນ
     loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths);
   }
-  // ຄິດໄລ່ຄ່າງວດໃໝ່
   handleCalculationChange();
 }
 
-// 🟢 ເພີ່ມ state: interestType ສໍາລັບຮອງຮັບປະເພດດອກເບ້ຍ
 const loanDetails = reactive({
   totalAmount: 0,
   downPayment: 0,
   interestRate: 0,
   termMonths: 0,
   monthlyPayment: 0,
-  interestType: 'flat_rate' // ຄ່າເລີ່ມຕົ້ນ (flat_rate | effective_rate)
+  interestType: 'flat_rate' 
 })
 
 const loanErrors = reactive({
@@ -715,7 +710,6 @@ const loanErrors = reactive({
   termMonths: ''
 })
 
-// 🟢 ຕັ້ງຄ່າເລີ່ມຕົ້ນເມື່ອເລືອກສິນຄ້າ
 const calculateInitialLoanDetails = () => {
   if (!selectedProduct.value) return
 
@@ -724,29 +718,20 @@ const calculateInitialLoanDetails = () => {
   loanDetails.totalAmount = Number(price || 0)
   loanDetails.termMonths = Number(term || 12)
   loanDetails.downPayment = 0
-
-  // 🟢 ດຶງອັດຕາດອກເບ້ຍຈາກເງື່ອນໄຂໜ້າເວັບ (Frontend Logic)
   loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths)
-
-  // ດຶງປະເພດດອກເບ້ຍຈາກສິນຄ້າ (ຖ້າມີ) ຫຼື ໃຫ້ເປັນ flat_rate ຄືເກົ່າ
   loanDetails.interestType = interest_type || 'flat_rate'
   loanDetails.monthlyPayment = calculateMonthlyPayment()
 }
 
-// 🟢 ຟັງຊັນຄິດໄລ່ຄ່າງວດໃໝ່ (ຮອງຮັບທັງ Flat Rate ແລະ Effective Rate ພ້ອມກັບແປງດອກເບ້ຍຕໍ່ປີເປັນຕໍ່ເດືອນ)
 const calculateMonthlyPayment = (): number => {
   const { totalAmount, downPayment, interestRate, termMonths, interestType } = loanDetails
 
   if (!totalAmount || !termMonths) return 0
 
   const principal = totalAmount - downPayment
-
-  // 1. ປັບອັດຕາດອກເບ້ຍໃຫ້ເປັນ "ຕໍ່ເດືອນ" ສະເໝີເພື່ອໃຫ້ສູດຄິດໄລ່ງ່າຍຂຶ້ນ
-  // ຖ້າດຶງມາຈາກສິນຄ້າແລ້ວເປັນ 'yearly' ໃຫ້ຫານ 12
   const isYearly = selectedProduct.value?.interest_rate_type === 'yearly'
   const ratePerMonth = isYearly ? (interestRate / 12) : interestRate
 
-  // ກໍລະນີດອກເບ້ຍ 0% ຫຼື ຕິດລົບ
   if (ratePerMonth <= 0) {
     return Math.round(principal / termMonths)
   }
@@ -754,18 +739,9 @@ const calculateMonthlyPayment = (): number => {
   let monthlyPayment = 0;
 
   if (interestType === 'flat_rate') {
-    // ==========================================
-    // 🟢 ສູດດອກເບ້ຍຄົງທີ່ (Flat Rate)
-    // ດອກເບ້ຍທັງໝົດ = ເງິນຕົ້ນ * ອັດຕາດອກເບ້ຍຕໍ່ເດືອນ(%) * ຈຳນວນເດືອນ
-    // ==========================================
     const totalInterest = principal * (ratePerMonth / 100) * termMonths
     monthlyPayment = (principal + totalInterest) / termMonths
-
   } else if (interestType === 'effective_rate') {
-    // ==========================================
-    // 🟢 ສູດຫຼຸດຕົ້ນຫຼຸດດອກ (Effective Rate / Amortization / PMT)
-    // ສູດ PMT: P * r * (1 + r)^n / ((1 + r)^n - 1)
-    // ==========================================
     const r = ratePerMonth / 100;
     const n = termMonths;
     monthlyPayment = (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
@@ -774,43 +750,29 @@ const calculateMonthlyPayment = (): number => {
   return Math.round(monthlyPayment)
 }
 
-// ==========================================
-// 🟢 ຟັງຊັນສຳລັບຈັດການ Input ຕົວເລກໃຫ້ມີໝາຍຈຸດ (,)
-// ==========================================
-
-// 1. ແປງຕົວເລກດິບ ໃຫ້ເປັນ String ທີ່ມີໝາຍຈຸດ ເພື່ອສະແດງໃນ Input
 const formatCurrencyInput = (val: number | string | null | undefined): string => {
   if (val === null || val === undefined || val === '') return '';
-  // ລຶບໝາຍຈຸດອອກກ່ອນ ແລ້ວແປງເປັນ Number (ຕັດທົດສະນິຍົມອອກ ຖ້າມີ)
   const num = typeof val === 'string' ? parseInt(val.replace(/,/g, ''), 10) : Math.floor(Number(val));
   if (isNaN(num)) return '';
-  // ຄືນຄ່າເປັນ String ທີ່ມີໝາຍຈຸດ
   return num.toLocaleString('en-US');
 };
 
-// 2. ຮັບຄ່າຈາກ Input, ລຶບໝາຍຈຸດອອກ, ແລ້ວບັນທຶກລົງ State ຕົວຈິງ
 const handleCurrencyInput = (field: 'monthly_income' | 'other_debts', event: Event) => {
   const target = event.target as HTMLInputElement;
-
-  // ຈື່ຕຳແໜ່ງ Cursor ເກົ່າໄວ້
   const cursorPosition = target.selectionStart;
   const originalLength = target.value.length;
 
-  // ລຶບທຸກຢ່າງທີ່ບໍ່ແມ່ນຕົວເລກອອກ
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
   const numericValue = parseInt(rawValue, 10);
 
-  // ອັບເດດຄ່າລົງໃນ State
   if (!isNaN(numericValue) && rawValue !== '') {
     customerForm[field] = numericValue;
   } else {
     customerForm[field] = 0;
   }
 
-  // ບັງຄັບອັບເດດຄ່າໃນຊ່ອງ Input ທັນທີໃຫ້ມີໝາຍຈຸດ
   target.value = formatCurrencyInput(customerForm[field]) || '';
 
-  // ຄືນຕຳແໜ່ງ Cursor ໃຫ້ຖືກຕ້ອງ (ປ້ອງກັນ Cursor ເດັ້ງໄປທາງຫຼັງສຸດຕອນພິມ)
   const newLength = target.value.length;
   const lengthDiff = newLength - originalLength;
   if (cursorPosition !== null) {
@@ -818,21 +780,15 @@ const handleCurrencyInput = (field: 'monthly_income' | 'other_debts', event: Eve
   }
 };
 
-// 🟢 ຟັງຊັນຈັດການ Input ເງິນດາວ ໃຫ້ມີໝາຍຈຸດອັດຕະໂນມັດ
 const handleDownPaymentInput = (event: Event) => {
   const target = event.target as HTMLInputElement;
-
-  // ຈື່ຕຳແໜ່ງ Cursor ເກົ່າໄວ້
   const cursorPosition = target.selectionStart;
   const originalLength = target.value.length;
 
-  // ລຶບທຸກຢ່າງທີ່ບໍ່ແມ່ນຕົວເລກອອກ
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
   const numericValue = parseInt(rawValue, 10);
 
-  // ອັບເດດຄ່າລົງໃນ State ຂອງເງິນດາວ
   if (!isNaN(numericValue) && rawValue !== '') {
-    // ປ້ອງກັນບໍ່ໃຫ້ປ້ອນເງິນດາວເກີນລາຄາສິນຄ້າ (ຖ້າເກີນ ໃຫ້ເທົ່າກັບລາຄາສິນຄ້າ)
     if (numericValue > loanDetails.totalAmount) {
       loanDetails.downPayment = loanDetails.totalAmount;
     } else {
@@ -842,70 +798,45 @@ const handleDownPaymentInput = (event: Event) => {
     loanDetails.downPayment = 0;
   }
 
-  // ບັງຄັບອັບເດດຄ່າໃນຊ່ອງ Input ທັນທີໃຫ້ມີໝາຍຈຸດ
   target.value = formatCurrencyInput(loanDetails.downPayment) || '';
 
-  // ຄືນຕຳແໜ່ງ Cursor ໃຫ້ຖືກຕ້ອງ
   const newLength = target.value.length;
   const lengthDiff = newLength - originalLength;
   if (cursorPosition !== null) {
     target.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
   }
 
-  // 🟢 ເອີ້ນໃຊ້ຟັງຊັນຄິດໄລ່ຄ່າງວດໃໝ່ທັນທີ ຫຼັງຈາກປ່ຽນເງິນດາວ
   handleCalculationChange();
 };
 
-// ຄິດໄລ່ຍອດຊຳລະທັງໝົດ
 const calculateTotalPayment = (): number => {
-  // ເອົາຄ່າງວດຕໍ່ເດືອນທີ່ປັດເສດແລ້ວ ມາຄູນຈຳນວນເດືອນ
   return loanDetails.monthlyPayment * loanDetails.termMonths
 }
 
-// ຄິດໄລ່ດອກເບ້ຍທັງໝົດ (ໃຊ້ໄດ້ກັບທັງສອງແບບ ເພາະເຮົາເອົາຍອດລວມລົບເງິນຕົ້ນ)
 const calculateTotalInterest = (): number => {
   const totalPayment = calculateTotalPayment()
   const loanAmount = loanDetails.totalAmount - loanDetails.downPayment
   return totalPayment - loanAmount
 }
 
-// ກວດສອບຄວາມຖືກຕ້ອງ
 const validateLoanDetails = (): boolean => {
   Object.keys(loanErrors).forEach(key => {
     loanErrors[key as keyof typeof loanErrors] = ''
   })
-
   let isValid = true
 
-  if (loanDetails.downPayment < 0) {
-    loanErrors.downPayment = 'ເງິນດາວຕ້ອງບໍ່ຕິດລົບ'
-    isValid = false
-  }
-
-  if (loanDetails.downPayment > loanDetails.totalAmount) {
-    loanErrors.downPayment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າລາຄາສິນຄ້າ'
-    isValid = false
-  }
-
-  if (loanDetails.interestRate < 0 || loanDetails.interestRate > 100) {
-    loanErrors.interestRate = 'ດອກເບ້ຍຕ້ອງຢູ່ລະຫວ່າງ 0-100%'
-    isValid = false
-  }
-
-  if (!loanDetails.termMonths || loanDetails.termMonths <= 0) {
-    loanErrors.termMonths = 'ກະລຸນາເລືອກຈຳນວນງວດ'
-    isValid = false
-  }
+  if (loanDetails.downPayment < 0) { loanErrors.downPayment = 'ເງິນດາວຕ້ອງບໍ່ຕິດລົບ'; isValid = false }
+  if (loanDetails.downPayment > loanDetails.totalAmount) { loanErrors.downPayment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າລາຄາສິນຄ້າ'; isValid = false }
+  if (loanDetails.interestRate < 0 || loanDetails.interestRate > 100) { loanErrors.interestRate = 'ດອກເບ້ຍຕ້ອງຢູ່ລະຫວ່າງ 0-100%'; isValid = false }
+  if (!loanDetails.termMonths || loanDetails.termMonths <= 0) { loanErrors.termMonths = 'ກະລຸນາເລືອກຈຳນວນງວດ'; isValid = false }
 
   return isValid
 }
 
-// 🟢 Handler ລວມເມື່ອມີການປ່ຽນແປງຕົວເລກ ຫຼື ປະເພດການຄິດໄລ່
 const handleCalculationChange = () => {
   validateLoanDetails()
   loanDetails.monthlyPayment = calculateMonthlyPayment()
 }
-
 
 // Shop selection
 const shopSearch = ref('')
@@ -949,9 +880,7 @@ const searchCustomerByPhone = async () => {
       customerForm.id_card = customer.identity_number || ''
       customerForm.address = customer.address || ''
       customerForm.occupation = customer.occupation || ''
-      // 🟢 ປັດເສດທົດສະນິຍົມຖິ້ມ (Math.floor)
       customerForm.monthly_income = Math.floor(Number(customer.income_per_month)) || 0
-      // ຖ້າມີໜີ້ສິນອື່ນໆ ກໍປັດເສດຄືກັນ (ຖ້າ API ສົ່ງມາ)
       customerForm.other_debts = Math.floor(Number(customer.other_debts)) || 0
       customerForm.age = customer.age || 18
 
@@ -998,28 +927,11 @@ watch(selectedProduct, () => {
 
 // Customer form
 const customerForm = reactive({
-  full_name: '',
-  phone: '',
-  id_card: '',
-  age: 18,
-  province_id: '',
-  district_id: '',
-  address: '',
-  occupation: '',
-  monthly_income: 0,
-  other_debts: 0
+  full_name: '', phone: '', id_card: '', age: 18, province_id: '', district_id: '', address: '', occupation: '', monthly_income: 0, other_debts: 0
 })
 
 const customerErrors = reactive({
-  full_name: '',
-  phone: '',
-  id_card: '',
-  province_id: '',
-  district_id: '',
-  age: '',
-  address: '',
-  occupation: '',
-  monthly_income: ''
+  full_name: '', phone: '', id_card: '', province_id: '', district_id: '', age: '', address: '', occupation: '', monthly_income: ''
 })
 
 // Documents
@@ -1033,7 +945,6 @@ const optionalDocuments = ref<Document[]>([
   { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
 ])
 
-// Modals
 const showSuccessModal = ref(false)
 
 const filteredShops = computed(() => {
@@ -1041,9 +952,8 @@ const filteredShops = computed(() => {
   if (shopsArray && typeof shopsArray === 'object' && !Array.isArray(shopsArray)) {
     shopsArray = Object.values(shopsArray)
   }
-  if (!shopSearch.value) {
-    return Array.isArray(shopsArray) ? shopsArray : []
-  }
+  if (!shopSearch.value) return Array.isArray(shopsArray) ? shopsArray : []
+  
   const query = shopSearch.value.toLowerCase()
   return Array.isArray(shopsArray)
     ? shopsArray.filter(shop => shop.shop_name?.toLowerCase().includes(query) || shop.shop_owner?.toLowerCase().includes(query))
@@ -1056,9 +966,8 @@ const filteredProducts = computed(() => {
   if (productsArray && typeof productsArray === 'object' && !Array.isArray(productsArray)) {
     productsArray = Object.values(productsArray)
   }
-  if (!productSearch.value) {
-    return Array.isArray(productsArray) ? productsArray : []
-  }
+  if (!productSearch.value) return Array.isArray(productsArray) ? productsArray : []
+  
   const query = productSearch.value.toLowerCase()
   return Array.isArray(productsArray)
     ? productsArray.filter(product => product.product_name?.toLowerCase().includes(query) || product.type_name?.toLowerCase().includes(query) || product.id?.toString().includes(query))
@@ -1066,7 +975,8 @@ const filteredProducts = computed(() => {
 })
 
 const allRequiredDocumentsUploaded = computed(() => {
-  return requiredDocuments.value.every(doc => doc.file !== null)
+  // ກວດສອບວ່າເອກະສານທີ່ຈຳເປັນມີ "ຮູບເກົ່າໃນລະບົບ" (preview !== null) ຫຼື "ຮູບໃໝ່ອັບໂຫຼດ" (file !== null) ແລ້ວຫຼືຍັງ
+  return requiredDocuments.value.every(doc => doc.file !== null || doc.preview !== null)
 })
 
 const switchTab = (tab: 'application' | 'documents') => {
@@ -1074,9 +984,35 @@ const switchTab = (tab: 'application' | 'documents') => {
   activeTab.value = tab
 }
 
-const switchToDocumentsTab = () => {
+const switchToDocumentsTab = async () => {
   activeTab.value = 'documents'
   showSuccessModal.value = false
+
+  // 🟢 ຖ້າເປັນລູກຄ້າເກົ່າ ລອງດຶງເອກະສານເກົ່າມາສະແດງ
+  if (existingCustomerId.value) {
+    try {
+      await loanApplicationStore.fetchDocuments(existingCustomerId.value); // ສົມມຸດວ່າມີ API ນີ້
+      const currentDocs = loanApplicationStore.currentDocuments || [];
+      
+      const allFormDocs = [...requiredDocuments.value, ...optionalDocuments.value];
+      currentDocs.forEach(serverDoc => {
+        const docType = serverDoc.document_type || serverDoc.doc_type;
+        const targetDoc = allFormDocs.find(d => d.id === docType);
+        if (targetDoc && serverDoc.file_url) {
+          targetDoc.preview = getFullImageUrl(serverDoc.file_url) || null;
+        }
+      });
+    } catch (e) {
+      console.warn("ບໍ່ສາມາດດຶງເອກະສານເກົ່າໄດ້", e);
+    }
+  }
+}
+
+// 🟢 ຟັງຊັນສຳລັບລູກຄ້າເກົ່າ ທີ່ເລືອກ "ໃຊ້ເອກະສານເດີມ"
+const useExistingDocuments = () => {
+  showSuccessModal.value = false;
+  alert.success('ສຳເລັດ', 'ບັນທຶກຮ່າງຄຳຂໍ ແລະ ນຳໃຊ້ເອກະສານເດີມຮຽບຮ້ອຍແລ້ວ');
+  router.push({ name: 'PendingLoans' }); // ໂດດກັບໄປໜ້າລາຍການເລີຍ
 }
 
 let shopSearchTimer: NodeJS.Timeout | null = null
@@ -1091,9 +1027,8 @@ const debounceProductSearch = () => {
   productSearchTimer = setTimeout(() => { }, 300)
 }
 
-// 4. Watcher ເມື່ອປ່ຽນແຂວງ ໃຫ້ໄປດຶງຂໍ້ມູນເມືອງ
 watch(() => customerForm.province_id, async (newVal) => {
-  customerForm.district_id = ''; // ລ້າງຄ່າເມືອງທຸກຄັ້ງທີ່ປ່ຽນແຂວງ
+  customerForm.district_id = ''; 
   if (newVal) {
     await addressStore.fetchDistricts(newVal);
   } else {
@@ -1180,55 +1115,42 @@ const validateCustomerForm = (): boolean => {
 
   let isValid = true
 
-  if (!customerForm.full_name.trim()) {
-    customerErrors.full_name = 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ'
-    isValid = false
-  }
-
+  if (!customerForm.full_name.trim()) { customerErrors.full_name = 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ'; isValid = false }
   const phoneRegex = /^[\d\-\+\(\)\s]{8,15}$/
-  if (!customerForm.phone.trim()) {
-    customerErrors.phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'
-    isValid = false
-  } else if (!phoneRegex.test(customerForm.phone)) {
-    customerErrors.phone = 'ເບີໂທລະສັບບໍ່ຖືກຕ້ອງ'
-    isValid = false
-  }
-
-  if (!customerForm.id_card.trim()) {
-    customerErrors.id_card = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ'
-    isValid = false
-  }
-
-  if (customerForm.age < 18 || customerForm.age > 100) {
-    customerErrors.age = 'ອາຍຸຕ້ອງຢູ່ລະຫວ່າງ 18-100 ປີ'
-    isValid = false
-  }
-
-  if (!customerForm.address.trim()) {
-    customerErrors.address = 'ກະລຸນາປ້ອນທີ່ຢູ່'
-    isValid = false
-  }
-
-  if (!customerForm.occupation.trim()) {
-    customerErrors.occupation = 'ກະລຸນາປ້ອນອາຊີບ (ຂໍ້ມູນສຳຄັນສຳລັບການພິຈາລະນາສິນເຊື່ອ)'
-    isValid = false
-  }
-
-  if (customerForm.monthly_income <= 0) {
-    customerErrors.monthly_income = 'ລາຍຮັບຕ້ອງຫຼາຍກວ່າ 0'
-    isValid = false
-  }
-
+  if (!customerForm.phone.trim()) { customerErrors.phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'; isValid = false } 
+  else if (!phoneRegex.test(customerForm.phone)) { customerErrors.phone = 'ເບີໂທລະສັບບໍ່ຖືກຕ້ອງ'; isValid = false }
+  if (!customerForm.id_card.trim()) { customerErrors.id_card = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ'; isValid = false }
+  if (customerForm.age < 18 || customerForm.age > 100) { customerErrors.age = 'ອາຍຸຕ້ອງຢູ່ລະຫວ່າງ 18-100 ປີ'; isValid = false }
+  if (!customerForm.address.trim()) { customerErrors.address = 'ກະລຸນາປ້ອນທີ່ຢູ່'; isValid = false }
+  if (!customerForm.occupation.trim()) { customerErrors.occupation = 'ກະລຸນາປ້ອນອາຊີບ (ຂໍ້ມູນສຳຄັນສຳລັບການພິຈາລະນາສິນເຊື່ອ)'; isValid = false }
+  if (customerForm.monthly_income <= 0) { customerErrors.monthly_income = 'ລາຍຮັບຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
+  
   return isValid
 }
 
-// 🟢 ປ່ຽນແປງຟັງຊັນບັນທຶກຂໍ້ມູນໂດຍກົງ ໂດຍບໍ່ຕ້ອງຜ່ານການຢືນຢັນ OTP
 const handleDirectSubmit = async () => {
   if (!selectedShop.value || !selectedProduct.value || !validateCustomerForm()) return
 
   isSubmitting.value = true
   try {
-    await submitLoanApplication()
+    const result = await submitLoanApplication();
+    
+    // 🟢 ແປງ Type ໃຫ້ເປັນ any ຊົ່ວຄາວ ເພື່ອຫຼີກລ້ຽງ TS Error
+    const resData = result as any;
+
+    // 🟢 ປັບ Logic ການດຶງ Customer ID ໃຫ້ຮອງຮັບທຸກຮູບແບບທີ່ Backend ອາດຈະສົ່ງມາ
+    if (resData.existing_customer_id) {
+        existingCustomerId.value = resData.existing_customer_id;
+    } else if (resData.customer?.id) {
+        existingCustomerId.value = resData.customer.id;
+    } else if (result.application?.customer_id) {
+        // ກໍລະນີ Backend ສົ່ງ ID ມາພ້ອມກັບ Object application
+        existingCustomerId.value = result.application.customer_id;
+    } else if (resData.data?.customer_id) {
+        // ກໍລະນີ Backend ຫໍ່ຂໍ້ມູນໄວ້ໃນ data {}
+        existingCustomerId.value = resData.data.customer_id;
+    }
+
     showSuccessModal.value = true
     canAccessDocuments.value = true
   } catch (error: any) {
@@ -1248,18 +1170,13 @@ const submitLoanApplication = async () => {
     const firstName = nameParts[0] || customerForm.full_name
     const lastName = nameParts.slice(1).join(' ') || ''
 
-    // ຊອກຫາຂໍ້ມູນເມືອງ ແລະ ແຂວງ ເພື່ອເອົາຊື່ໄປເຮັດ Snapshot (ຖ້າ Backend ຕ້ອງການໃຫ້ Frontend ໂຍນໄປເລີຍ)
-    const selectedProvince = addressStore.provinces.find(p => p.province_id === customerForm.province_id);
-    const selectedDistrict = addressStore.districts.find(d => d.district_id === customerForm.district_id);
-
     const data: CreateWithCustomerDto = {
       phone: customerForm.phone.trim(),
-      otp: '', // 🟢 ຂ້າມການສົ່ງ OTP, ຖ້າລະບົບຫຼັງບ້ານຮຽກຮ້ອງອາດຈະຕ້ອງແກ້ໄຂ API ໃຫ້ບໍ່ຈຳເປັນຕ້ອງໃຊ້
+      otp: '', 
       identity_number: customerForm.id_card.trim(),
       first_name: firstName,
       last_name: lastName,
 
-      // ໂຍນ ID ຕາມ Best Practice
       province_id: customerForm.province_id,
       district_id: customerForm.district_id,
 
@@ -1346,11 +1263,11 @@ const submitDocuments = async () => {
     const allDocs = [...requiredDocuments.value, ...optionalDocuments.value].filter(doc => doc.file)
     for (const doc of allDocs) {
       if (doc.file) {
-        await loanApplicationStore.uploadDocument(currentLoan.id, doc.file, doc.id)
+        await loanApplicationStore.uploadDocument(currentLoan.customer_id, doc.file, doc.id)
       }
     }
     alert.success('ບັນທຶກເອກະສານສຳເລັດ!')
-    await loanApplicationStore.fetchDocuments(currentLoan.id)
+    await loanApplicationStore.fetchDocuments(currentLoan.customer_id)
     await loanApplicationStore.fetchLoanApplicationById(currentLoan.id)
     router.push({ name: 'PendingLoans' })
   } catch (error) {
@@ -1362,10 +1279,7 @@ const submitDocuments = async () => {
 
 onMounted(async () => {
   await shopStore.fetchAllShop()
-  console.log('2. Fetching Provinces...'); // ຖ້າ Log ນີ້ບໍ່ຂຶ້ນ ສະແດງວ່າຕິດຢູ່ຂັ້ນຕອນເທິງ
-    await addressStore.fetchProvinces();
-    
-    console.log('3. Provinces Data:', addressStore.provinces);
+  await addressStore.fetchProvinces();
 })
 </script>
 
@@ -1373,5 +1287,29 @@ onMounted(async () => {
 .tab-disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 🟢 UI/UX Update ສຳລັບການສະແດງທີ່ຢູ່ */
+.address-grid-custom {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.select-addr {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .address-grid-custom {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

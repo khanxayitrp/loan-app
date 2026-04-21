@@ -73,19 +73,34 @@
             </div>
             <div class="form-group full-width">
               <label>ທີ່ຢູ່ປັດຈຸບັນ: <span class="required">*</span></label>
-              <div class="address-group">
-                <span>ບ້ານ</span>
-                <input v-model="formData.customer.address.village" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.customer.address.village, 'readonly-field': !isEditing }"
-                  placeholder="ບ້ານ" />
-                <span>ເມືອງ</span>
-                <input v-model="formData.customer.address.district" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.customer.address.district, 'readonly-field': !isEditing }"
-                  placeholder="ເມືອງ" />
-                <span>ແຂວງ</span>
-                <input v-model="formData.customer.address.province" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.customer.address.province, 'readonly-field': !isEditing }"
-                  placeholder="ແຂວງ" />
+              <div class="address-grid-custom">
+                <div class="input-sub">
+                  <span>ບ້ານ</span>
+                  <input v-model="formData.customer.address.village" type="text" :readonly="!isEditing" placeholder="ບ້ານ" />
+                </div>
+                
+                <div class="input-sub">
+                  <span>ແຂວງ</span>
+                  <select v-model="formData.customer.address.province_id" :disabled="!isEditing" class="select-addr">
+                    <option value="">-- ເລືອກແຂວງ --</option>
+                    <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
+                      {{ p.province_name }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="input-sub">
+                  <span>ເມືອງ</span>
+                  <select v-model="formData.customer.address.district_id" 
+                          :disabled="!isEditing || !formData.customer.address.province_id" 
+                          @change="handleDistrictChange('customer', formData.customer.address.district_id)"
+                          class="select-addr">
+                    <option value="">-- ເລືອກເມືອງ --</option>
+                    <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">
+                      {{ d.district_name }}
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
             <div class="form-group">
@@ -127,16 +142,32 @@
             </div>
             <div class="form-group full-width">
               <label>ທີ່ຢູ່ຫ້ອງການ:</label>
-              <div class="address-group">
-                <span>ບ້ານ</span>
-                <input v-model="formData.work.address.village" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.work.address.village, 'readonly-field': !isEditing }" />
-                <span>ເມືອງ</span>
-                <input v-model="formData.work.address.district" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.work.address.district, 'readonly-field': !isEditing }" />
-                <span>ແຂວງ</span>
-                <input v-model="formData.work.address.province" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.work.address.province, 'readonly-field': !isEditing }" />
+              <div class="address-grid-custom">
+                <div class="input-sub">
+                  <span>ບ້ານ</span>
+                  <input v-model="formData.work.address.village" type="text" :readonly="!isEditing" placeholder="ບ້ານ" />
+                </div>
+                <div class="input-sub">
+                  <span>ແຂວງ</span>
+                  <select v-model="formData.work.address.province_id" :disabled="!isEditing" class="select-addr">
+                    <option value="">-- ເລືອກແຂວງ --</option>
+                    <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
+                      {{ p.province_name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="input-sub">
+                  <span>ເມືອງ</span>
+                  <select v-model="formData.work.address.district_id" 
+                          :disabled="!isEditing || !formData.work.address.province_id" 
+                          @change="handleDistrictChange('work', formData.work.address.district_id)"
+                          class="select-addr">
+                    <option value="">-- ເລືອກເມືອງ --</option>
+                    <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">
+                      {{ d.district_name }}
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
             <div class="form-group">
@@ -350,16 +381,32 @@
             </div>
             <div class="form-group full-width">
               <label>ທີ່ຢູ່ປະຈຸບັນ:</label>
-              <div class="address-group">
-                <span>ບ້ານ</span>
-                <input v-model="formData.guarantor.address.village" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.guarantor.address.village, 'readonly-field': !isEditing }" />
-                <span>ເມືອງ</span>
-                <input v-model="formData.guarantor.address.district" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.guarantor.address.district, 'readonly-field': !isEditing }" />
-                <span>ແຂວງ</span>
-                <input v-model="formData.guarantor.address.province" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.guarantor.address.province, 'readonly-field': !isEditing }" />
+              <div class="address-grid-custom">
+                <div class="input-sub">
+                  <span>ບ້ານ</span>
+                  <input v-model="formData.guarantor.address.village" type="text" :readonly="!isEditing" placeholder="ບ້ານ" />
+                </div>
+                <div class="input-sub">
+                  <span>ແຂວງ</span>
+                  <select v-model="formData.guarantor.address.province_id" :disabled="!isEditing" class="select-addr">
+                    <option value="">-- ເລືອກແຂວງ --</option>
+                    <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
+                      {{ p.province_name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="input-sub">
+                  <span>ເມືອງ</span>
+                  <select v-model="formData.guarantor.address.district_id" 
+                          :disabled="!isEditing || !formData.guarantor.address.province_id" 
+                          @change="handleDistrictChange('guarantor', formData.guarantor.address.district_id)"
+                          class="select-addr">
+                    <option value="">-- ເລືອກເມືອງ --</option>
+                    <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">
+                      {{ d.district_name }}
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
             <div class="form-group">
@@ -397,16 +444,32 @@
             </div>
             <div class="form-group full-width">
               <label>ທີ່ຢູ່:</label>
-              <div class="address-group">
-                <span>ບ້ານ</span>
-                <input v-model="formData.guarantor.work.address.village" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.guarantor.work.address.village, 'readonly-field': !isEditing }" />
-                <span>ເມືອງ</span>
-                <input v-model="formData.guarantor.work.address.district" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.guarantor.work.address.district, 'readonly-field': !isEditing }" />
-                <span>ແຂວງ</span>
-                <input v-model="formData.guarantor.work.address.province" type="text" :readonly="!isEditing"
-                  :class="{ 'has-data': formData.guarantor.work.address.province, 'readonly-field': !isEditing }" />
+              <div class="address-grid-custom">
+                <div class="input-sub">
+                  <span>ບ້ານ</span>
+                  <input v-model="formData.guarantor.work.address.village" type="text" :readonly="!isEditing" placeholder="ບ້ານ" />
+                </div>
+                <div class="input-sub">
+                  <span>ແຂວງ</span>
+                  <select v-model="formData.guarantor.work.address.province_id" :disabled="!isEditing" class="select-addr">
+                    <option value="">-- ເລືອກແຂວງ --</option>
+                    <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
+                      {{ p.province_name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="input-sub">
+                  <span>ເມືອງ</span>
+                  <select v-model="formData.guarantor.work.address.district_id" 
+                          :disabled="!isEditing || !formData.guarantor.work.address.province_id" 
+                          @change="handleDistrictChange('guarantorWork', formData.guarantor.work.address.district_id)"
+                          class="select-addr">
+                    <option value="">-- ເລືອກເມືອງ --</option>
+                    <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">
+                      {{ d.district_name }}
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
             <div class="form-group">
@@ -525,18 +588,17 @@
 import { ref, reactive, watch, onMounted, computed } from 'vue'
 import type { LoanApplication } from '@/types/loanApplication'
 import apiClient from '@/api/apiclient'
-
-// 🟢 1. ຢ່າລືມ Import ຟັງຊັນ formatPrice
 import { formatPrice } from '@/utils/formatters'
+import { useAddressStore } from '@/stores/address'
 
-// Props
+const addressStore = useAddressStore()
+
 const props = defineProps<{
   loanApplicationId?: number
   loanApplication?: LoanApplication | null
   isEditing?: boolean
 }>()
 
-// Emits
 const emit = defineEmits<{
   (e: 'save-form', customerId: number, formData: any): void
   (e: 'form-updated', formData: any): void
@@ -544,7 +606,6 @@ const emit = defineEmits<{
   (e: 'enable-edit'): void
 }>()
 
-// State
 const isLoadingForm = ref(false)
 const isSaving = ref(false)
 const isEditing = ref(props.isEditing || false)
@@ -598,15 +659,15 @@ const closePdfPreview = () => {
   }
 }
 
-// 🟢 Form Data ພ້ອມ Hidden State ສຳລັບ Interest Type
+// 🟢 Form Data ພ້ອມເພີ່ມ district ໃຫ້ຄົບ
 const formData = reactive({
   customer: {
     fullname: '', dob: '', age: null as number | null, occupation: '', phone: '',
-    address: { village: '', district: '', province: '' },
+    address: { village: '', district: '', district_id: '', province: '', province_id: '' },
     idCard: '', censusNo: '', unit: '', issuePlace: '', issueDate: ''
   },
   work: {
-    companyName: '', address: { village: '', district: '', province: '' },
+    companyName: '', address: { village: '', district: '', district_id: '', province: '', province_id: '' },
     phone: '', businessType: '', businessDetail: '', durationMonths: null as number | null,
     durationYears: null as number | null, department: '', position: '', salary: null as number | null
   },
@@ -615,16 +676,16 @@ const formData = reactive({
     productType: '', price: null as number | null, loanTerm: null as number | null, fee: 20000,
     monthlyPayment: null as number | null, store: '', brand: '', downPayment: null as number | null,
     interestRate: null as number | null,
-    interestType: 'flat_rate',       // Hidden State
-    interestRateType: 'monthly',     // Hidden State
+    interestType: 'flat_rate',
+    interestRateType: 'monthly',
     firstInstallment: null as number | null,
     paymentDay: null as number | null, model: '', approvedAmount: null as number | null, totalInterest: null as number | null
   },
   hasGuarantor: false, hasReference: false,
   guarantor: {
     name: '', dob: '', age: null as number | null, occupation: '', phone: '',
-    address: { village: '', district: '', province: '' }, idCard: '', relationship: '', relationshipOther: '',
-    work: { companyName: '', address: { village: '', district: '', province: '' }, position: '', phone: '', salary: null as number | null }
+    address: { village: '', district: '', district_id: '', province: '', province_id: '' }, idCard: '', relationship: '', relationshipOther: '',
+    work: { companyName: '', address: { village: '', district: '', district_id: '', province: '', province_id: '' }, position: '', phone: '', salary: null as number | null }
   },
   signatures: { borrowerDate: '', guarantorDate: '', staffDate: '' }
 })
@@ -646,35 +707,26 @@ const parseAddress = (addressStr: string) => {
   }
 }
 
-// 🟢 Helper Function ສຳລັບແປງຄ່າເປັນ Number ຢ່າງປອດໄພ
 const safeNumber = (val: any): number | null => {
   if (val === null || val === undefined || val === '') return null;
   const num = Number(val);
   return isNaN(num) ? null : num;
 }
 
-// 🟢 ດຶງຂໍ້ມູນຈາກ JSON ມາໃສ່ໃນ Form ໃຫ້ຄົບຖ້ວນ
 const loadDataFromProps = () => {
-  if (!props.loanApplication) {
-    console.log('⚠️ No loan application data')
-    return
-  }
+  if (!props.loanApplication) return
 
-  // 🟢 ໃຊ້ 'any' ເພື່ອຂ້າມຜ່ານຂໍ້ຈຳກັດຂອງ TypeScript ໃນບາງ Field ທີ່ອາດຈະມີ/ບໍ່ມີໃນ Type ເດີມ
   const loan: any = props.loanApplication;
-  console.log('📝 Loading data from loan application:', loan)
 
   if (loan.customer) {
     formData.customer.fullname = `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim()
     formData.customer.dob = loan.customer.date_of_birth || ''
 
-    // Age
     if (loan.customer.age) {
       formData.customer.age = safeNumber(loan.customer.age);
     } else if (loan.customer.date_of_birth) {
       const birthDate = new Date(loan.customer.date_of_birth);
-      const ageDifMs = Date.now() - birthDate.getTime();
-      const ageDate = new Date(ageDifMs);
+      const ageDate = new Date(Date.now() - birthDate.getTime());
       formData.customer.age = Math.abs(ageDate.getUTCFullYear() - 1970);
     }
 
@@ -691,7 +743,6 @@ const loadDataFromProps = () => {
     formData.customer.address.district = customerAddress.district
     formData.customer.address.province = customerAddress.province
 
-    // 🟢 ດຶງຂໍ້ມູນວຽກ (ຮອງຮັບທັງ customer_work_infos ແລະ work_info)
     const workInfo = loan.customer.customer_work_infos?.[0] || loan.customer.work_info?.[0] || {};
     if (workInfo && Object.keys(workInfo).length > 0) {
       formData.work.companyName = workInfo.company_name || ''
@@ -727,11 +778,9 @@ const loadDataFromProps = () => {
   formData.product.firstInstallment = safeNumber(loan.first_installment_amount)
   formData.product.paymentDay = safeNumber(loan.payment_day) || 1
 
-  // 🟢 ໂຫຼດປະເພດດອກເບ້ຍມາເກັບໄວ້
   formData.product.interestType = loan.interest_type || 'flat_rate'
   formData.product.interestRateType = loan.interest_rate_type || 'monthly'
 
-  // ຄິດໄລ່ຄ່າງວດອັດຕະໂນມັດຫຼັງຈາກໂຫຼດຂໍ້ມູນ
   calculateLoanDetails()
 
   const guarantor = loan.loan_guarantors?.[0]
@@ -755,14 +804,12 @@ const loadDataFromProps = () => {
     formData.guarantor.work.salary = safeNumber(guarantor.work_salary)
     formData.guarantor.work.phone = guarantor.work_phone || ''
 
-    // ຮອງຮັບທັງ work_location ແລະ work_address
     const guarantorWorkAddress = parseAddress(guarantor.work_location || guarantor.work_address || '')
     formData.guarantor.work.address.village = guarantorWorkAddress.village
     formData.guarantor.work.address.district = guarantorWorkAddress.district
     formData.guarantor.work.address.province = guarantorWorkAddress.province
   }
 
-  // ຈັດການວັນທີໃຫ້ເປັນ Format YYYY-MM-DD
   formData.signatures.borrowerDate = loan.borrower_signature_date ? (new Date(loan.borrower_signature_date).toISOString().split('T')[0] || '') : ''
   formData.signatures.guarantorDate = loan.guarantor_signature_date ? (new Date(loan.guarantor_signature_date).toISOString().split('T')[0] || '') : ''
   formData.signatures.staffDate = loan.staff_signature_date ? (new Date(loan.staff_signature_date).toISOString().split('T')[0] || '') : ''
@@ -780,20 +827,14 @@ const calculateAge = (dobString: string): number | null => {
   return age;
 }
 
-const handleCustomerDobChange = () => {
-  formData.customer.age = calculateAge(formData.customer.dob);
-}
-const handleGuarantorDobChange = () => {
-  formData.guarantor.age = calculateAge(formData.guarantor.dob);
-}
+const handleCustomerDobChange = () => { formData.customer.age = calculateAge(formData.customer.dob); }
+const handleGuarantorDobChange = () => { formData.guarantor.age = calculateAge(formData.guarantor.dob); }
 
-// 🟢 ສູດການຄິດໄລ່ດອກເບ້ຍ ຮອງຮັບທັງ Flat ແລະ Effective
 const calculateLoanDetails = () => {
   const price = formData.product.price || 0
   const downPayment = formData.product.downPayment || 0
   const loanTerm = formData.product.loanTerm || 1
   const interestRate = formData.product.interestRate || 0
-
   const interestType = formData.product.interestType || 'flat_rate'
   const interestRateType = formData.product.interestRateType || 'monthly'
 
@@ -801,8 +842,6 @@ const calculateLoanDetails = () => {
 
   if (formData.product.approvedAmount > 0 && loanTerm > 0) {
     const principal = formData.product.approvedAmount
-
-    // ແປງດອກເບ້ຍເປັນຕໍ່ເດືອນສະເໝີ
     const isYearly = interestRateType === 'yearly'
     const ratePerMonth = isYearly ? (interestRate / 12) : interestRate
 
@@ -810,7 +849,6 @@ const calculateLoanDetails = () => {
       formData.product.monthlyPayment = Math.round(principal / loanTerm)
     } else {
       let monthlyPayment = 0
-
       if (interestType === 'flat_rate') {
         const totalInterest = principal * (ratePerMonth / 100) * loanTerm
         monthlyPayment = (principal + totalInterest) / loanTerm
@@ -819,7 +857,6 @@ const calculateLoanDetails = () => {
         const n = loanTerm
         monthlyPayment = (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
       }
-
       formData.product.monthlyPayment = Math.round(monthlyPayment)
     }
 
@@ -839,7 +876,6 @@ const saveForm = async () => {
     alert('ບໍ່ພົບຂໍ້ມູນລູກຄ້າ')
     return
   }
-
   isSaving.value = true
   try {
     emit('save-form', props.loanApplication.customer_id, formData)
@@ -856,18 +892,68 @@ const cancelEdit = () => {
   loadDataFromProps()
 }
 
-watch(() => props.loanApplication, (newVal) => {
-  if (newVal) {
-    loadDataFromProps()
+// 🟢 Watchers ສໍາລັບທີ່ຢູ່ທັງ 4 ສ່ວນ
+watch(() => formData.customer.address.province_id, async (newVal) => {
+  if (isEditing.value) {
+    formData.customer.address.district_id = '';
+    formData.customer.address.district = '';
+    const p = addressStore.provinces.find(x => x.province_id === newVal);
+    formData.customer.address.province = p ? p.province_name : '';
+    if (newVal) await addressStore.fetchDistricts(newVal);
   }
+});
+
+watch(() => formData.work.address.province_id, async (newVal) => {
+  if (isEditing.value) {
+    formData.work.address.district_id = '';
+    formData.work.address.district = '';
+    const p = addressStore.provinces.find(x => x.province_id === newVal);
+    formData.work.address.province = p ? p.province_name : '';
+    if (newVal) await addressStore.fetchDistricts(newVal);
+  }
+});
+
+watch(() => formData.guarantor.address.province_id, async (newVal) => {
+  if (isEditing.value) {
+    formData.guarantor.address.district_id = '';
+    formData.guarantor.address.district = '';
+    const p = addressStore.provinces.find(x => x.province_id === newVal);
+    formData.guarantor.address.province = p ? p.province_name : '';
+    if (newVal) await addressStore.fetchDistricts(newVal);
+  }
+});
+
+watch(() => formData.guarantor.work.address.province_id, async (newVal) => {
+  if (isEditing.value) {
+    formData.guarantor.work.address.district_id = '';
+    formData.guarantor.work.address.district = '';
+    const p = addressStore.provinces.find(x => x.province_id === newVal);
+    formData.guarantor.work.address.province = p ? p.province_name : '';
+    if (newVal) await addressStore.fetchDistricts(newVal);
+  }
+});
+
+const handleDistrictChange = (section: 'customer' | 'work' | 'guarantor' | 'guarantorWork', districtId: string) => {
+  const d = addressStore.districts.find(x => x.district_id === districtId);
+  if (!d) return;
+
+  if (section === 'customer') formData.customer.address.district = d.district_name;
+  else if (section === 'work') formData.work.address.district = d.district_name;
+  else if (section === 'guarantor') formData.guarantor.address.district = d.district_name;
+  else if (section === 'guarantorWork') formData.guarantor.work.address.district = d.district_name;
+};
+
+watch(() => props.loanApplication, (newVal) => {
+  if (newVal) loadDataFromProps()
 }, { deep: true })
 
 watch(() => props.isEditing, (newVal) => {
   isEditing.value = newVal
 })
 
-onMounted(() => {
+onMounted(async () => {
   loadDataFromProps()
+  await addressStore.fetchProvinces(); 
 })
 </script>
 
@@ -1240,6 +1326,45 @@ onMounted(() => {
   .address-group {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+.address-grid-custom {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.input-sub span {
+  font-size: 12px;
+  white-space: nowrap;
+  color: #666;
+}
+
+.select-addr {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  background-color: white;
+}
+
+.select-addr:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .address-grid-custom {
+    grid-template-columns: 1fr;
   }
 }
 </style>

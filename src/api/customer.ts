@@ -174,3 +174,10 @@ export const deleteCustomerLocation = async (locationId: number) => {
   const response = await apiClient.delete(`/customer-locations/${locationId}`)
   return response.data
 }
+
+
+// 🟢 ເພີ່ມຟັງຊັນນີ້ເຂົ້າໄປໃນ src/api/customer.ts
+export const saveCustomerWorkInfo = async (customerId: number | string, data: any) => {
+  // ປ່ຽນ URL '/customers/work-info' ໃຫ້ກົງກັບ Endpoint ຈິງຂອງ Backend ທ່ານ
+  return await apiClient.post(`/customers/${customerId}/work-info`, data);
+};
