@@ -1,7 +1,8 @@
 <template>
   <teleport to="body">
     <div v-if="show && loan" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-60 p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-6 border-b pb-4">
           <h3 class="text-xl font-bold flex items-center gap-2">
             <span class="icon-[tabler--calendar-stats] size-6 text-primary"></span>
@@ -12,7 +13,8 @@
           </button>
         </div>
 
-        <div v-if="hasScheduleConflict" class="alert alert-warning shadow-sm mb-4 flex-row items-start p-4 border border-warning/50">
+        <div v-if="hasScheduleConflict"
+          class="alert alert-warning shadow-sm mb-4 flex-row items-start p-4 border border-warning/50">
           <span class="icon-[tabler--alert-triangle] size-6 shrink-0 mt-0.5"></span>
           <div class="w-full">
             <h3 class="font-bold text-base">⚠️ ຕາຕະລາງຜ່ອນຊຳລະບໍ່ກົງກັບຂໍ້ມູນໃບຄຳຂໍຫຼ້າສຸດ!</h3>
@@ -21,14 +23,17 @@
                 <div class="flex flex-col sm:flex-row sm:justify-between border-b border-warning/20 border-dashed pb-1">
                   <span class="font-medium">{{ diff.label }}:</span>
                   <span class="mt-1 sm:mt-0">
-                    <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal) }}</span>
+                    <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal)
+                      }}</span>
                     <span class="font-bold text-success">👉 ໃບຄຳຂໍປັດຈຸບັນ: {{ formatPrice(diff.appVal) }}</span>
                   </span>
                 </div>
               </template>
             </div>
             <div class="mt-3 text-sm font-semibold text-error bg-error/10 p-2 rounded">
-              * ກະລຸນາກົດປຸ່ມ <span class="badge badge-warning badge-sm"><span class="icon-[tabler--refresh] mr-1"></span>ຣີເຊັດຄ່າເລີ່ມຕົ້ນ</span> ເພື່ອສ້າງຕາຕະລາງໃໝ່ໃຫ້ກົງກັນ, ແລ້ວກົດບັນທຶກ.
+              * ກະລຸນາກົດປຸ່ມ <span class="badge badge-warning badge-sm"><span
+                  class="icon-[tabler--refresh] mr-1"></span>ຣີເຊັດຄ່າເລີ່ມຕົ້ນ</span> ເພື່ອສ້າງຕາຕະລາງໃໝ່ໃຫ້ກົງກັນ,
+              ແລ້ວກົດບັນທຶກ.
             </div>
           </div>
         </div>
@@ -42,8 +47,11 @@
                 <span v-else class="badge badge-success text-white badge-sm ml-2">ບັນທຶກແລ້ວ</span>
               </h4>
               <p class="text-sm text-gray-600 mt-1">
-                ຍອດຈັດ (ຕົ້ນທຶນ): <span class="font-medium text-black">{{ formatPrice(Number(loan?.total_amount || 0) - Number(loan?.down_payment || 0)) }}</span> |
-                ດອກເບ້ຍ: <span class="font-medium text-black">{{ loan?.interest_rate_at_apply }}% {{ loan?.interest_rate_type === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>
+                ຍອດຈັດ (ຕົ້ນທຶນ): <span class="font-medium text-black">{{ formatPrice(Number(loan?.total_amount || 0) -
+                  Number(loan?.down_payment || 0)) }}</span> |
+                ດອກເບ້ຍ: <span class="font-medium text-black">{{ loan?.interest_rate_at_apply }}% {{
+                  loan?.interest_rate_type
+                    === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>
               </p>
             </div>
             <div class="flex gap-2">
@@ -80,16 +88,27 @@
                 <tr v-for="(row, index) in scheduleRows" :key="index" class="hover:bg-base-200/30 transition-colors">
                   <td class="text-center align-middle font-medium">{{ row.installment_number }}</td>
                   <td class="align-middle">
-                    <input type="date" v-model="row.due_date" class="input input-sm input-bordered w-full bg-white" :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                    <input type="date" v-model="row.due_date" class="input input-sm input-bordered w-full bg-white"
+                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
                   </td>
                   <td class="align-middle text-right">
-                    <input type="text" :value="formatCurrencyInput(row.principal)" @input="handleScheduleInput(row, 'principal', $event)" class="input input-sm input-bordered w-full text-right bg-white" :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                    <input type="text" :value="formatCurrencyInput(row.principal)"
+                      @input="handleScheduleInput(row, 'principal', $event)"
+                      class="input input-sm input-bordered w-full text-right bg-white"
+                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
                   </td>
                   <td class="align-middle text-right">
-                    <input type="text" :value="formatCurrencyInput(row.interest)" @input="handleScheduleInput(row, 'interest', $event)" class="input input-sm input-bordered w-full text-right text-error font-medium bg-white" :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                    <input type="text" :value="formatCurrencyInput(row.interest)"
+                      @input="handleScheduleInput(row, 'interest', $event)"
+                      class="input input-sm input-bordered w-full text-right text-error font-medium bg-white"
+                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
                   </td>
-                  <td class="text-right align-middle font-bold bg-gray-50 text-success">{{ formatPrice(row.total_amount) }}</td>
-                  <td class="text-right align-middle font-bold" :class="row.remaining_balance <= 0 ? 'text-success' : 'text-primary'">{{ formatPrice(row.remaining_balance) }}</td>
+                  <td class="text-right align-middle font-bold bg-gray-50 text-success">{{ formatPrice(row.total_amount)
+                    }}</td>
+                  <td class="text-right align-middle font-bold"
+                    :class="row.remaining_balance <= 0 ? 'text-success' : 'text-primary'">{{
+                      formatPrice(row.remaining_balance)
+                    }}</td>
                 </tr>
               </tbody>
               <tfoot class="bg-primary/5 font-bold text-base">
@@ -97,9 +116,11 @@
                   <td colspan="2" class="text-right align-middle">ລວມທັງໝົດ:</td>
                   <td class="text-right text-primary align-middle">{{ formatPrice(totalSchedulePrincipal) }}</td>
                   <td class="text-right text-error align-middle">{{ formatPrice(totalScheduleInterest) }}</td>
-                  <td class="text-right text-success align-middle">{{ formatPrice(totalSchedulePrincipal + totalScheduleInterest) }}</td>
+                  <td class="text-right text-success align-middle">{{ formatPrice(totalSchedulePrincipal +
+                    totalScheduleInterest) }}</td>
                   <td class="text-right align-middle">
-                    <span v-if="Math.abs(totalScheduleRemaining) > 10" class="text-error text-sm">(ຍອດບໍ່ລົງຕົວ {{ formatPrice(totalScheduleRemaining) }})</span>
+                    <span v-if="Math.abs(totalScheduleRemaining) > 10" class="text-error text-sm">(ຍອດບໍ່ລົງຕົວ {{
+                      formatPrice(totalScheduleRemaining) }})</span>
                     <span v-else class="text-success text-sm">(ລົງຕົວ)</span>
                   </td>
                 </tr>
@@ -155,7 +176,7 @@ const fetchSavedSchedule = async () => {
   if (!props.loan) return;
   try {
     const savedData = await loanApplicationStore.fetchRepaymentSchedule(props.loan.id);
-    
+
     if (savedData && savedData.length > 0) {
       // 🟢 ແກ້ໄຂ: ຮອງຮັບຊື່ Key ທັງແບບເກົ່າ ແລະ ແບບໃໝ່ຈາກ API ເພື່ອບໍ່ໃຫ້ເປັນ NaN
       const tempRows = savedData.map((r: any) => ({
@@ -169,11 +190,11 @@ const fetchSavedSchedule = async () => {
 
       const loan = props.loan;
       const firstRow = tempRows[0];
-      
+
       const appPrincipal = Number(loan.total_amount || 0) - Number(loan.down_payment || 0);
       const appMonthlyPay = Number(loan.monthly_pay || 0);
       const appTerm = Number(loan.loan_period || 0);
-      
+
       const schedPrincipal = Number(firstRow.principal) + Number(firstRow.remaining_balance);
       const schedMonthlyPay = Number(firstRow.total_amount);
       const schedTerm = tempRows.length;
@@ -236,7 +257,7 @@ const generateSchedule = () => {
 
     if (interestType === 'flat_rate') {
       rowPrincipal = flatMonthlyPrincipal; rowInterest = flatMonthlyInterest;
-    } else { 
+    } else {
       rowInterest = currentBalance * ratePerMonth; rowPrincipal = effectivePmt - rowInterest;
     }
 

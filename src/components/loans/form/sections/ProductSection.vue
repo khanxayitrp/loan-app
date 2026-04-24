@@ -13,7 +13,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div class="form-control lg:col-span-2">
         <label class="label"><span class="label-text font-bold">ລາຍລະອຽດສິນຄ້າ:</span></label>
-        <input v-model="data.description" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+        <input v-model="data.description" type="text" :readonly="!isEditing"
+          class="input input-sm input-bordered w-full" />
       </div>
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ປະເພດສິນຄ້າ:</span></label>
@@ -35,71 +36,85 @@
       </div>
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ລາຄາສິນຄ້າ (ກີບ):</span></label>
-        <input :value="formatCurrencyInput(data.price)" @input="handleCurrencyInput('price', $event)" 
-          type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+        <input :value="formatCurrencyInput(data.price)" @input="handleCurrencyInput('price', $event)" type="text"
+          :readonly="!isEditing" class="input input-sm input-bordered w-full" />
       </div>
 
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ເງິນວາງດາວ (ກີບ):</span></label>
-        <input :value="formatCurrencyInput(data.downPayment)" @input="handleCurrencyInput('downPayment', $event)" 
+        <input :value="formatCurrencyInput(data.downPayment)" @input="handleCurrencyInput('downPayment', $event)"
           type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
       </div>
       <div class="form-control">
         <label class="label"><span class="label-text font-bold text-primary">ວົງເງິນອະນຸມັດ (ກີບ):</span></label>
-        <input :value="formatPrice(data.approvedAmount)" type="text" readonly class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
+        <input :value="formatPrice(data.approvedAmount)" type="text" readonly
+          class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
       </div>
       <div class="form-control">
         <label class="label">
           <span class="label-text font-bold">
             ອັດຕາດອກເບ້ຍ (%)
-            <span class="text-primary font-normal ml-1">{{ data.interestRateType === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>:
+            <span class="text-primary font-normal ml-1">{{ data.interestRateType === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)'
+              }}</span>:
           </span>
         </label>
-        <input v-model.number="data.interestRate" type="number" step="0.01" :readonly="!isEditing" @input="$emit('recalculate')" class="input input-sm input-bordered w-full" />
+        <input v-model.number="data.interestRate" type="number" step="0.01" :readonly="!isEditing"
+          @input="$emit('recalculate')" class="input input-sm input-bordered w-full" />
       </div>
 
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ຈຳນວນງວດທີ່ກູ້ (ເດືອນ):</span></label>
-        <input v-model.number="data.loanTerm" type="number" :readonly="!isEditing" @input="$emit('recalculate')" class="input input-sm input-bordered w-full" />
+        <input v-model.number="data.loanTerm" type="number" :readonly="!isEditing" @input="$emit('recalculate')"
+          class="input input-sm input-bordered w-full" />
       </div>
       <div class="form-control">
         <label class="label"><span class="label-text font-bold text-primary">ຈຳນວນດອກເບ້ຍທັງໝົດ (ກີບ):</span></label>
-        <input :value="formatPrice(data.totalInterest)" type="text" readonly class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
+        <input :value="formatPrice(data.totalInterest)" type="text" readonly
+          class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
       </div>
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ຄ່າທຳນຽມ CIB/ອື່ນໆ (ກີບ):</span></label>
-        <input :value="formatCurrencyInput(data.fee)" @input="handleCurrencyInput('fee', $event)" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+        <input :value="formatCurrencyInput(data.fee)" @input="handleCurrencyInput('fee', $event)" type="text"
+          :readonly="!isEditing" class="input input-sm input-bordered w-full" />
       </div>
 
       <div class="form-control">
         <label class="label"><span class="label-text font-bold text-primary">ຄ່າງວດລາຍເດືອນ (ກີບ):</span></label>
-        <input :value="formatPrice(data.monthlyPayment)" type="text" readonly class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
+        <input :value="formatPrice(data.monthlyPayment)" type="text" readonly
+          class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
       </div>
       <div class="form-control">
-        <label class="label"><span class="label-text font-bold text-primary">ຄ່າງວດເດືອນທຳອິດ (+ຄ່າທຳນຽມ):</span></label>
-        <input :value="formatPrice(data.firstInstallment)" type="text" readonly class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
+        <label class="label"><span class="label-text font-bold text-primary">ຄ່າງວດເດືອນທຳອິດ
+            (+ຄ່າທຳນຽມ):</span></label>
+        <input :value="formatPrice(data.firstInstallment)" type="text" readonly
+          class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />
       </div>
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ມື້ກຳນົດການຊຳລະ (ທຸກວັນທີ):</span></label>
-        <input v-model.number="data.paymentDay" type="number" min="1" max="31" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+        <input v-model.number="data.paymentDay" type="number" min="1" max="31" :readonly="!isEditing"
+          class="input input-sm input-bordered w-full" />
       </div>
 
       <template v-if="productType.motorcycle">
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ເລກຈັກ (ລົດຈັກ):</span></label>
-          <input v-model="data.motorcycle.motorId" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+          <input v-model="data.motorcycle.motorId" type="text" :readonly="!isEditing"
+            class="input input-sm input-bordered w-full" />
         </div>
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ສີລົດ (ລົດຈັກ):</span></label>
-          <input v-model="data.motorcycle.motorColor" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+          <input v-model="data.motorcycle.motorColor" type="text" :readonly="!isEditing"
+            class="input input-sm input-bordered w-full" />
         </div>
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ເລກຖັງ (ລົດຈັກ):</span></label>
-          <input v-model="data.motorcycle.tankNumber" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+          <input v-model="data.motorcycle.tankNumber" type="text" :readonly="!isEditing"
+            class="input input-sm input-bordered w-full" />
         </div>
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ໄລຍະຮັບປະກັນລົດ (ເດືອນ):</span></label>
-          <input v-model.number="data.motorcycle.motorWarranty" type="number" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+          <input v-model.number="data.motorcycle.motorWarranty" type="number" :readonly="!isEditing"
+            class="input input-sm input-bordered w-full" />
         </div>
       </template>
     </div>

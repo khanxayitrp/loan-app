@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Mobile menu button (always visible on mobile) -->
     <button
       type="button"
       class="btn btn-text btn-square sm:hidden fixed top-4 left-4 z-30"
@@ -9,7 +8,6 @@
       <span class="icon-[tabler--menu-2] size-6"></span>
     </button>
 
-    <!-- Backdrop (only on mobile when open) -->
     <transition name="fade">
       <div
         v-if="isMobileOpen"
@@ -18,7 +16,6 @@
       ></div>
     </transition>
 
-    <!-- Sidebar -->
     <aside
       id="collapsible-mini-sidebar"
       :class="[
@@ -32,20 +29,18 @@
         'sm:translate-x-0 sm:shadow-none' // desktop override
       ]"
     >
-      <!-- Header -->
       <div
         class="drawer-header py-4 flex items-center justify-between border-b border-base-content/10"
         :class="{ 'px-4': isMinified && !isMobileOpen, 'px-6': !isMinified || isMobileOpen }"
       >
         <h3
-          class="text-xl font-bold transition-all"
+          class="text-xl font-bold transition-all text-primary"
           :class="{ 'opacity-0 w-0': isMinified && !isMobileOpen }"
         >
-          ອິນຊີ Loan
+          INSEE LOAN
         </h3>
 
         <div class="flex items-center gap-2">
-          <!-- Mobile close -->
           <button
             type="button"
             class="btn btn-circle btn-text sm:hidden"
@@ -54,7 +49,6 @@
             <span class="icon-[tabler--x] size-5"></span>
           </button>
 
-          <!-- Desktop minify toggle -->
           <button
             type="button"
             class="btn btn-circle btn-text hidden sm:flex"
@@ -66,12 +60,10 @@
         </div>
       </div>
 
-      <!-- Menu body -->
       <div class="flex-grow overflow-y-auto px-2 pt-4">
         <ul class="menu p-0 gap-1">
           <template v-for="item in menuItems" :key="item.label">
             <template v-if="!item.permission || can(item.permission)">
-              <!-- Normal menu item (no children) -->
               <li v-if="!item.children">
                 <router-link
                   :to="item.to"
@@ -92,7 +84,6 @@
                 </router-link>
               </li>
 
-              <!-- Dropdown menu item (with children) -->
               <li
                 v-else
                 class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:8] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]"
@@ -140,44 +131,8 @@
             </template>
           </template>
 
-          <!-- Apps Dropdown (example) -->
-          <li
-            v-if="can('view_apps')"
-            class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:15] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]"
-          >
-            <button
-              type="button"
-              class="dropdown-toggle w-full flex items-center gap-4 p-3 rounded-lg hover:bg-base-200"
-              aria-haspopup="menu"
-              aria-expanded="false"
-            >
-              <span class="icon-[tabler--apps] size-6 shrink-0"></span>
-              <span class="whitespace-nowrap transition-all flex-grow text-left overlay-minified:hidden">
-                Apps
-              </span>
-              <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform dropdown-open:rotate-180 overlay-minified:hidden"></span>
-            </button>
+          <div class="divider my-2"></div>
 
-            <ul
-              class="dropdown-menu mt-0 shadow-none overlay-minified:shadow-md overlay-minified:shadow-base-300/20 dropdown-open:opacity-100 hidden min-w-60 overlay-minified:before:absolute overlay-minified:before:-start-4 overlay-minified:before:top-0 overlay-minified:before:h-full overlay-minified:before:w-4 before:bg-transparent"
-              role="menu"
-            >
-              <li>
-                <a href="#" @click.prevent="closeMobileIfOpen" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-200">
-                  <span class="icon-[tabler--mail] size-5"></span>
-                  Email
-                </a>
-              </li>
-              <li>
-                <a href="#" @click.prevent="closeMobileIfOpen" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-200">
-                  <span class="icon-[tabler--calendar] size-5"></span>
-                  Calendar
-                </a>
-              </li>
-            </ul>
-          </li>
-
-          <!-- Sign Out -->
           <li>
             <a
               href="#"
@@ -186,7 +141,7 @@
             >
               <span class="icon-[tabler--logout-2] size-6 shrink-0"></span>
               <span :class="{ 'opacity-0 w-0': isMinified && !isMobileOpen }">
-                Sign Out
+                ອອກຈາກລະບົບ
               </span>
             </a>
           </li>
@@ -197,7 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePermission } from '@/composables/usePermission'
 import { useAuthStore } from '@/stores/auth'
@@ -210,15 +165,22 @@ const { can } = usePermission()
 const isMinified = ref(false)
 const isMobileOpen = ref(false)
 
+// 🟢 อัปเดต Menu Items ให้สอดคล้องกับ Route และ Permission ล่าสุด
 const menuItems = [
   {
-    label: 'Home',
-    icon: 'icon-[tabler--home]',
-    to: '/users',
-    permission: 'user_manage'
+    label: 'Dashboard',
+    icon: 'icon-[tabler--layout-dashboard]',
+    to: '/dashboard',
+    permission: 'view_admin_dashboard' // 👈 Admin/Staff Dashboard
   },
   {
-    label: 'Account',
+    label: 'ຮ້ານຄ້າ Dashboard',
+    icon: 'icon-[tabler--device-analytics]',
+    to: '/partner-dashboard',
+    permission: 'view_partner_dashboard' // 👈 Partner Dashboard
+  },
+  {
+    label: 'ຈັດການຜູ້ໃຊ້ (Account)',
     icon: 'icon-[tabler--user]',
     permission: 'user_manage',
     children: [
@@ -243,7 +205,7 @@ const menuItems = [
     ]
   },
   {
-    label: 'Manage Loans',
+    label: 'ຄຳຂໍສິນເຊື່ອ (Loans)',
     icon: 'icon-[tabler--report-money]',
     permission: 'loan_view_all',
     children: [
@@ -271,15 +233,13 @@ const menuItems = [
         to: '/repaymentLoans',
         permission: 'loan_approve'
       },
-
     ]
   },
   {
-    label: 'Draft Contract Loans',
+    label: 'ຮ່າງສິນເຊື່ອ (Draft Loans)',
     icon: 'icon-[tabler--apps-filled]',
     permission: 'loan_view_all',
     children: [
-
       {
         label: 'Create Draft',
         icon: 'icon-[tabler--clipboard-plus]',
@@ -301,9 +261,8 @@ const menuItems = [
     ]
   },
   {
-    label: 'Product',
+    label: 'ຈັດການສິນຄ້າ (Product)',
     icon: 'icon-[tabler--shopping-bag]',
-    // to: '/products',
     permission: 'partner_manage',
     children: [
       {
@@ -321,7 +280,7 @@ const menuItems = [
     ]
   },
   {
-    label: 'Store',
+    label: 'ຈັດການຮ້ານ (Store)',
     icon: 'icon-[tabler--building-store]',
     to: '/stores',
     permission: 'partner_manage'

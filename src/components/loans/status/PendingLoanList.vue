@@ -66,9 +66,9 @@
             <td>
               <div class="flex items-center gap-2">
                 <span class="font-medium" :class="!loan.credit_score ? 'text-gray-400' : ''">{{ loan.credit_score || '-'
-                }}</span>
-                <div v-if="loan.status !== 'approved' && loan.status !== 'rejected' && isSalesOrOfficer" class="tooltip tooltip-top"
-                  data-tip="ຄຳນວນຄະແນນ">
+                  }}</span>
+                <div v-if="loan.status !== 'approved' && loan.status !== 'rejected' && isSalesOrOfficer"
+                  class="tooltip tooltip-top" data-tip="ຄຳນວນຄະແນນ">
                   <button class="btn btn-circle btn-text btn-xs transition-all text-primary hover:bg-primary/10"
                     @click="openCreditScoreModal(loan)">
                     <span class="icon-[tabler--calculator] size-4"></span>
@@ -109,7 +109,8 @@
                   </button>
                 </div>
 
-                <div v-if="loan.credit_score && loan.credit_score >= 65 && loan.status === 'verified' && isApproverGroup"
+                <div
+                  v-if="loan.credit_score && loan.credit_score >= 65 && loan.status === 'verified' && isApproverGroup"
                   class="tooltip tooltip-top" data-tip="ອະນຸມັດສິນເຊື່ອ">
                   <button class="btn btn-circle btn-text btn-sm text-success hover:bg-success/10"
                     @click="approveLoan(loan)">
@@ -117,8 +118,7 @@
                   </button>
                 </div>
 
-                <div
-                  v-if="loan.status !== 'approved' && loan.status !== 'rejected' && isApproverGroup"
+                <div v-if="loan.status !== 'approved' && loan.status !== 'rejected' && isApproverGroup"
                   class="tooltip tooltip-top" data-tip="ປະຕິເສດ">
                   <button class="btn btn-circle btn-text btn-sm text-error hover:bg-error/10" @click="rejectLoan(loan)">
                     <span class="icon-[tabler--x] size-5"></span>
@@ -600,9 +600,9 @@ const confirmApproveLoan = async () => {
     fetchData();
   } catch (error: any) {
     const errorMsg = error.response?.data?.message
-                  || error.response?.data?.error
-                  || error.message
-                  || 'ເກີດຂໍ້ຜິດພາດໃນການອະນຸມັດ';
+      || error.response?.data?.error
+      || error.message
+      || 'ເກີດຂໍ້ຜິດພາດໃນການອະນຸມັດ';
 
     alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!', errorMsg);
   } finally { loanToAction.value = null; }
@@ -658,4 +658,3 @@ const fetchData = async () => {
 
 onMounted(() => { fetchData(); });
 </script>
-

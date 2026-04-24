@@ -1,13 +1,10 @@
 <template>
   <div>
-
     <nav class="navbar bg-base-100 rounded-box shadow-base-300/20 shadow-sm">
       <div class="flex flex-1 items-center">
-        <!-- <a class="link text-base-content link-neutral text-xl font-bold no-underline" href="#">
-          FlyonUI
-        </a> -->
       </div>
       <div class="navbar-end flex items-center gap-4">
+
         <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
           <button id="dropdown-scrollable" type="button"
             class="dropdown-toggle btn btn-text btn-circle dropdown-open:bg-base-content/10 size-10"
@@ -24,69 +21,8 @@
             </div>
             <div class="overflow-auto text-base-content/80 max-h-56 max-md:max-w-60">
               <div class="dropdown-item">
-                <div class="avatar avatar-away-bottom">
-                  <div class="w-10 rounded-full">
-                    <img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-1.png" alt="avatar 1" />
-                  </div>
-                </div>
                 <div class="w-60">
-                  <h6 class="truncate text-base">Charles Franklin</h6>
-                  <small class="text-base-content/50 truncate">Accepted your connection</small>
-                </div>
-              </div>
-              <div class="dropdown-item">
-                <div class="avatar">
-                  <div class="w-10 rounded-full">
-                    <img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-2.png" alt="avatar 2" />
-                  </div>
-                </div>
-                <div class="w-60">
-                  <h6 class="truncate text-base">Martian added moved Charts & Maps task to the done board.</h6>
-                  <small class="text-base-content/50 truncate">Today 10:00 AM</small>
-                </div>
-              </div>
-              <div class="dropdown-item">
-                <div class="avatar avatar-online-bottom">
-                  <div class="w-10 rounded-full">
-                    <img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-8.png" alt="avatar 8" />
-                  </div>
-                </div>
-                <div class="w-60">
-                  <h6 class="truncate text-base">New Message</h6>
-                  <small class="text-base-content/50 truncate">You have new message from Natalie</small>
-                </div>
-              </div>
-              <div class="dropdown-item">
-                <div class="avatar avatar-placeholder">
-                  <div class="bg-neutral text-neutral-content w-10 rounded-full p-2">
-                    <span class="icon-[tabler--user] size-full"></span>
-                  </div>
-                </div>
-                <div class="w-60">
-                  <h6 class="truncate text-base">Application has been approved 🚀</h6>
-                  <small class="text-base-content/50 text-wrap">Your ABC project application has been approved.</small>
-                </div>
-              </div>
-              <div class="dropdown-item">
-                <div class="avatar">
-                  <div class="w-10 rounded-full">
-                    <img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-10.png" alt="avatar 10" />
-                  </div>
-                </div>
-                <div class="w-60">
-                  <h6 class="truncate text-base">New message from Jane</h6>
-                  <small class="text-base-content/50 text-wrap">Your have new message from Jane</small>
-                </div>
-              </div>
-              <div class="dropdown-item">
-                <div class="avatar">
-                  <div class="w-10 rounded-full">
-                    <img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-3.png" alt="avatar 3" />
-                  </div>
-                </div>
-                <div class="w-60">
-                  <h6 class="truncate text-base">Barry Commented on App review task.</h6>
-                  <small class="text-base-content/50 truncate">Today 8:32 AM</small>
+                  <h6 class="truncate text-base">No new notifications</h6>
                 </div>
               </div>
             </div>
@@ -96,73 +32,77 @@
             </a>
           </div>
         </div>
+
         <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
-          <button id="dropdown-scrollable" type="button" class="dropdown-toggle flex items-center" aria-haspopup="menu"
+          <button id="dropdown-avatar" type="button" class="dropdown-toggle flex items-center" aria-haspopup="menu"
             aria-expanded="false" aria-label="Dropdown">
             <div class="avatar">
-              <div class="size-9.5 rounded-full">
-                <img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-1.png" alt="avatar 1" />
+              <div class="size-9.5 rounded-full bg-base-300">
+                <img :src="authStore.user?.avatar || 'https://cdn.flyonui.com/fy-assets/avatar/avatar-1.png'"
+                  alt="avatar" />
               </div>
             </div>
           </button>
+
           <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-60" role="menu" aria-orientation="vertical"
             aria-labelledby="dropdown-avatar">
+
             <li class="dropdown-header gap-2">
               <div class="avatar">
-                <div class="w-10 rounded-full">
-                  <img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-1.png" alt="avatar" />
+                <div class="w-10 rounded-full bg-base-300">
+                  <img :src="authStore.user?.avatar || 'https://cdn.flyonui.com/fy-assets/avatar/avatar-1.png'"
+                    alt="avatar" />
                 </div>
               </div>
               <div>
-                <h6 class="text-base-content text-base font-semibold">John Doe</h6>
-                <small class="text-base-content/50">Admin</small>
+                <h6 class="text-base-content text-base font-semibold">
+                  {{ authStore.user?.full_name || 'Loading...' }}
+                </h6>
+                <small class="text-base-content/50 capitalize">
+                  {{ authStore.user?.role || 'User' }}
+                </small>
               </div>
             </li>
-            <li>
-              <a class="dropdown-item" href="#">
-                <span class="icon-[tabler--user]"></span>
-                My Profile
-              </a>
-            </li>
+
             <li>
               <router-link class="dropdown-item" to="/changeMyPassword">
                 <span class="icon-[tabler--password-user]"></span>
                 Change My Password
               </router-link>
             </li>
-            <li>
-              <a class="dropdown-item" href="#">
-                <span class="icon-[tabler--settings]"></span>
-                Settings
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="#">
-                <span class="icon-[tabler--receipt-rupee]"></span>
-                Billing
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="#">
-                <span class="icon-[tabler--help-triangle]"></span>
-                FAQs
-              </a>
-            </li>
+
             <li class="dropdown-footer gap-2">
-              <a class="btn btn-error btn-soft btn-block" href="#">
+              <button class="btn btn-error btn-soft btn-block" @click="handleLogout">
                 <span class="icon-[tabler--logout]"></span>
                 Sign out
-              </a>
+              </button>
             </li>
+
           </ul>
         </div>
       </div>
     </nav>
-
   </div>
 </template>
 
-
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+// ⚠️ ປ່ຽນ Path ນີ້ໃຫ້ກົງກັບທີ່ຢູ່ Store ຈິງຂອງທ່ານ
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+// ຟັງຊັນສຳລັບການ Sign out
+const handleLogout = async () => {
+  try {
+    // ເອີ້ນໃຊ້ Action ຈາກ Store ເພື່ອລຶບ Token ຫຼື State
+    await authStore.signOut()
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout failed:', error)
+  }
+}
+
 
 </script>

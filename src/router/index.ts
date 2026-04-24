@@ -34,15 +34,31 @@ const routes: RouteRecordRaw[] = [
      }
   },
 
-  // Protected routes (ต้อง login + layout)
+  // ==========================================
+  // Protected routes (Dashboard)
+  // ==========================================
   {
     path: '/dashboard',
     name: 'DashboardHome',
-    component: () => import('@/views/dashboard/index.vue'),
+    component: () => import('@/views/dashboard/AdminDashboard.vue'),
     meta: {
-      requiresAuth: true
+      requiresAuth: true,
+      permission: 'view_admin_dashboard' // 🟢 ໃຊ້ສິດໃໝ່ທີ່ເພີ່ມໃນ DB
     }
   },
+  {
+    path: '/partner-dashboard',
+    name: 'PartnerDashboard',
+    component: () => import('@/views/dashboard/PartnerDashboard.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: 'view_partner_dashboard' // 🟢 ໃຊ້ສິດໃໝ່ທີ່ເພີ່ມໃນ DB
+    }
+  },
+
+  // ==========================================
+  // Protected routes (ອື່ນໆ)
+  // ==========================================
   {
     path: '/users',
     name: 'UserManagement',
@@ -215,7 +231,23 @@ const routes: RouteRecordRaw[] = [
   // เพิ่ม route อื่น ๆ ที่ต้องการ layout และ auth ที่นี่
   {
     path: '/',
-    redirect: '/users' // หรือหน้า default หลัง login
+    redirect: (to) => {
+      // 🟢 Redirect logic for the base URL '/'
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated) {
+        const role = authStore.currentUser?.role?.toLowerCase();
+        if (role === 'admin') return { name: 'DashboardHome' };
+        if (role === 'partner') return { name: 'PartnerDashboard' };
+        if (role === 'staff') {
+          const permissionStore = usePermissionStore();
+          // ເຊັກວ່າ Staff ມີສິດເບິ່ງ Dashboard ບໍ່ ຖ້າບໍ່ມີໃຫ້ໄປໜ້າສິນເຊື່ອ
+          if (permissionStore.hasPermission('view_admin_dashboard')) return { name: 'DashboardHome' };
+          if (permissionStore.hasPermission('loan_view_all')) return { name: 'LoanListAll' };
+          return { name: 'PendingLoans' };
+        }
+      }
+      return { name: 'Login' };
+    }
   },
 
 
@@ -227,74 +259,6 @@ const router = createRouter({
   routes
 })
 
-// // Global Navigation Guard: Auth + Permission Check
-// router.beforeEach(async (to, from, next) => {
-//   const authStore = useAuthStore()
-
-//   // 1. ✅ ข้ามการเช็ค auth สำหรับ blank layout pages
-//   if (to.meta.layout === 'blank' && !to.meta.requiresAuth) {
-//     next()
-//     return
-//   }
-
-//   // 1. ข้ามการเช็ค auth ถ้า route นี้ bypassAuth = true
-//   if (to.meta.bypassAuth) {
-//     next()
-//     return
-//   }
-
-//   // 2. ถ้าไปหน้า login แต่ login อยู่แล้ว → redirect ตาม role
-//   if (to.path === '/login' && authStore.isAuthenticated) {
-//     const user = authStore.currentUser
-
-//     if (user?.role === 'admin') {
-//       next({ name: 'UserManagement' })
-//     } else if ( user?.role === 'staff') {
-//       const permissionStore = usePermissionStore()
-//       if (permissionStore.hasPermission('loan_view_all')) {
-//         next({ name: 'LoanListAll' })
-//       } else if (permissionStore.hasPermission('loan_view_assigned')) {
-//         next({ name: 'ListLoans' })
-//       } else {
-//         next({ name: 'DashboardHome' }) // ไม่มีสิทธิ์เลยให้ไป Dashboard
-//       }
-//     }
-//     else if (user?.role === 'partner') {
-//       next({ name: 'Stores' })
-//     } else {
-//       next({ name: 'PendingLoans' })
-//     }
-//     return
-//   }
-
-//   // 2. เช็คว่าต้อง login ก่อนไหม
-//   if (to.meta.requiresAuth) {
-//     // ถ้ายังไม่ login → redirect ไป login
-//     if (!authStore.isAuthenticated || authStore.isTokenExpired) {
-//       const isValid = await authStore.checkAuth()
-//       if (!isValid) {
-//         // ยังไม่ login หรือ token ไม่ valid
-//         next({ path: '/login', query: { redirect: to.fullPath } })
-//         return
-//       }
-
-//     }
-
-//     // ถ้า login แล้ว แต่มี permission → เช็คสิทธิ์
-//     if (to.meta.permission) {
-//       const permissionStore = usePermissionStore()
-//       const required = to.meta.permission as string
-
-//       if (!permissionStore.hasPermission(required)) {
-//         next('/unauthorized')
-//         return
-//       }
-//     }
-//   }
-
-//   // ถ้าผ่านทุกอย่าง → ไปต่อ
-//   next()
-// })
 // ປັບປຸງສ່ວນ router.beforeEach ໃນ src/router/index.ts
 
 router.beforeEach(async (to, from, next) => {
@@ -314,13 +278,14 @@ router.beforeEach(async (to, from, next) => {
     const role = user?.role?.toLowerCase()
 
     // ບັງຄັບ Redirect ໄປໜ້າທີ່ຄວນຈະຢູ່ຕາມ Role (ໃຊ້ return ເພື່ອຢຸດການເຮັດວຽກ)
-    if (role === 'admin') return next({ name: 'UserManagement' })
+    if (role === 'admin') return next({ name: 'DashboardHome' }) // 👈 Changed this line to point Admin to DashboardHome
+    if (role === 'partner') return next({ name: 'PartnerDashboard' })
     if (role === 'staff') {
       if (permissionStore.hasPermission('loan_view_all')) return next({ name: 'LoanListAll' })
       if (permissionStore.hasPermission('loan_view_assigned')) return next({ name: 'ListLoans' })
       return next({ name: 'DashboardHome' })
     }
-    if (role === 'partner') return next({ name: 'Stores' })
+    // if (role === 'partner') return next({ name: 'Stores' })
 
     return next({ name: 'PendingLoans' })
   }
@@ -362,186 +327,3 @@ export default router
 
 
 
-
-
-// // src/router/index.ts
-// import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-// import type { NavigationGuard } from 'vue-router'
-
-// // 1. กำหนด Route ทั้งหมด
-// const routes: Array<RouteRecordRaw> = [
-//   // Auth Routes
-//   {
-//     path: '/login',
-//     name: 'Login',
-//     component: () => import('@/views/auth/Login.vue'),
-//     meta: { skipAuth: true }
-//   },
-//   {
-//     path: '/register',
-//     name: 'Register',
-//     component: () => import('@/views/auth/Register.vue'),
-//     meta: { skipAuth: true, requiresRegistrationToken: true }
-//   },
-
-//   // Public Routes
-//   {
-//     path: '/',
-//     name: 'Home',
-//     redirect: '/dashboard'
-//   },
-//   {
-//     path: '/about',
-//     name: 'About',
-//     component: () => import('@/views/About.vue'),
-//     meta: { skipAuth: true }
-//   },
-
-//   // Protected Routes (ต้องล็อกอิน)
-//   {
-//     path: '/dashboard',
-//     name: 'Dashboard',
-//     component: () => import('@/layouts/DefaultLayout.vue'),
-//     meta: { requiresAuth: true },
-//     children: [
-//       {
-//         path: '',
-//         name: 'DashboardHome',
-//         component: () => import('@/views/dashboard/Index.vue')
-//       },
-//       {
-//         path: 'loans',
-//         name: 'LoanList',
-//         component: () => import('@/views/loans/List.vue'),
-//         meta: { permission: 'view_loans' }
-//       },
-//       {
-//         path: 'loans/create',
-//         name: 'LoanCreate',
-//         component: () => import('@/views/loans/Create.vue'),
-//         meta: { permission: 'create_loan' }
-//       },
-//       {
-//         path: 'users',
-//         name: 'UserManagement',
-//         component: () => import('@/views/users/Index.vue'),
-//         meta: { permission: 'manage_users' }
-//       }
-//     ]
-//   },
-
-//   // Error Pages
-//   {
-//     path: '/unauthorized',
-//     name: 'Unauthorized',
-//     component: () => import('@/views/errors/Unauthorized.vue'),
-//     meta: { skipAuth: true }
-//   },
-//   {
-//     path: '/:pathMatch(.*)*',
-//     name: 'NotFound',
-//     component: () => import('@/views/errors/NotFound.vue'),
-//     meta: { skipAuth: true }
-//   }
-// ]
-
-// // 2. สร้าง Router Instance
-// const router = createRouter({
-//   history: createWebHistory(),
-//   routes,
-//   scrollBehavior(to, from, savedPosition) {
-//     if (savedPosition) {
-//       return savedPosition
-//     } else {
-//       return { top: 0 }
-//     }
-//   }
-// })
-
-// // 3. Route Guards
-// const authGuard: NavigationGuard = async (to, from, next) => {
-//   const authStore = useAuthStore()
-//   const isAuthenticated = await authStore.checkAuth()
-
-//   if (to.meta.requiresAuth && !isAuthenticated) {
-//     next({ name: 'Login', query: { redirect: to.fullPath } })
-//   } else if (to.meta.skipAuth && isAuthenticated) {
-//     next({ name: 'DashboardHome' })
-//   } else {
-//     next()
-//   }
-// }
-
-// const permissionGuard: NavigationGuard = (to, from, next) => {
-//   if (to.meta.permission) {
-//     const permissionStore = usePermissionStore()
-//     const requiredPermission = to.meta.permission as string
-
-//     if (permissionStore.hasPermission(requiredPermission)) {
-//       next()
-//     } else {
-//       next({ name: 'Unauthorized' })
-//     }
-//   } else {
-//     next()
-//   }
-// }
-
-// const registrationTokenGuard: NavigationGuard = (to, from, next) => {
-//   if (to.meta.requiresRegistrationToken) {
-//     const token = to.query.token as string | undefined
-//     const productId = to.query.productId as string | undefined
-
-//     if (!token || !productId) {
-//       next({ name: 'Login' })
-//       return
-//     }
-
-//     // ใน production ควรตรวจสอบ token กับ backend
-//     next()
-//   } else {
-//     next()
-//   }
-// }
-
-// // 4. ใช้งาน Guards
-// router.beforeEach(authGuard)
-// router.beforeEach(permissionGuard)
-// router.beforeEach(registrationTokenGuard)
-
-// export default router
-
-
-
-// import { createRouter, createWebHistory } from 'vue-router'
-// import type { RouteRecordRaw } from 'vue-router'
-
-// const routes: RouteRecordRaw[] = [
-//   // เปลี่ยน redirect
-//   {
-//     path: '/',
-//     redirect: '/login'
-//   },
-//   {
-//     path: '/login',
-//     name: 'Login',
-//     component: () => import('../views/login.vue')
-//   },
-//   // {
-//   //   path: '/about',
-//   //   name: 'about',
-//   //   component: () => import('../views/AboutView.vue')
-//   // }
-// ]
-
-// const router = createRouter({
-//   history: createWebHistory(import.meta.env.BASE_URL),
-//   routes
-// })
-
-// // router.afterEach((to, from, failure) => {
-// //   if (!failure) {
-// //     setTimeout(() => window.HSStaticMethods.autoInit(), 100);  // Reinit FlyonUI JS หลังเปลี่ยนหน้า
-// //   }
-// // });
-// export default router

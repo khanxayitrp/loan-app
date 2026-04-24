@@ -4,8 +4,9 @@ export interface User {
   username: string
   full_name: string
   role: 'admin' | 'staff' | 'partner' | 'customer'
-  staff_level?: 'requester' | 'approver' | 'credit_manager' | 'deputy_director' | 'none' ;
-  is_active?: boolean | number 
+  staff_level?:  'approver' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'none' ;
+  is_active?: boolean | number
+  avatar?: string; // 🟢 ເພີ່ມບັນທັດນີ້ເຂົ້າໄປ (ໃຊ້ ? ໝາຍຄວາມວ່າ ອາດຈະມີ ຫຼື ບໍ່ມີກໍໄດ້)
   created_at?: string
   updated_at?: string
   createdAt?: string

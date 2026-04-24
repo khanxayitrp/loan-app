@@ -1,7 +1,7 @@
 <template>
   <section class="form-section">
     <h3 class="section-title">I. ຂໍ້ມູນສ່ວນຕົວລູກຄ້າ</h3>
-    
+
     <div class="mb-5 bg-slate-50 p-5 rounded-xl border border-slate-200">
       <h4 class="font-bold text-primary mb-4 flex items-center gap-2">
         <span class="icon-[tabler--user] size-5"></span> ຂໍ້ມູນທົ່ວໄປ
@@ -91,7 +91,7 @@
           <label class="label"><span class="label-text font-bold">ໜ່ວຍ:</span></label>
           <input v-model="data.unit" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full bg-white" />
         </div>
-        
+
         <div class="md:col-span-4">
           <div class="address-grid-custom mt-1">
             <div class="input-sub">
@@ -107,11 +107,11 @@
             </div>
             <div class="input-sub">
               <span class="font-bold">ເມືອງ:</span>
-              <select v-model="data.address.district_id" :disabled="!isEditing || !data.address.province_id" 
+              <select v-model="data.address.district_id" :disabled="!isEditing || !data.address.province_id"
                       @change="handleDistrictChange"
                       class="select-addr select-sm select-bordered w-full bg-white">
                 <option value="">-- ເລືອກເມືອງ --</option>
-                <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">{{ d.district_name }}</option>
+                <option v-for="d in localDistricts" :key="d.district_id" :value="d.district_id">{{ d.district_name }}</option>
               </select>
             </div>
           </div>
@@ -143,14 +143,34 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { ref, watch, onMounted } from 'vue' // 🟢 ຢ່າລືມ import ref ແລະ onMounted
 import { useAddressStore } from '@/stores/address'
 
 const props = defineProps<{ data: any, isEditing: boolean }>()
 const addressStore = useAddressStore()
 
+// 🟢 1. ສ້າງຕົວແປເກັບລາຍຊື່ເມືອງສະເພາະຂອງ Component ນີ້
+const localDistricts = ref<any[]>([])
+
+// 🟢 2. ຟັງຊັນໂຫຼດເມືອງມາເກັບໄວ້ສະເພາະໂຕ
+const loadLocalDistricts = async (provinceId: string) => {
+  if (!provinceId) {
+    localDistricts.value = [];
+    return;
+  }
+  await addressStore.fetchDistricts(provinceId);
+  localDistricts.value = [...addressStore.districts]; // ກັອບປີ້ລາຍຊື່ແຍກອອກມາ
+}
+
+// 🟢 3. ຕອນໂຫຼດໜ້າທຳອິດ ຖ້າມີແຂວງແລ້ວ ໃຫ້ດຶງເມືອງມາເລີຍ
+onMounted(async () => {
+  if (props.data.address?.province_id) {
+    await loadLocalDistricts(props.data.address.province_id);
+  }
+});
+
 const handleDistrictChange = () => {
-  const d = addressStore.districts.find(x => x.district_id === props.data.address.district_id);
+  const d = localDistricts.value.find(x => x.district_id === props.data.address.district_id);
   if (d) props.data.address.district = d.district_name;
 };
 
@@ -160,7 +180,24 @@ watch(() => props.data.address.province_id, async (newVal) => {
     props.data.address.district = '';
     const p = addressStore.provinces.find(x => x.province_id === newVal);
     props.data.address.province = p ? p.province_name : '';
-    if (newVal) await addressStore.fetchDistricts(newVal);
+    if (newVal) await loadLocalDistricts(newVal);
+  }
+});
+// 🟢 1. ເພີ່ມຟັງຊັນຄິດໄລ່ອາຍຸ
+const calculateAge = (dob: string): number | null => {
+  if (!dob) return null;
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
+  return age;
+};
+
+// 🟢 2. ເພີ່ມ Watcher ໃຫ້ຕິດຕາມການປ່ຽນແປງຂອງວັນເກີດ
+watch(() => props.data.dob, (newDob) => {
+  if (props.isEditing && newDob) {
+    props.data.age = calculateAge(newDob);
   }
 });
 </script>

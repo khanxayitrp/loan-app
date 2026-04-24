@@ -115,18 +115,21 @@ const handleLogin = async () => {
       const role = user.role.toLowerCase()
 
       if (role === 'admin') {
-        router.replace({ name: 'UserManagement' })
-      } else if (role === 'staff') {
-        if (permissionStore.hasPermission('loan_view_all')) {
-          router.replace({ name: 'LoanListAll' })
-        } else if (permissionStore.hasPermission('loan_view_assigned')) {
-          router.replace({ name: 'ListLoans' })
-        } else {
-          router.replace({ name: 'DashboardHome' })
-        }
+        router.replace({ name: 'DashboardHome' })
       } else if (role === 'partner') {
-        router.replace({ name: 'Stores' })
+      router.replace({ name: 'PartnerDashboard' }); // 👈 Partner ໄປ Partner Dashboard
+    } else if (role === 'staff') {
+        // 👈 ສຳລັບ Staff ເຊັກຕາມສິດທີ່ພວກເຂົາມີ
+      if (permissionStore.hasPermission('view_admin_dashboard')) {
+        router.replace({ name: 'DashboardHome' });
+      } else if (permissionStore.hasPermission('loan_view_all')) {
+        router.replace({ name: 'LoanListAll' });
+      } else if (permissionStore.hasPermission('loan_view_assigned')) {
+        router.replace({ name: 'ListLoans' });
       } else {
+        router.replace({ name: 'PendingLoans' }); // ຄ່າເລີ່ມຕົ້ນຂອງ Staff
+      }
+      }  else {
         router.replace({ name: 'PendingLoans' })
       }
     }
