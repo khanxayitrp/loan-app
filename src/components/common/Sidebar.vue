@@ -225,13 +225,13 @@ const menuItems = [
         label: 'Approved',
         icon: 'icon-[tabler--check]',
         to: '/approvedLoans',
-        permission: 'loan_approve'
+        permission: 'loan_view_assigned'
       },
       {
         label: 'Repayment',
         icon: 'icon-[material-symbols--paid-outline]',
         to: '/repaymentLoans',
-        permission: 'loan_approve'
+        permission: 'loan_view_assigned'
       },
     ]
   },

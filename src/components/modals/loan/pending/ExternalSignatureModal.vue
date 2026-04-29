@@ -186,11 +186,8 @@ const fetchReferenceId = async () => {
 
       // ==============================================
       // 🟢 ໂລຈິກປອກເປືອກຂໍ້ມູນແບບໄຮ້ທຽມທານ (Invincible Unwrapping)
-      // ມັນຈະແກະ .data ເຂົ້າໄປເລິກໆ ຈົນກວ່າຈະຮອດຂໍ້ມູນແທ້ໆ
-      // ==============================================
       let extractedData: any = res;
 
-      // ວົນ Loop ແກະໄປເລື້ອຍໆ ຕາບໃດທີ່ຍັງມີຊັ້ນ 'data' ຫໍ່ຢູ່ຂ້າງໃນ
       while (extractedData && typeof extractedData === 'object' && 'data' in extractedData && extractedData.data !== undefined && extractedData.data !== null) {
          extractedData = extractedData.data;
       }
@@ -211,11 +208,19 @@ const fetchReferenceId = async () => {
           break;
 
         case 'repayment_schedule':
-          if (Array.isArray(extractedData) && extractedData.length > 0) {
-             form.reference_id = extractedData[0].loan_application_id || extractedData[0].id || props.loanId;
+          // 🟢 ແກ້ໄຂໃໝ່: ຮອງຮັບ Object ທີ່ສົ່ງມາ (ເຊັ່ນ: {id: 9, application_id: 32, ...})
+          if (!Array.isArray(extractedData) && extractedData.id) {
+             form.reference_id = extractedData.id;
+             // ສະແດງຜົນໃຫ້ເຫັນເລກ ID ແຈ້ງໆເລີຍ
+             form.display_reference = `ຕາຕະລາງຜ່ອນສິນເຊື່ອ (ID: ${extractedData.id})`;
+          }
+          // ປ້ອງກັນກໍລະນີອະນາຄົດ ຖ້າ API ສົ່ງມາເປັນ Array
+          else if (Array.isArray(extractedData) && extractedData.length > 0) {
+             form.reference_id = extractedData[0].schedule_id || extractedData[0].id || props.loanId;
              form.display_reference = `ຕາຕະລາງຜ່ອນ (ງວດ ${extractedData.length})`;
           } else {
-             form.reference_id = extractedData.id || props.loanId;
+             // ຖ້າຫາບໍ່ເຫັນແທ້ໆ ໃຫ້ໃຊ້ loanId ແທນ
+             form.reference_id = props.loanId;
              form.display_reference = `ຕາຕະລາງຜ່ອນສິນເຊື່ອ`;
           }
           break;
@@ -244,7 +249,6 @@ const handleFileUpload = (event: Event) => {
   if (target.files && target.files.length > 0) {
     const file = target.files[0];
 
-    // 🛡️ STEP 1: ป้องกัน 'undefined' ด้วย Guard Clause
     if (!file) {
         console.warn("No file selected");
         return;
@@ -264,47 +268,52 @@ const handleFileUpload = (event: Event) => {
 const removeFile = () => {
   fileToUpload.value = null;
   previewUrl.value = null;
-  // ເຄຼຍ input file ໂດຍການເຂົ້າເຖິງ DOM (ຫຼືປ່ອຍໄວ້ກໍໄດ້ເພາະ v-model ບໍ່ໄດ້ຜູກກັບ input type=file)
 };
 
-// 🟢 ຟັງຊັນບັນທຶກຂໍ້ມູນ
+// 🟢 ຟັງຊັນບັນທຶກຂໍ້ມູນ (ແກ້ໄຂໃໝ່ໃຫ້ກົງກັບ Backend)
 const submitSignature = async () => {
   if (!isFormValid.value || !props.loanId) return;
 
   isSaving.value = true;
 
   try {
-    // 1. ອັບໂຫຼດຮູບພາບ
+    // 1. ແພັກຂໍ້ມູນທຸກຢ່າງເຂົ້າໃນ FormData ດຽວ
     const formData = new FormData();
+
+    // ຂໍ້ມູນເອກະສານ
+    formData.append('document_type', form.document_type);
+    formData.append('reference_id', String(form.reference_id)); // ແປງເປັນ String
+    formData.append('role_type', form.role_type);
+    formData.append('signer_name', form.signer_name);
+
+    // ໄຟລ໌ຮູບພາບ
     formData.append('file', fileToUpload.value as Blob);
-    const uploadRes = await apiClient.post('/upload/image', formData);
-    const imageUrl = uploadRes.data.file_url;
 
-    // 2. ສ້າງ Payload ສຳລັບບັນທຶກລົງຕາຕະລາງ document_signatures
-    const payload = {
-      application_id: props.loanId,
-      document_type: form.document_type,
-      reference_id: form.reference_id,
-      role_type: form.role_type,
-      signer_name: form.signer_name,
-      signature_image_url: imageUrl,
-      status: 'signed'
-    };
+    // 2. ຍິງ API ອັບໂຫຼດພ້ອມກັບຂໍ້ມູນ (ໃຊ້ Endpoint ຂອງ Backend ທີ່ກຽມໄວ້)
+    // ⚠️ ຢ່າລືມປ່ຽນ `/upload/signature/${props.loanId}` ໃຫ້ກົງກັບ Route ຂອງ Backend ທີ່ແທ້ຈິງຂອງທ່ານ
+    const response = await apiClient.post(`/upload/signature/${props.loanId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
 
-    // 3. ຍິງ API ບັນທຶກ (Backend ຄວນໃຊ້ UPSERT ເພື່ອປ້ອງກັນ Duplicate Key)
-    await apiClient.post(`/document-signatures`, payload);
-
-    alert.success('ບັນທຶກຫຼັກຖານລາຍເຊັນສຳເລັດ!');
-    emit('updated');
-    close();
+    if (response.data?.success || response.status === 201) {
+      alert.success('ບັນທຶກຫຼັກຖານລາຍເຊັນສຳເລັດ!');
+      emit('updated');
+      close();
+    } else {
+      throw new Error(response.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ');
+    }
 
   } catch (error: any) {
-    console.error('Submit error:', error);
+    console.error('Submit signature error:', error);
+
     // ດັກຈັບ Error ຈາກ Backend ຖ້າເກີດ Duplicate
     if (error.response?.status === 409 || error.response?.data?.message?.includes('Duplicate')) {
       alert.error('ຂໍ້ມູນຊ້ຳຊ້ອນ', 'ບົດບາດນີ້ໄດ້ລົງລາຍເຊັນໃນເອກະສານນີ້ໄປແລ້ວ.');
     } else {
-      alert.error('ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້', error.message || 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ');
+      const errorMsg = error.response?.data?.message || error.message || 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ';
+      alert.error('ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້', errorMsg);
     }
   } finally {
     isSaving.value = false;

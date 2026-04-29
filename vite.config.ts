@@ -25,6 +25,9 @@ export default defineConfig({
         // target: 'http://192.168.101.118:15520',
         changeOrigin: true,
       }
-    }
+    },
+    watch: {
+      usePolling: true, // ใช้ polling เพื่อให้การเปลี่ยนแปลงไฟล์ถูกตรวจจับได้ดีขึ้นในบางสภาพแวดล้อม
+    },
   }
 })

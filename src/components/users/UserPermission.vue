@@ -530,28 +530,30 @@ const getRoleBadgeClass = (role: string) => {
 // ✅ เพิ่มฟังก์ชันแสดงชื่อสิทธิ์เป็นภาษาลาว
 const getFeatureDisplayName = (featureName: string): string => {
   const displayNames: Record<string, string> = {
-    'user_view': 'ດູລາຍຊື່ຜູ້ໃຊ້',
+    'user_view': 'ເບີ່ງລາຍຊື່ຜູ້ໃຊ້',
     'user_manage': 'ຈັດການຜູ້ໃຊ້',
     'permission_manage': 'ຈັດການສິດທິ',
-    'loan_view_all': 'ດູສິນເຊື່ອທັງໝົດ',
-    'loan_view_assigned': 'ດູສິນເຊື່ອທີ່ຮັບຜິດຊອບ',
+    'loan_view_all': 'ເບີ່ງສິນເຊື່ອທັງໝົດ',
+    'loan_view_assigned': 'ເບີ່ງສິນເຊື່ອທີ່ຮັບຜິດຊອບ',
     'loan_create': 'ສ້າງສິນເຊື່ອ',
     'loan_edit': 'ແກ້ໄຂສິນເຊື່ອ',
     'loan_approve': 'ອະນຸມັດສິນເຊື່ອ',
     'loan_reject': 'ປະຕິເສດສິນເຊື່ອ',
     'doc_upload': 'ອັບໂຫຼດເອກະສານ',
-    'doc_view': 'ດູເອກະສານ',
+    'doc_view': 'ເບີ່ງເອກະສານ',
     'doc_delete': 'ລຶບເອກະສານ',
     'partner_manage': 'ຈັດການຮ້ານຄ້າ',
-    'shop_view_report': 'ດູລາຍງານ',
-    'cust_profile_view': 'ດູໂປຣໄຟລ໌',
-    'cust_loan_history': 'ດູປະວັດສິນເຊື່ອ',
+    'shop_view_report': 'ເບີ່ງລາຍງານ',
+    'cust_profile_view': 'ເບີ່ງໂປຣໄຟລ໌',
+    'cust_loan_history': 'ເບີ່ງປະວັດສິນເຊື່ອ',
     'payment_proof_upload': 'ສົ່ງຫຼັກຖານຊຳລະ',
     'user_create': 'ສ້າງຜູ້ໃຊ້ໃໝ່',
-    'payment_view': 'ດູການຊຳລະ',
+    'payment_view': 'ເບີ່ງການຊຳລະ',
     'payment_create': 'ບັນທຶກການຊຳລະ',
     'payment_verify': 'ກວດສອບການຊຳລະ',
-    'user_changepass': 'ປ່ຽນລະຫັດຜ່ານ'
+    'user_changepass': 'ປ່ຽນລະຫັດຜ່ານ',
+    'view_admin_dashboard': 'ເບີ່ງແຜງຄວບຄຸມ Admin',
+    'view_partner_dashboard': 'ເບີ່ງແຜງຄວບຄຸມ Partner',
   }
 
   return displayNames[featureName] || featureName

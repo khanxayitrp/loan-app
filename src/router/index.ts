@@ -149,7 +149,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           requiresAuth: true,
           // bypassAuth: true,
-          permission: 'loan_approve'
+          permission: 'loan_view_assigned'
         }
       },
       {
@@ -159,7 +159,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           requiresAuth: true,
           // bypassAuth: true,
-          permission: 'loan_approve'
+          permission: 'loan_view_assigned'
         }
       },
       {
@@ -169,7 +169,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           requiresAuth: true,
           // bypassAuth: true,
-          permission: 'loan_approve'
+          permission: 'loan_create'
         }
       },
       {

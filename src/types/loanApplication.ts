@@ -261,6 +261,7 @@ export interface CreateWithCustomerDto {
   loan_period: number
   interest_rate_at_apply?: number
   monthly_pay?: number
+  down_payment?: number
   // 🟢 ເພີ່ມ 2 ບັນທັດນີ້ເຂົ້າໄປ
   interest_type?: string;
   interest_rate_type?: string;

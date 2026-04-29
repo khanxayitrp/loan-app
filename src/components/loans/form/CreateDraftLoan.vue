@@ -1201,10 +1201,11 @@ const submitLoanApplication = async () => {
 
       product_id: selectedProduct.value.id,
       quantity: 1,
-      total_amount: Math.max(0, loanDetails.totalAmount - loanDetails.downPayment), // 🟢 ຍອດຈັດທີ່ແທ້ຈິງ
+      total_amount: loanDetails.totalAmount, // 🟢 ຍອດຈັດທີ່ແທ້ຈິງ
       loan_period: loanDetails.termMonths,
       interest_rate_at_apply: loanDetails.interestRate,
       monthly_pay: loanDetails.monthlyPayment,
+      down_payment: loanDetails.downPayment,
 
       interest_type: loanDetails.interestType,
       interest_rate_type: selectedProduct.value?.interest_rate_type || 'monthly',
