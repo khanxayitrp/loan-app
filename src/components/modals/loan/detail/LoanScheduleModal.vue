@@ -242,7 +242,7 @@ const generateSchedule = () => {
   const interestRate = Number(loan.interest_rate_at_apply || 0);
   const interestType = loan.interest_type || 'flat_rate';
   const rateType = loan.interest_rate_type || 'monthly';
-  const paymentDay = Number(loan.payment_day || 1);
+  const paymentDay = Number(loan.payment_day || new Date().getDate());
   const ratePerMonth = rateType === 'yearly' ? (interestRate / 12) / 100 : interestRate / 100;
 
   let currentBalance = principal;
