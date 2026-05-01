@@ -16,6 +16,16 @@
             ຄົບຖ້ວນແລ້ວແມ່ນບໍ່?
           </p>
 
+          <div class="form-control bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-4">
+            <label class="label pb-1">
+              <span class="label-text font-bold text-gray-700 dark:text-gray-300">
+                ກຳນົດວັນທີຊຳລະເງິນ (Payment Day)
+              </span>
+            </label>
+            <input v-model.number="paymentDay" type="number" min="1" max="31" class="input input-bordered w-full bg-white dark:bg-gray-800 focus:border-info focus:ring-1 focus:ring-info" placeholder="ລະບຸວັນທີ 1-31" />
+          </div>
+
+
           <div class="form-control bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
             <label class="label pb-1">
               <span class="label-text font-bold text-gray-700 dark:text-gray-300">
@@ -46,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { useAuthStore } from '@/stores/auth';
 import { LoanApplicationStatus } from '@/types/loanApplication';
@@ -59,6 +69,14 @@ const loanApplicationStore = useLoanApplicationStore();
 const authStore = useAuthStore();
 
 const verifyRemark = ref('');
+const paymentDay = ref<number | null>(null);
+
+watch(() => props.loan, (newVal) => {
+  if (newVal && newVal.payment_day) {
+    paymentDay.value = Number(newVal.payment_day);
+  }
+}, { immediate: true });
+
 const isLoading = ref(false);
 
 const customerName = computed(() => {
@@ -68,6 +86,7 @@ const customerName = computed(() => {
 
 const close = () => {
   verifyRemark.value = '';
+  paymentDay.value = null;
   emit('close');
 };
 
@@ -76,10 +95,15 @@ const submit = async () => {
   isLoading.value = true;
 
   try {
+    
     const updateData: any = {
       status: LoanApplicationStatus.VERIFIED,
       approver_id: authStore.user?.id
     };
+
+    if (paymentDay.value !== null) {
+      updateData.payment_day = paymentDay.value;
+    }
 
     if (verifyRemark.value.trim()) {
       updateData.remarks = verifyRemark.value.trim();

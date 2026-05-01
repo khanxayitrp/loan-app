@@ -34,3 +34,10 @@ coverage
 
 # Vitest
 __screenshots__/
+
+# environment variables
+.env
+.env.*
+.env.local
+.env.*.local
+

@@ -25,6 +25,17 @@ export const alert = {
       timer: 2000,
     });
   },
+  /**
+   * 🌟 เพิ่มฟังก์ชันแจ้งเตือนแบบเตือน (Warning)
+   */
+  warning(title: string, text: string = '') {
+    return BaseSwal.fire({
+      icon: 'warning',
+      title,
+      text,
+      confirmButtonText: 'ຕົກລົງ',
+    });
+  },
 
   /**
    * แจ้งเตือนข้อผิดพลาด (ต้องกดปิดเอง)
