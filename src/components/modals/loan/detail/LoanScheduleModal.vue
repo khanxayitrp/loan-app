@@ -89,19 +89,19 @@
                   <td class="text-center align-middle font-medium">{{ row.installment_number }}</td>
                   <td class="align-middle">
                     <input type="date" v-model="row.due_date" class="input input-sm input-bordered w-full bg-white"
-                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                      :disabled="!canEdit || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
                   </td>
                   <td class="align-middle text-right">
                     <input type="text" :value="formatCurrencyInput(row.principal)"
                       @input="handleScheduleInput(row, 'principal', $event)"
                       class="input input-sm input-bordered w-full text-right bg-white"
-                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                      :disabled="!canEdit || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
                   </td>
                   <td class="align-middle text-right">
                     <input type="text" :value="formatCurrencyInput(row.interest)"
                       @input="handleScheduleInput(row, 'interest', $event)"
                       class="input input-sm input-bordered w-full text-right text-error font-medium bg-white"
-                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                      :disabled="!canEdit || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
                   </td>
                   <td class="text-right align-middle font-bold bg-gray-50 text-success">{{ formatPrice(row.total_amount)
                     }}</td>
@@ -131,7 +131,7 @@
 
         <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
           <button class="btn btn-soft btn-secondary" @click="closeModal">ປິດ</button>
-          <button class="btn btn-success text-white" @click="saveSchedule" :disabled="isSaving">
+          <button v-if="canEdit" class="btn btn-success text-white" @click="saveSchedule" :disabled="isSaving">
             <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
             <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span> ບັນທຶກຕາຕະລາງ
           </button>
@@ -148,7 +148,10 @@ import apiClient from '@/api/apiclient'
 import { formatPrice, formatCurrencyInput } from '@/utils/formatters'
 import { alert } from '@/utils/alert'
 
-const props = defineProps<{ show: boolean, loan: any | null }>()
+const props = withDefaults(defineProps<{ show: boolean, loan: any | null, canEdit?: boolean, canPrint?: boolean }>(), {
+  canEdit: true,
+  canPrint: true
+})
 const emit = defineEmits(['close'])
 
 const loanApplicationStore = useLoanApplicationStore()

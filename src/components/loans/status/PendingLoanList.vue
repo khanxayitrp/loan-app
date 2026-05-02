@@ -93,6 +93,12 @@
                     <span class="icon-[tabler--eye] size-4"></span>
                   </button>
                 </div>
+                <div class="tooltip tooltip-top" data-tip="ເບິ່ງຕາຕະລາງຜ່ອນຊຳລະ">
+                  <button class="btn btn-circle btn-text btn-sm text-info" @click="openSchedule(loan)">
+                    <span class="icon-[tabler--calendar-stats] size-4"></span>
+                  </button>
+                </div>
+
 
                 <div v-if="hasContract(loan) && isSalesOrOfficer" class="tooltip tooltip-top"
                   data-tip="ຈັດການລາຍເຊັນເອກະສານ (ລູກຄ້າ/ນາຍບ້ານ)">
@@ -330,6 +336,14 @@
       </div>
     </teleport>
 
+
+    <LoanScheduleModal
+      :show="showScheduleModal"
+      :loan="selectedScheduleLoan"
+      :canEdit="false"
+      :canPrint="selectedScheduleLoan?.status === 'verified'"
+      @close="showScheduleModal = false"
+    />
   </div>
 </template>
 
@@ -351,6 +365,7 @@ import PrintSummaryModal from '@/components/modals/loan/pending/PrintSummaryModa
 import ChecklistModal from '@/components/modals/loan/pending/CheckListModal.vue';
 import CreditScoreModal from '@/components/modals/loan/pending/CreditScoreModal.vue';
 import ExternalSignatureModal from '@/components/modals/loan/pending/ExternalSignatureModal.vue';
+import LoanScheduleModal from '@/components/modals/loan/detail/LoanScheduleModal.vue';
 
 const loanApplicationStore = useLoanApplicationStore();
 const loanContractStore = useLoanContractStore();
@@ -382,6 +397,7 @@ const showPrintModal = ref(false);
 const showChecklistModal = ref(false);
 const showCreditScoreModal = ref(false);
 const showSignatureModal = ref(false);
+const showScheduleModal = ref(false);
 const loanForSignature = ref<any>(null);
 
 const selectedLoan = ref<any>(null);
@@ -390,6 +406,7 @@ const selectedChecklistLoan = ref<any>(null);
 const loanForCreditScore = ref<any>(null);
 const summaryDataForScore = ref<any>(null);
 const printData = ref<any>(null);
+const selectedScheduleLoan = ref<any>(null);
 const actionRemark = ref('');
 
 // 🟢 ຟັງຊັນສຳລັບການຈັດຮູບແບບ Status Badge ໃຫ້ສວຍງາມ (UI/UX)
@@ -481,6 +498,20 @@ const viewLoanDetails = async (loan: any) => {
   }
 }
 const closeDetailsModal = () => { showDetailsModal.value = false; selectedLoan.value = null; }
+
+const openSchedule = async (loan: any) => {
+  try {
+    const fullLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id);
+    selectedScheduleLoan.value = fullLoan;
+    showScheduleModal.value = true;
+  } catch (error: any) {
+    alert.error(
+      "ເກີດຂໍ້ຜິດພາດ",
+      error.response?.data?.message || "ບໍ່ສາມາດດຶງຂໍ້ມູນຕາຕະລາງໄດ້"
+    );
+  }
+}
+
 
 const openSignatureModal = (loan: any) => {
   loanForSignature.value = loan;
