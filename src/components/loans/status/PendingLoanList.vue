@@ -149,6 +149,14 @@
       </button>
     </div>
 
+    <!-- 🌟 ເພີ່ມໃໝ່: ປຸ່ມເບິ່ງຕາຕະລາງຜ່ອນຊຳລະ (ທຸກຄົນເຫັນໄດ້) -->
+<!-- <div class="tooltip tooltip-top" data-tip="ຕາຕະລາງຜ່ອນຊຳລະ">
+  <button class="btn btn-circle btn-text btn-sm text-amber-600 hover:bg-amber-50"
+    @click="openScheduleModal(loan)">
+    <span class="icon-[tabler--calendar-stats] size-5"></span>
+  </button>
+</div> -->
+
     <!-- 7. ປຸ່ມ Checklist ແລະ Print Summary (ສຳລັບພະນັກງານ) -->
     <div v-if="isSalesOrOfficer" class="tooltip tooltip-top" data-tip="ແບບຟອມ Checklist">
       <button class="btn btn-circle btn-text btn-sm text-primary hover:bg-primary/10"
@@ -284,9 +292,52 @@
               <p>{{ formatDate(selectedLoan.createdAt) }}</p>
             </div>
           </div>
+          <!-- 🌟 🟢 ແກ້ໄຂ: ເພີ່ມປຸ່ມເຂົ້າໄປໃນສ່ວນ Action ດ້ານລຸ່ມນີ້ -->
           <div class="flex justify-end gap-3 mt-6 border-t pt-4">
+            <!-- 🌟 🟢 เพิ่มปุ่มตารางผ่อนชำระตรงนี้ (สังเกตว่าเปลี่ยนค่าที่ส่งเป็น selectedLoan) -->
+            <button class="btn btn-outline btn-warning" @click="openScheduleModal(selectedLoan)">
+              <span class="icon-[tabler--calendar-stats] size-4 mr-1"></span> ຕາຕະລາງຜ່ອນ
+            </button>
+            
+            <button class="btn btn-outline btn-info" @click="openDraftContractModal">
+              <span class="icon-[tabler--file-certificate] size-4 mr-1"></span> ເບິ່ງຮ່າງສັນຍາ
+            </button>
             <button class="btn btn-primary" @click="closeDetailsModal">ປິດໜ້າຈໍ</button>
           </div>
+        </div>
+      </div>
+    </teleport>
+    <!-- 🌟 🟢 Modal ສຳລັບສະແດງຮ່າງສັນຍາ -->
+    <teleport to="body">
+      <div v-if="showContractModal"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+          <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <span class="icon-[tabler--file-certificate] text-info size-6"></span> ຮ່າງສັນຍາກູ້ຢືມ
+            </h3>
+            <button @click="showContractModal = false"
+              class="btn btn-circle btn-ghost btn-sm text-gray-500 hover:bg-gray-200">
+              <span class="icon-[tabler--x] size-5"></span>
+            </button>
+          </div>
+          
+          <!-- ເອີ້ນໃຊ້ Component ສັນຍາ ແບບ Read-only (is-editing=false) -->
+          <LoanContractForm 
+            v-if="selectedContract"
+            :loan-contract-id="selectedLoan?.id" 
+            :loan-application="selectedLoan"
+            :loan-contract="selectedContract" 
+            :is-editing="false" 
+            :view-only="true"
+            @cancel-edit="showContractModal = false"
+          />
+          <div v-else class="text-center py-8 text-gray-500">
+            <div class="loading loading-spinner loading-md"></div>
+            <p class="mt-2">ກຳລັງໂຫຼດຂໍ້ມູນສັນຍາ...</p>
+          </div>
+
         </div>
       </div>
     </teleport>
@@ -369,6 +420,15 @@
     </teleport>
 
   </div>
+  <!-- ໃນໄຟລ໌ PendingLoanList.vue -> ກ່ອນປິດ </template> -->
+<!-- ในไฟล์ PendingLoanList.vue ด้านล่างสุดก่อนจบ <template> -->
+
+<LoanScheduleModal 
+  :show="showScheduleModal" 
+  :loan="loanForSchedule" 
+  :view-only="true"
+  @close="showScheduleModal = false; loanForSchedule = null" 
+/>
 </template>
 
 <script setup lang="ts">
@@ -390,6 +450,9 @@ import ChecklistModal from '@/components/modals/loan/pending/CheckListModal.vue'
 import CreditScoreModal from '@/components/modals/loan/pending/CreditScoreModal.vue';
 import ExternalSignatureModal from '@/components/modals/loan/pending/ExternalSignatureModal.vue';
 import DeliveryNoteModal from '@/components/modals/loan/pending/DeliveryNoteModal.vue';
+import LoanScheduleModal from '@/components/modals/loan/detail/LoanScheduleModal.vue';
+import LoanContractForm from '@/components/loans/form/LoanContractForm.vue';
+
 
 const loanApplicationStore = useLoanApplicationStore();
 const loanContractStore = useLoanContractStore();
@@ -424,6 +487,12 @@ const showSignatureModal = ref(false);
 const showDeliveryNoteModal = ref(false);
 const loanForDeliveryNote = ref<any>(null);
 const loanForSignature = ref<any>(null);
+  // 🟢 State ສຳລັບເປີດ/ປິດ Modal ຕາຕະລາງຜ່ອນ
+const showScheduleModal = ref(false);
+const loanForSchedule = ref<any>(null);
+  // 3. ສ້າງ State ສຳລັບ Modal ສັນຍາ
+const showContractModal = ref(false);
+const selectedContract = ref<any>(null);
 
 const selectedLoan = ref<any>(null);
 const loanToAction = ref<any>(null);
@@ -438,6 +507,79 @@ const openDeliveryNoteModal = (loan: any) => {
   
   loanForDeliveryNote.value = loan;
   showDeliveryNoteModal.value = true;
+};
+
+// 4. ສ້າງຟັງຊັນເປີດ Modal ຮ່າງສັນຍາ
+const openDraftContractModal = async () => {
+  if (!selectedLoan.value) return;
+  
+  try {
+    // ເປີດ Modal ໂຊວ໌ໂຫຼດດິ້ງກ່ອນ
+    showContractModal.value = true;
+    selectedContract.value = null; 
+
+    // ດຶງຂໍ້ມູນສັນຍາຈາກ Backend
+    const contractRes = await loanContractStore.fetchContract(selectedLoan.value.id);
+    const contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
+    
+    // ກວດສອບວ່າມີສັນຍາແທ້ຫຼຶບໍ່
+    if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
+       throw new Error("No Contract");
+    }
+
+    selectedContract.value = contractData;
+
+  } catch (error) {
+    showContractModal.value = false;
+    // ເອີ້ນໃຊ້ customAlert ຫຼຶ alert ຕາມທີ່ທ່ານມີໃນໂປຣເຈັກ
+    alert.error('ບໍ່ພົບຂໍ້ມູນ', 'ຍັງບໍ່ມີການສ້າງຮ່າງສັນຍາສຳລັບສິນເຊື່ອນີ້'); 
+  }
+};
+
+// ໃນໄຟລ໌ PendingLoanList.vue -> ປ່ຽນຟັງຊັນ openScheduleModal
+
+const openScheduleModal = async (loan: any) => {
+  try {
+    let contractData = null;
+    
+    // 1. ກວດສອບສັນຍາ (Contract)
+    try {
+      const contractRes = await loanContractStore.fetchContract(loan.id);
+      contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
+      
+      if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
+        throw new Error("Contract is empty");
+      }
+    } catch (e) {
+      alert.error('ບໍ່ສາມາດເປີດຕາຕະລາງໄດ້', 'ກະລຸນາສ້າງ "ສັນຍາກູ້ຢືມ" ໃຫ້ລູກຄ້າຮັບຮູ້ເງື່ອນໄຂກ່ອນ!');
+      return;
+    }
+
+    // 🌟 2. ດຶງຂໍ້ມູນໃບຄຳຂໍຫຼ້າສຸດ "ແບບເຕັມຮູບແບບ" (Full Relations)
+    const fullLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id);
+    
+    // ກວດສອບຄວາມຖືກຕ້ອງຂອງຕົວເລກ
+    const appPrincipal = Number(fullLoan.total_amount || 0) - Number(fullLoan.down_payment || 0);
+    const appMonthlyPay = Number(fullLoan.monthly_pay || 0);
+    const appTerm = Number(fullLoan.loan_period || 0);
+
+    const contractPrincipal = Number(contractData.totalAmount || contractData.total_amount || 0);
+    const contractMonthlyPay = Number(contractData.monthlyPay || contractData.monthly_pay || 0);
+    const contractTerm = Number(contractData.loanPeriod || contractData.loan_period || 0);
+
+    const isConflict = Math.abs(appPrincipal - contractPrincipal) > 10 || Math.abs(appMonthlyPay - contractMonthlyPay) > 10 || appTerm !== contractTerm;
+
+    if (isConflict) {
+      alert.error('ຂໍ້ມູນສັນຍາບໍ່ອັບເດດ! ⚠️', 'ຂໍ້ມູນສິນເຊື່ອມີການປ່ຽນແປງຫຼັງຈາກສ້າງສັນຍາໄປແລ້ວ.\n\n👉 ກະລຸນາກົດເຂົ້າ "ລາຍລະອຽດສິນເຊື່ອ" > ແຖບ "ສັນຍາກູ້ຢືມ" > ກົດແກ້ໄຂ ແລະ ກົດ "ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍ" ກ່ອນ.');
+      return;
+    }
+   loanForSchedule.value = fullLoan;
+    // 4. ເປີດ Modal ຕາຕະລາງ
+    showScheduleModal.value = true;
+    
+  } catch (error) {
+    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້');
+  }
 };
 
 // --- ປັບປຸງ Status Badge (ຖ້າຢາກໃຫ້ສີງາມຂຶ້ນ) ---

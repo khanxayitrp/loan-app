@@ -19,7 +19,7 @@
         </button>
       </div>
 
-      <div v-if="!isEditing" class="edit-button-container">
+      <div v-if="!isEditing && !viewOnly" class="edit-button-container">
         <button @click="enableEdit" class="btn btn-warning btn-sm gap-2 shadow-md">
           <span class="icon-[tabler--pencil] size-4"></span>
           ແກ້ໄຂຂໍ້ມູນ
@@ -188,6 +188,7 @@ const props = defineProps<{
   loanApplication?: any | null
   loanContract?: any | null
   isEditing?: boolean
+  viewOnly?: boolean // 🌟 🟢 เพิ่มบรรทัดนี้เข้าไปครับ
 }>()
 
 const emit = defineEmits<{

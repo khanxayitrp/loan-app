@@ -23,17 +23,19 @@
                 <div class="flex flex-col sm:flex-row sm:justify-between border-b border-warning/20 border-dashed pb-1">
                   <span class="font-medium">{{ diff.label }}:</span>
                   <span class="mt-1 sm:mt-0">
-                    <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal)
-                      }}</span>
+                    <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal) }}</span>
                     <span class="font-bold text-success">👉 ໃບຄຳຂໍປັດຈຸບັນ: {{ formatPrice(diff.appVal) }}</span>
                   </span>
                 </div>
               </template>
             </div>
-            <div class="mt-3 text-sm font-semibold text-error bg-error/10 p-2 rounded">
-              * ກະລຸນາກົດປຸ່ມ <span class="badge badge-warning badge-sm"><span
-                  class="icon-[tabler--refresh] mr-1"></span>ຣີເຊັດຄ່າເລີ່ມຕົ້ນ</span> ເພື່ອສ້າງຕາຕະລາງໃໝ່ໃຫ້ກົງກັນ,
-              ແລ້ວກົດບັນທຶກ.
+            
+            <!-- 🟢 ສະແດງຂໍ້ຄວາມແຕກຕ່າງກັນຕາມໂໝດ -->
+            <div v-if="!viewOnly" class="mt-3 text-sm font-semibold text-error bg-error/10 p-2 rounded">
+              * ກະລຸນາກົດປຸ່ມ <span class="badge badge-warning badge-sm"><span class="icon-[tabler--refresh] mr-1"></span>ຣີເຊັດຄ່າເລີ່ມຕົ້ນ</span> ເພື່ອສ້າງຕາຕະລາງໃໝ່ໃຫ້ກົງກັນ, ແລ້ວກົດບັນທຶກ.
+            </div>
+            <div v-else class="mt-3 text-sm font-semibold text-error bg-error/10 p-2 rounded">
+              * ຕາຕະລາງນີ້ຍອດເງິນບໍ່ກົງກັບໃບຄຳຂໍປັດຈຸບັນ ກະລຸນາແຈ້ງພະນັກງານໃຫ້ຣີເຊັດຕາຕະລາງກ່ອນອະນຸມັດ!
             </div>
           </div>
         </div>
@@ -47,17 +49,17 @@
                 <span v-else class="badge badge-success text-white badge-sm ml-2">ບັນທຶກແລ້ວ</span>
               </h4>
               <p class="text-sm text-gray-600 mt-1">
-                ຍອດຈັດ (ຕົ້ນທຶນ): <span class="font-medium text-black">{{ formatPrice(Number(loan?.total_amount || 0) -
-                  Number(loan?.down_payment || 0)) }}</span> |
-                ດອກເບ້ຍ: <span class="font-medium text-black">{{ loan?.interest_rate_at_apply }}% {{
-                  loan?.interest_rate_type
-                    === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>
+                ຍອດຈັດ (ຕົ້ນທຶນ): <span class="font-medium text-black">{{ formatPrice(Number(loan?.total_amount || 0) - Number(loan?.down_payment || 0)) }}</span> |
+                ດອກເບ້ຍ: <span class="font-medium text-black">{{ loan?.interest_rate_at_apply }}% {{ loan?.interest_rate_type === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>
               </p>
             </div>
             <div class="flex gap-2">
-              <button v-if="!isScheduleSaved" class="btn btn-warning btn-sm" @click="generateSchedule">
+              <!-- 🟢 ເຊື່ອງປຸ່ມ ຣີເຊັດ ຖ້າຢູ່ໃນໂໝດ View Only -->
+              <button v-if="!isScheduleSaved && !viewOnly" class="btn btn-warning btn-sm" @click="generateSchedule">
                 <span class="icon-[tabler--refresh] size-4 mr-1"></span> ຣີເຊັດຄ່າເລີ່ມຕົ້ນ
               </button>
+              
+              <!-- 🟢 ປຸ່ມພິມ: ທຸກຄົນພິມໄດ້ ຂໍພຽງແຕ່ຕາຕະລາງເຄີຍຖືກບັນທຶກແລ້ວກໍພໍ -->
               <button v-if="isScheduleSaved" class="btn btn-outline btn-primary btn-sm" @click="printSchedule">
                 <span class="icon-[tabler--printer] size-4 mr-1"></span> ພິມຕາຕະລາງ
               </button>
@@ -88,27 +90,31 @@
                 <tr v-for="(row, index) in scheduleRows" :key="index" class="hover:bg-base-200/30 transition-colors">
                   <td class="text-center align-middle font-medium">{{ row.installment_number }}</td>
                   <td class="align-middle">
-                    <input type="date" v-model="row.due_date" class="input input-sm input-bordered w-full bg-white"
-                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                    <!-- 🟢 ລັອກ Input ຖ້າ View Only ຫຼຶ ເງື່ອນໄຂເດີມຂອງທ່ານ -->
+                    <input type="date" v-model="row.due_date" 
+                      class="input input-sm input-bordered w-full"
+                      :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
+                      :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
                   </td>
                   <td class="align-middle text-right">
                     <input type="text" :value="formatCurrencyInput(row.principal)"
                       @input="handleScheduleInput(row, 'principal', $event)"
-                      class="input input-sm input-bordered w-full text-right bg-white"
-                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                      class="input input-sm input-bordered w-full text-right"
+                      :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
+                      :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
                   </td>
                   <td class="align-middle text-right">
                     <input type="text" :value="formatCurrencyInput(row.interest)"
                       @input="handleScheduleInput(row, 'interest', $event)"
-                      class="input input-sm input-bordered w-full text-right text-error font-medium bg-white"
-                      :disabled="isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying'" />
+                      class="input input-sm input-bordered w-full text-right font-medium text-error"
+                      :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
+                      :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
                   </td>
-                  <td class="text-right align-middle font-bold bg-gray-50 text-success">{{ formatPrice(row.total_amount)
-                    }}</td>
+                  <td class="text-right align-middle font-bold bg-gray-50 text-success">{{ formatPrice(row.total_amount) }}</td>
                   <td class="text-right align-middle font-bold"
-                    :class="row.remaining_balance <= 0 ? 'text-success' : 'text-primary'">{{
-                      formatPrice(row.remaining_balance)
-                    }}</td>
+                    :class="row.remaining_balance <= 0 ? 'text-success' : 'text-primary'">
+                    {{ formatPrice(row.remaining_balance) }}
+                  </td>
                 </tr>
               </tbody>
               <tfoot class="bg-primary/5 font-bold text-base">
@@ -116,11 +122,9 @@
                   <td colspan="2" class="text-right align-middle">ລວມທັງໝົດ:</td>
                   <td class="text-right text-primary align-middle">{{ formatPrice(totalSchedulePrincipal) }}</td>
                   <td class="text-right text-error align-middle">{{ formatPrice(totalScheduleInterest) }}</td>
-                  <td class="text-right text-success align-middle">{{ formatPrice(totalSchedulePrincipal +
-                    totalScheduleInterest) }}</td>
+                  <td class="text-right text-success align-middle">{{ formatPrice(totalSchedulePrincipal + totalScheduleInterest) }}</td>
                   <td class="text-right align-middle">
-                    <span v-if="Math.abs(totalScheduleRemaining) > 10" class="text-error text-sm">(ຍອດບໍ່ລົງຕົວ {{
-                      formatPrice(totalScheduleRemaining) }})</span>
+                    <span v-if="Math.abs(totalScheduleRemaining) > 10" class="text-error text-sm">(ຍອດບໍ່ລົງຕົວ {{ formatPrice(totalScheduleRemaining) }})</span>
                     <span v-else class="text-success text-sm">(ລົງຕົວ)</span>
                   </td>
                 </tr>
@@ -131,7 +135,9 @@
 
         <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
           <button class="btn btn-soft btn-secondary" @click="closeModal">ປິດ</button>
-          <button class="btn btn-success text-white" @click="saveSchedule" :disabled="isSaving">
+          
+          <!-- 🟢 ເຊື່ອງປຸ່ມ ບັນທຶກ ຖ້າຢູ່ໃນໂໝດ View Only -->
+          <button v-if="!viewOnly" class="btn btn-success text-white" @click="saveSchedule" :disabled="isSaving">
             <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
             <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span> ບັນທຶກຕາຕະລາງ
           </button>
@@ -148,7 +154,13 @@ import apiClient from '@/api/apiclient'
 import { formatPrice, formatCurrencyInput } from '@/utils/formatters'
 import { alert } from '@/utils/alert'
 
-const props = defineProps<{ show: boolean, loan: any | null }>()
+// 🟢 ເພີ່ມ Prop: viewOnly
+const props = defineProps<{ 
+  show: boolean, 
+  loan: any | null,
+  viewOnly?: boolean 
+}>()
+
 const emit = defineEmits(['close'])
 
 const loanApplicationStore = useLoanApplicationStore()
@@ -178,7 +190,6 @@ const fetchSavedSchedule = async () => {
     const savedData = await loanApplicationStore.fetchRepaymentSchedule(props.loan.id);
 
     if (savedData && savedData.length > 0) {
-      // 🟢 ແກ້ໄຂ: ຮອງຮັບຊື່ Key ທັງແບບເກົ່າ ແລະ ແບບໃໝ່ຈາກ API ເພື່ອບໍ່ໃຫ້ເປັນ NaN
       const tempRows = savedData.map((r: any) => ({
         installment_number: r.installment_no || r.installment_number,
         due_date: r.due_date ? r.due_date.split('T')[0] : '',
@@ -199,14 +210,12 @@ const fetchSavedSchedule = async () => {
       const schedMonthlyPay = Number(firstRow.total_amount);
       const schedTerm = tempRows.length;
 
-      // ກວດສອບຄວາມແຕກຕ່າງ (ອະນຸລົມໃຫ້ຫຼຸດລື່ນກັນບໍ່ເກີນ 10 ກີບ)
       const diffPrincipal = Math.abs(appPrincipal - schedPrincipal);
       const diffMonthlyPay = Math.abs(appMonthlyPay - schedMonthlyPay);
       const diffTerm = appTerm !== schedTerm;
 
       const isConflict = diffPrincipal > 10 || diffMonthlyPay > 10 || diffTerm;
 
-      // ເຄຼຍຄ່າຄວາມແຕກຕ່າງເກົ່າ
       for (let k in scheduleDifferences) delete scheduleDifferences[k];
 
       if (isConflict) {
@@ -214,7 +223,12 @@ const fetchSavedSchedule = async () => {
         if (diffMonthlyPay > 10) scheduleDifferences['monthly'] = { label: 'ຄ່າງວດຕໍ່ເດືອນ', schedVal: schedMonthlyPay, appVal: appMonthlyPay };
         if (diffTerm) scheduleDifferences['term'] = { label: 'ຈຳນວນງວດ (ເດືອນ)', schedVal: schedTerm, appVal: appTerm };
 
-        generateSchedule();
+        // 🟢 ຖ້າ View Only ໃຫ້ໂຊว์ຂອງເກົ່າ (ບໍ່ generate ໃໝ່)
+        if (props.viewOnly) {
+           scheduleRows.value = tempRows;
+        } else {
+           generateSchedule();
+        }
         hasScheduleConflict.value = true;
         isScheduleSaved.value = false;
       } else {
@@ -230,6 +244,7 @@ const fetchSavedSchedule = async () => {
   }
 }
 
+// ... ໂລຈິກ generateSchedule, handleScheduleInput, recalculate, computed ໄວ້ຄືເດີມປົກກະຕິ ...
 const generateSchedule = () => {
   scheduleRows.value = [];
   isScheduleSaved.value = false;
@@ -242,7 +257,6 @@ const generateSchedule = () => {
   const interestRate = Number(loan.interest_rate_at_apply || 0);
   const interestType = loan.interest_type || 'flat_rate';
   const rateType = loan.interest_rate_type || 'monthly';
-  // const paymentDay = Number(loan.payment_day || 1);
   const paymentDay = Number(loan.payment_day || new Date().getDate());
   const ratePerMonth = rateType === 'yearly' ? (interestRate / 12) / 100 : interestRate / 100;
 
@@ -275,6 +289,7 @@ const generateSchedule = () => {
 }
 
 const handleScheduleInput = (row: any, field: 'principal' | 'interest', event: Event) => {
+  if (props.viewOnly) return; // ກັນໜຽວ
   const target = event.target as HTMLInputElement;
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
   const numericValue = Number(rawValue);
@@ -304,7 +319,7 @@ const totalScheduleRemaining = computed(() => {
 })
 
 const saveSchedule = async () => {
-  if (!props.loan || scheduleRows.value.length === 0) return;
+  if (!props.loan || scheduleRows.value.length === 0 || props.viewOnly) return;
   isSaving.value = true;
   try {
     await loanApplicationStore.saveRepaymentSchedule(props.loan.id, scheduleRows.value);
