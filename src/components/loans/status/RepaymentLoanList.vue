@@ -50,15 +50,19 @@
             <td>{{ formatPrice((Number(loan.total_amount) || 0) - (Number(loan.down_payment) || 0)) }}</td>
             <td class="font-semibold text-blue-600">{{ formatPrice(loan.monthly_pay) }}</td>
             <td><span class="badge badge-sm badge-success text-white">ອະນຸມັດແລ້ວ</span></td>
+            
+            <!-- 🌟 🟢 ແກ້ໄຂຈຸດນີ້: ເປີດໃຫ້ກົດຊຳລະໄດ້ຕະຫຼອດ ແຕ່ເຕືອນຖ້າຍັງບໍ່ມອບຮັບ -->
             <td class="text-center">
-              <button v-if="hasApprovedDelivery(loan)" class="btn btn-sm btn-primary btn-soft"
-                @click="openRepaymentHub(loan)">
-                <span class="icon-[tabler--wallet] size-4 mr-1"></span> ຈັດການຊຳລະ
-              </button>
-              <span v-else class="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded">
-                ລໍຖ້າມອບຮັບສິນຄ້າ
-              </span>
+              <div class="flex flex-col items-center justify-center gap-1">
+                <button class="btn btn-sm btn-primary btn-soft" @click="openRepaymentHub(loan)">
+                  <span class="icon-[tabler--wallet] size-4 mr-1"></span> ຈັດການຊຳລະ
+                </button>
+                <div v-if="!hasApprovedDelivery(loan)" class="text-[10px] font-medium text-warning flex items-center gap-1 bg-warning/10 px-2 py-0.5 rounded">
+                  <span class="icon-[tabler--alert-circle] size-3"></span> ຍັງບໍ່ມອບຮັບ
+                </div>
+              </div>
             </td>
+
           </tr>
           <tr v-if="!filteredLoans.length">
             <td colspan="6" class="text-center py-8 text-gray-500">ບໍ່ພົບຂໍ້ມູນສິນເຊື່ອທີ່ອະນຸມັດແລ້ວ</td>
@@ -179,6 +183,20 @@
               </div>
             </div>
 
+            <!-- 🌟 🟢 ເພີ່ມໃໝ່: Dropdown ເລືອກຈຳນວນເດືອນດອກເບ້ຍສຳລັບປິດກ່ອນກຳນົດ -->
+            <div v-if="isEarlyPayoff" class="form-control bg-blue-50 p-3 rounded-lg border border-blue-200 mt-2">
+              <label class="label pb-1">
+                <span class="label-text font-medium text-blue-800">ຈຳນວນເດືອນດອກເບ້ຍທີ່ຕ້ອງຈ່າຍ (ເງື່ອນໄຂປິດກ່ອນ)</span>
+              </label>
+              <select v-model.number="paymentForm.payoff_months_to_charge" @change="recalculatePayoffInterest" class="select select-sm select-bordered w-full font-bold text-blue-700">
+                <option v-for="n in 12" :key="n" :value="n">ຈ່າຍດອກເບ້ຍ {{ n }} ເດືອນ</option>
+                <option :value="0">ຍົກເວັ້ນດອກເບ້ຍ (0 ເດືອນ)</option>
+              </select>
+              <p class="text-xs text-blue-600 mt-1">
+                * ຖ້າງວດຍັງເຫຼືອຫຼາຍກວ່າ 6 ງວດ, ລະບົບຈະຕັ້ງຄ່າເລີ່ມຕົ້ນໃຫ້ເກັບດອກເບ້ຍລ່ວງໜ້າ 5 ເດືອນ
+              </p>
+            </div>
+
             <div v-if="isEarlyPayoff" class="form-control bg-green-50 p-3 rounded-lg border border-green-200">
               <label class="label pb-1"><span class="label-text font-medium text-green-700">ມອບສ່ວນຫຼຸດ
                   (ກີບ)</span></label>
@@ -296,6 +314,7 @@ import apiClient from '@/api/apiclient'
 
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import type { LoanApplication } from '@/types/loanApplication'
+import { LoanApplicationStatus } from '@/types/loanApplication';
 
 const loanAppStore = useLoanApplicationStore()
 
@@ -323,6 +342,10 @@ const paymentForm = reactive({
   expected_principal: 0,
   expected_interest: 0,
   expected_penalty: 0,
+
+  // 🌟 ເພີ່ມ 2 ຕົວແປນີ້ເຂົ້າໄປ
+  payoff_months_to_charge: 5, 
+  base_monthly_interest: 0,
 
   amount_received: 0, // ປ້ອນພຽງຊ່ອງດຽວ
   discount_given: 0,
@@ -356,6 +379,14 @@ const formatCurrencyInput = (val: number) => val ? val.toLocaleString('en-US', {
 
 const triggerSlipUpload = () => {
   if (slipInput.value) slipInput.value.click();
+}
+
+// 🌟 ຟັງຊັນຄຳນວນຍອດໃໝ່ເມື່ອມີການປ່ຽນ Dropdown
+const recalculatePayoffInterest = () => {
+  paymentForm.expected_interest = paymentForm.base_monthly_interest * paymentForm.payoff_months_to_charge;
+  
+  // ອັບເດດຍອດທີ່ຕ້ອງຮັບຈາກລູກຄ້າໃໝ່
+  paymentForm.amount_received = paymentForm.expected_principal + paymentForm.expected_interest + paymentForm.expected_penalty;
 }
 
 const handleSlipUpload = (event: Event) => {
@@ -428,18 +459,49 @@ const getCustomerName = (loan: LoanApplication) => {
   return `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.trim() || 'ບໍ່ມີຊື່';
 }
 
+// 🌟 ຟັງຊັນກວດສອບການມອບຮັບສິນຄ້າ (ຍຶດ document_signatures ເປັນຫຼັກ)
 const hasApprovedDelivery = (loan: any): boolean => {
-  if (Array.isArray(loan.delivery_receipt)) return loan.delivery_receipt.some((receipt: any) => receipt.status === 'approved');
-  if (Array.isArray(loan.delivery_receipts)) return loan.delivery_receipts.some((receipt: any) => receipt.status === 'approved');
-  if (loan.delivery_receipt && typeof loan.delivery_receipt === 'object') return loan.delivery_receipt.status === 'approved';
-  if (loan.delivery_receipts && typeof loan.delivery_receipts === 'object') return loan.delivery_receipts.status === 'approved';
+  if (!loan) return false;
+
+  // 1. ຖ້າ Backend ສົ່ງ `document_signatures` ມາ (ເຖິງຈະເປັນ Array ວ່າງເປົ່າກໍຕາມ)
+  // ໃຫ້ຍຶດຕາຕະລາງນີ້ເປັນ "ຄວາມຈິງສູງສຸດ (Single Source of Truth)" ທັນທີ
+  if (loan.document_signatures !== undefined) {
+    if (Array.isArray(loan.document_signatures)) {
+      return loan.document_signatures.some((sig: any) => 
+        sig.document_type === 'delivery_note' && sig.status === 'signed'
+      );
+    }
+    return false; // ຖ້າມີ Field ນີ້ ແຕ່ບໍ່ມີຄົນເຊັນ (Array ວ່າງເປົ່າ) ຖືວ່າຍັງບໍ່ມອບຮັບ!
+  }
+
+  // 2. Fallback: ຈະເຮັດວຽກກໍຕໍ່ເມື່ອ Backend ບໍ່ໄດ້ include `document_signatures` ມາໃຫ້ເທົ່ານັ້ນ
+  if (loan.delivery_receipt) {
+    if (Array.isArray(loan.delivery_receipt)) {
+      return loan.delivery_receipt.some((receipt: any) => receipt.status === 'approved');
+    } else if (typeof loan.delivery_receipt === 'object') {
+      return loan.delivery_receipt.status === 'approved';
+    }
+  }
+
+  if (loan.delivery_receipts) {
+    if (Array.isArray(loan.delivery_receipts)) {
+      return loan.delivery_receipts.some((receipt: any) => receipt.status === 'approved');
+    } else if (typeof loan.delivery_receipts === 'object') {
+      return loan.delivery_receipts.status === 'approved';
+    }
+  }
+
   return false;
 }
 
 // Filters & Summary
 const filteredLoans = computed(() => {
   let loans = loanAppStore.loanApplications || [];
-  loans = loans.filter((loan: any) => loan.status === 'approved');
+  // loans = loans.filter((loan: any) => loan.status === 'approved' || loan.status === 'disbursed'); // 🟢 ແກ້ໄຂເພີ່ມ disbursed ເຂົ້າໄປເພື່ອໃຫ້ເຫັນຂໍ້ມູນແນ່ນອນ
+  loans = loans.filter((loan: any) => {
+      // เอาเฉพาะสินเชื่อที่ถูกปล่อยแล้ว (disbursed) หรือ สถานะ active (ถ้ามีการส่งมาจาก Backend แบบนี้)
+      return loan.status === 'disbursed' || loan.status === 'active'; 
+  });
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
     loans = loans.filter((loan: any) =>
@@ -472,7 +534,7 @@ const summary = computed(() => {
 // Actions
 const fetchLoans = async () => {
   try {
-    await loanAppStore.fetchLoanApplications({ is_confirmed: 1, status: 'approved' as any, limit: 100 });
+    await loanAppStore.fetchLoanApplications({ is_confirmed: 1, status: LoanApplicationStatus.DISBURSED, limit: 100 });
   } catch (error: any) {
     alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້', error.message);
   }
@@ -514,7 +576,30 @@ const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
       const res = await apiClient.get(`repayments/early-payoff/${selectedLoan.value?.id}`);
       const payoffData = res.data.data;
 
-      const totalOwed = Number(payoffData.remaining_principal) + Number(payoffData.calculated_interest) + Number(payoffData.total_penalty);
+      // const totalOwed = Number(payoffData.remaining_principal) + Number(payoffData.calculated_interest) + Number(payoffData.total_penalty);
+
+      // Object.assign(paymentForm, {
+      //   payment_date: new Date().toISOString().split('T')[0],
+      //   payment_method: 'cash',
+      //   reference_number: '',
+      //   remarks: 'ປິດບັນຊີກ່ອນກຳນົດ (Early Payoff)',
+
+      //   expected_principal: Number(payoffData.remaining_principal),
+      //   expected_interest: Number(payoffData.calculated_interest),
+      //   expected_penalty: Number(payoffData.total_penalty),
+
+      //   amount_received: totalOwed, // 🌟 ຕັ້ງຄ່າ Default ໃຫ້ເທົ່າກັບຍອດໜີ້
+      //   discount_given: 0,
+      //   installment_number: 0
+      // });
+
+      // 🌟 🟢 Logic ໃໝ່: ນັບຈຳນວນງວດທີ່ເຫຼືອ ແລະ ດຶງຄ່າດອກເບ້ຍຕໍ່ເດືອນ
+      const unpaidSchedules = currentSchedules.value.filter(s => s.payment_status !== 'paid');
+      const remainingCount = unpaidSchedules.length;
+      const monthlyInt = Number(unpaidSchedules[0]?.interest_amount || 0);
+
+      // ເງື່ອນໄຂ: ຖ້າເຫຼືອ > 6 ງວດ ໃຫ້ເກັບ 5 ເດືອນ. ຖ້າເຫຼືອໜ້ອຍກວ່ານັ້ນ ໃຫ້ເກັບຕາມຈຳນວນທີ່ເຫຼືອຈິງ
+      let defaultChargeMonths = remainingCount > 6 ? 5 : remainingCount;
 
       Object.assign(paymentForm, {
         payment_date: new Date().toISOString().split('T')[0],
@@ -523,13 +608,18 @@ const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
         remarks: 'ປິດບັນຊີກ່ອນກຳນົດ (Early Payoff)',
 
         expected_principal: Number(payoffData.remaining_principal),
-        expected_interest: Number(payoffData.calculated_interest),
         expected_penalty: Number(payoffData.total_penalty),
-
-        amount_received: totalOwed, // 🌟 ຕັ້ງຄ່າ Default ໃຫ້ເທົ່າກັບຍອດໜີ້
+        
+        // 🌟 ອັບເດດຄ່າເລີ່ມຕົ້ນໃໝ່
+        base_monthly_interest: monthlyInt,
+        payoff_months_to_charge: defaultChargeMonths,
+        
         discount_given: 0,
         installment_number: 0
       });
+
+      // 🌟 ຄຳນວນຍອດດອກເບ້ຍ ແລະ ຍອດລວມທີ່ຕ້ອງຈ່າຍເບື້ອງຕົ້ນ
+      recalculatePayoffInterest();
 
       showPaymentModal.value = true;
     } catch (error: any) {
@@ -577,6 +667,9 @@ const submitPayment = async () => {
       application_id: selectedLoan.value?.id,
       schedule_id: selectedSchedule.value?.id || null,
       is_early_payoff: isEarlyPayoff.value,
+
+      // 🌟 ສົ່ງຈຳນວນເດືອນດອກເບ້ຍໄປໃຫ້ Backend ຄຳນວນຄວາມຖືກຕ້ອງ
+      payoff_interest_months: isEarlyPayoff.value ? paymentForm.payoff_months_to_charge : null,
 
       // ສົ່ງແຄ່ຍອດລວມທີ່ຮັບມາ ໃຫ້ Backend ເປັນຄົນຈຳແນກເອງ (Source of Truth)
       amount_paid: paymentForm.amount_received,
