@@ -95,7 +95,8 @@
           class="input input-sm input-bordered w-full" />
       </div>
 
-      <template v-if="productType.motorcycle">
+      <!-- <template v-if="productType.motorcycle"> -->
+        <template v-if="data.type === 'ສິນຄ້າລົດຈັກ'">
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ເລກຈັກ (ລົດຈັກ):</span></label>
           <input v-model="data.motorcycle.motorId" type="text" :readonly="!isEditing"

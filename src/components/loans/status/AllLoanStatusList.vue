@@ -41,8 +41,9 @@
           <option value="pending">ລໍຖ້າການອະນຸມັດ</option>
           <option value="verifying">ກຳລັງກວດສອບ</option>
           <option value="approved">ອະນຸມັດແລ້ວ</option>
+          <option value="disbursed">ປ່ອຍສິນເຊື່ອແລ້ວ</option> <!-- 🌟 ເພີ່ມ disbursed ຢູ່ບ່ອນນີ້ -->
           <option value="rejected">ປະຕິເສດ</option>
-          <option value="completed">ສຳເລັດ</option>
+          <option value="completed">ສຳເລັດ (ປິດບັນຊີ)</option>
           <option value="draft">ຮ່າງ</option>
         </select>
       </div>
@@ -65,17 +66,12 @@
       <p class="mt-2 text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
     </div>
 
-    <!-- Saving State -->
-    <div v-if="isSaving" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-      <div class="loading loading-spinner loading-lg"></div>
-    </div>
-
     <!-- Table -->
     <div v-else class="w-full overflow-x-auto rounded-lg border border-base-content/10">
       <table class="table table-zebra w-full min-w-max">
         <thead>
           <tr>
-            <th>ເລກທີ່</th>
+            <th>ເລກທີ່ສິນເຊື່ອ</th>
             <th>ລູກຄ້າ</th>
             <th>ເບີໂທ</th>
             <th>ຈຳນວນເງິນ</th>
@@ -84,7 +80,6 @@
             <th>ສະຖານະ</th>
             <th>ຜູ້ອະນຸມັດ</th>
             <th>ວັນທີ່ສ້າງ</th>
-            <!-- <th class="w-24">Actions</th> -->
           </tr>
         </thead>
         <tbody>
@@ -129,45 +124,10 @@
 
             <!-- Created At -->
             <td>{{ formatDate(loan.createdAt) }}</td>
-
-            <!-- Actions -->
-            <!-- <td @click.stop>
-              <div class="dropdown dropdown-end">
-                <label tabindex="0" class="btn btn-ghost btn-xs">
-                  <span class="icon-[tabler--dots-vertical] size-4"></span>
-                </label>
-                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40">
-                  <li>
-                    <a @click="viewLoanDetails(loan)">
-                      <span class="icon-[tabler--eye] size-4"></span>
-                      ເບິ່ງລາຍລະອຽດ
-                    </a>
-                  </li>
-                  <li v-if="loan.status === 'pending'">
-                    <a @click="approveLoan(loan)" class="text-success">
-                      <span class="icon-[tabler--check] size-4"></span>
-                      ອະນຸມັດ
-                    </a>
-                  </li>
-                  <li v-if="loan.status === 'pending'">
-                    <a @click="rejectLoan(loan)" class="text-error">
-                      <span class="icon-[tabler--x] size-4"></span>
-                      ປະຕິເສດ
-                    </a>
-                  </li>
-                  <li v-if="loan.status === 'approved'">
-                    <a @click="disburseLoan(loan)" class="text-primary">
-                      <span class="icon-[tabler--cash] size-4"></span>
-                      ຈ່າຍເງິນ
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </td> -->
           </tr>
 
           <tr v-if="displayedLoans.length === 0">
-            <td colspan="10" class="text-center py-8 text-base-content/60">
+            <td colspan="9" class="text-center py-8 text-base-content/60">
               <div class="flex flex-col items-center gap-2">
                 <span class="icon-[tabler--database-off] size-8"></span>
                 <p>ບໍ່ພົບຂໍ້ມູນການຂໍສິນເຊື່ອ</p>
@@ -205,7 +165,7 @@
       </div>
     </div>
 
-    <!-- Loan Details Modal -->
+    <!-- Loan Details Modal (Read-Only) -->
     <teleport to="body">
       <div v-if="showDetailsModal && selectedLoan"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -226,8 +186,8 @@
                 <p class="font-mono">{{ selectedLoan.loan_id || '-' }}</p>
               </div>
               <div>
-                <label class="text-sm font-medium text-gray-500">ສະຖານະ</label>
-                <span class="badge badge-soft" :class="getStatusBadgeClass(selectedLoan.status)">
+                <label class="text-sm font-medium text-gray-500">ສະຖານະ</label><br>
+                <span class="badge badge-soft mt-1" :class="getStatusBadgeClass(selectedLoan.status)">
                   {{ getStatusText(selectedLoan.status) }}
                 </span>
               </div>
@@ -241,7 +201,7 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຈຳນວນເງິນ</label>
-                <p class="font-medium">{{ formatPrice(selectedLoan.total_amount) }}</p>
+                <p class="font-medium text-primary">{{ formatPrice(selectedLoan.total_amount) }}</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ດອກເບ້ຍ</label>
@@ -258,19 +218,19 @@
             </div>
 
             <!-- Customer Address -->
-            <div v-if="selectedLoan.customer?.address">
+            <div v-if="selectedLoan.customer?.address" class="border-t pt-4">
               <label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label>
               <p class="whitespace-pre-line">{{ selectedLoan.customer.address }}</p>
             </div>
 
             <!-- Remarks/Notes -->
-            <div v-if="selectedLoan.remarks">
+            <div v-if="selectedLoan.remarks" class="border-t pt-4">
               <label class="text-sm font-medium text-gray-500">ໝາຍເຫດ</label>
-              <p>{{ selectedLoan.remarks }}</p>
+              <p class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 mt-1">{{ selectedLoan.remarks }}</p>
             </div>
 
             <!-- Documents -->
-            <div v-if="currentDocuments.length > 0">
+            <div v-if="currentDocuments.length > 0" class="border-t pt-4">
               <label class="text-sm font-medium text-gray-500 mb-2 block">ເອກະສານ</label>
               <div class="flex flex-wrap gap-2">
                 <div v-for="doc in currentDocuments" :key="doc.id" class="badge badge-outline gap-1">
@@ -281,98 +241,28 @@
             </div>
 
             <!-- Timestamps -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
               <div>
                 <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
                 <p>{{ formatDate(selectedLoan.createdAt) }}</p>
               </div>
+              <div>
+                <label class="text-sm font-medium text-gray-500">ອັບເດດຫຼ້າສຸດ</label>
+                <p>{{ formatDate(selectedLoan.updatedAt) }}</p>
+              </div>
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 mt-6">
-            <button class="btn btn-soft btn-secondary" @click="closeDetailsModal">
-              ປິດ
-            </button>
-            <button v-if="selectedLoan.status === 'pending'" class="btn btn-success" @click="approveLoan(selectedLoan)">
-              ອະນຸມັດ
-            </button>
-            <button v-if="selectedLoan.status === 'pending'" class="btn btn-error" @click="rejectLoan(selectedLoan)">
-              ປະຕິເສດ
-            </button>
-            <button v-if="selectedLoan.status === 'approved'" class="btn btn-primary"
-              @click="disburseLoan(selectedLoan)">
-              ຈ່າຍເງິນ
+          <!-- 🌟 ເອົາປຸ່ມ Action ອອກ ຍັງເຫຼືອແຕ່ປຸ່ມປິດ -->
+          <div class="flex justify-end mt-6 border-t pt-4">
+            <button class="btn btn-soft btn-secondary w-full sm:w-auto" @click="closeDetailsModal">
+              ປິດໜ້າຈໍ
             </button>
           </div>
         </div>
       </div>
     </teleport>
 
-    <!-- Action Confirmation Modals (Approve, Reject, Disburse) -->
-    <!-- ใช้โครงสร้างเดิมจากโค้ดก่อนหน้า -->
-    <teleport to="body">
-      <div v-if="showApproveModal && loanToAction"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-          <h3 class="font-bold text-lg mb-4 text-success">ອະນຸມັດສິນເຊື່ອ</h3>
-          <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການອະນຸມັດສິນເຊື່ອຂອງ "{{ getCustomerFullName(loanToAction) }}" ?
-          </p>
-          <div class="flex justify-end gap-3 mt-6">
-            <button class="btn btn-soft btn-secondary" @click="showApproveModal = false">
-              ຍົກເລີກ
-            </button>
-            <button class="btn btn-success" @click="confirmApproveLoan" :disabled="isSaving">
-              <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
-              ອະນຸມັດ
-            </button>
-          </div>
-        </div>
-      </div>
-    </teleport>
-
-    <teleport to="body">
-      <div v-if="showRejectModal && loanToAction"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-          <h3 class="font-bold text-lg mb-4 text-error">ປະຕິເສດສິນເຊື່ອ</h3>
-          <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການປະຕິເສດສິນເຊື່ອຂອງ "{{ getCustomerFullName(loanToAction) }}" ?
-          </p>
-          <div class="flex justify-end gap-3 mt-6">
-            <button class="btn btn-soft btn-secondary" @click="showRejectModal = false">
-              ຍົກເລີກ
-            </button>
-            <button class="btn btn-error" @click="confirmRejectLoan" :disabled="isSaving">
-              <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
-              ປະຕິເສດ
-            </button>
-          </div>
-        </div>
-      </div>
-    </teleport>
-
-    <teleport to="body">
-      <div v-if="showDisburseModal && loanToAction"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-          <h3 class="font-bold text-lg mb-4 text-primary">ຈ່າຍເງິນສິນເຊື່ອ</h3>
-          <p class="py-4 text-gray-700 dark:text-gray-300">
-            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຈ່າຍເງິນສິນເຊື່ອ {{ formatPrice(loanToAction.total_amount) }} ໃຫ້ "{{
-              getCustomerFullName(loanToAction) }}" ?
-          </p>
-          <div class="flex justify-end gap-3 mt-6">
-            <button class="btn btn-soft btn-secondary" @click="showDisburseModal = false">
-              ຍົກເລີກ
-            </button>
-            <button class="btn btn-primary" @click="confirmDisburseLoan" :disabled="isSaving">
-              <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
-              ຈ່າຍເງິນ
-            </button>
-          </div>
-        </div>
-      </div>
-    </teleport>
   </div>
 </template>
 
@@ -388,9 +278,7 @@ import { LoanApplicationStatus, type LoanApplication, type LoanApplicationFilter
 const loanStore = useLoanApplicationStore()
 const {
   loanApplications,
-  currentLoanApplication,
   isLoading,
-  isSaving,
   currentDocuments,
   customer
 } = storeToRefs(loanStore)
@@ -399,7 +287,7 @@ const {
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchQuery = ref('')
-const statusFilter = ref<LoanApplicationStatus | ''>('')
+const statusFilter = ref<LoanApplicationStatus | string>('')
 const dateFrom = ref('')
 const dateTo = ref('')
 
@@ -409,11 +297,7 @@ const amountMax = ref<number | undefined>(undefined)
 
 // 🪟 Modal states
 const showDetailsModal = ref(false)
-const showApproveModal = ref(false)
-const showRejectModal = ref(false)
-const showDisburseModal = ref(false)
 const selectedLoan = ref<LoanApplication | null>(null)
-const loanToAction = ref<LoanApplication | null>(null)
 
 // 📄 Pagination
 const debouncedSearch = ref('')
@@ -439,11 +323,10 @@ const applyDateFilter = () => {
 const fetchLoans = async () => {
   try {
     const filters: LoanApplicationFilters = {
-      is_confirmed: 1,
-      status: statusFilter.value || undefined,
+      is_confirmed: 1, // ດຶງສະເພາະອັນທີ່ຄອນເຟີມແລ້ວ
+      status: statusFilter.value ? (statusFilter.value as any) : undefined,
       min: amountMin.value,
       max: amountMax.value,
-      // ✅ เพิ่ม CustomerId ถ้ามีการค้นหา
       CustomerId: customer.value?.id || undefined
     }
 
@@ -457,7 +340,7 @@ const fetchLoans = async () => {
 const filteredLoans = computed(() => {
   let filtered = loanApplications.value
 
-  // 🔍 Search filter (client-side สำหรับ search ทั่วไป)
+  // 🔍 Search filter
   if (debouncedSearch.value) {
     const query = debouncedSearch.value.toLowerCase()
     filtered = filtered.filter(loan => {
@@ -471,7 +354,7 @@ const filteredLoans = computed(() => {
     })
   }
 
-  // 📅 Date filter (client-side)
+  // 📅 Date filter
   if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(loan => {
       const loanDate = loan.createdAt ? new Date(loan.createdAt).toISOString().split('T')[0] : undefined;
@@ -507,8 +390,9 @@ const getStatusBadgeClass = (status: string): string => {
     'verifying': 'badge-info',
     'verified': 'badge-primary',
     'approved': 'badge-success',
+    'disbursed': 'badge-success text-white bg-indigo-500', // 🌟 ເພີ່ມສີໃຫ້ສະຖານະປ່ອຍແລ້ວ
     'rejected': 'badge-error',
-    'completed': 'badge-neutral',
+    'completed': 'badge-neutral text-white bg-gray-700',
     'draft': 'badge-ghost'
   }
   return map[status] || 'badge-neutral'
@@ -521,15 +405,13 @@ const getStatusText = (status: string): string => {
     'verifying': 'ກຳລັງກວດສອບ',
     'verified': 'ກວດສອບແລ້ວ',
     'approved': 'ອະນຸມັດແລ້ວ',
+    'disbursed': 'ປ່ອຍສິນເຊື່ອແລ້ວ', // 🌟 ເພີ່ມຄຳແປ
     'rejected': 'ປະຕິເສດ',
     'completed': 'ສຳເລັດ',
     'draft': 'ຮ່າງ'
   }
   return map[status] || status
 }
-
-// 💰 Format Price
-
 
 // 📅 Format Date
 const formatDate = (dateString: string | undefined): string => {
@@ -546,9 +428,9 @@ const formatDate = (dateString: string | undefined): string => {
 // 👤 Get Customer Full Name
 const getCustomerFullName = (loan: LoanApplication): string => {
   if (loan.customer) {
-    return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim() || 'ไม່ຮູ້ຊື່'
+    return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim() || 'ບໍ່ຮູ້ຊື່'
   }
-  return 'ไม່ຮູ້ຊື່'
+  return 'ບໍ່ຮູ້ຊື່'
 }
 
 // 📞 Get Customer Phone
@@ -556,16 +438,13 @@ const getCustomerPhone = (loan: LoanApplication): string => {
   return loan.customer?.phone || '-'
 }
 
-// 🎯 Action Handlers
-
-// 📋 View Details
+// 📋 View Details (Read Only)
 const viewLoanDetails = async (loan: LoanApplication) => {
   try {
     selectedLoan.value = loan
     await loanStore.fetchLoanApplicationById(loan.id)
     if (loanStore.currentLoanApplication) {
       selectedLoan.value = loanStore.currentLoanApplication
-      // 📄 Fetch documents
       await loanStore.fetchDocuments(loan.id)
     }
   } catch (error) {
@@ -577,78 +456,6 @@ const viewLoanDetails = async (loan: LoanApplication) => {
 const closeDetailsModal = () => {
   showDetailsModal.value = false
   selectedLoan.value = null
-}
-
-// ✅ Approve
-const approveLoan = (loan: LoanApplication) => {
-  loanToAction.value = loan
-  showApproveModal.value = true
-}
-
-const confirmApproveLoan = async () => {
-  if (!loanToAction.value) return
-
-  try {
-    await loanStore.changeStatus(loanToAction.value.id, {
-      status: LoanApplicationStatus.APPROVED,
-      remarks: 'ອະນຸມັດໂດຍຜູ້ໃຊ້'
-    })
-    alert('ອະນຸມັດສິນເຊື່ອສຳເລັດ!')
-    await fetchLoans()
-  } catch (error: any) {
-    alert('ອະນຸມັດລົ້ມເຫຼວ: ' + (error.message || 'Unknown error'))
-  } finally {
-    showApproveModal.value = false
-    loanToAction.value = null
-  }
-}
-
-// ❌ Reject
-const rejectLoan = (loan: LoanApplication) => {
-  loanToAction.value = loan
-  showRejectModal.value = true
-}
-
-const confirmRejectLoan = async () => {
-  if (!loanToAction.value) return
-
-  try {
-    await loanStore.changeStatus(loanToAction.value.id, {
-      status: LoanApplicationStatus.REJECTED,
-      remarks: 'ປະຕິເສດໂດຍຜູ້ໃຊ້'
-    })
-    alert('ປະຕິເສດສິນເຊື່ອສຳເລັດ!')
-    await fetchLoans()
-  } catch (error: any) {
-    alert('ປະຕິເສດລົ້ມເຫຼວ: ' + (error.message || 'Unknown error'))
-  } finally {
-    showRejectModal.value = false
-    loanToAction.value = null
-  }
-}
-
-// 💸 Disburse
-const disburseLoan = (loan: LoanApplication) => {
-  loanToAction.value = loan
-  showDisburseModal.value = true
-}
-
-const confirmDisburseLoan = async () => {
-  if (!loanToAction.value) return
-
-  try {
-    await loanStore.changeStatus(loanToAction.value.id, {
-      status: LoanApplicationStatus.COMPLETED,
-      remarks: 'ຈ່າຍເງິນແລ້ວ'
-    })
-    alert('ຈ່າຍເງິນສິນເຊື່ອສຳເລັດ!')
-    await fetchLoans()
-  } catch (error: any) {
-    alert('ຈ່າຍເງິນລົ້ມເຫຼວ: ' + (error.message || 'Unknown error'))
-  } finally {
-    showDisburseModal.value = false
-    loanToAction.value = null
-  }
 }
 
 // 📥 Export CSV
@@ -671,7 +478,7 @@ const exportToCSV = () => {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
-  link.download = `loans_${new Date().toISOString().split('T')[0]}.csv`
+  link.download = `all_loans_history_${new Date().toISOString().split('T')[0]}.csv`
   link.click()
 }
 
@@ -685,20 +492,6 @@ const previousPage = () => {
 const nextPage = () => {
   if (hasNextPage.value) {
     currentPage.value++
-  }
-}
-
-// 🔍 Search Customer by Phone (ใช้ Store)
-const searchCustomer = async (phone: string) => {
-  if (!phone || phone.length < 9) return
-
-  try {
-    await loanStore.fetchCustomerByPhone(phone)
-    if (loanStore.customer) {
-      console.log('Customer found:', loanStore.customer)
-    }
-  } catch (error) {
-    console.error('Customer not found:', error)
   }
 }
 

@@ -313,13 +313,21 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="form-control">
             <label class="label">
-              <span class="label-text font-medium">ຊື່ ແລະ ນາມສະກຸນ *</span>
+              <span class="label-text font-medium">ຊື່ແທ້ *</span>
             </label>
-            <input v-model="customerForm.full_name" type="text" placeholder="ປ້ອນຊື່ ແລະ ນາມສະກຸນ"
-              class="input input-bordered w-full" :class="{ 'input-error': customerErrors.full_name }" required />
-            <label v-if="customerErrors.full_name" class="label text-error">
-              <span class="label-text-alt">{{ customerErrors.full_name }}</span>
+            <input v-model="customerForm.first_name" type="text" placeholder="ປ້ອນຊື່"
+              class="input input-bordered w-full" :class="{ 'input-error': customerErrors.first_name }" required />
+            <label v-if="customerErrors.first_name" class="label text-error">
+              <span class="label-text-alt">{{ customerErrors.first_name }}</span>
             </label>
+          </div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">ນາມສະກຸນ</span>
+            </label>
+            <input v-model="customerForm.last_name" type="text" placeholder="ປ້ອນນາມສະກຸນ"
+              class="input input-bordered w-full" />
           </div>
 
           <div class="form-control">
@@ -632,8 +640,10 @@ import type { Product } from '@/types/product'
 import { useAddressStore } from '@/stores/address';
 import { getFullImageUrl } from '@/utils/url';
 
+// 🟢 ແກ້ໄຂ interface ໃຫ້ກົງກັບໂຕໃໝ່
 interface Customer {
-  full_name: string
+  first_name: string
+  last_name: string
   phone: string
   id_card: string
   age: number
@@ -657,7 +667,7 @@ const shopStore = useShopStore()
 const productStore = useProductStore()
 const productTypeStore = useProductTypeStore()
 const loanApplicationStore = useLoanApplicationStore()
-const addressStore = useAddressStore();
+const addressStore = useAddressStore()
 
 const router = useRouter()
 const activeTab = ref<'application' | 'documents'>('application')
@@ -767,7 +777,6 @@ const handleCurrencyInput = (field: 'monthly_income' | 'other_debts', event: Eve
   }
 };
 
-// 🟢 ຟັງຊັນສຳລັບການປ່ຽນແປງລາຄາສິນຄ້າ
 const handlePriceInput = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const cursorPosition = target.selectionStart;
@@ -778,7 +787,6 @@ const handlePriceInput = (event: Event) => {
 
   if (!isNaN(numericValue) && rawValue !== '') {
     loanDetails.totalAmount = numericValue;
-    // ຖ້າເງິນດາວຫຼາຍກວ່າລາຄາໃໝ່ ໃຫ້ປັບເງິນດາວລົງມາເທົ່າກັບລາຄາ
     if (loanDetails.downPayment > loanDetails.totalAmount) {
       loanDetails.downPayment = loanDetails.totalAmount;
     }
@@ -856,18 +864,15 @@ const handleCalculationChange = () => {
   loanDetails.monthlyPayment = calculateMonthlyPayment()
 }
 
-// Shop selection
 const shopSearch = ref('')
 const showShopDropdown = ref(false)
 const selectedShop = ref<shopType | null>(null)
 const selectedProductType = ref<string>('')
 
-// Product selection
 const productSearch = ref('')
 const showProductDropdown = ref(false)
 const selectedProduct = ref<Product | null>(null)
 
-// Customer Search State
 const customerSearchPhone = ref('')
 const isSearchingCustomer = ref(false)
 const foundCustomer = ref<any>(null)
@@ -893,7 +898,9 @@ const searchCustomerByPhone = async () => {
       existingCustomerId.value = customer.id
       customerSearchMessage.value = `ພົບຂໍ້ມູນລູກຄ້າ: ${customer.first_name} ${customer.last_name}`
 
-      customerForm.full_name = `${customer.first_name} ${customer.last_name}`.trim()
+      // 🟢 Mapping ຂໍ້ມູນໃສ່ first_name ແລະ last_name
+      customerForm.first_name = customer.first_name || ''
+      customerForm.last_name = customer.last_name || ''
       customerForm.phone = customer.phone
       customerForm.id_card = customer.identity_number || ''
       customerForm.address = customer.address || ''
@@ -926,7 +933,10 @@ const clearFoundCustomer = () => {
   allowEditFoundCustomer.value = false
 
   const phone = customerForm.phone
-  customerForm.full_name = ''
+  
+  // 🟢 ເຄລຍຄ່າ first_name ແລະ last_name
+  customerForm.first_name = ''
+  customerForm.last_name = ''
   customerForm.phone = phone
   customerForm.id_card = ''
   customerForm.address = ''
@@ -948,16 +958,15 @@ watch(selectedProduct, () => {
   }
 })
 
-// Customer form
+// 🟢 ປ່ຽນແປງ Reactive Form
 const customerForm = reactive({
-  full_name: '', phone: '', id_card: '', age: 18, province_id: '', district_id: '', address: '', occupation: '', monthly_income: 0, other_debts: 0
+  first_name: '', last_name: '', phone: '', id_card: '', age: 18, province_id: '', district_id: '', address: '', occupation: '', monthly_income: 0, other_debts: 0
 })
 
 const customerErrors = reactive({
-  full_name: '', phone: '', id_card: '', province_id: '', district_id: '', age: '', address: '', occupation: '', monthly_income: ''
+  first_name: '', phone: '', id_card: '', province_id: '', district_id: '', age: '', address: '', occupation: '', monthly_income: ''
 })
 
-// Documents
 const requiredDocuments = ref<Document[]>([
   { id: 'id_card', name: 'ບັດປະຈຳຕົວ', description: 'ຮູບຖ່າຍບັດປະຈຳຕົວທັງໜ້າ-ຫຼັງ', required: true, file: null, preview: null },
   { id: 'house_reg', name: 'ປື້ມສຳມະໂນຄົວ', description: 'ໃບຄອບຄົວຫຼືເອກະສານຢືນຢັນທີ່ຢູ່', required: true, file: null, preview: null }
@@ -1128,6 +1137,7 @@ const handleProductBlur = () => {
   setTimeout(() => { showProductDropdown.value = false }, 200)
 }
 
+// 🟢 ເພີ່ມ Validation ສຳລັບຊື່ແທ້, ແຂວງ ແລະ ເມືອງ
 const validateCustomerForm = (): boolean => {
   Object.keys(customerErrors).forEach(key => {
     customerErrors[key as keyof typeof customerErrors] = ''
@@ -1135,12 +1145,18 @@ const validateCustomerForm = (): boolean => {
 
   let isValid = true
 
-  if (!customerForm.full_name.trim()) { customerErrors.full_name = 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ'; isValid = false }
+  if (!customerForm.first_name.trim()) { customerErrors.first_name = 'ກະລຸນາປ້ອນຊື່ແທ້'; isValid = false }
+  
   const phoneRegex = /^[\d\-\+\(\)\s]{8,15}$/
   if (!customerForm.phone.trim()) { customerErrors.phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'; isValid = false }
   else if (!phoneRegex.test(customerForm.phone)) { customerErrors.phone = 'ເບີໂທລະສັບບໍ່ຖືກຕ້ອງ'; isValid = false }
+  
   if (!customerForm.id_card.trim()) { customerErrors.id_card = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ'; isValid = false }
   if (customerForm.age < 18 || customerForm.age > 100) { customerErrors.age = 'ອາຍຸຕ້ອງຢູ່ລະຫວ່າງ 18-100 ປີ'; isValid = false }
+  
+  if (!customerForm.province_id) { customerErrors.province_id = 'ກະລຸນາເລືອກແຂວງ'; isValid = false }
+  if (!customerForm.district_id) { customerErrors.district_id = 'ກະລຸນາເລືອກເມືອງ'; isValid = false }
+  
   if (!customerForm.address.trim()) { customerErrors.address = 'ກະລຸນາປ້ອນທີ່ຢູ່'; isValid = false }
   if (!customerForm.occupation.trim()) { customerErrors.occupation = 'ກະລຸນາປ້ອນອາຊີບ (ຂໍ້ມູນສຳຄັນສຳລັບການພິຈາລະນາສິນເຊື່ອ)'; isValid = false }
   if (customerForm.monthly_income <= 0) { customerErrors.monthly_income = 'ລາຍຮັບຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
@@ -1176,21 +1192,18 @@ const handleDirectSubmit = async () => {
   }
 }
 
+// 🟢 ປັບປຸງການດຶງຄ່າຈາກ customerForm (ຕັດການ split ອອກ)
 const submitLoanApplication = async () => {
   try {
     if (!validateLoanDetails()) throw new Error('ກະລຸນາກວດສອບຂໍ້ມູນສິນເຊື່ອ')
     if (!selectedShop.value || !selectedProduct.value) throw new Error('ກະລຸນາເລືອກຮ້ານ ແລະ ສິນຄ້າ')
 
-    const nameParts = customerForm.full_name.trim().split(' ')
-    const firstName = nameParts[0] || customerForm.full_name
-    const lastName = nameParts.slice(1).join(' ') || ''
-
     const data: CreateWithCustomerDto = {
       phone: customerForm.phone.trim(),
       otp: '',
       identity_number: customerForm.id_card.trim(),
-      first_name: firstName,
-      last_name: lastName,
+      first_name: customerForm.first_name.trim(), // ຮັບຄ່າຈາກ input ໂດຍກົງ
+      last_name: customerForm.last_name.trim(),   // ຮັບຄ່າຈາກ input ໂດຍກົງ
 
       province_id: customerForm.province_id,
       district_id: customerForm.district_id,
@@ -1201,7 +1214,7 @@ const submitLoanApplication = async () => {
 
       product_id: selectedProduct.value.id,
       quantity: 1,
-      total_amount: loanDetails.totalAmount, // 🟢 ຍອດຈັດທີ່ແທ້ຈິງ
+      total_amount: loanDetails.totalAmount, 
       loan_period: loanDetails.termMonths,
       interest_rate_at_apply: loanDetails.interestRate,
       monthly_pay: loanDetails.monthlyPayment,
@@ -1305,7 +1318,6 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-/* 🟢 UI/UX Update ສຳລັບການສະແດງທີ່ຢູ່ */
 .address-grid-custom {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

@@ -32,11 +32,11 @@
       <table class="table table-zebra w-full min-w-max">
         <thead class="bg-base-200">
           <tr>
-            <th>ເລກທີສັນຍາ</th>
+            <th>ເລກທີ່ສິນເຊື່ອ</th>
             <th>ລູກຄ້າ</th>
             <th>ຍອດຈັດສິນເຊື່ອ</th>
             <th>ຄ່າຜ່ອນ/ງວດ</th>
-            <th>ສະຖານະສັນຍາ</th>
+            <th>ສະຖານະ</th>
             <th class="text-center">ຈັດການ</th>
           </tr>
         </thead>

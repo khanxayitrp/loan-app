@@ -342,39 +342,62 @@
         </div>
 
         <div v-else-if="activeTab === 'documents'" class="space-y-6">
-
           <div v-if="!isEditingInModal" class="space-y-6">
             <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
               class="text-center py-12 text-gray-500">
-              <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span class="icon-[tabler--file-off] size-8 text-gray-400"></span>
               </div>
               <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
               <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີເອກະສານທີ່ອັບໂຫຼດສຳລັບສິນເຊື່ອນີ້</p>
             </div>
+            
             <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div v-for="doc in loanApplicationStore.currentDocuments" :key="doc.id"
-                class="border rounded-lg p-4 flex flex-col gap-3 bg-white">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h5 class="font-medium text-sm">{{ getDocumentTypeName(doc.document_type || doc.doc_type) }}</h5>
-                    <p class="text-xs text-gray-500 mt-1">{{ doc.original_filename || doc.file_name || 'ບໍ່ຮູ້ຈັກ' }}
+              <div v-for="doc in sortedCurrentDocuments" :key="doc.id"
+                class="border rounded-lg p-4 flex flex-col gap-3 bg-white dark:bg-gray-800 overflow-hidden">
+                
+                <div class="flex justify-between items-start gap-2 w-full overflow-hidden">
+                  <div class="flex-1 min-w-0">
+                    <h5 class="font-medium text-sm truncate">
+                      {{ getDocumentTypeName(doc.document_type || doc.doc_type) }}
+                    </h5>
+                    <p class="text-xs text-gray-500 mt-1 truncate" :title="doc.original_filename || doc.file_name">
+                      {{ doc.original_filename || doc.file_name || 'ບໍ່ຮູ້ຈັກ' }}
                     </p>
                   </div>
-                  <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
-                    class="btn btn-xs btn-ghost text-primary hover:bg-primary/10">
-                    <span class="icon-[tabler--download] size-4 mr-1"></span> ດາວໂຫຼດ
-                  </a>
+                  
+                  <div class="flex items-center gap-1 shrink-0">
+                    <a href="#" @click.prevent="openInNewTab(getFullImageUrl(doc.file_url))"
+                      class="btn btn-xs btn-ghost text-info hover:bg-info/10"
+                      title="ເບິ່ງເອກະສານ">
+                      <span class="icon-[tabler--eye] size-4 mr-1"></span> ເບິ່ງ
+                    </a>
+                    
+                    <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
+                      class="btn btn-xs btn-ghost text-primary hover:bg-primary/10"
+                      title="ດາວໂຫຼດ">
+                      <span class="icon-[tabler--download] size-4 mr-1"></span> ໂຫຼດ
+                    </a>
+                  </div>
                 </div>
+
                 <div class="mt-2">
-                  <div v-if="isImage(doc.file_url)" class="aspect-video bg-gray-100 rounded overflow-hidden">
+                  <div v-if="isImage(doc.file_url)"
+                    class="aspect-video bg-gray-100 dark:bg-gray-700 rounded overflow-hidden cursor-pointer"
+                    @click="openInNewTab(getFullImageUrl(doc.file_url))">
                     <img :src="getFullImageUrl(doc.file_url) || ''" alt="Document preview"
-                      class="w-full h-full object-contain p-2" />
+                      class="w-full h-full object-contain p-2 hover:scale-105 transition-transform" />
                   </div>
-                  <div v-else class="w-full h-32 bg-gray-100 rounded flex items-center justify-center">
-                    <span class="icon-[tabler--file-description] size-12 text-gray-400"></span>
+                  <div v-else 
+                    class="w-full h-32 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200 transition"
+                    @click="openInNewTab(getFullImageUrl(doc.file_url))">
+                    <div class="text-center">
+                      <span class="icon-[tabler--file-description] size-12 text-gray-400"></span>
+                      <p class="text-xs text-gray-500 mt-2">ຄລິກເພື່ອເບິ່ງ PDF</p>
+                    </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -538,6 +561,13 @@ const isUploadingDocuments = ref(false)
 const selectedLoan = ref<any | null>(null)
 const selectedContract = ref<any | null>(null)
 
+// 🟢 ຟັງຊັນເປີດ Tab ໃໝ່
+const openInNewTab = (url: string | null | undefined) => {
+  if (url) {
+    window.open(url, '_blank');
+  }
+};
+
 // Product Selection states
 const modalShopId = ref<number | null>(null)
 const modalProductSearch = ref('')
@@ -603,6 +633,28 @@ const closeModal = () => { isEditingInModal.value = false; activeTab.value = 'de
 const canPrintProposal = computed(() => !!selectedLoan.value?.id && !!selectedLoan.value?.customer?.first_name)
 const canPrintContract = computed(() => !!selectedContract.value && !!selectedContract.value.id)
 const openPrintTab = (tabName: 'loanContract') => { activeTab.value = tabName; }
+
+// 🟢 ຟັງຊັນຈັດລຽງລຳດັບເອກະສານ (ບັດປະຈຳຕົວ -> ໃບຄອບຄົວ -> ລາຍຮັບ -> ອື່ນໆ)
+const sortedCurrentDocuments = computed(() => {
+  const docs = loanApplicationStore.currentDocuments || [];
+  
+  // ກຳນົດລຳດັບທີ່ຕ້ອງການ (ອ້າງອີງຈາກ document_type)
+  const orderList = ['id_card', 'house_reg', 'salary_slip', 'other'];
+
+  return [...docs].sort((a, b) => {
+    const typeA = a.document_type || a.doc_type || '';
+    const typeB = b.document_type || b.doc_type || '';
+
+    let indexA = orderList.indexOf(typeA);
+    let indexB = orderList.indexOf(typeB);
+
+    // ຖ້າບໍ່ກົງກັບລາຍການຂ້າງເທິງ ໃຫ້ເອົາໄປໄວ້ທ້າຍສຸດ
+    if (indexA === -1) indexA = 999;
+    if (indexB === -1) indexB = 999;
+
+    return indexA - indexB;
+  });
+});
 
 // 🟢 Address Handlers
 const handleProvinceChange = async () => {
@@ -938,7 +990,7 @@ const calculateModalMonthlyPayment = (): number => {
 const handleModalCurrencyInput = (field: keyof typeof modalLoanForm, e: Event) => {
   const target = e.target as HTMLInputElement;
   const raw = target.value.replace(/,/g, '');
-  // @ts-ignore - Because modalLoanForm holds mixed types (string, number), TS complains about assignment
+  // @ts-ignore
   modalLoanForm[field] = Number(raw) || 0;
   target.value = formatCurrencyInput(Number(modalLoanForm[field]));
 }
@@ -988,7 +1040,7 @@ const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') 
   const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return;
   const docs = type === 'req' ? loanDocuments.value : optionalDocuments.value;
   const reader = new FileReader(); reader.onload = (e) => {
-    if (docs[index]) { // 🟢 Safety Check Added
+    if (docs[index]) {
       docs[index].file = file;
       docs[index].preview = e.target?.result as string;
     }
@@ -997,7 +1049,7 @@ const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') 
 
 const removeDocument = (index: number, type: 'req' | 'opt') => {
   const docs = type === 'req' ? loanDocuments.value : optionalDocuments.value;
-  if (docs[index]) { // 🟢 Safety Check Added
+  if (docs[index]) {
     docs[index].file = null;
     docs[index].preview = null;
   }

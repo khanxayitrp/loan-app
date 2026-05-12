@@ -226,8 +226,11 @@ const fetchReferenceId = async () => {
           break;
 
         case 'delivery_note':
-          form.reference_id = extractedData.receipts_id || extractedData.id;
-          form.display_reference = extractedData.delivery_number || extractedData.receipt_number || `ໃບນຳສົ່ງ (ID: ${form.reference_id})`;
+          // ✅ 1. ดึง id (ตัวเลขล้วน) ส่งไปให้ Backend
+          form.reference_id = extractedData.id; 
+          
+          // ✅ 2. ดึง receipts_id (DR-2026-xxx) มาโชว์บนหน้าจอให้พนักงานดู
+          form.display_reference = extractedData.receipts_id || `ໃບນຳສົ່ງ (ID: ${form.reference_id})`;
           break;
       }
 

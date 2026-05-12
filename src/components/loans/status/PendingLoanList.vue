@@ -42,7 +42,7 @@
       <table class="table table-zebra w-full min-w-max">
         <thead>
           <tr>
-            <th>ເລກທີ່</th>
+            <th>ເລກທີ່ສິນເຊື່ອ</th>
             <th>ລູກຄ້າ</th>
             <th>ເບີໂທ</th>
             <th>ຈຳນວນເງິນ</th>
@@ -298,7 +298,7 @@
             <button class="btn btn-outline btn-warning" @click="openScheduleModal(selectedLoan)">
               <span class="icon-[tabler--calendar-stats] size-4 mr-1"></span> ຕາຕະລາງຜ່ອນ
             </button>
-            
+
             <button class="btn btn-outline btn-info" @click="openDraftContractModal">
               <span class="icon-[tabler--file-certificate] size-4 mr-1"></span> ເບິ່ງຮ່າງສັນຍາ
             </button>

@@ -1,19 +1,15 @@
 <template>
   <div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-    <!-- Loading State -->
     <div v-if="isLoading" class="text-center py-8">
       <div class="loading loading-spinner"></div>
     </div>
 
-    <!-- Error State -->
     <div v-else-if="error" class="text-center py-8 text-error">
       <span class="icon-[tabler--alert-triangle] size-8 mb-4"></span>
       <p>{{ error }}</p>
     </div>
 
-    <!-- Shop Data -->
     <div v-else-if="shop">
-      <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <div class="p-2 bg-primary/10 rounded-lg">
@@ -31,7 +27,6 @@
         </button>
       </div>
 
-      <!-- Logo -->
       <div class="flex justify-center mb-6">
         <div v-if="shop.shop_logo_url"
           class="w-24 h-24 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
@@ -42,7 +37,6 @@
         </div>
       </div>
 
-      <!-- Basic Info Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
           <label class="text-sm font-medium text-gray-500">ຊື່ຮ້ານ</label>
@@ -72,23 +66,16 @@
         </div>
       </div>
 
-      <!-- Address -->
       <div class="mb-6">
         <label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label>
-        <p class="whitespace-pre-line mb-2">{{ shop.address }}</p>
-        <!-- <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ shop.village ? `${shop.village}, ` : '' }}
-          {{ shop.district }}, {{ getProvinceName(shop.province) }}
-        </p> -->
+        <p class="whitespace-pre-line mb-1">{{ shop.address }}</p>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          {{ getFullAddressText(shop.province_id ?? undefined, shop.district_id ?? undefined) }}
+        </p>
       </div>
-      <!-- Created At -->
-      <!-- <div>
-        <label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
-        <p>{{ formatDate(shopStore.currentShop.created_at) }}</p>
-      </div> -->
+      
     </div>
 
-    <!-- No Data State -->
     <div v-else class="text-center py-8 text-gray-500">
       <span class="icon-[tabler--building-store] size-8 mb-4"></span>
       <p>ບໍ່ພົບຂໍ້ມູນຮ້ານ</p>
@@ -97,8 +84,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type Prop } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useShopStore } from '@/stores/shop'
+import { useAddressStore } from '@/stores/address' // 🟢 ເພີ່ມ Address Store
 import type { shopType } from '@/types/shop'
 
 const emit = defineEmits<{
@@ -108,49 +96,37 @@ const emit = defineEmits<{
 const props = defineProps<{
   shop: shopType | null
 }>()
-const shop = computed(() => props.shop)
-// Store
-const shopStore = useShopStore()
-// // ✅ ใช้ computed เพื่อ reactivity
-// const shop = computed(() => {
-//   const currentShop = shopStore.currentShop
-//   if (!currentShop) return null
 
-//   // ✅ ตรวจสอบโครงสร้างข้อมูลและ extract ให้ถูกต้อง
-//   if (currentShop.shop && typeof currentShop.shop === 'object') {
-//     // กรณี: { message: "...", shop: { ... } }
-//     return currentShop.shop
-//   } else {
-//     // กรณี: { id: ..., shop_name: ..., ... }
-//     return currentShop
-//   }
-// })
+const shop = computed(() => props.shop)
+const shopStore = useShopStore()
+const addressStore = useAddressStore() // 🟢 ໃຊ້ Address Store
+
 const isLoading = computed(() => shopStore.isLoading)
 const error = computed(() => shopStore.error)
 
+// 🟢 ຟັງຊັນຊອກຫາຊື່ແຂວງ ແລະ ເມືອງ ຈາກ ID
+const getFullAddressText = (provinceId?: string | number, districtId?: string | number): string => {
+  let addressText = '';
 
+  // ຫາຊື່ເມືອງ
+  if (districtId) {
+    // ຖ້າຍັງບໍ່ມີຂໍ້ມູນເມືອງໃນ Store ໃຫ້ພະຍາຍາມດຶງມາກ່ອນ (ຖ້າໂຫຼດແລ້ວມັນຈະມີໃນ Cache)
+    const district = addressStore.districts.find(d => String(d.district_id) === String(districtId));
+    if (district) {
+      addressText += `${district.district_name}, `;
+    }
+  }
 
-// Utility functions
-// const getProvinceName = (provinceCode: string): string => {
-//   const provinces: Record<string, string> = {
-//     'Vientiane': 'ນະຄອນຫຼວງວຽງຈັນ',
-//     'Champasak': 'ຈຳປາສັກ',
-//     'Savannakhet': 'ສະຫວັນນະເຂດ',
-//     'Luang Prabang': 'ຫຼວງພະບາງ',
-//     'Bokeo': 'ບໍ່ແກ້ວ',
-//     'Bolikhamxai': 'ບໍລິຄໍາໄຊ',
-//     'Houaphanh': 'ຫົວພັນ',
-//     'Khammouane': 'ຄໍາມ່ວນ',
-//     'Oudomxay': 'ອຸດົມໄຊ',
-//     'Phongsaly': 'ຜົ້ງສາລີ',
-//     'Salavan': 'ສາລະວັນ',
-//     'Sekong': 'ເຊກອງ',
-//     'Vientiane Province': 'ວຽງຈັນ',
-//     'Xayaboury': 'ໄຊຍະບູລີ',
-//     'Xiangkhouang': 'ຊຽງຂວາງ'
-//   }
-//   return provinces[provinceCode] || provinceCode
-// }
+  // ຫາຊື່ແຂວງ
+  if (provinceId) {
+    const province = addressStore.provinces.find(p => String(p.province_id) === String(provinceId));
+    if (province) {
+      addressText += `ແຂວງ${province.province_name}`;
+    }
+  }
+
+  return addressText || 'ບໍ່ລະບຸແຂວງ/ເມືອງ';
+}
 
 const getBusinessTypeName = (businessType: string): string => {
   const types: Record<string, string> = {
@@ -164,12 +140,22 @@ const getBusinessTypeName = (businessType: string): string => {
   return types[businessType] || businessType
 }
 
-const formatDate = (dateString: string): string => {
-  if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleDateString('lo-LA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
+// 🟢 ໂຫຼດຂໍ້ມູນແຂວງ (ແລະເມືອງຖ້າມີ) ຂຶ້ນມາກຽມໄວ້
+// 🟢 เปลี่ยนจาก onMounted เดิม เป็นการใช้ watch ผสม onMounted
+onMounted(async () => {
+  // โหลดรายชื่อแขวงทั้งหมดเตรียมไว้ก่อน (ดึงแค่ครั้งเดียว)
+  if (addressStore.provinces.length === 0) {
+    await addressStore.fetchProvinces();
+  }
+})
+
+// 🟢 เพิ่ม watch เพื่อคอยดูว่าข้อมูลร้านค้าถูกส่งมาถึงหรือยัง
+watch(() => props.shop?.province_id, async (newProvinceId) => {
+  if (newProvinceId) {
+    // ทันทีที่ province_id โหลดมาถึง (เช่น "01") ให้สั่งดึงรายชื่อเมือง
+    // ปล่อยค่าเป็น String หรือ Number ตามที่ API รับได้เลย (ไม่ต้องครอบ Number() แล้วถ้า Backend ใช้ "01")
+    await addressStore.fetchDistricts(newProvinceId as any);
+  }
+}, { immediate: true }) // immediate: true สั่งให้ทำงานทันทีที่เปิดหน้าจอด้วย
+
 </script>

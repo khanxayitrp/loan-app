@@ -8,6 +8,8 @@ export interface shopType {
   contact_number: string | null
   shop_logo_url: string | null
   address: string | null
+  province_id: number | null
+  district_id: number | null
   business_type: string
   is_active: number
 

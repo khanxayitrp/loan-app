@@ -185,19 +185,19 @@ const menuItems = [
     permission: 'user_manage',
     children: [
       {
-        label: 'Manage User',
+        label: 'ການຈັດການຜູ້ໃຊ້ (Manage User)',
         icon: 'icon-[tabler--users]',
         to: '/users',
         permission: 'user_view'
       },
       {
-        label: 'Change Password',
+        label: 'ການປ່ຽນPassword (Change Password)',
         icon: 'icon-[tabler--key]',
         to: '/changePassword',
         permission: 'user_manage'
       },
       {
-        label: 'Manage Permission',
+        label: 'ການຈັດການສິດ (Manage Permission)',
         icon: 'icon-[tabler--shield]',
         to: '/PermissionManagement',
         permission: 'permission_manage'
@@ -210,25 +210,25 @@ const menuItems = [
     permission: 'loan_view_all',
     children: [
       {
-        label: 'All Loans',
+        label: 'ຄຳຂໍສິນເຊື່ອທັງໝົດ (All Loans)',
         icon: 'icon-[tabler--list]',
         to: '/loans',
         permission: 'loan_view_all'
       },
       {
-        label: 'Pending',
+        label: 'ລໍຖ້າການອະນຸມັດ (Pending)',
         icon: 'icon-[tabler--clock]',
         to: '/pendingLoans',
         permission: 'loan_view_assigned'
       },
       {
-        label: 'Approved',
+        label: 'ອະນຸມັດ (Approved)',
         icon: 'icon-[tabler--check]',
         to: '/approvedLoans',
         permission: 'loan_view_assigned'
       },
       {
-        label: 'Repayment',
+        label: 'ການຈັດການການຈ່າຍ (Repayment)',
         icon: 'icon-[material-symbols--paid-outline]',
         to: '/repaymentLoans',
         permission: 'loan_view_assigned'
@@ -241,19 +241,19 @@ const menuItems = [
     permission: 'loan_view_all',
     children: [
       {
-        label: 'Create Draft',
+        label: 'ສ້າງຮ່າງຂໍສິນເຊື່ອ (Create Draft)',
         icon: 'icon-[tabler--clipboard-plus]',
         to: '/createDraftLoan',
         permission: 'loan_create'
       },
       {
-        label: 'List Drafts',
+        label: 'ລາຍການຮ່າງຂໍສິນເຊື່ອ (List Drafts)',
         icon: 'icon-[tabler--checkup-list]',
         to: '/listDraftsloan',
         permission: 'loan_view_assigned'
       },
       {
-        label: 'List Loans',
+        label: 'ລາຍການສິນເຊື່ອ (List Loans)',
         icon: 'icon-[tabler--list-check]',
         to: '/listLoans',
         permission: 'loan_view_assigned'
@@ -266,13 +266,13 @@ const menuItems = [
     permission: 'partner_manage',
     children: [
       {
-        label: 'Products',
+        label: 'ສິນຄ້າ (Products)',
         icon: 'icon-[tabler--box]',
         to: '/products',
         permission: 'partner_manage'
       },
       {
-        label: 'Categories',
+        label: 'ປະເພດສິນຄ້າ (Categories)',
         icon: 'icon-[tabler--category]',
         to: '/productTypes',
         permission: 'partner_manage'

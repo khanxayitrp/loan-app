@@ -370,131 +370,150 @@
         </div>
 
         <div v-else-if="activeTab === 'documents'" class="space-y-6">
-          <div v-if="!isEditingInModal" class="space-y-6">
-            <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
-              class="text-center py-12 text-gray-500">
-              <div
-                class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="icon-[tabler--file-off] size-8 text-gray-400"></span>
-              </div>
-              <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
-              <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີເອກະສານທີ່ອັບໂຫຼດສຳລັບສິນເຊື່ອນີ້</p>
-            </div>
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div v-for="doc in loanApplicationStore.currentDocuments" :key="doc.id"
-                class="border rounded-lg p-4 flex flex-col gap-3 bg-white dark:bg-gray-800">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h5 class="font-medium text-sm">
-                      {{ getDocumentTypeName(doc.document_type || doc.doc_type) }}
-                    </h5>
-                    <p class="text-xs text-gray-500 mt-1">{{ doc.original_filename || doc.file_name || 'ບໍ່ຮູ້ຈັກ' }}
-                    </p>
-                  </div>
-                  <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
-                    class="btn btn-xs btn-ghost text-primary hover:bg-primary/10">
-                    <span class="icon-[tabler--download] size-4 mr-1"></span> ດາວໂຫຼດ
-                  </a>
-                </div>
-                <div class="mt-2">
-                  <div v-if="isImage(doc.file_url)"
-                    class="aspect-video bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
-                    <img :src="getFullImageUrl(doc.file_url) || ''" alt="Document preview"
-                      class="w-full h-full object-contain p-2" />
-                  </div>
-                  <div v-else class="w-full h-32 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center">
-                    <span class="icon-[tabler--file-description] size-12 text-gray-400"></span>
-                  </div>
-                </div>
-              </div>
-            </div>
+  <div v-if="!isEditingInModal" class="space-y-6">
+    <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
+      class="text-center py-12 text-gray-500">
+      <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span class="icon-[tabler--file-off] size-8 text-gray-400"></span>
+      </div>
+      <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
+      <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີເອກະສານທີ່ອັບໂຫຼດສຳລັບສິນເຊື່ອນີ້</p>
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div v-for="doc in sortedCurrentDocuments" :key="doc.id"
+        class="border rounded-lg p-4 flex flex-col gap-3 bg-white dark:bg-gray-800 overflow-hidden">
+        
+        <div class="flex justify-between items-start gap-2 w-full overflow-hidden">
+          
+          <div class="flex-1 min-w-0">
+            <h5 class="font-medium text-sm truncate">
+              {{ getDocumentTypeName(doc.document_type || doc.doc_type) }}
+            </h5>
+            <p class="text-xs text-gray-500 mt-1 truncate" :title="doc.original_filename || doc.file_name">
+              {{ doc.original_filename || doc.file_name || 'ບໍ່ຮູ້ຈັກ' }}
+            </p>
           </div>
 
-          <div v-else class="space-y-6">
-            <div>
-              <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
-                <span class="icon-[tabler--file-check] size-5 text-error"></span> ເອກະສານທີ່ຕ້ອງການ
-              </h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div v-for="(doc, index) in draftDocuments" :key="index"
-                  class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
-                  <div class="flex items-center justify-between mb-3">
-                    <div>
-                      <h5 class="font-medium">{{ doc.name }}</h5>
-                      <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
-                    </div>
-                    <span class="badge badge-soft badge-error text-xs">ຕ້ອງການ</span>
-                  </div>
-                  <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
-                    <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
-                      class="w-full h-full object-contain p-2" />
-                    <button type="button"
-                      class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
-                      @click="removeDocument(index, 'req')" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
-                      <span class="icon-[tabler--x] size-4"></span>
-                    </button>
-                    <div class="absolute bottom-2 left-2 pointer-events-none">
-                      <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
-                      <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
-                    </div>
-                  </div>
-                  <div v-else class="mt-3">
-                    <label
-                      class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
-                      <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
-                      <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
-                      <input type="file" class="hidden" accept="image/*,.pdf"
-                        @change="(event) => handleDocumentUpload(index, event, 'req')" />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank"
+              class="btn btn-xs btn-ghost text-info hover:bg-info/10" title="ເບິ່ງເອກະສານ"
+              @click.prevent="openInNewTab(getFullImageUrl(doc.file_url))">
+              <span class="icon-[tabler--eye] size-4 mr-1"></span> ເບິ່ງ
+            </a>
 
-            <div class="mt-8">
-              <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
-                <span class="icon-[tabler--file-plus] size-5 text-primary"></span> ເອກະສານເພີ່ມເຕີມ (ບໍ່ບັງຄັບ)
-              </h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div v-for="(doc, index) in optionalDocuments" :key="index"
-                  class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
-                  <div class="flex items-center justify-between mb-3">
-                    <div>
-                      <h5 class="font-medium">{{ doc.name }}</h5>
-                      <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
-                    </div>
-                  </div>
-                  <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
-                    <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
-                      class="w-full h-full object-contain p-2" />
-                    <button type="button"
-                      class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
-                      @click="removeDocument(index, 'opt')" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
-                      <span class="icon-[tabler--x] size-4"></span>
-                    </button>
-                    <div class="absolute bottom-2 left-2 pointer-events-none">
-                      <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
-                      <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
-                    </div>
-                  </div>
-                  <div v-else class="mt-3">
-                    <label
-                      class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
-                      <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
-                      <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
-                      <input type="file" class="hidden" accept="image/*,.pdf"
-                        @change="(event) => handleDocumentUpload(index, event, 'opt')" />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-if="isUploadingDocuments" class="mt-4 p-3 bg-info/10 rounded-lg text-center">
-              <div class="loading loading-spinner loading-sm inline-block mr-2"></div>
-              <span>ກຳລັງອັບໂຫຼດເອກະສານ...</span>
+            <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
+              class="btn btn-xs btn-ghost text-primary hover:bg-primary/10" title="ດາວໂຫຼດ">
+              <span class="icon-[tabler--download] size-4 mr-1"></span> ໂຫຼດ
+            </a>
+          </div>
+
+        </div>
+        <div class="mt-2">
+          <div v-if="isImage(doc.file_url)"
+            class="aspect-video bg-gray-100 dark:bg-gray-700 rounded overflow-hidden cursor-pointer"
+            @click="openInNewTab(getFullImageUrl(doc.file_url))">
+            <img :src="getFullImageUrl(doc.file_url) || ''" alt="Document preview"
+              class="w-full h-full object-contain p-2 hover:scale-105 transition-transform" />
+          </div>
+          <div v-else
+            class="w-full h-32 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200 transition"
+            @click="openInNewTab(getFullImageUrl(doc.file_url))">
+            <div class="text-center">
+              <span class="icon-[tabler--file-description] size-12 text-gray-400"></span>
+              <p class="text-xs text-gray-500 mt-2">ຄລິກເພື່ອເບິ່ງ PDF</p>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="space-y-6">
+    <div>
+      <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
+        <span class="icon-[tabler--file-check] size-5 text-error"></span> ເອກະສານທີ່ຕ້ອງການ
+      </h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div v-for="(doc, index) in draftDocuments" :key="index"
+          class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h5 class="font-medium">{{ doc.name }}</h5>
+              <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
+            </div>
+            <span class="badge badge-soft badge-error text-xs">ຕ້ອງການ</span>
+          </div>
+          <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
+            <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
+              class="w-full h-full object-contain p-2" />
+            <button type="button"
+              class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
+              @click="removeDocument(index, 'req')" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
+              <span class="icon-[tabler--x] size-4"></span>
+            </button>
+            <div class="absolute bottom-2 left-2 pointer-events-none">
+              <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
+              <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
+            </div>
+          </div>
+          <div v-else class="mt-3">
+            <label
+              class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
+              <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
+              <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
+              <input type="file" class="hidden" accept="image/*,.pdf"
+                @change="(event) => handleDocumentUpload(index, event, 'req')" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
+        <span class="icon-[tabler--file-plus] size-5 text-primary"></span> ເອກະສານເພີ່ມເຕີມ (ບໍ່ບັງຄັບ)
+      </h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div v-for="(doc, index) in optionalDocuments" :key="index"
+          class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h5 class="font-medium">{{ doc.name }}</h5>
+              <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
+            </div>
+          </div>
+          <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
+            <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
+              class="w-full h-full object-contain p-2" />
+            <button type="button"
+              class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
+              @click="removeDocument(index, 'opt')" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
+              <span class="icon-[tabler--x] size-4"></span>
+            </button>
+            <div class="absolute bottom-2 left-2 pointer-events-none">
+              <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
+              <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
+            </div>
+          </div>
+          <div v-else class="mt-3">
+            <label
+              class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
+              <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
+              <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
+              <input type="file" class="hidden" accept="image/*,.pdf"
+                @change="(event) => handleDocumentUpload(index, event, 'opt')" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="isUploadingDocuments" class="mt-4 p-3 bg-info/10 rounded-lg text-center">
+      <div class="loading loading-spinner loading-sm inline-block mr-2"></div>
+      <span>ກຳລັງອັບໂຫຼດເອກະສານ...</span>
+    </div>
+  </div>
+</div>
 
         <div v-else-if="activeTab === 'map'" class="space-y-6">
           <CustomerLocationMap :customer-id="selectedDraft?.customer_id || 0" :locations="customerLocations"
@@ -595,6 +614,12 @@ const optionalDocuments = ref<Document[]>([
   { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
 ])
 
+const openInNewTab = (url: string | null | undefined) => { // 🟢 เพิ่ม undefined ตรงนี้
+  if (url) {
+    window.open(url, '_blank');
+  }
+};
+
 // Helpers
 const getDraftDisplayName = (draft: any): string => draft?.customer ? `${draft.customer.first_name || ''} ${draft.customer.last_name || ''}`.trim() : '-'
 const getDraftPhone = (draft: any): string => draft?.customer?.phone || '-'
@@ -631,6 +656,28 @@ const canPrintContract = computed(() => !!selectedContract.value && !!selectedCo
 const openPrintTab = (tabName: 'loanContract') => {
   activeTab.value = tabName;
 }
+
+// 🟢 ຟັງຊັນຈັດລຽງລຳດັບເອກະສານ (ບັດປະຈຳຕົວ -> ໃບຄອບຄົວ -> ລາຍຮັບ -> ອື່ນໆ)
+const sortedCurrentDocuments = computed(() => {
+  const docs = loanApplicationStore.currentDocuments || [];
+  
+  // ກຳນົດລຳດັບທີ່ຕ້ອງການ (ອ້າງອີງຈາກ document_type)
+  const orderList = ['id_card', 'house_reg', 'salary_slip', 'other'];
+
+  return [...docs].sort((a, b) => {
+    const typeA = a.document_type || a.doc_type || '';
+    const typeB = b.document_type || b.doc_type || '';
+
+    let indexA = orderList.indexOf(typeA);
+    let indexB = orderList.indexOf(typeB);
+
+    // ຖ້າບໍ່ກົງກັບລາຍການຂ້າງເທິງ ໃຫ້ເອົາໄປໄວ້ທ້າຍສຸດ
+    if (indexA === -1) indexA = 999;
+    if (indexB === -1) indexB = 999;
+
+    return indexA - indexB;
+  });
+});
 
 // 🟢 Address Handlers
 const handleProvinceChange = async () => {
