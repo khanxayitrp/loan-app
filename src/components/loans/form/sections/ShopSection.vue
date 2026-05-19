@@ -1,6 +1,9 @@
 <template>
   <section class="form-section">
     <h3 class="section-title">IV. ຂໍ້ມູນຮ້ານຄ້າຕົວແທນ</h3>
+    
+    <input type="hidden" v-model="data.id" />
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ຊື່ຮ້ານຄ້າຕົວແທນ:</span></label>

@@ -235,7 +235,7 @@ const formData = reactive({
     firstInstallment: null as number | null, paymentDay: null as number | null,
     motorcycle: { motorId: '', tankNumber: '', motorColor: '', insurance: null as number | null, motorWarranty: null as number | null }
   },
-  shop: { name: '', branch: '', code: '' },
+  shop: { id: '', name: '', branch: '', code: '' },
   hasGuarantor: false,
   hasReference: false,
   guarantor: {
@@ -515,9 +515,22 @@ const loadDataFromProps = () => {
     formData.work.address.district = workAddr.district
     formData.work.address.province = workAddr.province
 
+    formData.shop.id = sourceData["partner.id"] || sourceData.partner_id || ''
     formData.shop.name = sourceData["partner.shop_name"] || sourceData.shop_name || ''
     formData.shop.branch = sourceData.shop_branch || ''
     formData.shop.code = sourceData.shop_id || ''
+
+    // 2. 🟢 Fallback: ถ้า Contract ไม่มีข้อมูล Shop (ขาด id หรือ name) ให้ไปดึงจาก Loan Application แทน
+    if (!formData.shop.id || !formData.shop.name) {
+      const appPartner = props.loanApplication?.product?.partner;
+      if (appPartner) {
+        // ใช้ค่าเดิมถ้ามี แต่ถ้าไม่มีให้เอาของ appPartner มาใส่
+        formData.shop.id = formData.shop.id || appPartner.id || '';
+        formData.shop.name = formData.shop.name || appPartner.shop_name || '';
+        formData.shop.branch = formData.shop.branch || appPartner.address || '';
+        formData.shop.code = formData.shop.code || appPartner.shop_id || '';
+      }
+    }
 
     if (sourceData.ref_name) {
       formData.hasGuarantor = true
@@ -617,6 +630,7 @@ const loadDataFromProps = () => {
     }
 
     if (sourceData.product && sourceData.product.partner) {
+      formData.shop.id = sourceData.product.partner.id || ''
       formData.shop.name = sourceData.product.partner.shop_name || ''
       formData.shop.branch = sourceData.product.partner.address || ''
       formData.shop.code = sourceData.product.partner.shop_id || ''

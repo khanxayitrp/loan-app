@@ -946,6 +946,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       tankNumber: pData.motorcycle?.tankNumber || '',
       motorColor: pData.motorcycle?.motorColor || '',
       motorWarranty: Number(pData.motorcycle?.motorWarranty) || 0,
+      partner_id: sData.id || '',
       shopId: sData.code || '',
       shopBranch: sData.branch || '',
       producttypeId: selectedDraft.value.product?.productType_id || null
