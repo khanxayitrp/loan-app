@@ -1053,7 +1053,21 @@ const debounceShopSearch = () => {
 let productSearchTimer: NodeJS.Timeout | null = null
 const debounceProductSearch = () => {
   if (productSearchTimer) clearTimeout(productSearchTimer)
-  productSearchTimer = setTimeout(() => { }, 300)
+  productSearchTimer = setTimeout(async () => {
+    // 🟢 ເພີ່ມໂຄ້ດໃຫ້ຍິງ API ໄປຫາ Backend ເມື່ອພິມຄົ້ນຫາ
+    if (!selectedShop.value) return;
+    
+    try {
+      await productStore.fetchProducts({ 
+        shop_id: selectedShop.value.id,
+        search: productSearch.value, // ສົ່ງຄຳຄົ້ນຫາໄປນຳ
+        limit: 50 // ດຶງມາ 50 ຕົວ ເພື່ອໃຫ້ Dropdown ມີລາຍການຫຼາຍຂຶ້ນ
+      });
+      showProductDropdown.value = true;
+    } catch (error) {
+      console.error('Failed to search products:', error);
+    }
+  }, 500) // ລໍຖ້າໃຫ້ພິມສຳເລັດ 500ms ກ່ອນແລ້ວຄ່ອຍຍິງ API (ກັນ Server ໜັກ)
 }
 
 watch(() => customerForm.province_id, async (newVal) => {
@@ -1081,7 +1095,11 @@ const selectShop = async (shop: shopType) => {
   loanDetails.monthlyPayment = 0
 
   try {
-    await productStore.fetchProducts({ shop_id: shop.id })
+    // 🟢 ປ່ຽນຈາກດຶງຄ່າ Default (10) ມາເປັນ 50 ຫຼື 100 ລາຍການ
+    await productStore.fetchProducts({ 
+      shop_id: shop.id,
+      limit: 50 
+    })
   } catch (error) {
     console.error('❌ Failed to load products:', error)
   }

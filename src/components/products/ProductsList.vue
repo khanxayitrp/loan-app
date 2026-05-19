@@ -804,17 +804,43 @@ const debounceSearch = () => {
   }, 300)
 }
 
-const previousPage = () => {
+const previousPage = async () => {
   if (hasPreviousPage.value) {
     selectedRows.value = []
     productStore.changePage(currentPage.value - 1)
+    
+    // 🟢 ເພີ່ມໂຄ້ດສ່ວນນີ້: ສັ່ງໃຫ້ດຶງຂໍ້ມູນໜ້າໃໝ່ຈາກ API
+    const currentShopId = shopStore.currentShop?.id;
+    if (currentShopId) {
+      await productStore.fetchProducts({
+        shop_id: currentShopId,
+        page: currentPage.value, // ໃຊ້ເລກໜ້າທີ່ປ່ຽນແລ້ວ
+        limit: localPageSize.value,
+        search: searchQuery.value,
+        status: statusFilter.value,
+        type: typeFilter.value
+      })
+    }
   }
 }
 
-const nextPage = () => {
+const nextPage = async () => {
   if (hasNextPage.value) {
     selectedRows.value = []
     productStore.changePage(currentPage.value + 1)
+
+    // 🟢 ເພີ່ມໂຄ້ດສ່ວນນີ້: ສັ່ງໃຫ້ດຶງຂໍ້ມູນໜ້າໃໝ່ຈາກ API
+    const currentShopId = shopStore.currentShop?.id;
+    if (currentShopId) {
+      await productStore.fetchProducts({
+        shop_id: currentShopId,
+        page: currentPage.value, // ໃຊ້ເລກໜ້າທີ່ປ່ຽນແລ້ວ
+        limit: localPageSize.value,
+        search: searchQuery.value,
+        status: statusFilter.value,
+        type: typeFilter.value
+      })
+    }
   }
 }
 
@@ -919,41 +945,6 @@ const openEditProductModal = async (product: any) => {
 
   showModal.value = true
 }
-// const openEditProductModal = async (product: any) => {
-//   editingProduct.value = product
-//   try {
-//     const gallery = await productStore.fetchProductGallery(product.id)
-//     form.product_name = product.product_name
-//     form.description = product.description || ''
-//     form.product_brand = product.brand || ''
-//     form.product_model = product.model || ''
-//     form.productType_id = product.productType_id
-//     form.price = Number(product.price)
-//     form.stock_quantity = Number(product.stock_quantity) || 0
-//     form.merchant_sku = product.merchant_sku || ''
-//     form.allowed_loan_type = product.allowed_loan_type || 'both'
-//     form.global_category_id = product.global_category_id || null
-
-//     form.image_url = product.image_url || ''
-//     form.gallery = gallery.map((item: any) => item.image_url) || []
-//     form.is_active = product.is_active ? 1 : 0
-
-//     if (product.image_url) {
-//       imageFileInfo.name = 'product-image.jpg'
-//       imageFileInfo.type = 'image/jpeg'
-//       imageFileInfo.size = 0
-//     }
-
-//     // 🟢 ถ้าระบบแก้ไขสามารถดึง Variants ได้ ก็เอามา Map ตรงนี้
-//     // (ตอนนี้เราเน้นที่การเพิ่มใหม่ ถ้ามีข้อมูล variants ในตัวแปร product ก็สามารถ set กลับมาได้)
-//     form.has_variants = false;
-//     form.variants = [];
-
-//   } catch (error) {
-//     console.error('❌ Error loading product details:', error)
-//   }
-//   showModal.value = true
-// }
 
 const closeModal = () => {
   showModal.value = false
@@ -1240,9 +1231,21 @@ const handleGalleryDrop = async (event: DragEvent) => {
 
 const processGalleryFiles = async (files: File[]) => {
   const validImages: string[] = []
+  let oversizedCount = 0; // 🟢 ເພີ່ມຕົວນັບຮູບທີ່ໃຫຍ່ເກີນ
+  let invalidTypeCount = 0; // 🟢 ເພີ່ມຕົວນັບໄຟລ໌ທີ່ບໍ່ແມ່ນຮູບ
+
   for (const file of files) {
-    if (file.size > 2 * 1024 * 1024) continue
-    if (!file.type.startsWith('image/')) continue
+    // ກວດສອບຂະໜາດ (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      oversizedCount++;
+      continue;
+    }
+    // ກວດສອບປະເພດໄຟລ໌
+    if (!file.type.startsWith('image/')) {
+      invalidTypeCount++;
+      continue;
+    }
+    
     try {
       const reader = new FileReader()
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -1253,6 +1256,15 @@ const processGalleryFiles = async (files: File[]) => {
       validImages.push(base64)
     } catch (error) { }
   }
+
+  // 🟢 ສະແດງ Alert ແຈ້ງເຕືອນຖ້າມີໄຟລ໌ທີ່ຖືກປະຕິເສດ
+  if (oversizedCount > 0) {
+    alert.error('ຂະໜາດຮູບເກີນກຳນົດ', `ມີຮູບຈຳນວນ ${oversizedCount} ຮູບ ທີ່ມີຂະໜາດໃຫຍ່ກວ່າ 2MB ຈຶ່ງບໍ່ຖືກອັບໂຫຼດ`);
+  }
+  if (invalidTypeCount > 0) {
+    alert.error('ປະເພດໄຟລ໌ບໍ່ຖືກຕ້ອງ', `ມີໄຟລ໌ຈຳນວນ ${invalidTypeCount} ໄຟລ໌ ທີ່ບໍ່ແມ່ນຮູບພາບ`);
+  }
+
   form.gallery.push(...validImages)
   if (galleryInput.value) galleryInput.value.value = ''
 }
