@@ -10,6 +10,8 @@
 
     <slot name="warnings"></slot>
 
+    <input type="hidden" v-model="data.variantId" />
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div class="form-control lg:col-span-2">
         <label class="label"><span class="label-text font-bold">ລາຍລະອຽດສິນຄ້າ:</span></label>
@@ -27,23 +29,23 @@
       </div>
 
       <div class="form-control">
-  <label class="label"><span class="label-text font-bold">ຍີ່ຫໍ້ສິນຄ້າ:</span></label>
-  <input v-model="data.brand" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
-</div>
+        <label class="label"><span class="label-text font-bold">ຍີ່ຫໍ້ສິນຄ້າ:</span></label>
+        <input v-model="data.brand" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+      </div>
 
-<div class="form-control">
-  <label class="label"><span class="label-text font-bold">ລຸ້ນສິນຄ້າ:</span></label>
-  <input v-model="data.model" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
-</div>
+      <div class="form-control">
+        <label class="label"><span class="label-text font-bold">ລຸ້ນສິນຄ້າ:</span></label>
+        <input v-model="data.model" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+      </div>
 
-<div class="form-control">
-  <label class="label"><span class="label-text font-bold">ສີສິນຄ້າ:</span></label>
-  <input v-model="data.productColor" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
-</div>
-<div class="form-control">
-  <label class="label"><span class="label-text font-bold">ຂະໜາດ:</span></label>
-  <input v-model="data.productSize" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
-</div>
+      <div class="form-control">
+        <label class="label"><span class="label-text font-bold">ສີສິນຄ້າ:</span></label>
+        <input v-model="data.productColor" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text font-bold">ະໜາດ:</span></label>
+        <input v-model="data.productSize" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+      </div>
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ລາຄາສິນຄ້າ (ກີບ):</span></label>
         <input :value="formatCurrencyInput(data.price)" @input="handleCurrencyInput('price', $event)" type="text"
@@ -55,7 +57,7 @@
         <input :value="formatCurrencyInput(data.downPayment)" @input="handleCurrencyInput('downPayment', $event)"
           type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
       </div>
-      <div class="form-control">
+      <div class="grid-span-1 form-control">
         <label class="label"><span class="label-text font-bold text-primary">ວົງເງິນອະນຸມັດ (ກີບ):</span></label>
         <input :value="formatPrice(data.approvedAmount)" type="text" readonly
           class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold" />

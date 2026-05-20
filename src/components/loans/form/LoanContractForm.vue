@@ -228,6 +228,7 @@ const formData = reactive({
   product: {
     description: '', type: '', brand: '', model: '',productColor: '', // 🟢 ເພີ່ມ
     productSize: '',  // 🟢 ເພີ່ມ
+    variantId: null as number | null, // 🟢 ເພີ່ມແຖວນີ້ໄວ້ກຳນົດຄ່າເລີ່ມຕົ້ນ
     price: null as number | null, downPayment: null as number | null,
     approvedAmount: null as number | null, interestRate: null as number | null,
     interestType: 'flat_rate', interestRateType: 'monthly',
@@ -366,7 +367,12 @@ const syncProductWithApplication = () => {
   if (app.variant) {
       formData.product.productColor = app.variant.color || '';
       formData.product.productSize = app.variant.size_or_capacity || '';
+  } else {
+      formData.product.productColor = '';
+      formData.product.productSize = '';  
   }
+
+  formData.product.variantId = app.variant_id || app.variant?.id || null;
 
   // 4. ຣີຄຳນວນໃໝ່ ແລະ ກວດສອບ Conflict
   calculateLoanDetails();
@@ -762,19 +768,20 @@ const loadDataFromProps = () => {
     }
   }
 
-  if (isFromContract && contractData) {
+  if (isFromContract && contractData) {  // ถ้ามาจาก Contract ให้ใช้ข้อมูล Product จาก Contract เป็นหลัก เพราะอาจมีการแก้ไขข้อมูลใน Contract ที่ต่างจาก Application
     formData.product.description = contractData.product_detail || contractData.productDetail || '';
     formData.product.type = contractData["producttype.type_name"] || '';
     formData.product.brand = contractData.product_brand || contractData.productBrand || '';
     formData.product.model = contractData.product_model || contractData.productModel || '';
-  } else if (app && app.id) {
+  } else if (app && app.id) { // ถ้ามาจาก Application ให้ใช้ข้อมูลจาก Application
     formData.product.description = app.product?.product_name || app.product_detail || '';
     formData.product.type = app.product?.type || app.product_type || '';
     formData.product.brand = app.product?.brand || app.product_brand || '';
     formData.product.model = app.product?.model || app.product_model || '';
   }
 
-  if (app && app.id) {
+  if (app && app.id) { // ถ้ามาจาก Application ให้ใช้ข้อมูลจาก Application เป็นหลักสำหรับข้อมูลที่อาจไม่มีใน Contract
+    formData.product.variantId = app.variant_id || app.variant?.id || null;
     formData.product.price = Number(app.total_amount) || 0;
     formData.product.downPayment = Number(app.down_payment) || 0;
     formData.product.interestRate = Number(app.interest_rate_at_apply) || 0;

@@ -838,7 +838,215 @@ const saveDraftFromModal = async () => {
 }
 
 const handleSaveContract = async (customerId: number, formData: any) => {
-  // ... (ໂຄ້ດ Contract ເດີມຂອງທ່ານ)
+  if (!selectedDraft.value) return;
+  isSaving.value = true;
+
+  try {
+    const loanId = selectedDraft.value.id;
+
+    // ແຍກຂໍ້ມູນເພື່ອໃຫ້ອ່ານງ່າຍ
+    const cData = formData?.customer || {};
+    const wData = formData?.work || {};
+    const gData = formData?.guarantor || {};
+    const gwData = formData?.guarantorWork || {};
+    const pData = formData?.product || {};
+    const sData = formData?.shop || {};
+
+    const fullNameString = String(cData.fullname || '').trim();
+    const nameParts = fullNameString ? fullNameString.split(' ') : [];
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // 1. ອັບເດດຂໍ້ມູນ Loan Application (ໃບຄຳຂໍ)
+    const updateAppPayload = {
+      total_amount: Number(pData.price) || 0,
+      down_payment: Number(pData.downPayment) || 0,
+      interest_rate_at_apply: Number(pData.interestRate) || 0,
+      loan_period: Number(pData.loanTerm) || 0,
+      monthly_pay: Number(pData.monthlyPayment) || 0,
+      fee: Number(pData.fee) || 0,
+      payment_day: Number(pData.paymentDay) || 1,
+      interest_type: pData.interestType || 'flat_rate',
+      interest_rate_type: pData.interestRateType || 'monthly',
+
+      // 🟢 1. ເພີ່ມ variant_id ເຂົ້າໃບຄຳຂໍ (ອ້າງອີງຈາກຂໍ້ມູນຫຼ້າສຸດໃນໃບຄຳຂໍ ຫຼື ຈາກຟອມສັນຍາ)
+      variant_id: Number(pData.variant_id) || selectedDraft.value?.variant_id || null,
+
+      first_name: firstName, last_name: lastName,
+      phone: cData.phone || '', identity_number: cData.idCard || '',
+      gender: cData.gender || '', marital_status: cData.maritalStatus || '',
+      date_of_birth: cData.dob || '', age: Number(cData.age) || 0,
+      occupation: cData.occupation || '',
+      province_id: cData.address?.province_id || null,
+      district_id: cData.address?.district_id || null,
+      address: cData.address?.village || '',
+      unit: cData.unit || '', house_number: cData.houseNumber || '',
+      census_number: cData.censusBook || '', issue_place: cData.censusAuthorizeBy || '',
+      issue_date: cData.idCardIssueDate || null
+    };
+    await loanApplicationStore.updateDraftLoanApplication(loanId, updateAppPayload);
+
+    // 2. Proposal Data (ໃບສະເໜີປ່ອຍສິນຄ້າ)
+    const proposalData = {
+      company_name: wData.companyName || '',
+      province_id: wData.address?.province_id || null,
+      district_id: wData.address?.district_id || null,
+      address: wData.address?.village || '',
+      phone: wData.phone || cData.phone || '',
+      business_type: wData.businessType || '',
+      business_detail: wData.businessDetail || '',
+      department: wData.department || '',
+      duration_years: wData.workYears || null,
+      duration_months: wData.workMonths || null,
+      position: wData.position || '',
+      salary: wData.salary || null,
+
+      name: gData.fullname || '',
+      identity_number: gData.idCard || '',
+      GuarantorDOB: gData.dob || '',
+      GuarantorAGE: gData.age || null,
+      Guarantorprovince_id: gData.address?.province_id || null,
+      Guarantordistrict_id: gData.address?.district_id || null,
+      Guarantoraddress: gData.address?.village || '',
+      Guarantorphone: gData.phone || '',
+      occupation: gData.occupation || '',
+      relationship: gData.relationship || '',
+
+      work_company_name: gwData.companyName || '',
+      work_phone: gwData.phone || '',
+      work_location: gwData.address?.village || '',
+      work_province_id: gwData.address?.province_id || null,
+      work_district_id: gwData.address?.district_id || null,
+      work_position: gwData.position || '',
+      work_salary: String(gwData.salary || '0')
+    };
+
+    const { saveCustProposal } = await import('@/api/proposal');
+    await saveCustProposal(customerId, loanId, proposalData);
+
+    // 3. Flat Contract Payload (ຂໍ້ມູນສັນຍາກູ້ຢືມຕົວຈິງ)
+    const formatAddr = (addr: any) => addr ? [addr.village, addr.district, addr.province].filter(Boolean).join(', ') : 'ບໍ່ລະບຸ';
+
+    const flatContractPayload = {
+      loanId: loanId,
+      cusFullName: cData.fullname || 'ບໍ່ລະບຸ',
+      cusSex: cData.gender || 'ບໍ່ລະບຸ',
+      cusDateOfBirth: cData.dob || new Date().toISOString().split('T')[0],
+      cusPhone: cData.phone || 'ບໍ່ລະບຸ',
+      cusMaritalStatus: cData.maritalStatus || 'ບໍ່ລະບຸ',
+      cusIdPassNumber: cData.idCard || 'ບໍ່ລະບຸ',
+      cusIdPassDate: cData.idCardIssueDate || new Date().toISOString().split('T')[0],
+      cusCensusNumber: cData.censusBook || 'ບໍ່ມີ',
+      cusCensusCreated: cData.idCardExpiryDate || new Date().toISOString().split('T')[0],
+      cusCensusAuthorizeBy: cData.censusAuthorizeBy || 'ບໍ່ລະບຸ',
+      cusHouseNumber: cData.houseNumber || 'ບໍ່ລະບຸ',
+      cusUnit: Number(cData.unit) || 0,
+      cusAddress: formatAddr(cData.address),
+      cusProvinceId: cData.address?.province_id || null,
+      cusDistrictId: cData.address?.district_id || null,
+      cusLivedYear: Number(cData.residenceYears) || 0,
+      cusLivedWith: cData.liveWith || 'ບໍ່ລະບຸ',
+      cusLivedSituation: cData.residenceStatus || 'ບໍ່ລະບຸ',
+      cusOccupation: cData.occupation || 'ບໍ່ລະບຸ',
+
+      cusCompanyName: wData.companyName || 'ບໍ່ລະບຸ',
+      cusCompanyBusinessType: wData.businessType || 'ບໍ່ລະບຸ',
+      cusCompanyLocation: formatAddr(wData.address),
+      cusCompanyWorkYear: Number(wData.workYears) || 0,
+      cusPosition: wData.position || 'ບໍ່ລະບຸ',
+      cusIncome: Number(wData.salary) || 0,
+      cusPayrollDate: String(wData.salaryDay || '0'),
+      cusCompanyEmpNumber: Number(wData.totalEmployees) || 0,
+      cusIncomeOther: Number(wData.otherIncome) || 0,
+      cusIncomeOtherSource: wData.otherIncomeSource || 'ບໍ່ມີ',
+
+      productDetail: pData.description || 'ບໍ່ລະບຸ',
+      productBrand: pData.brand || 'ບໍ່ລະບຸ',
+      productModel: pData.model || 'ບໍ່ລະບຸ',
+
+      variant_id: Number(pData.variant_id) || selectedDraft.value?.variant_id || null, // 🟢 ສົ່ງ variant_id ໄປສ້າງສັນຍາ
+      product_color: pData.productColor || selectedDraft.value?.variant.color || 'ບໍ່ລະບຸ',
+      product_size: pData.productSize || selectedDraft.value?.variant.size_or_capacity || 'ບໍ່ລະບຸ',
+
+      productPrice: Number(pData.price) || 0,
+      productDownPayment: Number(pData.downPayment) || 0,
+      totalAmount: Number(pData.approvedAmount) || 0,
+      interestRateAtApply: Number(pData.interestRate) || 0,
+      loanPeriod: Number(pData.loanTerm) || 0,
+      totalInterest: Number(pData.totalInterest) || 0,
+      fee: Number(pData.fee) || 0,
+      monthlyPay: Number(pData.monthlyPayment) || 0,
+      firstInstallmentAmount: Number(pData.firstInstallment) || 0,
+      paymentDay: Number(pData.paymentDay) || 1,
+
+      refName: gData.fullname || 'ບໍ່ມີ',
+      refDateOfBirth: gData.dob || new Date().toISOString().split('T')[0],
+      refPhone: gData.phone || 'ບໍ່ມີ',
+      refSex: gData.gender || 'ບໍ່ລະບຸ',
+      refMaritalStatus: gData.maritalStatus || 'ບໍ່ລະບຸ',
+      refIdPassNumber: gData.idCard || 'ບໍ່ມີ',
+      refIdPassDate: gData.idCardIssueDate || new Date().toISOString().split('T')[0],
+      refCensusNumber: gData.censusBook || 'ບໍ່ມີ',
+      refCensusCreated: gData.censusBookIssueDate || new Date().toISOString().split('T')[0],
+      refCensusAuthorizeBy: gData.censusAuthorizeBy || 'ບໍ່ມີ',
+      refHouseNumber: gData.houseNumber || 'ບໍ່ມີ',
+      refUnit: Number(gData.unit) || 0,
+      refAddress: formatAddr(gData.address),
+      refProvinceId: gData.address?.province_id || null,
+      refDistrictId: gData.address?.district_id || null,
+      refLivedYear: Number(gData.residenceYears) || 0,
+      refLivedWith: gData.liveWith || 'ບໍ່ມີ',
+      refLivedSituation: gData.residenceStatus || 'ບໍ່ມີ',
+      refOccupation: gData.occupation || 'ບໍ່ມີ',
+      refRelationship: gData.relationship || 'ບໍ່ມີ',
+
+      refCompanyName: gwData.companyName || 'ບໍ່ມີ',
+      refCompanyBusinessType: gwData.businessType || 'ບໍ່ມີ',
+      refCompanyLocation: formatAddr(gwData.address),
+      refCompanyWorkYear: Number(gwData.workYears) || 0,
+      refPosition: gwData.position || 'ບໍ່ມີ',
+      refIncome: Number(gwData.salary) || 0,
+      refPayrollDate: String(gwData.salaryDay || '0'),
+      refCompanyEmpNumber: Number(gwData.totalEmployees) || 0,
+      refIncomeOther: Number(gwData.otherIncome) || 0,
+      refIncomeOtherSource: gwData.otherIncomeSource || 'ບໍ່ມີ',
+
+      motorId: pData.motorcycle?.motorId || '',
+      tankNumber: pData.motorcycle?.tankNumber || '',
+      motorColor: pData.motorcycle?.motorColor || '',
+      motorWarranty: Number(pData.motorcycle?.motorWarranty) || 0,
+      partner_id: sData.id || '',
+      shopId: sData.code || '',
+      shopBranch: sData.branch || '',
+      producttypeId: selectedDraft.value.product?.productType_id || null
+    };
+
+    await loanContractStore.createContract(loanId, flatContractPayload);
+
+    // 4. ອັບໂຫຼດເອກະສານທີ່ແນບມາໃນໜ້າສັນຍາ (ຖ້າມີ)
+    const newUploadDocs = [...draftDocuments.value, ...optionalDocuments.value].filter(doc => doc.file !== null);
+    if (newUploadDocs.length > 0) {
+      isUploadingDocuments.value = true;
+      for (const doc of newUploadDocs) {
+        await loanApplicationStore.uploadDocument(selectedDraft.value.customer_id, doc.file!, doc.id);
+      }
+      await loanApplicationStore.fetchDocuments(loanId);
+      isUploadingDocuments.value = false;
+    }
+
+    alert.success('ບັນທຶກຂໍ້ມູນສັນຍາ ແລະ ໃບສະເໜີສຳເລັດ!');
+    isEditingInModal.value = false;
+
+    // ຣີເຟຣຊຂໍ້ມູນໃໝ່ຫຼ້າສຸດ
+    selectedContract.value = await loanContractStore.fetchContract(loanId);
+    emit('refresh');
+
+  } catch (error: any) {
+    console.error("Save Contract Error: ", error);
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກສັນຍາ', error.response?.data?.message || error.message || 'ກະລຸນາລອງໃໝ່');
+  } finally {
+    isSaving.value = false;
+  }
 }
 
 const calculateModalMonthlyPayment = (): number => {
