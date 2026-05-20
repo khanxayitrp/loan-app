@@ -226,7 +226,8 @@ const formData = reactive({
     otherIncome: null as number | null, otherIncomeSource: '', phone: '', department: ''
   },
   product: {
-    description: '', type: '', brand: '', model: '',
+    description: '', type: '', brand: '', model: '',productColor: '', // 🟢 ເພີ່ມ
+    productSize: '',  // 🟢 ເພີ່ມ
     price: null as number | null, downPayment: null as number | null,
     approvedAmount: null as number | null, interestRate: null as number | null,
     interestType: 'flat_rate', interestRateType: 'monthly',
@@ -251,7 +252,8 @@ const formData = reactive({
     workYears: null as number | null, position: '', salary: null as number | null,
     salaryDay: null as number | null, totalEmployees: null as number | null,
     otherIncome: null as number | null, otherIncomeSource: ''
-  }
+  },
+  
 })
 
 // =======================
@@ -267,6 +269,7 @@ const calculateAge = (dob: string): number | null => {
   return age;
 };
 
+// 
 const checkProductConflicts = () => {
   hasProductConflict.value = false;
   Object.keys(productDifferences).forEach(k => delete productDifferences[k]);
@@ -278,44 +281,98 @@ const checkProductConflicts = () => {
 
   if (!contract || !contract.id) return;
 
-  const getCVal = (key: string) => Number(contract[key]) || 0;
-  const getAVal = (key: string) => Number(app[key]) || 0;
+  // 1. ກວດສອບຂໍ້ມູນຕົວເລກ (ລາຄາ, ເງິນດາວ, ດອກເບ້ຍ, ໄລຍະເວລາ)
+  const getCVal = (key: string) => Number(contract[key] || 0);
+  const getAVal = (key: string) => Number(app[key] || 0);
 
-  const contractProductPrice = getCVal('product_price');
-  const appProductPrice = getAVal('total_amount'); 
-
-  const contractDownPayment = getCVal('product_down_payment');
-  const appDownPayment = getAVal('down_payment');
-
-  const contractApprovedAmount = getCVal('total_amount');
-  const appApprovedAmount = appProductPrice - appDownPayment;
-
-  const checks = [
-    { key: 'product_price', label: 'ລາຄາສິນຄ້າ', cVal: contractProductPrice, aVal: appProductPrice },
-    { key: 'approved_amount', label: 'ວົງເງິນອະນຸມັດ/ຍອດຈັດ', cVal: contractApprovedAmount, aVal: appApprovedAmount },
-    { key: 'down_payment', label: 'ເງິນວາງດາວ', cVal: contractDownPayment, aVal: appDownPayment },
+  const numberChecks = [
+    { key: 'product_price', label: 'ລາຄາສິນຄ້າ', cVal: getCVal('product_price'), aVal: getAVal('total_amount') },
+    { key: 'down_payment', label: 'ເງິນວາງດາວ', cVal: getCVal('product_down_payment'), aVal: getAVal('down_payment') },
     { key: 'interest_rate', label: 'ອັດຕາດອກເບ້ຍ (%)', cVal: getCVal('interest_rate_at_apply'), aVal: getAVal('interest_rate_at_apply') },
     { key: 'loan_period', label: 'ໄລຍະເວລາ (ເດືອນ)', cVal: getCVal('loan_period'), aVal: getAVal('loan_period') },
-    { key: 'monthly_pay', label: 'ຄ່າງວດຕໍ່ເດືອນ', cVal: getCVal('monthly_pay'), aVal: getAVal('monthly_pay') },
   ];
 
-  let isConflict = false;
-
-  checks.forEach(item => {
+  numberChecks.forEach(item => {
+    // ໃຊ້ Math.abs ເພື່ອປຽບທຽບຄວາມຕ່າງ
     if (Math.abs(item.cVal - item.aVal) > 1) {
-      isConflict = true;
+      hasProductConflict.value = true;
       productDifferences[item.key] = {
         label: item.label, contractVal: item.cVal, appVal: item.aVal, hasDiff: true,
-        format: (val: number) => item.key === 'interest_rate' || item.key === 'loan_period' ? val.toString() : formatPrice(val)
+        format: (val: number) => (item.key === 'interest_rate' || item.key === 'loan_period') ? val.toString() : formatPrice(val)
       };
     }
   });
-  hasProductConflict.value = isConflict;
+
+  // 2. 🟢 ກວດສອບຂໍ້ມູນຕົວໜັງສື (Brand, Model, Description)
+  const stringChecks = [
+    { key: 'description', label: 'ລາຍລະອຽດສິນຄ້າ', cVal: contract.product_detail || '', aVal: app.product?.product_name || '' },
+    { key: 'brand', label: 'ຍີ່ຫໍ້', cVal: contract.product_brand || '', aVal: app.product?.brand || '' },
+    { key: 'model', label: 'ລຸ້ນ', cVal: contract.product_model || '', aVal: app.product?.model || '' },
+  ];
+
+  stringChecks.forEach(item => {
+    if (item.cVal.trim() !== item.aVal.trim()) {
+      hasProductConflict.value = true;
+      productDifferences[item.key] = {
+        label: item.label, contractVal: item.cVal, appVal: item.aVal, hasDiff: true,
+        format: (val: string) => val || 'ບໍ່ລະບຸ'
+      };
+    }
+  });
+
+  // 3. 🟢 ກວດສອບ Variant (ສີ ແລະ ຂະໜາດ)
+  const appVariant = app.variant || {};
+  const variantChecks = [
+    { key: 'product_color', label: 'ສີ', cVal: contract.product_color || '', aVal: appVariant.color || '' },
+    { key: 'product_size', label: 'ຂະໜາດ/ຄວາມຈຸ', cVal: contract.product_size || '', aVal: appVariant.size_or_capacity || appVariant.size || '' },
+  ];
+
+  variantChecks.forEach(item => {
+    // ປ້ອງກັນ error ຖ້າຂໍ້ມູນເປັນ null/undefined
+    const cValStr = String(item.cVal || '').trim();
+    const aValStr = String(item.aVal || '').trim();
+    
+    if (cValStr !== aValStr) {
+      hasProductConflict.value = true;
+      productDifferences[item.key] = {
+        label: item.label, contractVal: item.cVal, appVal: item.aVal, hasDiff: true,
+        format: (val: string) => val || 'ບໍ່ລະບຸ'
+      };
+    }
+  });
 }
 
+// const syncProductWithApplication = () => {
+//   loadDataFromProps();
+//   customAlert.success('ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍສຳເລັດແລ້ວ. ກະລຸນາກວດສອບ ແລະ ກົດບັນທຶກ.');
+// }
 const syncProductWithApplication = () => {
-  loadDataFromProps();
-  customAlert.success('ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍສຳເລັດແລ້ວ. ກະລຸນາກວດສອບ ແລະ ກົດບັນທຶກ.');
+  const app = props.loanApplication;
+  if (!app) return;
+
+  // 1. ອັບເດດຂໍ້ມູນສິນຄ້າຫຼັກ (ໃສ່ product object ຕາມໂຄງສ້າງ formData)
+  formData.product.description = app.product?.product_name || app.product_detail || '';
+  formData.product.brand = app.product?.brand || '';
+  formData.product.model = app.product?.model || '';
+  
+  // 2. ອັບເດດຂໍ້ມູນລາຄາ ແລະ ອື່ນໆ
+  formData.product.price = Number(app.total_amount) || 0;
+  formData.product.downPayment = Number(app.down_payment) || 0;
+  formData.product.interestRate = Number(app.interest_rate_at_apply) || 0;
+  formData.product.loanTerm = Number(app.loan_period) || 1;
+  formData.product.monthlyPayment = Number(app.monthly_pay) || 0;
+  
+  // 3. 🟢 ອັບເດດຂໍ້ມູນ Variant (ເພີ່ມໃສ່ formData ໂດຍກົງ)
+  if (app.variant) {
+      formData.product.productColor = app.variant.color || '';
+      formData.product.productSize = app.variant.size_or_capacity || '';
+  }
+
+  // 4. ຣີຄຳນວນໃໝ່ ແລະ ກວດສອບ Conflict
+  calculateLoanDetails();
+  checkProductConflicts();
+  
+  customAlert.success('ອັບເດດຂໍ້ມູນສິນຄ້າຈາກໃບຄຳຂໍສຳເລັດ!');
 }
 
 const calculateLoanDetails = () => {
@@ -741,6 +798,20 @@ const loadDataFromProps = () => {
     formData.productType.general = false;
   } else {
     formData.productType.general = true;
+    formData.product.description = app.product?.product_name || app.product_detail || '';
+    formData.product.brand = app.product?.brand || '';
+    formData.product.model = app.product?.model || '';
+    formData.product.price = Number(app.total_amount) || 0;
+
+    // 🟢 2. ອັບເດດຂໍ້ມູນ Variant (ສີ ແລະ ຂະໜາດ)
+    if (app.variant) {
+        formData.product.productColor = app.variant.color || '';
+        formData.product.productSize = app.variant.size_or_capacity || app.variant.size || '';
+    } else {
+        // ຖ້າບໍ່ມີ variant ໃຫ້ເປັນຄ່າວ່າງ
+        formData.product.productColor = '';
+        formData.product.productSize = '';
+    }
   }
 
   calculateLoanDetails()

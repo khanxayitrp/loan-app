@@ -27,13 +27,23 @@
       </div>
 
       <div class="form-control">
-        <label class="label"><span class="label-text font-bold">ຍີ່ຫໍ້ສິນຄ້າ:</span></label>
-        <input v-model="data.brand" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
-      </div>
-      <div class="form-control">
-        <label class="label"><span class="label-text font-bold">ລຸ້ນສິນຄ້າ:</span></label>
-        <input v-model="data.model" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
-      </div>
+  <label class="label"><span class="label-text font-bold">ຍີ່ຫໍ້ສິນຄ້າ:</span></label>
+  <input v-model="data.brand" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+</div>
+
+<div class="form-control">
+  <label class="label"><span class="label-text font-bold">ລຸ້ນສິນຄ້າ:</span></label>
+  <input v-model="data.model" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+</div>
+
+<div class="form-control">
+  <label class="label"><span class="label-text font-bold">ສີສິນຄ້າ:</span></label>
+  <input v-model="data.productColor" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+</div>
+<div class="form-control">
+  <label class="label"><span class="label-text font-bold">ຂະໜາດ:</span></label>
+  <input v-model="data.productSize" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
+</div>
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ລາຄາສິນຄ້າ (ກີບ):</span></label>
         <input :value="formatCurrencyInput(data.price)" @input="handleCurrencyInput('price', $event)" type="text"
@@ -54,8 +64,7 @@
         <label class="label">
           <span class="label-text font-bold">
             ອັດຕາດອກເບ້ຍ (%)
-            <span class="text-primary font-normal ml-1">{{ data.interestRateType === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)'
-              }}</span>:
+            <span class="text-primary font-normal ml-1">{{ data.interestRateType === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>:
           </span>
         </label>
         <input v-model.number="data.interestRate" type="number" step="0.01" :readonly="!isEditing"
@@ -95,8 +104,7 @@
           class="input input-sm input-bordered w-full" />
       </div>
 
-      <!-- <template v-if="productType.motorcycle"> -->
-        <template v-if="data.type === 'ສິນຄ້າລົດຈັກ'">
+      <template v-if="data.type === 'ສິນຄ້າລົດຈັກ'">
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ເລກຈັກ (ລົດຈັກ):</span></label>
           <input v-model="data.motorcycle.motorId" type="text" :readonly="!isEditing"
