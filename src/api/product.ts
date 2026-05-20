@@ -52,6 +52,20 @@ export const getProductById = async (id: number) => {
 }
 
 /**
+ * 🟢 ดึงข้อมูลสินค้าย่อย (Variants) ตาม ID สินค้าหลัก
+ */
+export const getProductVariants = async (productId: number) => {
+  try {
+    const response = await apiClient.get(`/products/${productId}/variants`)
+    // Backend ส่งมาเป็น: { success: true, data: [...] }
+    return response.data.data || response.data
+  } catch (error: any) {
+    console.error(`Error fetching variants for product ${productId}:`, error)
+    throw error
+  }
+}
+
+/**
  * สร้างสินค้าใหม่
  */
 export const createProduct = async (data: CreateProductDto) => {
@@ -235,6 +249,7 @@ export const getProductTypes = async () => {
     throw error
   }
 }
+
 /**
  * 🟢 นำเข้าข้อมูลสินค้าจากไฟล์ Excel (Smart Bulk Import)
  * @param file - ไฟล์ Excel (.xlsx, .xls, .csv)

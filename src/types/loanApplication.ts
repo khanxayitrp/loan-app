@@ -72,6 +72,16 @@ export interface WorkInfo {
   created_at?: string
 }
 
+export interface ProductVariant {
+  // 🟢 2. ເພີ່ມ Object ຂອງ variant ເຂົ້າໄປ
+    id: number;
+    color: string;
+    size_or_capacity: string;
+    merchant_sku: string;
+    price: number;
+}
+
+
 export interface Guarantor {
   id: number
   name: string
@@ -126,6 +136,7 @@ export interface LoanApplication {
   // Relations (ถ้า backend ส่งมา)
   customer?: CustomerLoan
   product?: Product
+  variant?: ProductVariant; // 🟢 เพิ่มข้อมูลสินค้าย่อย (Variant) เข้าไปใน LoanApplication เพื่อให้เข้าถึงได้ง่ายขึ้น
   guarantor?: Guarantor;
   delivery_receipts?: DeliveryReceipt[]; // ຮອງຮັບການ Join ຈາກ backend
   requester?: { id: number; name: string }
@@ -256,6 +267,7 @@ export interface CreateWithCustomerDto {
   occupation: string
   income_per_month: number
   product_id: number
+  variant_id?: number | null
   quantity?: number
   total_amount: number
   loan_period: number

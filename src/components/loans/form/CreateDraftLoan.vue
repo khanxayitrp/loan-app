@@ -76,7 +76,7 @@
         </label>
 
         <div class="relative">
-          <input v-model="productSearch" type="text" placeholder="ພິມຊື່ສິນຄ້າ ຫຼື ລະຫັດ…"
+          <input v-model="productSearch" type="text" placeholder="ພີມຊື່ສິນຄ້າ ຫຼື ລະຫັດ…"
             class="input input-bordered w-full pl-10 pr-10" :disabled="!selectedShop" @input="debounceProductSearch"
             @focus="showProductDropdown = true" @blur="handleProductBlur" />
           <span class="icon-[tabler--search] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
@@ -111,7 +111,38 @@
         </div>
       </div>
 
-      <div v-if="selectedProduct" class="mb-6">
+      <div v-if="selectedProduct && productVariants.length > 0" class="form-control mb-6">
+        <label class="label">
+          <span class="label-text font-medium text-gray-800 dark:text-white">ເລືອກ ສີ / ຂະໜາດ (ຕົວເລືອກຍ່ອຍ) *</span>
+        </label>
+        
+        <div v-if="isLoadingVariants" class="text-sm text-gray-500 flex items-center gap-2">
+          <span class="loading loading-spinner loading-xs"></span> ກຳລັງໂຫຼດຕົວເລືອກຍ່ອຍ...
+        </div>
+        
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div v-for="variant in productVariants" :key="variant.id" 
+               class="border rounded-lg p-3 cursor-pointer flex justify-between items-center transition-all"
+               :class="selectedVariant?.id === variant.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 hover:border-primary/50'"
+               @click="selectVariant(variant)">
+            <div>
+              <div class="font-medium text-sm text-gray-800 dark:text-white">
+                {{ variant.color || 'ບໍ່ລະບຸສີ' }} / {{ variant.size_or_capacity || 'ບໍ່ລະບຸຂະໜາດ' }}
+              </div>
+              <div class="text-xs text-gray-500">SKU: {{ variant.merchant_sku || variant.system_sku }}</div>
+            </div>
+            <div class="font-bold text-primary">{{ formatPrice(variant.price) }}</div>
+          </div>
+        </div>
+        
+        <label v-if="loanErrors.variant" class="label text-error p-0 pt-1">
+          <span class="label-text-alt flex items-center gap-1">
+            <span class="icon-[tabler--alert-circle] size-4"></span> {{ loanErrors.variant }}
+          </span>
+        </label>
+      </div>
+
+      <div v-if="selectedProduct && (productVariants.length === 0 || selectedVariant)" class="mb-6">
         <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-4">ລາຍລະອຽດສິນເຊື່ອ</h3>
 
         <div v-if="productTypeStore.error" class="mb-4">
@@ -127,6 +158,9 @@
               <label class="text-sm text-gray-500 dark:text-gray-400">ສິນຄ້າ</label>
               <p class="font-medium text-gray-800 dark:text-white">
                 {{ selectedProduct.product_name }}
+                <span v-if="selectedVariant" class="text-primary text-sm font-semibold ml-1">
+                  ({{ selectedVariant.color || 'ບໍ່ລະບຸສີ' }} / {{ selectedVariant.size_or_capacity || 'ບໍ່ລະບຸຂະໜາດ' }})
+                </span>
                 <span class="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
                   {{ productTypeDisplay }}
                 </span>
@@ -345,7 +379,7 @@
             <label class="label">
               <span class="label-text font-medium">ເລກບັດປະຈຳຕົວ *</span>
             </label>
-            <input v-model="customerForm.id_card" type="text" placeholder="ປ້ອນເລກບັດປະຈຳຕົວ"
+            <input v-model="customerForm.id_card" type="text" placeholder="ປ້ອນເລกບັດປະຈຳຕົວ"
               class="input input-bordered w-full" :class="{ 'input-error': customerErrors.id_card }" required />
             <label v-if="customerErrors.id_card" class="label text-error">
               <span class="label-text-alt">{{ customerErrors.id_card }}</span>
@@ -436,7 +470,7 @@
               @input="handleCurrencyInput('monthly_income', $event)" type="text" placeholder="ປ້ອນລາຍຮັບຕໍ່ເດືອນ"
               class="input input-bordered w-full" :class="{ 'input-error': customerErrors.monthly_income }" required />
             <div class="text-xs text-gray-500 mt-1">
-              <div>ລາຍຮັບຕໍ່ເດືອນ (ກີບ): {{ formatPrice(customerForm.monthly_income) }}</div>
+              <div>ລາຍຮັບຕໍ່เດືອນ (ກີບ): {{ formatPrice(customerForm.monthly_income) }}</div>
             </div>
             <label v-if="customerErrors.monthly_income" class="label text-error">
               <span class="label-text-alt">{{ customerErrors.monthly_income }}</span>
@@ -459,7 +493,8 @@
       </div>
 
       <div class="flex justify-end mt-8">
-        <button type="button" class="btn btn-primary" :disabled="!selectedShop || !selectedProduct || isSubmitting"
+        <button type="button" class="btn btn-primary" 
+          :disabled="!selectedShop || !selectedProduct || (productVariants.length > 0 && !selectedVariant) || isSubmitting"
           @click="handleDirectSubmit">
           <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>
           <span v-else>ສົ່ງຄຳຂໍສິນເຊື່ອ</span>
@@ -531,7 +566,7 @@
         </div>
 
         <div>
-          <h3 class="font-medium mb-3">ເອກະສານເພີ່ມເຕີມ</h3>
+          <h3 class="font-medium mb-3">เອກະສານເພີ່ມເຕີມ</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div v-for="(doc, index) in optionalDocuments" :key="index + requiredDocuments.length"
               class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
@@ -593,7 +628,7 @@
 
             <template v-if="!existingCustomerId">
               <p class="text-gray-600 dark:text-gray-400 mb-6">
-                ຄຳຂໍສິນເຊື່ອຖືກສ້າງເຂົ້າລະບົບແລ້ວ ກະລຸນາອັບໂຫຼດເອກະສານຢັ້ງຢືນ.
+                ຄຳຂໍສິນເຊື່ອຖືກສ້າງເຂົ້າລະບົບແແລ້ວ ກະລຸນາອັບໂຫຼດເອກະສานຢັ້ງຢືນ.
               </p>
               <button type="button" class="btn btn-primary w-full" @click="switchToDocumentsTab">
                 ດຳເນີນການອັບໂຫຼດເອກະສານ
@@ -605,7 +640,7 @@
                 ລະບົບພົບວ່າເປັນລູກຄ້າເກົ່າ ທີ່ມີປະຫວັດເອກະສານໃນລະບົບແລ້ວ.
               </p>
               <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-sm text-blue-800 dark:text-blue-200 mb-6 text-left">
-                ທ່ານຕ້ອງການໃຊ້ເອກະສານເດີມ ຫຼື ອັບໂຫຼດເອກະສານຊຸດໃໝ່?
+                ທ່ານຕ້ອງການໃຊ້ເອກະສານເດີມ ຫຼື ອັບໂຫຼດเອກະສານຊຸດໃໝ່?
                 <br><span class="text-xs opacity-70">(ລະບົບອາດຈະຮຽກຮ້ອງບາງເອກະສານໃໝ່ຖ້າອັນເກົ່າໝົດອາຍຸ)</span>
               </div>
               <div class="flex flex-col gap-3">
@@ -613,7 +648,7 @@
                   <span class="icon-[tabler--file-check] size-4 mr-2"></span> ໃຊ້ເອກະສານເດີມທີ່ມີຢູ່
                 </button>
                 <button type="button" class="btn btn-outline btn-secondary w-full" @click="switchToDocumentsTab">
-                  <span class="icon-[tabler--upload] size-4 mr-2"></span> ອັບໂຫຼດເອກະສານໃໝ່ເພີ່ມເຕີມ
+                  <span class="icon-[tabler--upload] size-4 mr-2"></span> ອັບໂຫຼດເอกະສານໃໝ່ເພີ່ມເຕີມ
                 </button>
               </div>
             </template>
@@ -640,7 +675,6 @@ import type { Product } from '@/types/product'
 import { useAddressStore } from '@/stores/address';
 import { getFullImageUrl } from '@/utils/url';
 
-// 🟢 ແກ້ໄຂ interface ໃຫ້ກົງກັບໂຕໃໝ່
 interface Customer {
   first_name: string
   last_name: string
@@ -676,6 +710,11 @@ const canAccessDocuments = ref(false)
 
 const loanNumber = ref('LN' + Date.now().toString().slice(-6))
 
+// 🟢 เพิ่มตัวแปรเก็บสถานะรายการย่อย (Variants)
+const productVariants = ref<any[]>([])
+const selectedVariant = ref<any>(null)
+const isLoadingVariants = ref(false)
+
 const getInterestRateByTerm = (months: number): number => {
   if (!months || months <= 6) return 2.50;
   if (months <= 12) return 2.00;
@@ -704,15 +743,17 @@ const loanErrors = reactive({
   totalAmount: '',
   downPayment: '',
   interestRate: '',
-  termMonths: ''
+  termMonths: '',
+  variant: '' // 🟢 เพิ่ม Error สำหรับเคสลืมเลือก Variant
 })
 
-const calculateInitialLoanDetails = () => {
+// 🟢 ปรับฟังก์ชันให้รับราคาเพื่อใช้คำนวณ (สลับไปมาระหว่างราคาหลักกับราคา Variant)
+const calculateInitialLoanDetails = (priceToUse?: number) => {
   if (!selectedProduct.value) return
 
-  const { price, term, interest_type } = selectedProduct.value
+  const { term, interest_type, price } = selectedProduct.value
 
-  loanDetails.totalAmount = Number(price || 0)
+  loanDetails.totalAmount = priceToUse !== undefined ? Number(priceToUse) : Number(price || 0)
   loanDetails.termMonths = Number(term || 12)
   loanDetails.downPayment = 0
   loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths)
@@ -850,10 +891,16 @@ const validateLoanDetails = (): boolean => {
   })
   let isValid = true
 
+  // 🟢 ตรวจสอบความถูกต้องของเคสสินค้ามี Variant
+  if (productVariants.value.length > 0 && !selectedVariant.value) {
+    loanErrors.variant = 'ກະລຸນາເລືອກ ສີ / ຂະໜາດ ຂອງສินຄ້າ';
+    isValid = false;
+  }
+
   if (loanDetails.totalAmount <= 0) { loanErrors.totalAmount = 'ລາຄາສິນຄ້າຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
   if (loanDetails.downPayment < 0) { loanErrors.downPayment = 'ເງິນດາວຕ້ອງບໍ່ຕິດລົບ'; isValid = false }
-  if (loanDetails.downPayment > loanDetails.totalAmount) { loanErrors.downPayment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າລາຄາສິນຄ້າ'; isValid = false }
-  if (loanDetails.interestRate < 0 || loanDetails.interestRate > 100) { loanErrors.interestRate = 'ດອກເບ້ຍຕ້ອງຢູ່ລະຫວ່າງ 0-100%'; isValid = false }
+  if (loanDetails.downPayment > loanDetails.totalAmount) { loanErrors.downPayment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າລາຄาສິນຄ້າ'; isValid = false }
+  if (loanDetails.interestRate < 0 || loanDetails.interestRate > 100) { loanErrors.interestRate = 'ดອກເບ້ຍຕ້ອງຢູ່ລະຫວ່າງ 0-100%'; isValid = false }
   if (!loanDetails.termMonths || loanDetails.termMonths <= 0) { loanErrors.termMonths = 'ກະລຸນາເລືອກຈຳນວນງວດ'; isValid = false }
 
   return isValid
@@ -898,7 +945,6 @@ const searchCustomerByPhone = async () => {
       existingCustomerId.value = customer.id
       customerSearchMessage.value = `ພົບຂໍ້ມູນລູກຄ້າ: ${customer.first_name} ${customer.last_name}`
 
-      // 🟢 Mapping ຂໍ້ມູນໃສ່ first_name ແລະ last_name
       customerForm.first_name = customer.first_name || ''
       customerForm.last_name = customer.last_name || ''
       customerForm.phone = customer.phone
@@ -934,7 +980,6 @@ const clearFoundCustomer = () => {
 
   const phone = customerForm.phone
   
-  // 🟢 ເຄລຍຄ່າ first_name ແລະ last_name
   customerForm.first_name = ''
   customerForm.last_name = ''
   customerForm.phone = phone
@@ -958,7 +1003,6 @@ watch(selectedProduct, () => {
   }
 })
 
-// 🟢 ປ່ຽນແປງ Reactive Form
 const customerForm = reactive({
   first_name: '', last_name: '', phone: '', id_card: '', age: 18, province_id: '', district_id: '', address: '', occupation: '', monthly_income: 0, other_debts: 0
 })
@@ -974,7 +1018,7 @@ const requiredDocuments = ref<Document[]>([
 
 const optionalDocuments = ref<Document[]>([
   { id: 'salary_slip', name: 'ຫຼັກຖານລາຍຮັບ', description: 'ໃບເງິນເດືອນ ຫຼື ໃບຮັບລາຍຮັບ', required: false, file: null, preview: null },
-  { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
+  { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເอกະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
 ])
 
 const showSuccessModal = ref(false)
@@ -1054,20 +1098,19 @@ let productSearchTimer: NodeJS.Timeout | null = null
 const debounceProductSearch = () => {
   if (productSearchTimer) clearTimeout(productSearchTimer)
   productSearchTimer = setTimeout(async () => {
-    // 🟢 ເພີ່ມໂຄ້ດໃຫ້ຍິງ API ໄປຫາ Backend ເມື່ອພິມຄົ້ນຫາ
     if (!selectedShop.value) return;
     
     try {
       await productStore.fetchProducts({ 
         shop_id: selectedShop.value.id,
-        search: productSearch.value, // ສົ່ງຄຳຄົ້ນຫາໄປນຳ
-        limit: 50 // ດຶງມາ 50 ຕົວ ເພື່ອໃຫ້ Dropdown ມີລາຍການຫຼາຍຂຶ້ນ
+        search: productSearch.value,
+        limit: 50
       });
       showProductDropdown.value = true;
     } catch (error) {
       console.error('Failed to search products:', error);
     }
-  }, 500) // ລໍຖ້າໃຫ້ພິມສຳເລັດ 500ms ກ່ອນແລ້ວຄ່ອຍຍິງ API (ກັນ Server ໜັກ)
+  }, 500)
 }
 
 watch(() => customerForm.province_id, async (newVal) => {
@@ -1088,6 +1131,11 @@ const selectShop = async (shop: shopType) => {
   productSearch.value = ''
   selectedProductType.value = ''
 
+  // เคลียร์ค่า Variant และข้อมูลเงินกู้ใหม่ทั้งหมด
+  selectedVariant.value = null
+  productVariants.value = []
+  loanErrors.variant = ''
+
   loanDetails.totalAmount = 0
   loanDetails.downPayment = 0
   loanDetails.interestRate = 0
@@ -1095,7 +1143,6 @@ const selectShop = async (shop: shopType) => {
   loanDetails.monthlyPayment = 0
 
   try {
-    // 🟢 ປ່ຽນຈາກດຶງຄ່າ Default (10) ມາເປັນ 50 ຫຼື 100 ລາຍການ
     await productStore.fetchProducts({ 
       shop_id: shop.id,
       limit: 50 
@@ -1110,10 +1157,16 @@ const clearShopSelection = () => {
   shopSearch.value = ''
   selectedProduct.value = null
   productSearch.value = ''
+  selectedVariant.value = null
+  productVariants.value = []
+  loanErrors.variant = ''
 }
 
-const handleShopBlur = () => {
-  setTimeout(() => { showShopDropdown.value = false }, 200)
+// 🟢 ฟังก์ชันสำหรับอัปเดตราคาเงินกู้เมื่อมีการคลิกเลือก Variant ย่อย
+const selectVariant = (variant: any) => {
+  selectedVariant.value = variant
+  loanErrors.variant = ''
+  calculateInitialLoanDetails(variant.price) // ใช้ราคาเฉพาะของ Variant นั้นมาคำนวณเงินกู้
 }
 
 const selectProduct = async (product: Product) => {
@@ -1121,7 +1174,31 @@ const selectProduct = async (product: Product) => {
   productSearch.value = product.product_name
   showProductDropdown.value = false
 
-  calculateInitialLoanDetails()
+  // 🟢 เคลียร์ค่าตัวเลือกย่อยของสินค้าอันเก่าทิ้งก่อน
+  selectedVariant.value = null
+  productVariants.value = []
+  loanErrors.variant = ''
+
+  // 🟢 ยิง API ไปโหลดข้อมูล Variants ของสินค้าชิ้นนี้มาตรวจสอบทันที
+  isLoadingVariants.value = true
+  try {
+    const variants = await productStore.fetchVariantsByProductId(product.id)
+    productVariants.value = variants || []
+    
+    // ถ้าร้านค้านี้ไม่มีตัวเลือกย่อย ให้ดึงค่าหลักมาคำนวณได้ทันที (variant_id จะเป็น null)
+    if (productVariants.value.length === 0) {
+      calculateInitialLoanDetails(Number(product.price))
+    } else {
+      // หากมีตัวเลือกย่อย ให้ตั้งราคากู้เป็น 0 รอจนกว่า User จะกดเลือกสีก่อน
+      loanDetails.totalAmount = 0
+      loanDetails.monthlyPayment = 0
+    }
+  } catch (error) {
+    console.error('Failed to load variants:', error)
+    calculateInitialLoanDetails(Number(product.price)) // เคสฉุกเฉินให้ดึงราคาหลักมาสstalk ไว้ก่อน
+  } finally {
+    isLoadingVariants.value = false
+  }
 
   const productTypeId = product.productType_id
   if (productTypeId) {
@@ -1149,13 +1226,19 @@ const clearProductSelection = () => {
   selectedProduct.value = null
   productSearch.value = ''
   selectedProductType.value = ''
+  selectedVariant.value = null
+  productVariants.value = []
+  loanErrors.variant = ''
+}
+
+const handleShopBlur = () => {
+  setTimeout(() => { showShopDropdown.value = false }, 200)
 }
 
 const handleProductBlur = () => {
   setTimeout(() => { showProductDropdown.value = false }, 200)
 }
 
-// 🟢 ເພີ່ມ Validation ສຳລັບຊື່ແທ້, ແຂວງ ແລະ ເມືອງ
 const validateCustomerForm = (): boolean => {
   Object.keys(customerErrors).forEach(key => {
     customerErrors[key as keyof typeof customerErrors] = ''
@@ -1210,7 +1293,6 @@ const handleDirectSubmit = async () => {
   }
 }
 
-// 🟢 ປັບປຸງການດຶງຄ່າຈາກ customerForm (ຕັດການ split ອອກ)
 const submitLoanApplication = async () => {
   try {
     if (!validateLoanDetails()) throw new Error('ກະລຸນາກວດສອບຂໍ້ມູນສິນເຊື່ອ')
@@ -1220,8 +1302,8 @@ const submitLoanApplication = async () => {
       phone: customerForm.phone.trim(),
       otp: '',
       identity_number: customerForm.id_card.trim(),
-      first_name: customerForm.first_name.trim(), // ຮັບຄ່າຈາກ input ໂດຍກົງ
-      last_name: customerForm.last_name.trim(),   // ຮັບຄ່າຈາກ input ໂດຍກົງ
+      first_name: customerForm.first_name.trim(), 
+      last_name: customerForm.last_name.trim(),   
 
       province_id: customerForm.province_id,
       district_id: customerForm.district_id,
@@ -1231,6 +1313,8 @@ const submitLoanApplication = async () => {
       income_per_month: customerForm.monthly_income,
 
       product_id: selectedProduct.value.id,
+      // 🟢 บันทึกค่า variant_id ไปยังระบบหลังบ้านอย่างถูกต้อง (เป็น ID ตัวเลข หรือ null)
+      variant_id: selectedVariant.value?.id || null, 
       quantity: 1,
       total_amount: loanDetails.totalAmount, 
       loan_period: loanDetails.termMonths,
@@ -1313,7 +1397,7 @@ const submitDocuments = async () => {
         await loanApplicationStore.uploadDocument(currentLoan.customer_id, doc.file, doc.id)
       }
     }
-    alert.success('ບັນທຶກເອກະສານສຳເລັດ!')
+    alert.success('ບັນທຶກເອກະສานສຳເລັດ!')
     await loanApplicationStore.fetchDocuments(currentLoan.customer_id)
     await loanApplicationStore.fetchLoanApplicationById(currentLoan.id)
     router.push({ name: 'ListDraftLoans' })

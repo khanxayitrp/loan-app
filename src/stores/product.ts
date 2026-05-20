@@ -4,6 +4,7 @@ import { getFullImageUrl } from '@/utils/url'
 import {
   getProducts,
   getProductById,
+  getProductVariants, // 🟢 ເພີ່ມ Import ໃໝ່
   createProduct,
   updateProduct,
   toggleProductStatus,
@@ -150,6 +151,24 @@ export const useProductStore = defineStore('product', {
         return productWithUrls;
       } catch (error: any) {
         this.error = error.message || 'Failed to fetch product';
+        throw error;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    /**
+     * 🟢 ດຶງຂໍ້ມູນສິນຄ້າຍ່ອຍ (Variants) ຕາມ ID ຂອງສິນຄ້າຫຼັກ
+     */
+    async fetchVariantsByProductId(productId: number) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const variants = await getProductVariants(productId);
+        return variants;
+      } catch (error: any) {
+        console.error(`❌ [ProductStore] Failed to fetch variants for product ${productId}:`, error);
+        this.error = error.message || 'ບໍ່ສາມາດດຶງຂໍ້ມູນລາຍການຍ່ອຍໄດ້';
         throw error;
       } finally {
         this.isLoading = false;

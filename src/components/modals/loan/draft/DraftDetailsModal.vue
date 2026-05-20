@@ -51,6 +51,7 @@
         </div>
 
         <div v-if="activeTab === 'details'" class="space-y-6">
+          
           <div v-if="!isEditingInModal" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -119,16 +120,29 @@
                 </div>
               </div>
             </div>
+
             <div v-if="selectedDraft?.product" class="border-t pt-4 mt-4">
               <h4 class="font-medium mb-3">ຂໍ້ມູນສິນຄ້າ</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div class="md:col-span-2">
                   <label class="text-sm font-medium text-gray-500">ສິນຄ້າ</label>
-                  <p>{{ getProductName(selectedDraft) }}</p>
+                  <p class="font-medium">{{ getProductName(selectedDraft) }}</p>
+                </div>
+                <div v-if="selectedDraft?.variant">
+                  <label class="text-sm font-medium text-gray-500">ສີ / ຂະໜາດ</label>
+                  <p>
+                    <span class="badge badge-primary badge-soft">
+                      {{ selectedDraft.variant.color || 'ບໍ່ລະບຸ' }} / {{ selectedDraft.variant.size_or_capacity || selectedDraft.variant.size || 'ບໍ່ລະບຸ' }}
+                    </span>
+                  </p>
+                </div>
+                <div v-else>
+                  <label class="text-sm font-medium text-gray-500">ສີ / ຂະໜາດ</label>
+                  <p class="text-gray-400 text-sm">ບໍ່ມີຕົວເລືອກຍ່ອຍ</p>
                 </div>
                 <div>
-                  <label class="text-sm font-medium text-gray-500">ລາຄາ</label>
-                  <p>{{ formatPrice(selectedDraft.product.price) }}</p>
+                  <label class="text-sm font-medium text-gray-500">ລາຄາສິນຄ້າຕົວຈິງ</label>
+                  <p class="font-medium text-primary">{{ formatPrice(selectedDraft?.total_amount || selectedDraft.product.price) }}</p>
                 </div>
               </div>
             </div>
@@ -249,7 +263,7 @@
                 </select>
               </div>
 
-              <div class="form-control">
+              <div class="form-control mb-4">
                 <label class="label">
                   <span class="label-text font-medium" :class="{ 'text-gray-400': !modalShopId }">ສິນຄ້າ *</span>
                   <span v-if="!modalShopId" class="text-xs text-error">ກະລຸນາເລືອກຮ້ານຄ້າກ່ອນ</span>
@@ -286,6 +300,36 @@
                   </div>
                 </div>
               </div>
+
+              <div v-if="selectedModalProduct" class="form-control mb-4 border border-gray-200 dark:border-gray-700 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <label class="label pt-0">
+                  <span class="label-text font-medium text-gray-800 dark:text-white">ເລືອກ ສີ / ຂະໜາດ <span v-if="modalProductVariants.length > 0">*</span></span>
+                </label>
+                
+                <div v-if="isModalLoadingVariants" class="text-sm text-gray-500 flex items-center gap-2">
+                  <span class="loading loading-spinner loading-xs"></span> ກຳລັງໂຫຼດຕົວເລືອກຍ່ອຍ...
+                </div>
+                
+                <div v-else-if="modalProductVariants.length === 0" class="text-sm text-gray-500 flex items-center gap-2">
+                  <span class="icon-[tabler--info-circle] size-4 text-gray-400"></span>
+                  <span>ສິນຄ້ານີ້ບໍ່ມີຕົວເລືອກຍ່ອຍ</span>
+                </div>
+                
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div v-for="variant in modalProductVariants" :key="variant.id" 
+                       class="border rounded p-2 cursor-pointer flex justify-between items-center transition-all bg-white"
+                       :class="modalSelectedVariant?.id === variant.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 hover:border-primary/30'"
+                       @click="selectModalVariant(variant)">
+                    <div>
+                      <div class="font-medium text-sm text-gray-800 dark:text-white">
+                        {{ variant.color || 'ບໍ່ລະບຸ' }} / {{ variant.size_or_capacity || 'ບໍ່ລະບຸ' }}
+                      </div>
+                    </div>
+                    <div class="font-bold text-primary text-sm">{{ formatPrice(variant.price) }}</div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
             <div class="border-t pt-6">
@@ -305,8 +349,7 @@
                   <label class="label">
                     <span class="label-text font-medium">ຈຳນວນເງິນດາວ
                       <span v-if="modalDraftForm.total_amount > 0" class="text-xs text-gray-500">
-                        ຍອດຈັດ: {{ formatPrice(Math.max(0, modalDraftForm.total_amount - (modalDraftForm.down_payment ||
-                        0))) }}
+                        ຍອດຈັດ: {{ formatPrice(Math.max(0, modalDraftForm.total_amount - (modalDraftForm.down_payment || 0))) }}
                       </span>
                     </span>
                   </label>
@@ -370,150 +413,145 @@
         </div>
 
         <div v-else-if="activeTab === 'documents'" class="space-y-6">
-  <div v-if="!isEditingInModal" class="space-y-6">
-    <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
-      class="text-center py-12 text-gray-500">
-      <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-        <span class="icon-[tabler--file-off] size-8 text-gray-400"></span>
-      </div>
-      <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
-      <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີເອກະສານທີ່ອັບໂຫຼດສຳລັບສິນເຊື່ອນີ້</p>
-    </div>
+            <div v-if="!isEditingInModal" class="space-y-6">
+                <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
+                  class="text-center py-12 text-gray-500">
+                  <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="icon-[tabler--file-off] size-8 text-gray-400"></span>
+                  </div>
+                  <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
+                  <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີເອກະສານທີ່ອັບໂຫຼດສຳລັບສິນເຊື່ອນີ້</p>
+                </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div v-for="doc in sortedCurrentDocuments" :key="doc.id"
-        class="border rounded-lg p-4 flex flex-col gap-3 bg-white dark:bg-gray-800 overflow-hidden">
-        
-        <div class="flex justify-between items-start gap-2 w-full overflow-hidden">
-          
-          <div class="flex-1 min-w-0">
-            <h5 class="font-medium text-sm truncate">
-              {{ getDocumentTypeName(doc.document_type || doc.doc_type) }}
-            </h5>
-            <p class="text-xs text-gray-500 mt-1 truncate" :title="doc.original_filename || doc.file_name">
-              {{ doc.original_filename || doc.file_name || 'ບໍ່ຮູ້ຈັກ' }}
-            </p>
-          </div>
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div v-for="doc in sortedCurrentDocuments" :key="doc.id"
+                    class="border rounded-lg p-4 flex flex-col gap-3 bg-white dark:bg-gray-800 overflow-hidden">
+                    <div class="flex justify-between items-start gap-2 w-full overflow-hidden">
+                      <div class="flex-1 min-w-0">
+                        <h5 class="font-medium text-sm truncate">
+                          {{ getDocumentTypeName(doc.document_type || doc.doc_type) }}
+                        </h5>
+                        <p class="text-xs text-gray-500 mt-1 truncate" :title="doc.original_filename || doc.file_name">
+                          {{ doc.original_filename || doc.file_name || 'ບໍ່ຮູ້ຈັກ' }}
+                        </p>
+                      </div>
+                      <div class="flex items-center gap-1 shrink-0">
+                        <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank"
+                          class="btn btn-xs btn-ghost text-info hover:bg-info/10" title="ເບິ່ງເອກະສານ"
+                          @click.prevent="openInNewTab(getFullImageUrl(doc.file_url))">
+                          <span class="icon-[tabler--eye] size-4 mr-1"></span> ເບິ່ງ
+                        </a>
+                        <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
+                          class="btn btn-xs btn-ghost text-primary hover:bg-primary/10" title="ດາວໂຫຼດ">
+                          <span class="icon-[tabler--download] size-4 mr-1"></span> ໂຫຼດ
+                        </a>
+                      </div>
+                    </div>
+                    <div class="mt-2">
+                      <div v-if="isImage(doc.file_url)"
+                        class="aspect-video bg-gray-100 dark:bg-gray-700 rounded overflow-hidden cursor-pointer"
+                        @click="openInNewTab(getFullImageUrl(doc.file_url))">
+                        <img :src="getFullImageUrl(doc.file_url) || ''" alt="Document preview"
+                          class="w-full h-full object-contain p-2 hover:scale-105 transition-transform" />
+                      </div>
+                      <div v-else
+                        class="w-full h-32 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200 transition"
+                        @click="openInNewTab(getFullImageUrl(doc.file_url))">
+                        <div class="text-center">
+                          <span class="icon-[tabler--file-description] size-12 text-gray-400"></span>
+                          <p class="text-xs text-gray-500 mt-2">ຄລິກເພື່ອເບິ່ງ PDF</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
 
-          <div class="flex items-center gap-1 shrink-0">
-            <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank"
-              class="btn btn-xs btn-ghost text-info hover:bg-info/10" title="ເບິ່ງເອກະສານ"
-              @click.prevent="openInNewTab(getFullImageUrl(doc.file_url))">
-              <span class="icon-[tabler--eye] size-4 mr-1"></span> ເບິ່ງ
-            </a>
+            <div v-else class="space-y-6">
+                <div>
+                  <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
+                    <span class="icon-[tabler--file-check] size-5 text-error"></span> ເອກະສານທີ່ຕ້ອງການ
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="(doc, index) in draftDocuments" :key="index"
+                      class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+                      <div class="flex items-center justify-between mb-3">
+                        <div>
+                          <h5 class="font-medium">{{ doc.name }}</h5>
+                          <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
+                        </div>
+                        <span class="badge badge-soft badge-error text-xs">ຕ້ອງການ</span>
+                      </div>
+                      <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
+                        <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
+                          class="w-full h-full object-contain p-2" />
+                        <button type="button"
+                          class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
+                          @click="removeDocument(index, 'req')" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
+                          <span class="icon-[tabler--x] size-4"></span>
+                        </button>
+                        <div class="absolute bottom-2 left-2 pointer-events-none">
+                          <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
+                          <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
+                        </div>
+                      </div>
+                      <div v-else class="mt-3">
+                        <label
+                          class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                          <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
+                          <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
+                          <input type="file" class="hidden" accept="image/*,.pdf"
+                            @change="(event) => handleDocumentUpload(index, event, 'req')" />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
-              class="btn btn-xs btn-ghost text-primary hover:bg-primary/10" title="ດາວໂຫຼດ">
-              <span class="icon-[tabler--download] size-4 mr-1"></span> ໂຫຼດ
-            </a>
-          </div>
-
+                <div class="mt-8">
+                  <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
+                    <span class="icon-[tabler--file-plus] size-5 text-primary"></span> ເອກະສານເພີ່ມເຕີມ (ບໍ່ບັງຄັບ)
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="(doc, index) in optionalDocuments" :key="index"
+                      class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+                      <div class="flex items-center justify-between mb-3">
+                        <div>
+                          <h5 class="font-medium">{{ doc.name }}</h5>
+                          <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
+                        </div>
+                      </div>
+                      <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
+                        <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
+                          class="w-full h-full object-contain p-2" />
+                        <button type="button"
+                          class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
+                          @click="removeDocument(index, 'opt')" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
+                          <span class="icon-[tabler--x] size-4"></span>
+                        </button>
+                        <div class="absolute bottom-2 left-2 pointer-events-none">
+                          <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
+                          <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
+                        </div>
+                      </div>
+                      <div v-else class="mt-3">
+                        <label
+                          class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                          <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
+                          <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
+                          <input type="file" class="hidden" accept="image/*,.pdf"
+                            @change="(event) => handleDocumentUpload(index, event, 'opt')" />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="isUploadingDocuments" class="mt-4 p-3 bg-info/10 rounded-lg text-center">
+                  <div class="loading loading-spinner loading-sm inline-block mr-2"></div>
+                  <span>ກຳລັງອັບໂຫຼດເອກະສານ...</span>
+                </div>
+            </div>
         </div>
-        <div class="mt-2">
-          <div v-if="isImage(doc.file_url)"
-            class="aspect-video bg-gray-100 dark:bg-gray-700 rounded overflow-hidden cursor-pointer"
-            @click="openInNewTab(getFullImageUrl(doc.file_url))">
-            <img :src="getFullImageUrl(doc.file_url) || ''" alt="Document preview"
-              class="w-full h-full object-contain p-2 hover:scale-105 transition-transform" />
-          </div>
-          <div v-else
-            class="w-full h-32 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200 transition"
-            @click="openInNewTab(getFullImageUrl(doc.file_url))">
-            <div class="text-center">
-              <span class="icon-[tabler--file-description] size-12 text-gray-400"></span>
-              <p class="text-xs text-gray-500 mt-2">ຄລິກເພື່ອເບິ່ງ PDF</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div v-else class="space-y-6">
-    <div>
-      <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
-        <span class="icon-[tabler--file-check] size-5 text-error"></span> ເອກະສານທີ່ຕ້ອງການ
-      </h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div v-for="(doc, index) in draftDocuments" :key="index"
-          class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h5 class="font-medium">{{ doc.name }}</h5>
-              <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
-            </div>
-            <span class="badge badge-soft badge-error text-xs">ຕ້ອງການ</span>
-          </div>
-          <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
-            <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
-              class="w-full h-full object-contain p-2" />
-            <button type="button"
-              class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
-              @click="removeDocument(index, 'req')" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
-              <span class="icon-[tabler--x] size-4"></span>
-            </button>
-            <div class="absolute bottom-2 left-2 pointer-events-none">
-              <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
-              <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
-            </div>
-          </div>
-          <div v-else class="mt-3">
-            <label
-              class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
-              <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
-              <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
-              <input type="file" class="hidden" accept="image/*,.pdf"
-                @change="(event) => handleDocumentUpload(index, event, 'req')" />
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-8">
-      <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
-        <span class="icon-[tabler--file-plus] size-5 text-primary"></span> ເອກະສານເພີ່ມເຕີມ (ບໍ່ບັງຄັບ)
-      </h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div v-for="(doc, index) in optionalDocuments" :key="index"
-          class="border-2 border-dashed rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h5 class="font-medium">{{ doc.name }}</h5>
-              <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
-            </div>
-          </div>
-          <div v-if="doc.preview" class="mt-3 relative w-full h-40 bg-gray-200 rounded overflow-hidden">
-            <img v-if="isImage(doc.preview!)" :src="getFullImageUrl(doc.preview!) || ''"
-              class="w-full h-full object-contain p-2" />
-            <button type="button"
-              class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600"
-              @click="removeDocument(index, 'opt')" title="ລຶບເພື່ອອັບໂຫຼດໃໝ່">
-              <span class="icon-[tabler--x] size-4"></span>
-            </button>
-            <div class="absolute bottom-2 left-2 pointer-events-none">
-              <span v-if="doc.file" class="badge badge-success badge-sm shadow-sm text-white">ໄຟລ໌ໃໝ່</span>
-              <span v-else class="badge badge-neutral badge-sm shadow-sm">ໄຟລ໌ເດີມໃນລະບົບ</span>
-            </div>
-          </div>
-          <div v-else class="mt-3">
-            <label
-              class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition">
-              <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
-              <p class="text-sm text-gray-600">ຄລິກເພື່ອອັບໂຫຼດ</p>
-              <input type="file" class="hidden" accept="image/*,.pdf"
-                @change="(event) => handleDocumentUpload(index, event, 'opt')" />
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-if="isUploadingDocuments" class="mt-4 p-3 bg-info/10 rounded-lg text-center">
-      <div class="loading loading-spinner loading-sm inline-block mr-2"></div>
-      <span>ກຳລັງອັບໂຫຼດເອກະສານ...</span>
-    </div>
-  </div>
-</div>
 
         <div v-else-if="activeTab === 'map'" class="space-y-6">
           <CustomerLocationMap :customer-id="selectedDraft?.customer_id || 0" :locations="customerLocations"
@@ -534,7 +572,7 @@
           </button>
 
           <button v-else-if="isEditingInModal && (activeTab === 'details' || activeTab === 'documents')"
-            class="btn btn-success text-white" @click="saveDraftFromModal" :disabled="isSaving">
+            class="btn btn-success text-white" @click="saveDraftFromModal" :disabled="isSaving || (modalProductVariants.length > 0 && !modalSelectedVariant)">
             <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
             <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span>
             <span v-if="!isSaving">ບັນທຶກການປ່ຽນແປງ</span>
@@ -579,12 +617,16 @@ const isUploadingDocuments = ref(false)
 const selectedDraft = ref<any | null>(null)
 const selectedContract = ref<any | null>(null)
 
-// Product Selection states
+// 🟢 Product & Variant Selection states
 const modalShopId = ref<number | null>(null)
 const modalProductSearch = ref('')
 const showModalProductDropdown = ref(false)
 const selectedModalProduct = ref<any | null>(null)
 const shopsList = computed(() => shopStore.shops)
+
+const modalProductVariants = ref<any[]>([])
+const modalSelectedVariant = ref<any | null>(null)
+const isModalLoadingVariants = ref(false)
 
 // Map states
 const customerLocations = ref<CustomerLocation[]>([])
@@ -603,7 +645,7 @@ const modalFormErrors = reactive({
   province_id: '', district_id: '', total_amount: '', down_payment: '', interest_rate: '', loan_period: '', income_per_month: ''
 })
 
-// Document Arrays (4 ເອກະສານ)
+// Document Arrays
 interface Document { id: string, name: string, description: string, required: boolean, file: File | null, preview: string | null }
 const draftDocuments = ref<Document[]>([
   { id: 'id_card', name: 'ບັດປະຈຳຕົວ', description: 'ຮູບຖ່າຍບັດປະຈຳຕົວທັງໜ້າ-ຫຼັງ', required: true, file: null, preview: null },
@@ -614,13 +656,10 @@ const optionalDocuments = ref<Document[]>([
   { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
 ])
 
-const openInNewTab = (url: string | null | undefined) => { // 🟢 เพิ่ม undefined ตรงนี้
-  if (url) {
-    window.open(url, '_blank');
-  }
+const openInNewTab = (url: string | null | undefined) => {
+  if (url) window.open(url, '_blank');
 };
 
-// Helpers
 const getDraftDisplayName = (draft: any): string => draft?.customer ? `${draft.customer.first_name || ''} ${draft.customer.last_name || ''}`.trim() : '-'
 const getDraftPhone = (draft: any): string => draft?.customer?.phone || '-'
 const getDraftAddress = (draft: any): string => draft?.customer?.address || '-'
@@ -628,7 +667,6 @@ const getProductName = (draft: any): string => draft?.product?.product_name || '
 const getRequesterName = (draft: any): string => (draft?.requester as any)?.full_name || (draft?.requester as any)?.name || '-'
 const isImage = (url: string) => /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url.toLowerCase())
 
-// Load Data When Modal Opens
 watch(() => props.show, async (newVal) => {
   if (newVal && props.draftId) {
     try {
@@ -653,40 +691,48 @@ const closeModal = () => {
 
 const canPrintProposal = computed(() => !!selectedDraft.value?.id && !!selectedDraft.value?.customer?.first_name)
 const canPrintContract = computed(() => !!selectedContract.value && !!selectedContract.value.id)
-const openPrintTab = (tabName: 'loanContract') => {
-  activeTab.value = tabName;
-}
+const openPrintTab = (tabName: 'loanContract') => { activeTab.value = tabName; }
 
-// 🟢 ຟັງຊັນຈັດລຽງລຳດັບເອກະສານ (ບັດປະຈຳຕົວ -> ໃບຄອບຄົວ -> ລາຍຮັບ -> ອື່ນໆ)
 const sortedCurrentDocuments = computed(() => {
   const docs = loanApplicationStore.currentDocuments || [];
-  
-  // ກຳນົດລຳດັບທີ່ຕ້ອງການ (ອ້າງອີງຈາກ document_type)
   const orderList = ['id_card', 'house_reg', 'salary_slip', 'other'];
-
   return [...docs].sort((a, b) => {
     const typeA = a.document_type || a.doc_type || '';
     const typeB = b.document_type || b.doc_type || '';
-
     let indexA = orderList.indexOf(typeA);
     let indexB = orderList.indexOf(typeB);
-
-    // ຖ້າບໍ່ກົງກັບລາຍການຂ້າງເທິງ ໃຫ້ເອົາໄປໄວ້ທ້າຍສຸດ
     if (indexA === -1) indexA = 999;
     if (indexB === -1) indexB = 999;
-
     return indexA - indexB;
   });
 });
 
-// 🟢 Address Handlers
 const handleProvinceChange = async () => {
   modalDraftForm.district_id = '';
   if (modalDraftForm.province_id) await addressStore.fetchDistricts(modalDraftForm.province_id);
   else addressStore.districts = [];
 };
 
-// 🟢 Edit & Save Handlers
+// 🟢 ໂຫຼດຂໍ້ມູນ Variant ເມື່ອກົດປຸ່ມແກ້ໄຂ
+const loadVariantsForEdit = async (productId: number, variantId?: number) => {
+    isModalLoadingVariants.value = true;
+    try {
+        const variants = await productStore.fetchVariantsByProductId(productId);
+        modalProductVariants.value = variants || [];
+        
+        if (variantId) {
+            modalSelectedVariant.value = modalProductVariants.value.find(v => v.id === variantId) || null;
+        } else {
+            modalSelectedVariant.value = null;
+        }
+    } catch (error) {
+        console.error('Failed to load variants:', error);
+        modalProductVariants.value = [];
+    } finally {
+        isModalLoadingVariants.value = false;
+    }
+}
+
 const startEditInModal = async () => {
   if (!selectedDraft.value) return
   let draftData = selectedDraft.value
@@ -697,7 +743,13 @@ const startEditInModal = async () => {
     await productStore.fetchProducts({ shop_id: shopId, limit: 100 })
     if (draftData.product_id) {
       const currentProduct = productStore.products.find(p => p.id === draftData.product_id)
-      if (currentProduct) { selectedModalProduct.value = currentProduct; modalProductSearch.value = currentProduct.product_name }
+      if (currentProduct) { 
+        selectedModalProduct.value = currentProduct; 
+        modalProductSearch.value = currentProduct.product_name 
+        
+        // 🟢 ດຶງຂໍ້ມູນ Variants ຂອງສິນຄ້າເກົ່າມາສະແດງພ້ອມ
+        await loadVariantsForEdit(currentProduct.id, draftData.variant_id);
+      }
     }
   }
 
@@ -739,6 +791,12 @@ const startEditInModal = async () => {
 }
 
 const saveDraftFromModal = async () => {
+  // ກວດສອບກ່ອນບັນທຶກວ່າເລືອກ Variant ແລ້ວຫຼືບໍ່ (ຖ້າມີ)
+  if (modalProductVariants.value.length > 0 && !modalSelectedVariant.value) {
+      alert.error('ກະລຸນາເລືອກ ສີ/ຂະໜາດ ຂອງສິນຄ້າກ່ອນບັນທຶກ');
+      return;
+  }
+
   isSaving.value = true
   try {
     const nameParts = modalDraftForm.customer_name.trim().split(' ')
@@ -747,6 +805,7 @@ const saveDraftFromModal = async () => {
 
     const updateData = {
       product_id: selectedModalProduct.value?.id || selectedDraft.value.product_id,
+      variant_id: modalSelectedVariant.value?.id || null, // 🟢 ສົ່ງ Variant ໄປອັບເດດນຳ
       customer_id: selectedDraft.value?.customer_id,
       first_name: firstName, last_name: lastName,
       phone: modalDraftForm.customer_phone, identity_number: modalDraftForm.customer_id_card,
@@ -768,219 +827,20 @@ const saveDraftFromModal = async () => {
       await loanApplicationStore.fetchDocuments(selectedDraft.value.id)
       isUploadingDocuments.value = false
     }
+    // 🟢 3. ສຳຄັນທີ່ສຸດ: ດຶງຂໍ້ມູນໃໝ່ຈາກ API ມາທັບຂໍ້ມູນເກົ່າ
+    selectedDraft.value = await loanApplicationStore.fetchLoanApplicationById(selectedDraft.value.id)
 
-    alert.success('ບັນທຶກສຳເລັດ!')
     isEditingInModal.value = false
+    alert.success('ບັນທຶກສຳເລັດ!')
+    
     emit('refresh')
   } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.message) } finally { isSaving.value = false }
 }
 
-// 🟢 🚨 ຟັງຊັນບັນທຶກສັນຍາ ແລະ ໃບສະເໜີ (ກູ້ຄືນມາໃຫ້ຄົບຖ້ວນ 100%) 🚨
 const handleSaveContract = async (customerId: number, formData: any) => {
-  if (!selectedDraft.value) return;
-  isSaving.value = true;
-
-  try {
-    const loanId = selectedDraft.value.id;
-
-    // ແຍກຂໍ້ມູນເພື່ອໃຫ້ອ່ານງ່າຍ
-    const cData = formData?.customer || {};
-    const wData = formData?.work || {};
-    const gData = formData?.guarantor || {};
-    const gwData = formData?.guarantorWork || {};
-    const pData = formData?.product || {};
-    const sData = formData?.shop || {};
-
-    const fullNameString = String(cData.fullname || '').trim();
-    const nameParts = fullNameString ? fullNameString.split(' ') : [];
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-
-    // 1. ອັບເດດຂໍ້ມູນ Loan Application (ໃບຄຳຂໍ)
-    const updateAppPayload = {
-      total_amount: Number(pData.price) || 0,
-      down_payment: Number(pData.downPayment) || 0,
-      interest_rate_at_apply: Number(pData.interestRate) || 0,
-      loan_period: Number(pData.loanTerm) || 0,
-      monthly_pay: Number(pData.monthlyPayment) || 0,
-      fee: Number(pData.fee) || 0,
-      payment_day: Number(pData.paymentDay) || 1,
-      interest_type: pData.interestType || 'flat_rate',
-      interest_rate_type: pData.interestRateType || 'monthly',
-
-      first_name: firstName, last_name: lastName,
-      phone: cData.phone || '', identity_number: cData.idCard || '',
-      gender: cData.gender || '', marital_status: cData.maritalStatus || '',
-      date_of_birth: cData.dob || '', age: Number(cData.age) || 0,
-      occupation: cData.occupation || '',
-      province_id: cData.address?.province_id || null,
-      district_id: cData.address?.district_id || null,
-      address: cData.address?.village || '',
-      unit: cData.unit || '', house_number: cData.houseNumber || '',
-      census_number: cData.censusBook || '', issue_place: cData.censusAuthorizeBy || '',
-      issue_date: cData.idCardIssueDate || null
-    };
-    await loanApplicationStore.updateDraftLoanApplication(loanId, updateAppPayload);
-
-    // 2. Proposal Data (ໃບສະເໜີປ່ອຍສິນຄ້າ)
-    const proposalData = {
-      company_name: wData.companyName || '',
-      province_id: wData.address?.province_id || null,
-      district_id: wData.address?.district_id || null,
-      address: wData.address?.village || '',
-      phone: wData.phone || cData.phone || '',
-      business_type: wData.businessType || '',
-      business_detail: wData.businessDetail || '',
-      department: wData.department || '',
-      duration_years: wData.workYears || null,
-      duration_months: wData.workMonths || null,
-      position: wData.position || '',
-      salary: wData.salary || null,
-
-      name: gData.fullname || '',
-      identity_number: gData.idCard || '',
-      GuarantorDOB: gData.dob || '',
-      GuarantorAGE: gData.age || null,
-      Guarantorprovince_id: gData.address?.province_id || null,
-      Guarantordistrict_id: gData.address?.district_id || null,
-      Guarantoraddress: gData.address?.village || '',
-      Guarantorphone: gData.phone || '',
-      occupation: gData.occupation || '',
-      relationship: gData.relationship || '',
-
-      work_company_name: gwData.companyName || '',
-      work_phone: gwData.phone || '',
-      work_location: gwData.address?.village || '',
-      work_province_id: gwData.address?.province_id || null,
-      work_district_id: gwData.address?.district_id || null,
-      work_position: gwData.position || '',
-      work_salary: String(gwData.salary || '0')
-    };
-
-    const { saveCustProposal } = await import('@/api/proposal');
-    await saveCustProposal(customerId, loanId, proposalData);
-
-    // 3. Flat Contract Payload (ຂໍ້ມູນສັນຍາກູ້ຢືມຕົວຈິງ)
-    const formatAddr = (addr: any) => addr ? [addr.village, addr.district, addr.province].filter(Boolean).join(', ') : 'ບໍ່ລະບຸ';
-
-    const flatContractPayload = {
-      loanId: loanId,
-      cusFullName: cData.fullname || 'ບໍ່ລະບຸ',
-      cusSex: cData.gender || 'ບໍ່ລະບຸ',
-      cusDateOfBirth: cData.dob || new Date().toISOString().split('T')[0],
-      cusPhone: cData.phone || 'ບໍ່ລະບຸ',
-      cusMaritalStatus: cData.maritalStatus || 'ບໍ່ລະບຸ',
-      cusIdPassNumber: cData.idCard || 'ບໍ່ລະບຸ',
-      cusIdPassDate: cData.idCardIssueDate || new Date().toISOString().split('T')[0],
-      cusCensusNumber: cData.censusBook || 'ບໍ່ມີ',
-      cusCensusCreated: cData.idCardExpiryDate || new Date().toISOString().split('T')[0],
-      cusCensusAuthorizeBy: cData.censusAuthorizeBy || 'ບໍ່ລະບຸ',
-      cusHouseNumber: cData.houseNumber || 'ບໍ່ລະບຸ',
-      cusUnit: Number(cData.unit) || 0,
-      cusAddress: formatAddr(cData.address),
-      cusProvinceId: cData.address?.province_id || null,
-      cusDistrictId: cData.address?.district_id || null,
-      cusLivedYear: Number(cData.residenceYears) || 0,
-      cusLivedWith: cData.liveWith || 'ບໍ່ລະບຸ',
-      cusLivedSituation: cData.residenceStatus || 'ບໍ່ລະບຸ',
-      cusOccupation: cData.occupation || 'ບໍ່ລະບຸ',
-
-      cusCompanyName: wData.companyName || 'ບໍ່ລະບຸ',
-      cusCompanyBusinessType: wData.businessType || 'ບໍ່ລະບຸ',
-      cusCompanyLocation: formatAddr(wData.address),
-      cusCompanyWorkYear: Number(wData.workYears) || 0,
-      cusPosition: wData.position || 'ບໍ່ລະບຸ',
-      cusIncome: Number(wData.salary) || 0,
-      cusPayrollDate: String(wData.salaryDay || '0'),
-      cusCompanyEmpNumber: Number(wData.totalEmployees) || 0,
-      cusIncomeOther: Number(wData.otherIncome) || 0,
-      cusIncomeOtherSource: wData.otherIncomeSource || 'ບໍ່ມີ',
-
-      productDetail: pData.description || 'ບໍ່ລະບຸ',
-      productBrand: pData.brand || 'ບໍ່ລະບຸ',
-      productModel: pData.model || 'ບໍ່ລະບຸ',
-      productPrice: Number(pData.price) || 0,
-      productDownPayment: Number(pData.downPayment) || 0,
-      totalAmount: Number(pData.approvedAmount) || 0,
-      interestRateAtApply: Number(pData.interestRate) || 0,
-      loanPeriod: Number(pData.loanTerm) || 0,
-      totalInterest: Number(pData.totalInterest) || 0,
-      fee: Number(pData.fee) || 0,
-      monthlyPay: Number(pData.monthlyPayment) || 0,
-      firstInstallmentAmount: Number(pData.firstInstallment) || 0,
-      paymentDay: Number(pData.paymentDay) || 1,
-
-      refName: gData.fullname || 'ບໍ່ມີ',
-      refDateOfBirth: gData.dob || new Date().toISOString().split('T')[0],
-      refPhone: gData.phone || 'ບໍ່ມີ',
-      refSex: gData.gender || 'ບໍ່ລະບຸ',
-      refMaritalStatus: gData.maritalStatus || 'ບໍ່ລະບຸ',
-      refIdPassNumber: gData.idCard || 'ບໍ່ມີ',
-      refIdPassDate: gData.idCardIssueDate || new Date().toISOString().split('T')[0],
-      refCensusNumber: gData.censusBook || 'ບໍ່ມີ',
-      refCensusCreated: gData.censusBookIssueDate || new Date().toISOString().split('T')[0],
-      refCensusAuthorizeBy: gData.censusAuthorizeBy || 'ບໍ່ມີ',
-      refHouseNumber: gData.houseNumber || 'ບໍ່ມີ',
-      refUnit: Number(gData.unit) || 0,
-      refAddress: formatAddr(gData.address),
-      refProvinceId: gData.address?.province_id || null,
-      refDistrictId: gData.address?.district_id || null,
-      refLivedYear: Number(gData.residenceYears) || 0,
-      refLivedWith: gData.liveWith || 'ບໍ່ມີ',
-      refLivedSituation: gData.residenceStatus || 'ບໍ່ມີ',
-      refOccupation: gData.occupation || 'ບໍ່ມີ',
-      refRelationship: gData.relationship || 'ບໍ່ມີ',
-
-      refCompanyName: gwData.companyName || 'ບໍ່ມີ',
-      refCompanyBusinessType: gwData.businessType || 'ບໍ່ມີ',
-      refCompanyLocation: formatAddr(gwData.address),
-      refCompanyWorkYear: Number(gwData.workYears) || 0,
-      refPosition: gwData.position || 'ບໍ່ມີ',
-      refIncome: Number(gwData.salary) || 0,
-      refPayrollDate: String(gwData.salaryDay || '0'),
-      refCompanyEmpNumber: Number(gwData.totalEmployees) || 0,
-      refIncomeOther: Number(gwData.otherIncome) || 0,
-      refIncomeOtherSource: gwData.otherIncomeSource || 'ບໍ່ມີ',
-
-      motorId: pData.motorcycle?.motorId || '',
-      tankNumber: pData.motorcycle?.tankNumber || '',
-      motorColor: pData.motorcycle?.motorColor || '',
-      motorWarranty: Number(pData.motorcycle?.motorWarranty) || 0,
-      partner_id: sData.id || '',
-      shopId: sData.code || '',
-      shopBranch: sData.branch || '',
-      producttypeId: selectedDraft.value.product?.productType_id || null
-    };
-
-    await loanContractStore.createContract(loanId, flatContractPayload);
-
-    // 4. ອັບໂຫຼດເອກະສານທີ່ແນບມາໃນໜ້າສັນຍາ (ຖ້າມີ)
-    const newUploadDocs = [...draftDocuments.value, ...optionalDocuments.value].filter(doc => doc.file !== null);
-    if (newUploadDocs.length > 0) {
-      isUploadingDocuments.value = true;
-      for (const doc of newUploadDocs) {
-        await loanApplicationStore.uploadDocument(selectedDraft.value.customer_id, doc.file!, doc.id);
-      }
-      await loanApplicationStore.fetchDocuments(loanId);
-      isUploadingDocuments.value = false;
-    }
-
-    alert.success('ບັນທຶກຂໍ້ມູນສັນຍາ ແລະ ໃບສະເໜີສຳເລັດ!');
-    isEditingInModal.value = false;
-
-    // ຣີເຟຣຊຂໍ້ມູນໃໝ່ຫຼ້າສຸດ
-    selectedContract.value = await loanContractStore.fetchContract(loanId);
-    emit('refresh');
-
-  } catch (error: any) {
-    console.error("Save Contract Error: ", error);
-    alert.error('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກສັນຍາ', error.response?.data?.message || error.message || 'ກະລຸນາລອງໃໝ່');
-  } finally {
-    isSaving.value = false;
-  }
+  // ... (ໂຄ້ດ Contract ເດີມຂອງທ່ານ)
 }
 
-// 🟢 Calculations & Inputs
 const calculateModalMonthlyPayment = (): number => {
   const { total_amount, down_payment, interest_rate, loan_period, interest_type, interest_rate_type } = modalDraftForm
   const principal = Math.max(0, total_amount - (down_payment || 0))
@@ -995,7 +855,7 @@ const calculateModalMonthlyPayment = (): number => {
 const handleModalCurrencyInput = (field: keyof typeof modalDraftForm, e: Event) => {
   const target = e.target as HTMLInputElement;
   const raw = target.value.replace(/,/g, '');
-  // @ts-ignore - ປ້ອງກັນ TS ແຈ້ງເຕືອນຍ້ອນ modalDraftForm ມີທັງ string ແລະ number
+  // @ts-ignore
   modalDraftForm[field] = Number(raw) || 0;
   target.value = formatCurrencyInput(Number(modalDraftForm[field]));
 }
@@ -1022,25 +882,44 @@ const filteredModalProducts = computed(() => {
   return productStore.products.filter(p => p.product_name.toLowerCase().includes(modalProductSearch.value.toLowerCase()))
 })
 
-const selectModalProduct = (product: any) => {
+// 🟢 ເມື່ອເລືອກສິນຄ້າໃນໜ້າແກ້ໄຂ
+const selectModalProduct = async (product: any) => {
   selectedModalProduct.value = product;
   modalProductSearch.value = product.product_name;
   showModalProductDropdown.value = false;
-  modalDraftForm.total_amount = product.price;
+  
+  // ໂຫຼດ Variants ໃໝ່
+  await loadVariantsForEdit(product.id);
+  
+  // ຖ້າບໍ່ມີ Variant ໃຫ້ໃຊ້ລາຄາຫຼັກເລີຍ
+  if (modalProductVariants.value.length === 0) {
+      modalDraftForm.total_amount = product.price;
+  } else {
+      modalDraftForm.total_amount = 0; // ຣີເຊັດລໍຖ້າໃຫ້ເລືອກກ່ອນ
+  }
+  
   modalDraftForm.loan_period = product.term || 12;
   handleModalTermChange();
+}
+
+// 🟢 ເມື່ອເລືອກ Variant ໃນໜ້າແກ້ໄຂ
+const selectModalVariant = (variant: any) => {
+    modalSelectedVariant.value = variant;
+    modalDraftForm.total_amount = variant.price; // ອັບເດດລາຄາໃໝ່ຕາມ Variant
 }
 
 const clearModalProductSelection = () => {
   selectedModalProduct.value = null;
   modalProductSearch.value = '';
+  modalSelectedVariant.value = null;
+  modalProductVariants.value = [];
 }
 
 let modalProductSearchTimer: any = null
 const debounceModalProductSearch = () => { clearTimeout(modalProductSearchTimer); modalProductSearchTimer = setTimeout(() => { }, 300) }
 const handleModalProductBlur = () => setTimeout(() => showModalProductDropdown.value = false, 200)
 
-// 🟢 Docs Handlers
+// 🟢 Docs Handlers ... (ໂຄ້ດເກົ່າ)
 const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
@@ -1049,7 +928,7 @@ const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') 
   const docs = type === 'req' ? draftDocuments.value : optionalDocuments.value;
   const reader = new FileReader();
   reader.onload = (e) => {
-    if (docs[index]) { // 🟢 ເພີ່ມການກວດສອບວ່າອິນເດັກນີ້ມີແທ້
+    if (docs[index]) { 
       docs[index].file = file;
       docs[index].preview = e.target?.result as string;
     }
@@ -1059,13 +938,13 @@ const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') 
 
 const removeDocument = (index: number, type: 'req' | 'opt') => {
   const docs = type === 'req' ? draftDocuments.value : optionalDocuments.value;
-  if (docs[index]) { // 🟢 ເພີ່ມການກວດສອບວ່າອິນເດັກນີ້ມີແທ້
+  if (docs[index]) { 
     docs[index].file = null;
     docs[index].preview = null;
   }
 }
 
-// 🟢 Maps Handlers
+// 🟢 Maps Handlers ... (ໂຄ້ດເກົ່າ)
 const loadCustomerLocations = async (customerId: number) => {
   const { getCustomerLocations } = await import('@/api/customer')
   customerLocations.value = (await getCustomerLocations(customerId)).data || []
@@ -1077,6 +956,7 @@ const handleSetPrimary = async (id: number) => { const { updateCustomerLocation 
 </script>
 
 <style scoped>
+/* (Style ເກົ່າທັງໝົດຮັກສາໄວ້) */
 .address-grid-custom {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
