@@ -966,12 +966,12 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusIncomeOtherSource: wData.otherIncomeSource || 'ບໍ່ມີ',
 
       productDetail: pData.description || 'ບໍ່ລະບຸ',
-      productBrand: pData.brand || 'ບໍ່ລະບຸ',
-      productModel: pData.model || 'ບໍ່ລະບຸ',
+      productBrand: pData.brand || '',
+      productModel: pData.model || '',
 
       variant_id: Number(pData.variantId) || selectedLoan.value?.variant_id || null,
-      product_color: pData.productColor || selectedLoan.value?.variant.color || 'ບໍ່ລະບຸ',
-      product_size: pData.productSize || selectedLoan.value?.variant.size_or_capacity || 'ບໍ່ລະບຸ',
+      product_color: pData.productColor || selectedLoan.value?.variant?.color || '',
+      product_size: pData.productSize || selectedLoan.value?.variant?.size_or_capacity || '',
 
       productPrice: Number(pData.price) || 0,
       productDownPayment: Number(pData.downPayment) || 0,

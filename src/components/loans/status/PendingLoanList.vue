@@ -67,7 +67,7 @@
               <div class="flex items-center gap-2">
                 <span class="font-medium" :class="!loan.credit_score ? 'text-gray-400' : ''">{{ loan.credit_score || '-'
                   }}</span>
-                <div v-if="loan.status !== 'approved' && loan.status !== 'rejected' && isSalesOrOfficer"
+                <div v-if="loan.status !== 'approved' && loan.status !== 'rejected' && (isSalesOrOfficer || isManager)"
                   class="tooltip tooltip-top" data-tip="ຄຳນວນຄະແນນ">
                   <button class="btn btn-circle btn-text btn-xs transition-all text-primary hover:bg-primary/10"
                     @click="openCreditScoreModal(loan)">
@@ -97,7 +97,7 @@
     </div>
 
     <!-- 2. ປຸ່ມຈັດການລາຍເຊັນ (ສຳລັບພະນັກງານ) -->
-    <div v-if="hasContract(loan) && isSalesOrOfficer" class="tooltip tooltip-top"
+    <div v-if="hasContract(loan) && (isSalesOrOfficer || isManager)" class="tooltip tooltip-top"
       data-tip="ຈັດການລາຍເຊັນເອກະສານ (ລູກຄ້າ/ນາຍບ້ານ)">
       <button class="btn btn-circle btn-text btn-sm text-indigo-500 hover:bg-indigo-50"
         @click="openSignatureModal(loan)">
@@ -106,7 +106,7 @@
     </div>
 
     <!-- 🌟 3. ປຸ່ມພິມໃບມອບຮັບສິນຄ້າ (ເພີ່ມໃໝ່ ສຳລັບພະນັກງານເທົ່ານັ້ນ) -->
-    <div v-if="isSalesOrOfficer" class="tooltip tooltip-top" data-tip="ພິມໃບມອບຮັບສິນຄ້າ">
+    <div v-if="isSalesOrOfficer || isManager" class="tooltip tooltip-top" data-tip="ພິມໃບມອບຮັບສິນຄ້າ">
       <!-- แก้ชื่อฟังก์ชันให้ตรงกับใน script -->
       <button class="btn btn-circle btn-text btn-sm text-fuchsia-600 hover:bg-fuchsia-50"
         @click="openDeliveryNoteModal(loan)">
@@ -158,14 +158,14 @@
 </div> -->
 
     <!-- 7. ປຸ່ມ Checklist ແລະ Print Summary (ສຳລັບພະນັກງານ) -->
-    <div v-if="isSalesOrOfficer" class="tooltip tooltip-top" data-tip="ແບບຟອມ Checklist">
+    <div v-if="isSalesOrOfficer || isManager" class="tooltip tooltip-top" data-tip="ແບບຟອມ Checklist">
       <button class="btn btn-circle btn-text btn-sm text-primary hover:bg-primary/10"
         @click="openChecklistModal(loan)">
         <span class="icon-[tabler--clipboard-check] size-5"></span>
       </button>
     </div>
     
-    <div v-if="loan.credit_score && isSalesOrOfficer" class="tooltip tooltip-top" data-tip="ພິມໃບສະຫຼຸບ">
+    <div v-if="loan.credit_score && (isSalesOrOfficer || isManager)" class="tooltip tooltip-top" data-tip="ພິມໃບສະຫຼຸບ">
       <button class="btn btn-circle btn-text btn-sm text-gray-500 hover:text-primary hover:bg-gray-100"
         @click="openPrintSummary(loan)">
         <span class="icon-[tabler--printer] size-5"></span>

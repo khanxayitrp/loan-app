@@ -43,7 +43,7 @@
         <input v-model="data.productColor" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
       </div>
       <div class="form-control">
-        <label class="label"><span class="label-text font-bold">ະໜາດ:</span></label>
+        <label class="label"><span class="label-text font-bold">ຂະໜາດ:</span></label>
         <input v-model="data.productSize" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full" />
       </div>
       <div class="form-control">
