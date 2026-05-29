@@ -99,16 +99,16 @@ const routes: RouteRecordRaw[] = [
       permission: 'permission_manage'
     }
   },
-  {
-    path: '/createLoan',
-    name: 'CreateLoan',
-    component: () => import('@/views/loans/LoanView.vue'),
-    meta: {
-      requiresAuth: false,           // ต้อง login
-      bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
-      permission: 'loan_create'
-    }
-  },
+  // {
+  //   path: '/createLoan',
+  //   name: 'CreateLoan',
+  //   component: () => import('@/views/loans/LoanView.vue'),
+  //   meta: {
+  //     requiresAuth: false,           // ต้อง login
+  //     bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
+  //     permission: 'loan_create'
+  //   }
+  // },
   {
     path: '/loans',
     name: 'LoanList',

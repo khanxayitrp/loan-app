@@ -89,13 +89,43 @@
                 </tr>
                 <tr v-for="(row, index) in scheduleRows" :key="index" class="hover:bg-base-200/30 transition-colors">
                   <td class="text-center align-middle font-medium">{{ row.installment_number }}</td>
-                  <td class="align-middle">
-                    <!-- 🟢 ລັອກ Input ຖ້າ View Only ຫຼຶ ເງື່ອນໄຂເດີມຂອງທ່ານ -->
+                  <!-- 🟢 ລັອກ Input ຖ້າ View Only ຫຼຶ ເງື່ອນໄຂເດີມຂອງທ່ານ -->
+                  <!-- <td class="align-middle">
+                    
                     <input type="date" v-model="row.due_date" 
                       class="input input-sm input-bordered w-full"
                       :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
                       :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
-                  </td>
+                  </td> -->
+                  <td class="align-middle relative">
+  <!-- <input type="text" 
+    :value="formatDateToDDMMYYYY(row.due_date)"
+    readonly
+    placeholder="dd/mm/yyyy"
+    class="input input-sm input-bordered w-full pr-8 cursor-pointer"
+    :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
+    :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')"
+    
+  /> -->
+  <input type="text" 
+    :value="formatDateToDDMMYYYY(row.due_date)"
+    readonly
+    placeholder="dd/mm/yyyy"
+    class="input input-sm input-bordered w-full pr-8 cursor-pointer"
+    :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
+    :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')"
+    @click="triggerRowDatePicker($event)" 
+  />
+
+  <input type="date" 
+    v-model="row.due_date" 
+    class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none"
+    :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" 
+    @change="recalculateDatesFromIndex(index)"
+  />
+
+  <span class="icon-[tabler--calendar] absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none size-4"></span>
+</td>
                   <td class="align-middle text-right">
                     <input type="text" :value="formatCurrencyInput(row.principal)"
                       @input="handleScheduleInput(row, 'principal', $event)"
@@ -151,7 +181,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import apiClient from '@/api/apiclient'
-import { formatPrice, formatCurrencyInput } from '@/utils/formatters'
+import { formatPrice, formatCurrencyInput, formatDateToDDMMYYYY } from '@/utils/formatters'
 import { alert } from '@/utils/alert'
 
 // 🟢 ເພີ່ມ Prop: viewOnly
@@ -170,6 +200,63 @@ const isScheduleSaved = ref(false)
 const hasScheduleConflict = ref(false)
 const scheduleDifferences = reactive<Record<string, any>>({})
 const scheduleRows = ref<any[]>([])
+
+// 2. ເພີ່ມຟັງຊັນສຳລັບເປີດປະຕິທິນແຕ່ລະແຖວ
+const triggerRowDatePicker = (e: Event) => {
+  // ຈັບເອົາ Input ຕົວທີ່ເຮົາຄລິກ (Text Input)
+  const textInput = e.currentTarget as HTMLInputElement;
+  
+  // ຊອກຫາ Input ຕົວຖັດໄປທີ່ເຊື່ອງຢູ່ (Date Input)
+  const hiddenDateInput = textInput.nextElementSibling as HTMLInputElement;
+  
+  // ຖ້າຊ່ອງບໍ່ໄດ້ຖືກລັອກ (disabled) ໃຫ້ສັ່ງເປີດປະຕິທິນ
+  if (!textInput.disabled && hiddenDateInput && hiddenDateInput.showPicker) {
+    hiddenDateInput.showPicker();
+  }
+}
+
+// Add this function anywhere in your script setup, 
+// for example, right below your triggerRowDatePicker function
+
+const recalculateDatesFromIndex = (changedIndex: number) => {
+  // ຖ້າຢູ່ໃນໂໝດ View Only ບໍ່ຕ້ອງເຮັດຫຍັງ
+  if (props.viewOnly) return;
+
+  const changedDateStr = scheduleRows.value[changedIndex].due_date;
+  if (!changedDateStr) return;
+
+  // 1. ຈື່ "ວັນທີ" (Day) ຂອງແຖວທີ່ຖືກປ່ຽນໄວ້ເປັນຫຼັກ
+  const baseDate = new Date(changedDateStr);
+  const targetDay = baseDate.getDate(); // ເຊັ່ນ: ຖ້າເລືອກ 31 ມັງກອນ ຈະໄດ້ເລກ 31
+  let currentYear = baseDate.getFullYear();
+  let currentMonth = baseDate.getMonth();
+
+  // 2. ວົນລູບແຖວຖັດໄປທັງໝົດ
+  for (let i = changedIndex + 1; i < scheduleRows.value.length; i++) {
+    // ບວກເດືອນເພີ່ມຂຶ້ນ 1 ເດືອນ
+    currentMonth++;
+    
+    // ຖ້າເດືອນກາຍເດືອນ 12 (ຄ່າ index > 11), ໃຫ້ປັດເປັນເດືອນ 1 ປີໃໝ່
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
+
+    // 3. ຫາມື້ສຸດທ້າຍຂອງເດືອນເປົ້າໝາຍ (ແກ້ບັນຫາເດືອນ 2 ທີ່ມີ 28/29 ມື້ ຫຼື ເດືອນທີ່ມີ 30 ມື້)
+    // ການໃສ່ວັນທີ 0 ຂອງເດືອນຖັດໄປ ຈະໄດ້ມື້ສຸດທ້າຍຂອງເດືອນປັດຈຸບັນສະເໝີ
+    const maxDaysInTargetMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // 4. ທຽບເບິ່ງວ່າຈະໃຊ້ມື້ໃດ: ຖ້າ targetDay (ເຊັ່ນ 31) ໃຫຍ່ກວ່າມື້ທີ່ມີໃນເດືອນນັ້ນ (ເຊັ່ນ 28) ໃຫ້ໃຊ້ມື້ສຸດທ້າຍແທນ
+    const actualDay = Math.min(targetDay, maxDaysInTargetMonth);
+
+    // 5. ປະກອບວັນທີກັບຄືນເປັນຮູບແບບ YYYY-MM-DD
+    const yearStr = currentYear.toString();
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    const dayStr = String(actualDay).padStart(2, '0');
+
+    scheduleRows.value[i].due_date = `${yearStr}-${monthStr}-${dayStr}`;
+  }
+}
 
 const closeModal = () => {
   emit('close');

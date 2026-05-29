@@ -828,7 +828,7 @@ const fetchData = async () => {
         LoanApplicationStatus.VERIFYING,
         LoanApplicationStatus.VERIFIED
       ] as any,
-      is_confirmed: 1,
+      is_confirmed: 1, limit: 1000 
     });
   } catch (e) {
     console.error("Failed to load pending loans", e);

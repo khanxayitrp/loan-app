@@ -26,11 +26,31 @@
             <input v-model="data.fullname" type="text" :readonly="!isEditing"
               class="input input-sm input-bordered w-full bg-white" />
           </div>
-          <div class="form-control">
+          <!-- <div class="form-control">
             <label class="label"><span class="label-text font-bold">ວັນເດືອນປີເກີດ:</span></label>
             <input v-model="data.dob" type="date" :readonly="!isEditing"
               class="input input-sm input-bordered w-full bg-white" />
-          </div>
+          </div> -->
+
+          <div class="form-control relative">
+          <label class="label"><span class="label-text font-bold">ວັນເດືອນປີເກີດ:</span></label>
+          <input 
+            type="text" 
+            :value="displayDob" 
+            :readonly="!isEditing"
+            placeholder="dd/mm/yyyy"
+            class="input input-sm input-bordered w-full bg-white pr-10 cursor-pointer"
+            @click="isEditing ? triggerDatePicker() : null" 
+          />
+          <input 
+            ref="hiddenDateInput"
+            v-model="data.dob" 
+            type="date" 
+            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0" 
+            :disabled="!isEditing"
+          />
+          <span class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 pointer-events-none size-4"></span>
+        </div>
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ອາຍຸ:</span></label>
             <div class="join w-full">
@@ -132,15 +152,7 @@
                 <input v-model="data.address.village" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full bg-white" placeholder="ບ້ານ" />
               </div>
-              <div class="input-sub">
-                <span class="font-bold">ແຂວງ:</span>
-                <select v-model="data.address.province_id" :disabled="!isEditing"
-                  class="select-addr select-sm select-bordered w-full bg-white">
-                  <option value="">-- ເລືອກແຂວງ --</option>
-                  <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{
-                    p.province_name }}</option>
-                </select>
-              </div>
+              
               <div class="input-sub">
                 <span class="font-bold">ເມືອງ:</span>
                 <select v-model="data.address.district_id" :disabled="!isEditing || !data.address.province_id"
@@ -148,6 +160,15 @@
                   <option value="">-- ເລືອກເມືອງ --</option>
                   <option v-for="d in localDistricts" :key="d.district_id" :value="d.district_id">{{ d.district_name }}
                   </option>
+                </select>
+              </div>
+              <div class="input-sub">
+                <span class="font-bold">ແຂວງ:</span>
+                <select v-model="data.address.province_id" :disabled="!isEditing"
+                  class="select-addr select-sm select-bordered w-full bg-white">
+                  <option value="">-- ເລືອກແຂວງ --</option>
+                  <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{
+                    p.province_name }}</option>
                 </select>
               </div>
             </div>
@@ -174,6 +195,7 @@
               <option value="own">ເຮືອນຕົວເອງ</option>
               <option value="rent">ເຊົ່າ</option>
               <option value="family">ຢູ່ກັບຄອບຄົວ</option>
+              <option value="other">ອື່ນໆ</option>
             </select>
           </div>
         </div>
@@ -183,8 +205,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue' // 🟢 ຢ່າລືມ import ref ແລະ onMounted
+import { ref, watch, onMounted, computed } from 'vue' // 🟢 ຢ່າລືມ import ref ແລະ onMounted
 import { useAddressStore } from '@/stores/address'
+import { formatDateToDDMMYYYY } from '@/utils/formatters';
 
 const props = defineProps<{
   data: any,
@@ -192,6 +215,19 @@ const props = defineProps<{
   hasReference: boolean,
   isEditing: boolean
 }>()
+
+const hiddenDateInput = ref<HTMLInputElement | null>(null)
+
+  // 🟢 2. ເອີ້ນໃຊ້ຟັງຊັນໃນ computed property
+const displayDob = computed(() => {
+  return formatDateToDDMMYYYY(props.data.dob)
+})
+
+const triggerDatePicker = () => {
+  if (hiddenDateInput.value) {
+    hiddenDateInput.value.showPicker()
+  }
+}
 
 const emit = defineEmits(['update:hasGuarantor', 'update:hasReference'])
 const addressStore = useAddressStore()

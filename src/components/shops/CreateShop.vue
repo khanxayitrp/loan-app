@@ -410,7 +410,7 @@ const validateForm = (): boolean => {
 
 const handleImageError = (e: Event) => {
   const target = e.target as HTMLImageElement
-  target.src = '/images/placeholder-shop.png'
+  target.src = '/image/placeholder-shop.avif'
 }
 
 const handleFileUpload = (event: Event) => {

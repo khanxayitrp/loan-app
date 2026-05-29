@@ -479,6 +479,7 @@
 import { formatPrice } from '@/utils/formatters'
 // 🟢 เปลี่ยนจากเดิม ให้มี toRaw ด้วย
 import { ref, reactive, computed, onMounted, toRaw } from 'vue'
+import { useRouter } from 'vue-router'
 import { useProductStore } from '@/stores/product'
 import { useGlobalCategoryStore } from '@/stores/global_categories';
 import { useShopStore } from '@/stores/shop'
@@ -499,6 +500,7 @@ interface ImageFileInfo {
 const productStore = useProductStore()
 const shopStore = useShopStore()
 const globalCategoryStore = useGlobalCategoryStore();
+const router = useRouter()
 
 // Modal state
 const showModal = ref(false)
@@ -1330,6 +1332,7 @@ onMounted(async () => {
     const currentShop = shopStore.currentShop
     if (!currentShop || !currentShop.id) {
       alert.error('ບໍ່ພົບຂໍ້ມູນຮ້ານຄ້າ', 'ກະລຸນາເລືອກຮ້ານຄ້າກ່ອນ')
+      router.replace({ name: 'Stores' }) // 🟢 Redirect ໄປໜ້າ /stores
       return
     }
     await Promise.all([

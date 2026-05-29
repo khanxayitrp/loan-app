@@ -71,3 +71,23 @@ export const getDocumentTypeName = (type: string): string => {
 
   return typeMap[type.toLowerCase()] || type;
 };
+
+
+/**
+ * ແປງວັນທີຈາກ YYYY-MM-DD ເປັນ DD/MM/YYYY ສຳລັບສະແດງຜົນ
+ */
+export const formatDateToDDMMYYYY = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+  
+  // ກວດສອບວ່າມີເຄື່ອງໝາຍ - ຫຼືບໍ່ (ປ້ອງກັນ error ຖ້າຂໍ້ມູນຜິດຮູບແບບ)
+  if (dateString.includes('-')) {
+    const [year, month, day] = dateString.split('-');
+    // ຖ້າແຍກໄດ້ 3 ພາກສ່ວນຄົບຖ້ວນ
+    if (year && month && day) {
+      return `${day}/${month}/${year}`;
+    }
+  }
+  
+  // ຖ້າຮູບແບບບໍ່ກົງ ກໍສົ່ງຄ່າເດີມກັບຄືນໄປ
+  return dateString;
+}

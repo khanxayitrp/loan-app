@@ -327,7 +327,8 @@ const fetchLoans = async () => {
       status: statusFilter.value ? (statusFilter.value as any) : undefined,
       min: amountMin.value,
       max: amountMax.value,
-      CustomerId: customer.value?.id || undefined
+      CustomerId: customer.value?.id || undefined,
+      limit: 1000 // ເພີ່ມ limit ເພື່ອดึงข้อมูลทั้งหมดมาไว้ใน Store แล้วค่อยกรองในฝั่ง Client
     }
 
     await loanStore.fetchLoanApplications(filters)

@@ -22,15 +22,6 @@
               class="input input-sm input-bordered w-full bg-white" placeholder="ບ້ານ" />
           </div>
           <div class="input-sub">
-            <span class="font-bold">ແຂວງ:</span>
-            <select v-model="data.address.province_id" :disabled="!isEditing"
-              class="select-addr select-sm select-bordered w-full bg-white">
-              <option value="">-- ເລືອກແຂວງ --</option>
-              <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{ p.province_name
-                }}</option>
-            </select>
-          </div>
-          <div class="input-sub">
             <span class="font-bold">ເມືອງ:</span>
             <select v-model="data.address.district_id" :disabled="!isEditing || !data.address.province_id"
               @change="handleDistrictChange" class="select-addr select-sm select-bordered w-full bg-white">
@@ -39,6 +30,16 @@
               </option>
             </select>
           </div>
+          <div class="input-sub">
+            <span class="font-bold">ແຂວງ:</span>
+            <select v-model="data.address.province_id" :disabled="!isEditing"
+              class="select-addr select-sm select-bordered w-full bg-white">
+              <option value="">-- ເລືອກແຂວງ --</option>
+              <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{ p.province_name
+                }}</option>
+            </select>
+          </div>
+          
         </div>
       </div>
 

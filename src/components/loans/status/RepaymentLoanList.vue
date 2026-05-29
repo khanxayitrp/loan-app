@@ -534,7 +534,7 @@ const summary = computed(() => {
 // Actions
 const fetchLoans = async () => {
   try {
-    await loanAppStore.fetchLoanApplications({ is_confirmed: 1, status: LoanApplicationStatus.DISBURSED, limit: 100 });
+    await loanAppStore.fetchLoanApplications({ is_confirmed: 1, status: LoanApplicationStatus.DISBURSED, limit: 1000 });
   } catch (error: any) {
     alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້', error.message);
   }

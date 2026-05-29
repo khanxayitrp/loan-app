@@ -948,7 +948,8 @@ const fetchLoans = () => {
   // ດຶງຂໍ້ມູນສະເພາະສິນເຊື່ອທີ່ approved ແລະ disbursed ເທົ່ານັ້ນ
   loanApplicationStore.fetchLoanApplications({ 
     status: [LoanApplicationStatus.APPROVED, LoanApplicationStatus.DISBURSED] as any, 
-    is_confirmed: 1 
+    is_confirmed: 1,
+    limit: 1000 
   });
 }
 
