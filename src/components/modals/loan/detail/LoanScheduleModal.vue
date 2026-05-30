@@ -353,9 +353,39 @@ const generateSchedule = () => {
   let flatMonthlyInterest = principal * ratePerMonth;
   let effectivePmt = ratePerMonth > 0 ? (principal * ratePerMonth * Math.pow(1 + ratePerMonth, term)) / (Math.pow(1 + ratePerMonth, term) - 1) : principal / term;
 
+  // for (let i = 1; i <= term; i++) {
+  //   let dueDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, paymentDay);
+  //   let rowPrincipal = 0; let rowInterest = 0;
+
+  //   if (interestType === 'flat_rate') {
+  //     rowPrincipal = flatMonthlyPrincipal; rowInterest = flatMonthlyInterest;
+  //   } else {
+  //     rowInterest = currentBalance * ratePerMonth; rowPrincipal = effectivePmt - rowInterest;
+  //   }
+
+  //   if (i === term) rowPrincipal = currentBalance;
+  //   let totalAmount = rowPrincipal + rowInterest;
+  //   currentBalance -= rowPrincipal;
+
+  //   scheduleRows.value.push({
+  //     installment_number: i, due_date: dueDate.toISOString().split('T')[0] || '',
+  //     principal: Math.round(rowPrincipal), interest: Math.round(rowInterest),
+  //     total_amount: Math.round(totalAmount), remaining_balance: Math.round(Math.max(0, currentBalance))
+  //   });
+  // }
   for (let i = 1; i <= term; i++) {
-    let dueDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, paymentDay);
     let rowPrincipal = 0; let rowInterest = 0;
+
+    // 🟢 ປັບປຸງການຄິດໄລ່ວັນທີ ເພື່ອແກ້ບັນຫາເດືອນທີ່ມີ 28, 29, 30 ມື້
+    let targetYear = startDate.getFullYear();
+    let targetMonth = startDate.getMonth() + i;
+    
+    // ຫາມື້ສຸດທ້າຍຂອງເດືອນເປົ້າໝາຍ
+    let maxDaysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+    // ຖ້າ paymentDay ໃຫຍ່ກວ່າມື້ສຸດທ້າຍຂອງເດືອນ ໃຫ້ໃຊ້ມື້ສຸດທ້າຍແທນ
+    let actualDay = Math.min(paymentDay, maxDaysInTargetMonth); 
+    
+    let dueDate = new Date(targetYear, targetMonth, actualDay);
 
     if (interestType === 'flat_rate') {
       rowPrincipal = flatMonthlyPrincipal; rowInterest = flatMonthlyInterest;
@@ -368,9 +398,12 @@ const generateSchedule = () => {
     currentBalance -= rowPrincipal;
 
     scheduleRows.value.push({
-      installment_number: i, due_date: dueDate.toISOString().split('T')[0] || '',
-      principal: Math.round(rowPrincipal), interest: Math.round(rowInterest),
-      total_amount: Math.round(totalAmount), remaining_balance: Math.round(Math.max(0, currentBalance))
+      installment_number: i, 
+      due_date: dueDate.toISOString().split('T')[0] || '',
+      principal: Math.round(rowPrincipal), 
+      interest: Math.round(rowInterest),
+      total_amount: Math.round(totalAmount), 
+      remaining_balance: Math.round(Math.max(0, currentBalance))
     });
   }
 }
@@ -405,12 +438,43 @@ const totalScheduleRemaining = computed(() => {
   return (Number(props.loan.total_amount) - Number(props.loan.down_payment || 0)) - totalSchedulePrincipal.value;
 })
 
+// const saveSchedule = async () => {
+//   if (!props.loan || scheduleRows.value.length === 0 || props.viewOnly) return;
+//   isSaving.value = true;
+//   try {
+//     await loanApplicationStore.saveRepaymentSchedule(props.loan.id, scheduleRows.value);
+//     alert.success('ບັນທຶກຕາຕະລາງຜ່ອນສຳເລັດ!');
+//     isScheduleSaved.value = true;
+//     hasScheduleConflict.value = false;
+//   } catch (error: any) {
+//     alert.error('ເກີດຂໍ້ຜິດພາດ: ' + (error.response?.data?.message || error.message));
+//   } finally {
+//     isSaving.value = false;
+//   }
+// }
 const saveSchedule = async () => {
   if (!props.loan || scheduleRows.value.length === 0 || props.viewOnly) return;
   isSaving.value = true;
   try {
+    // 🟢 1. ດຶງວັນທີ (Payment Day) ຈາກງວດທີ 1 ມາເປັນຫຼັກ
+    const firstRowDate = new Date(scheduleRows.value[0].due_date);
+    const newPaymentDay = firstRowDate.getDate(); // ຈະໄດ້ຕົວເລກ 1 - 31 ຕາມທີ່ເລືອກ
+
+    // 🟢 2. ບັນທຶກຕາຕະລາງຜ່ອນ
     await loanApplicationStore.saveRepaymentSchedule(props.loan.id, scheduleRows.value);
-    alert.success('ບັນທຶກຕາຕະລາງຜ່ອນສຳເລັດ!');
+
+    // 🟢 3. ອັບເດດ payment_day ໃນ Table LoanApplications ໃຫ້ກົງກັນ
+    // (ສົມມຸດວ່າທ່ານມີຟັງຊັນ updateLoanApplication ຢູ່ແລ້ວ ຄືກັບໜ້າ Verify)
+    await loanApplicationStore.updateLoanApplication(props.loan.id, {
+      payment_day: newPaymentDay
+    });
+
+    // ອັບເດດ UI ໃຫ້ສະແດງຄ່າໃໝ່
+    if (props.loan) {
+      props.loan.payment_day = newPaymentDay;
+    }
+
+    alert.success('ບັນທຶກຕາຕະລາງສຳເລັດ!');
     isScheduleSaved.value = true;
     hasScheduleConflict.value = false;
   } catch (error: any) {

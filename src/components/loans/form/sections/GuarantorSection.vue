@@ -26,31 +26,28 @@
             <input v-model="data.fullname" type="text" :readonly="!isEditing"
               class="input input-sm input-bordered w-full bg-white" />
           </div>
-          <!-- <div class="form-control">
-            <label class="label"><span class="label-text font-bold">ວັນເດືອນປີເກີດ:</span></label>
-            <input v-model="data.dob" type="date" :readonly="!isEditing"
-              class="input input-sm input-bordered w-full bg-white" />
-          </div> -->
 
-          <div class="form-control relative">
-          <label class="label"><span class="label-text font-bold">ວັນເດືອນປີເກີດ:</span></label>
-          <input 
-            type="text" 
-            :value="displayDob" 
-            :readonly="!isEditing"
-            placeholder="dd/mm/yyyy"
-            class="input input-sm input-bordered w-full bg-white pr-10 cursor-pointer"
-            @click="isEditing ? triggerDatePicker() : null" 
-          />
-          <input 
-            ref="hiddenDateInput"
-            v-model="data.dob" 
-            type="date" 
-            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0" 
-            :disabled="!isEditing"
-          />
-          <span class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 pointer-events-none size-4"></span>
-        </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text font-bold">ວັນເດືອນປີເກີດ:</span></label>
+            <div class="relative w-full">
+              <input 
+                type="text" 
+                :value="displayDob" 
+                readonly
+                placeholder="dd/mm/yyyy"
+                class="input input-sm input-bordered w-full pr-10"
+                :class="isEditing ? 'bg-white cursor-pointer' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
+              />
+              <input 
+                v-model="data.dob" 
+                type="date" 
+                :disabled="!isEditing"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+              />
+              <span class="icon-[tabler--calendar] absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none size-4"></span>
+            </div>
+          </div>
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ອາຍຸ:</span></label>
             <div class="join w-full">
@@ -106,21 +103,55 @@
             <input v-model="data.idCard" type="text" :readonly="!isEditing"
               class="input input-sm input-bordered w-full bg-white" />
           </div>
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ວັນເດືອນປີອອກ:</span></label>
-            <input v-model="data.idCardIssueDate" type="date" :readonly="!isEditing"
-              class="input input-sm input-bordered w-full bg-white" />
+            <div class="relative w-full">
+              <input 
+                type="text" 
+                :value="displayIdCardIssueDate" 
+                readonly
+                placeholder="dd/mm/yyyy"
+                class="input input-sm input-bordered w-full pr-10"
+                :class="isEditing ? 'bg-white cursor-pointer' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
+              />
+              <input 
+                v-model="data.idCardIssueDate" 
+                type="date" 
+                :disabled="!isEditing"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+              />
+              <span class="icon-[tabler--calendar] absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none size-4"></span>
+            </div>
           </div>
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ປຶ້ມສຳມະໂນຄົວ ເລກທີ:</span></label>
             <input v-model="data.censusBook" type="text" :readonly="!isEditing"
               class="input input-sm input-bordered w-full bg-white" />
           </div>
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ວັນເດືອນປີອອກ:</span></label>
-            <input v-model="data.censusBookIssueDate" type="date" :readonly="!isEditing"
-              class="input input-sm input-bordered w-full bg-white" />
+            <div class="relative w-full">
+              <input 
+                type="text" 
+                :value="displayCensusBookIssueDate" 
+                readonly
+                placeholder="dd/mm/yyyy"
+                class="input input-sm input-bordered w-full pr-10"
+                :class="isEditing ? 'bg-white cursor-pointer' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
+              />
+              <input 
+                v-model="data.censusBookIssueDate" 
+                type="date" 
+                :disabled="!isEditing"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+              />
+              <span class="icon-[tabler--calendar] absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none size-4"></span>
+            </div>
           </div>
+
           <div class="form-control md:col-span-2 lg:col-span-4">
             <label class="label"><span class="label-text font-bold">ສະຖານທີ່ອອກເອກະສານ:</span></label>
             <input v-model="data.censusAuthorizeBy" type="text" :readonly="!isEditing"
@@ -205,9 +236,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue' // 🟢 ຢ່າລືມ import ref ແລະ onMounted
+import { ref, watch, onMounted, computed } from 'vue'
 import { useAddressStore } from '@/stores/address'
-import { formatDateToDDMMYYYY } from '@/utils/formatters';
+import { formatDateToDDMMYYYY } from '@/utils/formatters'
+import { calculateAge } from '@/utils/dateUtils'
+import { alert as customAlert } from '@/utils/alert'
 
 const props = defineProps<{
   data: any,
@@ -216,35 +249,97 @@ const props = defineProps<{
   isEditing: boolean
 }>()
 
-const hiddenDateInput = ref<HTMLInputElement | null>(null)
-
-  // 🟢 2. ເອີ້ນໃຊ້ຟັງຊັນໃນ computed property
-const displayDob = computed(() => {
-  return formatDateToDDMMYYYY(props.data.dob)
-})
-
-const triggerDatePicker = () => {
-  if (hiddenDateInput.value) {
-    hiddenDateInput.value.showPicker()
-  }
-}
-
 const emit = defineEmits(['update:hasGuarantor', 'update:hasReference'])
 const addressStore = useAddressStore()
-// 🟢 1. ສ້າງຕົວແປເກັບລາຍຊື່ເມືອງສະເພາະຂອງ Component ນີ້
+
+// ==========================================
+// 🟢 Date Pickers (Display DD/MM/YYYY)
+// ==========================================
+const displayDob = computed(() => formatDateToDDMMYYYY(props.data.dob))
+const displayIdCardIssueDate = computed(() => formatDateToDDMMYYYY(props.data.idCardIssueDate))
+const displayCensusBookIssueDate = computed(() => formatDateToDDMMYYYY(props.data.censusBookIssueDate))
+
+// ==========================================
+// 🟢 Validation ວັນທີ & ຄິດໄລ່ອາຍຸ
+// ==========================================
+const getTodayDateString = (): string => {
+  return new Date().toISOString().split('T')[0] || '';
+}
+
+watch(() => props.data.dob, (newDob: string | undefined | null) => {
+  if (!props.isEditing) return;
+  if (!newDob) {
+    props.data.age = null;
+    return;
+  }
+
+  if (newDob > getTodayDateString()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຖືກຕ້ອງ', 'ວັນເດືອນປີເກີດບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້');
+    props.data.dob = '';
+    props.data.age = null;
+    return;
+  }
+
+  const calculatedAge = calculateAge(newDob);
+  
+  if (calculatedAge !== null) {
+    // 2. ກວດສອບອາຍຸຂັ້ນຕ່ຳ (18 ປີ)
+    if (calculatedAge < 18) {
+       customAlert.error('ອາຍຸບໍ່ຮອດເກນ', 'ລູກຄ້າຕ້ອງມີອາຍຸ 18 ປີຂຶ້ນໄປ');
+       props.data.dob = '';
+       props.data.age = null;
+       return;
+    }
+    
+    // 3. 🟢 ກວດສອບອາຍຸສູງສຸດ (ຫ້າມເກີນ 100 ປີ)
+    if (calculatedAge > 100) {
+       customAlert.error('ອາຍຸເກີນເກນ', 'ອາຍຸລູກຄ້າບໍ່ສາມາດເກີນ 100 ປີໄດ້. ກະລຸນາກວດສອບປີເກີດຄືນໃໝ່');
+       props.data.dob = '';
+       props.data.age = null;
+       return;
+    }
+  }
+
+  // ຖ້າຜ່ານທຸກເງື່ອນໄຂ ໃຫ້ອັບເດດອາຍຸ
+  props.data.age = calculatedAge;
+});
+
+// ກວດສອບວັນທີອອກເອກະສານບັດປະຈຳຕົວ (ຫ້າມເກີນມື້ປະຈຸບັນ)
+watch(() => props.data.idCardIssueDate, (newDate: string | undefined | null) => {
+  if (!props.isEditing) return;
+  if (!newDate) return;
+  
+  if (newDate > getTodayDateString()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຖືກຕ້ອງ', 'ວັນທີອອກເອກະສານບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້');
+    props.data.idCardIssueDate = '';
+  }
+});
+
+// ກວດສອບວັນທີອອກປຶ້ມສຳມະໂນຄົວ (ຫ້າມເກີນມື້ປະຈຸບັນ)
+watch(() => props.data.censusBookIssueDate, (newDate: string | undefined | null) => {
+  if (!props.isEditing) return;
+  if (!newDate) return;
+  
+  if (newDate > getTodayDateString()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຖືກຕ້ອງ', 'ວັນທີອອກປຶ້ມສຳມະໂນຄົວບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້');
+    props.data.censusBookIssueDate = '';
+  }
+});
+
+// ==========================================
+// 🟢 Address Management (ຈັດການທີ່ຢູ່ບ້ານ, ເມືອງ, ແຂວງ)
+// ==========================================
 const localDistricts = ref<any[]>([])
 
-// 🟢 2. ຟັງຊັນໂຫຼດເມືອງມາເກັບໄວ້ສະເພາະໂຕ
 const loadLocalDistricts = async (provinceId: string) => {
   if (!provinceId) {
     localDistricts.value = [];
     return;
   }
   await addressStore.fetchDistricts(provinceId);
-  localDistricts.value = [...addressStore.districts]; // ກັອບປີ້ລາຍຊື່ແຍກອອກມາ
+  localDistricts.value = [...addressStore.districts];
 }
 
-// 🟢 3. ຕອນໂຫຼດໜ້າທຳອິດ ຖ້າມີແຂວງແລ້ວ ໃຫ້ດຶງເມືອງມາເລີຍ
 onMounted(async () => {
   if (props.data.address?.province_id) {
     await loadLocalDistricts(props.data.address.province_id);
@@ -256,7 +351,6 @@ const handleDistrictChange = () => {
   if (d) props.data.address.district = d.district_name;
 };
 
-
 watch(() => props.data.address.province_id, async (newVal) => {
   if (props.isEditing) {
     props.data.address.district_id = '';
@@ -264,23 +358,6 @@ watch(() => props.data.address.province_id, async (newVal) => {
     const p = addressStore.provinces.find(x => x.province_id === newVal);
     props.data.address.province = p ? p.province_name : '';
     if (newVal) await loadLocalDistricts(newVal);
-  }
-});
-// 🟢 ຟັງຊັນຄິດໄລ່ອາຍຸ
-const calculateAge = (dob: string): number | null => {
-  if (!dob) return null;
-  const birthDate = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
-  return age;
-};
-
-// 🟢 ຕິດຕາມການປ່ຽນແປງຂອງວັນເກີດ (dob) ແລ້ວອັບເດດອາຍຸ (age) ອັດຕະໂນມັດ
-watch(() => props.data.dob, (newDob) => {
-  if (props.isEditing && newDob) {
-    props.data.age = calculateAge(newDob);
   }
 });
 </script>

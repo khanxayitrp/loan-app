@@ -56,7 +56,7 @@
           </div>
         </div>
 
-        <!-- <div class="flex justify-center gap-6 mb-8">
+        <div class="flex justify-center gap-6 mb-8">
           <label class="cursor-pointer flex items-center gap-2">
             <input type="checkbox" v-model="formData.productType.gold" :disabled="!isEditing" class="checkbox checkbox-primary" />
             <span class="font-medium">ສິນຄ້າຄຳ</span>
@@ -69,21 +69,8 @@
             <input type="checkbox" v-model="formData.productType.motorcycle" :disabled="!isEditing" class="checkbox checkbox-primary" />
             <span class="font-medium">ສິນຄ້າລົດຈັກ</span>
           </label>
-        </div> -->
-        <div class="flex justify-center gap-6 mb-8">
-  <label class="cursor-pointer flex items-center gap-2">
-    <input type="checkbox" v-model="formData.productType.gold" @change="selectProductType('gold')" :disabled="!isEditing" class="checkbox checkbox-primary" />
-    <span class="font-medium">ສິນຄ້າຄຳ</span>
-  </label>
-  <label class="cursor-pointer flex items-center gap-2">
-    <input type="checkbox" v-model="formData.productType.general" @change="selectProductType('general')" :disabled="!isEditing" class="checkbox checkbox-primary" />
-    <span class="font-medium">ສິນຄ້າທົ່ວໄປ</span>
-  </label>
-  <label class="cursor-pointer flex items-center gap-2">
-    <input type="checkbox" v-model="formData.productType.motorcycle" @change="selectProductType('motorcycle')" :disabled="!isEditing" class="checkbox checkbox-primary" />
-    <span class="font-medium">ສິນຄ້າລົດຈັກ</span>
-  </label>
-</div>
+        </div>
+      </div>
 
       <form @submit.prevent="saveForm" class="space-y-8">
         
@@ -177,7 +164,6 @@
       </div>
     </div>
   </teleport>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -224,7 +210,6 @@ const formData = reactive({
   contractNumber: '',
   contractDate: { day: '', month: '', year: '' },
   productType: { gold: false, general: false, motorcycle: false },
-  // productTypeSelected: 'general', // กำหนดค่าเริ่มต้น
   customer: {
     fullname: '', dob: '', phone: '', gender: '', maritalStatus: '',
     idCard: '', idCardIssueDate: '', idCardExpiryDate: '', idCardPlace: '',
@@ -285,13 +270,6 @@ const calculateAge = (dob: string): number | null => {
   return age;
 };
 
-const selectProductType = (type: 'gold' | 'general' | 'motorcycle') => {
-  // บังคับให้เลือกได้แค่อันเดียว
-  formData.productType.gold = (type === 'gold');
-  formData.productType.general = (type === 'general');
-  formData.productType.motorcycle = (type === 'motorcycle');
-}
-
 // 
 const checkProductConflicts = () => {
   hasProductConflict.value = false;
@@ -314,8 +292,6 @@ const checkProductConflicts = () => {
     { key: 'interest_rate', label: 'ອັດຕາດອກເບ້ຍ (%)', cVal: getCVal('interest_rate_at_apply'), aVal: getAVal('interest_rate_at_apply') },
     { key: 'loan_period', label: 'ໄລຍະເວລາ (ເດືອນ)', cVal: getCVal('loan_period'), aVal: getAVal('loan_period') },
   ];
-
-  
 
   numberChecks.forEach(item => {
     // ໃຊ້ Math.abs ເພື່ອປຽບທຽບຄວາມຕ່າງ

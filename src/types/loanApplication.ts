@@ -292,6 +292,7 @@ export interface UpdateLoanApplicationDto {
   credit_score?: number
   remarks?: string
   approver_id?: number
+  payment_day?: number;
 }
 
 export interface ChangeStatusDto {

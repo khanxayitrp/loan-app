@@ -254,7 +254,7 @@ const debounceSearch = () => { clearTimeout(debounceTimer); debounceTimer = setT
 const applyDateFilter = () => currentPage.value = 1
 
 const fetchData = async () => {
-  await loanApplicationStore.fetchLoanApplications({ status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING] as any, is_confirmed: 1, limit: 1000 })
+  await loanApplicationStore.fetchLoanApplications({ status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING, LoanApplicationStatus.VERIFIED] as any, is_confirmed: 1, limit: 1000 })
 }
 
 const viewLoanDetails = (id: number) => {

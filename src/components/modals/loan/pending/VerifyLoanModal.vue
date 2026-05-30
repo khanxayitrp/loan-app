@@ -22,7 +22,29 @@
                 ກຳນົດວັນທີຊຳລະເງິນ (Payment Day)
               </span>
             </label>
-            <input v-model.number="paymentDay" type="number" min="1" max="31" class="input input-bordered w-full bg-white dark:bg-gray-800 focus:border-info focus:ring-1 focus:ring-info" placeholder="ລະບຸວັນທີ 1-31" />
+
+            <div class="flex flex-col gap-2 mt-2 mb-3">
+              <label class="cursor-pointer flex items-center gap-2">
+                <input type="radio" v-model="paymentDayOption" value="keep" class="radio radio-info radio-sm" :disabled="!loan?.payment_day" />
+                <span class="text-sm text-gray-700 dark:text-gray-300" :class="{ 'opacity-50': !loan?.payment_day }">
+                  ຮັກສາວັນທີຊຳລະເດີມ <span v-if="loan?.payment_day">(ວັນທີ {{ loan.payment_day }})</span>
+                </span>
+              </label>
+              <label class="cursor-pointer flex items-center gap-2">
+                <input type="radio" v-model="paymentDayOption" value="change" class="radio radio-info radio-sm" />
+                <span class="text-sm text-gray-700 dark:text-gray-300">ກຳນົດວັນທີຊຳລະໃໝ່</span>
+              </label>
+            </div>
+
+            <input 
+              v-model.number="paymentDay" 
+              type="number" 
+              min="1" 
+              max="31" 
+              class="input input-bordered w-full bg-white dark:bg-gray-800 focus:border-info focus:ring-1 focus:ring-info disabled:bg-gray-200 disabled:text-gray-500 disabled:border-gray-300" 
+              placeholder="ລະບຸວັນທີ 1-31" 
+              :disabled="paymentDayOption === 'keep'"
+            />
           </div>
 
 
@@ -69,11 +91,17 @@ const loanApplicationStore = useLoanApplicationStore();
 const authStore = useAuthStore();
 
 const verifyRemark = ref('');
+// 🟢 ເພີ່ມຕົວແປສຳລັບເກັບຄ່າຕົວເລືອກ Radio
+const paymentDayOption = ref<'keep' | 'change'>('keep');
 const paymentDay = ref<number | null>(null);
 
 watch(() => props.loan, (newVal) => {
   if (newVal && newVal.payment_day) {
     paymentDay.value = Number(newVal.payment_day);
+    paymentDayOption.value = 'keep'; // ຄ່າເລີ່ມຕົ້ນໃຫ້ຮັກສາອັນເກົ່າ
+  } else {
+    paymentDay.value = null;
+    paymentDayOption.value = 'change'; // ຖ້າບໍ່ມີຄ່າເກົ່າເລີຍ ໃຫ້ບັງຄັບເປັນກຳນົດໃໝ່
   }
 }, { immediate: true });
 
@@ -92,17 +120,28 @@ const close = () => {
 
 const submit = async () => {
   if (!props.loan) return;
+
+  // 🟢 ກວດສອບຄວາມຖືກຕ້ອງ ຖ້າເລືອກ "ກຳນົດວັນທີໃໝ່"
+  if (paymentDayOption.value === 'change') {
+    if (!paymentDay.value || paymentDay.value < 1 || paymentDay.value > 31) {
+      alert.error('ຂໍ້ມູນບໍ່ຖືກຕ້ອງ', 'ກະລຸນາລະບຸວັນທີຊຳລະເງິນລະຫວ່າງວັນທີ 1 ເຖິງ 31');
+      return;
+    }
+  }
+
   isLoading.value = true;
 
   try {
-    
     const updateData: any = {
       status: LoanApplicationStatus.VERIFIED,
       approver_id: authStore.user?.id
     };
 
-    if (paymentDay.value !== null) {
+    // 🟢 ສົ່ງຄ່າ Payment Day ຕາມຕົວເລືອກ
+    if (paymentDayOption.value === 'change' && paymentDay.value !== null) {
       updateData.payment_day = paymentDay.value;
+    } else if (paymentDayOption.value === 'keep' && props.loan.payment_day) {
+      updateData.payment_day = props.loan.payment_day;
     }
 
     if (verifyRemark.value.trim()) {
