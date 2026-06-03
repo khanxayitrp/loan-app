@@ -424,7 +424,7 @@
             @enable-edit="isEditingInModal = true" @save-form="handleSaveContract" />
         </div>
 
-        <div v-else-if="activeTab === 'documents'" class="space-y-6">
+        <!-- <div v-else-if="activeTab === 'documents'" class="space-y-6">
           <div v-if="!isEditingInModal" class="space-y-6">
             <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
               class="text-center py-12 text-gray-500">
@@ -570,6 +570,176 @@
               <span>ກຳລັງອັບໂຫຼດເອກະສານ...</span>
             </div>
           </div>
+        </div> -->
+        <div v-else-if="activeTab === 'documents'" class="space-y-6">
+          
+          <div v-if="!isEditingInModal" class="space-y-6">
+            <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
+              class="text-center py-12 text-gray-500">
+              <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="icon-[tabler--file-off] size-8 text-gray-400"></span>
+              </div>
+              <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
+              <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີເອກະສານທີ່ອັບໂຫຼດສຳລັບສິນເຊື່ອນີ້</p>
+            </div>
+            
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div v-for="doc in sortedCurrentDocuments" :key="doc.id"
+                class="border rounded-lg p-4 flex flex-col gap-3 bg-white dark:bg-gray-800 overflow-hidden">
+                
+                <div class="flex justify-between items-start gap-2 w-full overflow-hidden">
+                  <div class="flex-1 min-w-0">
+                    <h5 class="font-medium text-sm truncate">
+                      {{ getDocumentTypeName(doc.document_type || doc.doc_type) }}
+                    </h5>
+                    <p class="text-xs text-gray-500 mt-1 truncate" :title="doc.original_filename || doc.file_name">
+                      {{ doc.original_filename || doc.file_name || 'ບໍ່ຮູ້ຈັກ' }}
+                    </p>
+                  </div>
+                  
+                  <div class="flex items-center gap-1 shrink-0">
+                    <a href="#" @click.prevent="openInNewTab(getFullImageUrl(doc.file_url))"
+                      class="btn btn-xs btn-ghost text-info hover:bg-info/10"
+                      title="ເບິ່ງເອກະສານ">
+                      <span class="icon-[tabler--eye] size-4 mr-1"></span> ເບິ່ງ
+                    </a>
+                    
+                    <a :href="getFullImageUrl(doc.file_url) || '#'" target="_blank" download
+                      class="btn btn-xs btn-ghost text-primary hover:bg-primary/10"
+                      title="ດາວໂຫຼດ">
+                      <span class="icon-[tabler--download] size-4 mr-1"></span> ໂຫຼດ
+                    </a>
+                  </div>
+                </div>
+
+                <div class="mt-2">
+                  <div v-if="isImage(doc.file_url)"
+                    class="aspect-video bg-gray-100 dark:bg-gray-700 rounded overflow-hidden cursor-pointer"
+                    @click="openInNewTab(getFullImageUrl(doc.file_url))">
+                    <img :src="getFullImageUrl(doc.file_url) || ''" alt="Document preview"
+                      class="w-full h-full object-contain p-2 hover:scale-105 transition-transform" />
+                  </div>
+                  <div v-else 
+                    class="w-full h-32 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200 transition"
+                    @click="openInNewTab(getFullImageUrl(doc.file_url))">
+                    <div class="text-center">
+                      <span class="icon-[tabler--file-description] size-12 text-gray-400"></span>
+                      <p class="text-xs text-gray-500 mt-2">ຄລິກເພື່ອເບິ່ງ PDF</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="space-y-6">
+            
+            <div>
+              <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
+                <span class="icon-[tabler--file-check] size-5 text-error"></span> ເອກະສານທີ່ຕ້ອງການ
+              </h4>
+              <div class="grid grid-cols-1 gap-4">
+                <div v-for="(doc, catIndex) in draftDocuments" :key="'req-' + catIndex"
+                  class="border rounded-xl p-4 bg-gray-50 dark:bg-gray-800/50 shadow-sm">
+                  <div class="flex items-center justify-between mb-3">
+                    <div>
+                      <h5 class="font-bold text-gray-800 dark:text-gray-200">{{ doc.name }}</h5>
+                      <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
+                    </div>
+                    <span class="badge badge-soft badge-error text-xs">ຕ້ອງການ</span>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-3">
+                    <div v-for="(f, fileIndex) in doc.files" :key="fileIndex" 
+                         class="relative aspect-square rounded-lg border overflow-hidden group bg-white dark:bg-gray-700">
+                      
+                      <button type="button" @click.stop="removeDocument(catIndex, fileIndex, 'req')" 
+                        class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-90 hover:opacity-100 z-10 shadow">
+                        <span class="icon-[tabler--x] size-4"></span>
+                      </button>
+
+                      <img v-if="!f.isPdf" :src="f.preview" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" @click="openInNewTab(f.preview)" />
+                      
+                      <div v-else class="w-full h-full flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-gray-100 transition" @click="openInNewTab(f.preview)">
+                        <span class="icon-[tabler--file-type-pdf] size-8 text-red-500"></span>
+                        <span class="text-[10px] truncate w-full text-center mt-1">{{ f.name }}</span>
+                      </div>
+
+                      <div class="absolute bottom-1 left-1 pointer-events-none">
+                        <span v-if="f.file" class="text-[9px] bg-green-500 text-white px-1.5 py-0.5 rounded shadow">ໃໝ່</span>
+                      </div>
+                    </div>
+
+                    <label class="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-primary/5 hover:border-primary transition-all">
+                      <input type="file" class="hidden" accept="image/*,.pdf" multiple @change="(event) => handleDocumentUpload(catIndex, event, 'req')" />
+                      <span class="icon-[tabler--plus] size-6 text-gray-400"></span>
+                      <span class="text-[10px] font-bold text-gray-500 mt-1">ອັບໂຫຼດເພີ່ມ</span>
+                    </label>
+                  </div>
+
+                  <div class="mt-3 text-xs text-gray-500 text-right font-medium">
+                    ອັບໂຫຼດແລ້ວ: <span :class="doc.files.length > 0 ? 'text-success' : 'text-error'">{{ doc.files.length }} ໄຟລ໌</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8">
+              <h4 class="font-medium mb-3 text-lg flex items-center gap-2">
+                <span class="icon-[tabler--file-plus] size-5 text-primary"></span> ເອກະສານເພີ່ມເຕີມ (ບໍ່ບັງຄັບ)
+              </h4>
+              <div class="grid grid-cols-1 gap-4">
+                <div v-for="(doc, catIndex) in optionalDocuments" :key="'opt-' + catIndex"
+                  class="border rounded-xl p-4 bg-gray-50 dark:bg-gray-800/50 shadow-sm">
+                  <div class="flex items-center justify-between mb-3">
+                    <div>
+                      <h5 class="font-bold text-gray-800 dark:text-gray-200">{{ doc.name }}</h5>
+                      <p class="text-xs text-gray-500 mt-1">{{ doc.description }}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-3">
+                    <div v-for="(f, fileIndex) in doc.files" :key="fileIndex" 
+                         class="relative aspect-square rounded-lg border overflow-hidden group bg-white dark:bg-gray-700">
+                      
+                      <button type="button" @click.stop="removeDocument(catIndex, fileIndex, 'opt')" 
+                        class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-90 hover:opacity-100 z-10 shadow">
+                        <span class="icon-[tabler--x] size-4"></span>
+                      </button>
+
+                      <img v-if="!f.isPdf" :src="f.preview" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" @click="openInNewTab(f.preview)" />
+                      
+                      <div v-else class="w-full h-full flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-gray-100 transition" @click="openInNewTab(f.preview)">
+                        <span class="icon-[tabler--file-type-pdf] size-8 text-red-500"></span>
+                        <span class="text-[10px] truncate w-full text-center mt-1">{{ f.name }}</span>
+                      </div>
+
+                      <div class="absolute bottom-1 left-1 pointer-events-none">
+                        <span v-if="f.file" class="text-[9px] bg-green-500 text-white px-1.5 py-0.5 rounded shadow">ໃໝ່</span>
+                      </div>
+                    </div>
+
+                    <label class="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-primary/5 hover:border-primary transition-all">
+                      <input type="file" class="hidden" accept="image/*,.pdf" multiple @change="(event) => handleDocumentUpload(catIndex, event, 'opt')" />
+                      <span class="icon-[tabler--plus] size-6 text-gray-400"></span>
+                      <span class="text-[10px] font-bold text-gray-500 mt-1">ອັບໂຫຼດເພີ່ມ</span>
+                    </label>
+                  </div>
+
+                  <div class="mt-3 text-xs text-gray-500 text-right font-medium">
+                    ອັບໂຫຼດແລ້ວ: {{ doc.files.length }} ໄຟລ໌
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="isUploadingDocuments" class="mt-4 p-3 bg-info/10 rounded-lg text-center font-bold text-info">
+              <div class="loading loading-spinner loading-sm inline-block mr-2 align-middle"></div>
+              <span>ກຳລັງອັບໂຫຼດເອກະສານ...</span>
+            </div>
+            
+          </div>
         </div>
 
         <div v-else-if="activeTab === 'map'" class="space-y-6">
@@ -681,14 +851,40 @@ const modalFormErrors = reactive({
 })
 
 // Document Arrays
-interface Document { id: string, name: string, description: string, required: boolean, file: File | null, preview: string | null }
-const loanDocuments = ref<Document[]>([
-  { id: 'id_card', name: 'ບັດປະຈຳຕົວ', description: 'ຮູບຖ່າຍບັດປະຈຳຕົວທັງໜ້າ-ຫຼັງ', required: true, file: null, preview: null },
-  { id: 'house_reg', name: 'ໃບຄອບຄົວ', description: 'ໃບຄອບຄົວຫຼືເອກະສານຢືນຢັນທີ່ຢູ່', required: true, file: null, preview: null }
+// interface Document { id: string, name: string, description: string, required: boolean, file: File | null, preview: string | null }
+
+// 🟢 1. สร้าง Interface สำหรับไฟล์ย่อย
+interface UploadedFile {
+  file: File | Blob | null; // ถ้าเป็น null แปลว่าเป็นไฟล์เดิมจาก Server
+  preview: string;
+  isPdf: boolean;
+  name: string;
+}
+
+// 🟢 2. เปลี่ยนหมวดหมู่ให้เก็บเป็น Array ของ UploadedFile
+interface DocumentCategory { 
+  id: string; 
+  name: string; 
+  description: string; 
+  required: boolean; 
+  files: UploadedFile[]; 
+}
+
+// const loanDocuments = ref<Document[]>([
+//   { id: 'id_card', name: 'ບັດປະຈຳຕົວ', description: 'ຮູບຖ່າຍບັດປະຈຳຕົວທັງໜ້າ-ຫຼັງ', required: true, file: null, preview: null },
+//   { id: 'house_reg', name: 'ໃບຄອບຄົວ', description: 'ໃບຄອບຄົວຫຼືເອກະສານຢືນຢັນທີ່ຢູ່', required: true, file: null, preview: null }
+// ])
+// const optionalDocuments = ref<Document[]>([
+//   { id: 'salary_slip', name: 'ຫຼັກຖານລາຍຮັບ', description: 'ໃບເງິນເດືອນ ຫຼື ໃບຮັບລາຍຮັບ', required: false, file: null, preview: null },
+//   { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
+// ])
+const draftDocuments = ref<DocumentCategory[]>([
+  { id: 'id_card', name: 'ບັດປະຈຳຕົວ', description: 'ຮູບຖ່າຍບັດປະຈຳຕົວທັງໜ້າ-ຫຼັງ', required: true, files: [] },
+  { id: 'house_reg', name: 'ໃບຄອບຄົວ', description: 'ໃບຄອບຄົວຫຼືເອກະສານຢືນຢັນທີ່ຢູ່', required: true, files: [] }
 ])
-const optionalDocuments = ref<Document[]>([
-  { id: 'salary_slip', name: 'ຫຼັກຖານລາຍຮັບ', description: 'ໃບເງິນເດືອນ ຫຼື ໃບຮັບລາຍຮັບ', required: false, file: null, preview: null },
-  { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
+const optionalDocuments = ref<DocumentCategory[]>([
+  { id: 'salary_slip', name: 'ຫຼັກຖານລາຍຮັບ', description: 'ໃບເງິນເດືອນ ຫຼື ໃບຮັບລາຍຮັບ', required: false, files: [] },
+  { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, files: [] }
 ])
 
 // Helpers
@@ -804,16 +1000,40 @@ const startEditInModal = async () => {
   modalLoanForm.monthly_payment = calculateModalMonthlyPayment()
   modalLoanForm.monthly_income = Math.round(Number(loanData.customer?.income_per_month || 0))
 
-  loanDocuments.value.forEach(doc => { doc.file = null; doc.preview = null })
-  optionalDocuments.value.forEach(doc => { doc.file = null; doc.preview = null })
+  // loanDocuments.value.forEach(doc => { doc.file = null; doc.preview = null })
+  // optionalDocuments.value.forEach(doc => { doc.file = null; doc.preview = null })
 
+  // if (loanApplicationStore.currentDocuments && loanApplicationStore.currentDocuments.length > 0) {
+  //   loanApplicationStore.currentDocuments.forEach(serverDoc => {
+  //     const docType = serverDoc.document_type || serverDoc.doc_type
+  //     const reqDoc = loanDocuments.value.find(d => d.id === docType)
+  //     const optDoc = optionalDocuments.value.find(d => d.id === docType)
+  //     if (reqDoc && serverDoc.file_url) reqDoc.preview = serverDoc.file_url
+  //     if (optDoc && serverDoc.file_url) optDoc.preview = serverDoc.file_url
+  //   })
+  // }
+
+  // เคลียร์ไฟล์เก่าออกก่อน
+  draftDocuments.value.forEach(doc => { doc.files = [] })
+  optionalDocuments.value.forEach(doc => { doc.files = [] })
+
+  // ดึงไฟล์จาก Server ยัดใส่ Array
   if (loanApplicationStore.currentDocuments && loanApplicationStore.currentDocuments.length > 0) {
     loanApplicationStore.currentDocuments.forEach(serverDoc => {
-      const docType = serverDoc.document_type || serverDoc.doc_type
-      const reqDoc = loanDocuments.value.find(d => d.id === docType)
-      const optDoc = optionalDocuments.value.find(d => d.id === docType)
-      if (reqDoc && serverDoc.file_url) reqDoc.preview = serverDoc.file_url
-      if (optDoc && serverDoc.file_url) optDoc.preview = serverDoc.file_url
+      const docType = serverDoc.document_type || serverDoc.doc_type;
+      const reqDoc = draftDocuments.value.find(d => d.id === docType);
+      const optDoc = optionalDocuments.value.find(d => d.id === docType);
+      const fileUrl = getFullImageUrl(serverDoc.file_url);
+      
+      const newFileObj = {
+        file: null, // null แปลว่าเป็นไฟล์ของเก่า ไม่ต้องอัปโหลดซ้ำ
+        preview: fileUrl || '',
+        isPdf: serverDoc.file_url?.toLowerCase().endsWith('.pdf'),
+        name: serverDoc.original_filename || serverDoc.file_name || 'Document'
+      };
+
+      if (reqDoc && fileUrl) reqDoc.files.push(newFileObj);
+      if (optDoc && fileUrl) optDoc.files.push(newFileObj);
     })
   }
 
@@ -861,13 +1081,24 @@ const saveLoanFromModal = async () => {
 const saveDocumentsOnly = async () => {
   isSaving.value = true;
   try {
-    const newUploadDocs = [...loanDocuments.value, ...optionalDocuments.value].filter(doc => doc.file !== null);
+    const newUploadDocs = [...draftDocuments.value, ...optionalDocuments.value].filter(doc => doc.files !== null);
 
     if (newUploadDocs.length > 0) {
       isUploadingDocuments.value = true;
-      for (const doc of newUploadDocs) {
-        await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, doc.file!, doc.id);
-      }
+      // for (const doc of newUploadDocs) {
+      //   await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, doc.file!, doc.id);
+      // }
+      // ค้นหาทุกไฟล์ที่เป็นไฟล์ใหม่ (ถูกเลือกจากเครื่อง)
+for (const cat of [...draftDocuments.value, ...optionalDocuments.value]) {
+  for (const f of cat.files) {
+    if (f.file) { // อัปโหลดเฉพาะไฟล์ใหม่ (ไฟล์เดิมจาก Server ค่า file จะเป็น null)
+      const fileToUpload = f.file instanceof File 
+  ? f.file 
+  : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
+      await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, fileToUpload, cat.id);
+    }
+  }
+}
       await loanApplicationStore.fetchDocuments(selectedLoan.value.id);
       isUploadingDocuments.value = false;
       customAlert.success('ອັບໂຫຼດເອກະສານສຳເລັດ!');
@@ -1085,12 +1316,25 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     // =====================================
     // 4. ອັບໂຫຼດເອກະສານທີ່ແນບມາໃນໜ້າສັນຍາ (ຖ້າມີ)
     // =====================================
-    const newUploadDocs = [...loanDocuments.value, ...optionalDocuments.value].filter(doc => doc.file !== null);
+    const newUploadDocs = [...draftDocuments.value, ...optionalDocuments.value].filter(doc => doc.files !== null);
     if (newUploadDocs.length > 0) {
       isUploadingDocuments.value = true;
-      for (const doc of newUploadDocs) {
-        await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, doc.file!, doc.id);
-      }
+      // for (const doc of newUploadDocs) {
+      //   await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, doc.file!, doc.id);
+      // }
+
+      // ค้นหาทุกไฟล์ที่เป็นไฟล์ใหม่ (ถูกเลือกจากเครื่อง)
+for (const cat of [...draftDocuments.value, ...optionalDocuments.value]) {
+  for (const f of cat.files) {
+    if (f.file) { // อัปโหลดเฉพาะไฟล์ใหม่ (ไฟล์เดิมจาก Server ค่า file จะเป็น null)
+
+      const fileToUpload = f.file instanceof File 
+  ? f.file 
+  : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
+      await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, fileToUpload, cat.id);
+    }
+  }
+}
       await loanApplicationStore.fetchDocuments(loanId);
       isUploadingDocuments.value = false;
     }
@@ -1201,80 +1445,156 @@ const handleModalProductBlur = () => setTimeout(() => showModalProductDropdown.v
 //   }; reader.readAsDataURL(file);
 // }
 
+
 const handleDocumentUpload = async (index: number, event: Event, type: 'req' | 'opt') => {
-  let file = (event.target as HTMLInputElement).files?.[0]; 
-  if (!file) return;
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files || files.length === 0) return;
 
-  const docs = type === 'req' ? loanDocuments.value : optionalDocuments.value;
+  const docs = type === 'req' ? draftDocuments.value : optionalDocuments.value;
 
-  // 🔴 1. ตรวจสอบไฟล์ PDF (ห้ามเกิน 8MB)
-  if (file.type === 'application/pdf') {
-    const maxPdfSizeMB = 8; // กำหนด PDF สูงสุด 8MB
-    if (file.size > maxPdfSizeMB * 1024 * 1024) {
-      customAlert.error(`ໄຟລ໌ PDF ໃຫຍ່ເກີນໄປ! ກະລຸນາອັບໂຫຼດໄຟລ໌ຂະໜາດບໍ່ເກີນ ${maxPdfSizeMB} MB`);
-      (event.target as HTMLInputElement).value = ''; // ล้างค่า input ทิ้ง
-      return; 
+  // ວົນລູບຈັດການທຸກໄຟລ໌ທີ່ຖືກເລືອກມາ
+  for (let i = 0; i < files.length; i++) {
+    const currentFile = files[i];
+    if (!currentFile) continue; // 🟢 1. ແກ້ໄຂເງື່ອນໄຂປ້ອງກັນໄຟລ໌ເປັນ undefined
+
+    // 🔴 ກວດສອບ PDF ຫຼື ໄຟລ໌ທົ່ວໄປບໍ່ໃຫ້ເກີນ 8MB
+    if (currentFile.size > 8 * 1024 * 1024) {
+      customAlert.error('ໄຟລ໌ໃຫຍ່ເກີນໄປ', `ໄຟລ໌ ${currentFile.name} ໃຫຍ່ເກີນໄປ (ເກີນ 8MB)`);
+      continue;
     }
-  }
 
-  // 🟢 2. ตรวจสอบและบีบอัดไฟล์รูปภาพ (ให้ผลลัพธ์ไม่เกิน 3MB)
-  if (file.type.startsWith('image/')) {
+    let finalFile: File = currentFile;
     
-    // (Optional) ถ่ายากบล็อกรูปที่ใหญ่เกิน 3MB ตั้งแต่ต้นเลยโดยไม่บีบอัด ให้เอาคอมเมนต์ด้านล่างออก
-    /*
-    const maxImageSizeMB = 3;
-    if (file.size > maxImageSizeMB * 1024 * 1024) {
-      customAlert.error(`ຮູບພາບໃຫຍ່ເກີນໄປ! ກະລຸນາເລືອກຮູບຂະໜາດບໍ່ເກີນ ${maxImageSizeMB} MB`);
-      (event.target as HTMLInputElement).value = '';
-      return;
-    }
-    */
-
-    try {
-      const options = {
-        maxSizeMB: 3,           // 👈 กำหนดเป้าหมายการบีบอัดให้ไม่เกิน 3MB
-        maxWidthOrHeight: 1920, // ความละเอียดสูงสุด 1920px (เหมาะสำหรับจอ Full HD)
-        useWebWorker: true,
-      };
-
-      // ทำการบีบอัดรูปภาพ
-      const compressedBlob = await imageCompression(file, options);
-      
-      // แปลงกลับเป็น File Object เพื่อเตรียมส่งให้ API
-      file = new File([compressedBlob], file.name, {
-        type: compressedBlob.type,
-        lastModified: Date.now(),
-      });
-      
-    } catch (error) {
-      console.error('Error compressing image:', error);
-      // กรณี Error เราอาจจะดักเช็คขนาดอีกรอบป้องกันไฟล์เดิมใหญ่เกินไปหลุดรอดไป API
-      if (file.size > 3 * 1024 * 1024) {
-         customAlert.error('ບໍ່ສາມາດບີບອັດຮູບພາບໄດ້ ແລະ ຮູບມີຂະໜາດໃຫຍ່ເກີນໄປ');
-         (event.target as HTMLInputElement).value = '';
-         return;
+    // 🟢 2. ບີບອັດຮູບພາບ ໃຫ້ບໍ່ເກີນ 3MB (ປ່ຽນຈາກຕົວແປ file ມາເປັນ finalFile ແລະ currentFile ໃຫ້ຖືກຕ້ອງ)
+    if (finalFile.type.startsWith('image/')) {
+      try {
+        const compressedBlob = await imageCompression(currentFile, {
+          maxSizeMB: 3, 
+          maxWidthOrHeight: 1920, 
+          useWebWorker: true
+        });
+        finalFile = new File([compressedBlob], currentFile.name, { 
+          type: compressedBlob.type, 
+          lastModified: Date.now() 
+        });
+      } catch (error) {
+        console.error('Compress error:', error);
+        if (finalFile.size > 3 * 1024 * 1024) continue; // ຖ້າບີບອັດພັງ ແລະ ໄຟລ໌ໃຫຍ່ເກີນ 3MB ໃຫ້ຂ້າມໄຟລ໌ນີ້ໄປ
       }
     }
-  }
 
-  // 🟢 3. อัปเดต State เพื่อแสดง Preview
-  const reader = new FileReader(); 
-  reader.onload = (e) => {
-    if (docs[index]) {
-      docs[index].file = file; // ไฟล์นี้คือ PDF (<=8MB) หรือ Image (บีบอัด <=3MB แล้ว)
-      docs[index].preview = e.target?.result as string;
+    // ເຊັກປະເພດໄຟລ໌ວ່າເປັນ PDF ບໍ່
+    const isPdf = finalFile.type === 'application/pdf';
+
+    // 🟢 3. ສ້າງ Preview ແລະ ຍັດເຂົ້າ Array ຂອງໝວດໝູ່ນັ້ນ (ເພີ່ມການກວດສອບຄວາມປອດໄພຂອງ Object)
+    if (docs && docs[index]) {
+      // ຖ້າຫາກໃນໝວດໝູ່ນັ້ນຍັງບໍ່ມີ Array files ເທື່ອ ໃຫ້ສ້າງເປັນ Array ຫວ່າງໄວ້ກ່ອນ
+      if (!docs[index].files) {
+        docs[index].files = [];
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (docs[index] && docs[index].files) {
+          docs[index].files.push({
+            file: finalFile,
+            preview: (e.target?.result as string) || '',
+            isPdf: isPdf,
+            name: finalFile.name // 🟢 ຜ່ານສະບາຍ ເພາະ finalFile ເປັນ Type: File ແທ້ໆແລ້ວ
+          });
+        }
+      };
+      reader.readAsDataURL(finalFile);
     }
-  }; 
-  reader.readAsDataURL(file);
+  }
+  
+  target.value = ''; // ເຄລຍຄ່າ input ໃຫ້ກົດເລືອກໄຟລ໌ເດີມຊ້ຳໄດ້
 }
 
-const removeDocument = (index: number, type: 'req' | 'opt') => {
-  const docs = type === 'req' ? loanDocuments.value : optionalDocuments.value;
-  if (docs[index]) {
-    docs[index].file = null;
-    docs[index].preview = null;
-  }
+// 🟢 ฟังก์ชันลบรูป (ต้องระบุ Index ของรูปใน Array ด้วย)
+const removeDocument = (catIndex: number, fileIndex: number, type: 'req' | 'opt') => {
+  const docs = type === 'req' ? draftDocuments.value : optionalDocuments.value;
+  if (docs && docs[catIndex] && docs[catIndex].files) {
+  docs[catIndex].files.splice(fileIndex, 1); // ລົບອອກຈາກ Array ຢ່າງປອດໄພ
 }
+}
+
+
+// const handleDocumentUpload = async (index: number, event: Event, type: 'req' | 'opt') => {
+//   let file = (event.target as HTMLInputElement).files?.[0]; 
+//   if (!file) return;
+
+//   const docs = type === 'req' ? loanDocuments.value : optionalDocuments.value;
+
+//   // 🔴 1. ตรวจสอบไฟล์ PDF (ห้ามเกิน 8MB)
+//   if (file.type === 'application/pdf') {
+//     const maxPdfSizeMB = 8; // กำหนด PDF สูงสุด 8MB
+//     if (file.size > maxPdfSizeMB * 1024 * 1024) {
+//       customAlert.error(`ໄຟລ໌ PDF ໃຫຍ່ເກີນໄປ! ກະລຸນາອັບໂຫຼດໄຟລ໌ຂະໜາດບໍ່ເກີນ ${maxPdfSizeMB} MB`);
+//       (event.target as HTMLInputElement).value = ''; // ล้างค่า input ทิ้ง
+//       return; 
+//     }
+//   }
+
+//   // 🟢 2. ตรวจสอบและบีบอัดไฟล์รูปภาพ (ให้ผลลัพธ์ไม่เกิน 3MB)
+//   if (file.type.startsWith('image/')) {
+    
+//     // (Optional) ถ่ายากบล็อกรูปที่ใหญ่เกิน 3MB ตั้งแต่ต้นเลยโดยไม่บีบอัด ให้เอาคอมเมนต์ด้านล่างออก
+//     /*
+//     const maxImageSizeMB = 3;
+//     if (file.size > maxImageSizeMB * 1024 * 1024) {
+//       customAlert.error(`ຮູບພາບໃຫຍ່ເກີນໄປ! ກະລຸນາເລືອກຮູບຂະໜາດບໍ່ເກີນ ${maxImageSizeMB} MB`);
+//       (event.target as HTMLInputElement).value = '';
+//       return;
+//     }
+//     */
+
+//     try {
+//       const options = {
+//         maxSizeMB: 3,           // 👈 กำหนดเป้าหมายการบีบอัดให้ไม่เกิน 3MB
+//         maxWidthOrHeight: 1920, // ความละเอียดสูงสุด 1920px (เหมาะสำหรับจอ Full HD)
+//         useWebWorker: true,
+//       };
+
+//       // ทำการบีบอัดรูปภาพ
+//       const compressedBlob = await imageCompression(file, options);
+      
+//       // แปลงกลับเป็น File Object เพื่อเตรียมส่งให้ API
+//       file = new File([compressedBlob], file.name, {
+//         type: compressedBlob.type,
+//         lastModified: Date.now(),
+//       });
+      
+//     } catch (error) {
+//       console.error('Error compressing image:', error);
+//       // กรณี Error เราอาจจะดักเช็คขนาดอีกรอบป้องกันไฟล์เดิมใหญ่เกินไปหลุดรอดไป API
+//       if (file.size > 3 * 1024 * 1024) {
+//          customAlert.error('ບໍ່ສາມາດບີບອັດຮູບພາບໄດ້ ແລະ ຮູບມີຂະໜາດໃຫຍ່ເກີນໄປ');
+//          (event.target as HTMLInputElement).value = '';
+//          return;
+//       }
+//     }
+//   }
+
+//   // 🟢 3. อัปเดต State เพื่อแสดง Preview
+//   const reader = new FileReader(); 
+//   reader.onload = (e) => {
+//     if (docs[index]) {
+//       docs[index].file = file; // ไฟล์นี้คือ PDF (<=8MB) หรือ Image (บีบอัด <=3MB แล้ว)
+//       docs[index].preview = e.target?.result as string;
+//     }
+//   }; 
+//   reader.readAsDataURL(file);
+// }
+
+// const removeDocument = (index: number, type: 'req' | 'opt') => {
+//   const docs = type === 'req' ? loanDocuments.value : optionalDocuments.value;
+//   if (docs[index]) {
+//     docs[index].file = null;
+//     docs[index].preview = null;
+//   }
+// }
 
 // Maps Handlers
 const loadCustomerLocations = async (customerId: number) => {

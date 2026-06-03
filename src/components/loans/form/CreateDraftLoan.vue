@@ -1397,8 +1397,8 @@ const submitDocuments = async () => {
         await loanApplicationStore.uploadDocument(currentLoan.customer_id, doc.file, doc.id)
       }
     }
-    alert.success('ບັນທຶກເອກະສานສຳເລັດ!')
-    await loanApplicationStore.fetchDocuments(currentLoan.customer_id)
+    alert.success('ບັນທຶກເອກະສານສຳເລັດ!')
+    await loanApplicationStore.fetchDocuments(currentLoan.id)
     await loanApplicationStore.fetchLoanApplicationById(currentLoan.id)
     router.push({ name: 'ListDraftLoans' })
   } catch (error) {
