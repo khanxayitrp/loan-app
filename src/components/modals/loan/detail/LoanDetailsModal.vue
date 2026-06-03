@@ -33,7 +33,7 @@
           </button>
         </div>
 
-        <div class="tabs tabs-boxed mb-6 flex-wrap gap-1">
+        <!-- <div class="tabs tabs-boxed mb-6 flex-wrap gap-1">
           <button class="tab" :class="{ 'tab-active': activeTab === 'details' }" @click="activeTab = 'details'">
             ລາຍລະອຽດໄວ
           </button>
@@ -47,7 +47,46 @@
           <button class="tab" :class="{ 'tab-active': activeTab === 'map' }" @click="activeTab = 'map'">
             <span class="icon-[tabler--map] size-4 mr-1"></span> ແຜນທີ່
           </button>
-        </div>
+        </div> -->
+        <div class="flex w-full overflow-x-auto no-scrollbar border-b border-gray-200 dark:border-gray-700 mb-6">
+  
+  <button 
+    @click="activeTab = 'details'"
+    class="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 px-2 min-w-[80px] border-b-2 transition-all whitespace-nowrap"
+    :class="activeTab === 'details' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800'"
+  >
+    <span class="icon-[tabler--alert-circle] size-6"></span>
+    <span class="text-xs font-bold">ລາຍລະອຽດໄວ</span>
+  </button>
+
+  <button 
+    @click="activeTab = 'loanContract'"
+    class="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 px-2 min-w-[80px] border-b-2 transition-all whitespace-nowrap"
+    :class="activeTab === 'loanContract' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800'"
+  >
+    <span class="icon-[tabler--file-invoice] size-6"></span>
+    <span class="text-xs font-bold">ແບບຟອມ</span>
+  </button>
+
+  <button 
+    @click="activeTab = 'documents'"
+    class="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 px-2 min-w-[80px] border-b-2 transition-all whitespace-nowrap"
+    :class="activeTab === 'documents' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800'"
+  >
+    <span class="icon-[basil--attach-outline] size-6"></span>
+    <span class="text-xs font-bold">ເອກະສານແນບ</span>
+  </button>
+
+  <button 
+    @click="activeTab = 'map'"
+    class="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 px-2 min-w-[80px] border-b-2 transition-all whitespace-nowrap"
+    :class="activeTab === 'map' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800'"
+  >
+    <span class="icon-[tabler--map] size-6"></span>
+    <span class="text-xs font-bold">ແຜນທີ່</span>
+  </button>
+
+</div>
 
         <div v-if="activeTab === 'details'" class="space-y-6">
           
