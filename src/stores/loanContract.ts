@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getLoanContract, getLoanContracts, saveLoanContract } from '@/api/loanContract'
+// 🟢 เพิ่ม updateLoanContract ในส่วนของ import
+import { getLoanContract, getLoanContracts, saveLoanContract, updateLoanContract } from '@/api/loanContract'
 import type { LoanContract, CreateLoanContractRequest } from '@/types/loanContract'
 
 export const useLoanContractStore = defineStore('loanContract', () => {
@@ -55,6 +56,22 @@ export const useLoanContractStore = defineStore('loanContract', () => {
     }
   }
 
+  // 🟢 เพิ่มฟังก์ชันสำหรับ Update Contract
+  const updateContract = async (loanId: number, data: Partial<CreateLoanContractRequest>) => {
+    isLoading.value = true
+    error.value = null
+    try {
+      const updatedContract = await updateLoanContract(loanId, data)
+      currentContract.value = updatedContract // อัปเดต state ปัจจุบัน
+      return updatedContract
+    } catch (err: any) {
+      error.value = err.message || 'Failed to update loan contract'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     contracts,
     currentContract,
@@ -62,6 +79,7 @@ export const useLoanContractStore = defineStore('loanContract', () => {
     error,
     fetchContracts,
     fetchContract,
-    createContract
+    createContract,
+    updateContract // 🟢 อย่าลืม return ฟังก์ชันออกไปให้ Component ใช้งาน
   }
 })

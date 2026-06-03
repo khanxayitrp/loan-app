@@ -32,14 +32,16 @@ export const formatCurrencyInput = (val: number | string | null | undefined): st
 
 // 🟢 Helper function ສຳລັບແປງສະຖານະເປັນສີຂອງ Badge
 export const getStatusBadgeClass = (status: string): string => {
-  switch (status) {
-    case 'pending': return 'badge-warning';
-    case 'verifying': return 'badge-info';
-    case 'approved': return 'badge-success';
-    case 'rejected': return 'badge-error';
-    case 'disbursed': return 'badge-primary';
-    case 'closed': return 'badge-neutral';
-    default: return 'badge-neutral';
+  // ໃຊ້ toLowerCase() ເພື່ອປ້ອງກັນ error ກໍລະນີຕົວພິມນ້ອຍ-ໃຫຍ່ບໍ່ກົງກັນ
+  switch (status?.toLowerCase()) {
+    case 'pending': return 'badge-warning';    // 🟡 ສີເຫຼືອງ/ສົ້ມ: ໝາຍເຖິງ "ລໍຖ້າການຈັດການ" ຫຼື ຕ້ອງເຂົ້າໄປເບິ່ງ
+    case 'verifying': return 'badge-info';       // 🔵 ສີຟ້າ: ໝາຍເຖິງ "ກຳລັງດຳເນີນການ" (Process ຍັງແລ່ນຢູ່)
+    case 'verified': return 'badge-primary';    // 🟣 ສີຫຼັກຂອງເວັບ: ໝາຍເຖິງ "ກວດກາຜ່ານແລ້ວ" ລໍຖ້າອະນຸມັດ
+    case 'approved': return 'badge-success';    // 🟢 ສີຂຽວ: ໝາຍເຖິງ "ສຳເລັດ/ຜ່ານ" (ເປັນສັນຍານບວກ)
+    case 'disbursed': return 'badge-secondary';  // 💖 ສີສຳຮອງ (ມັກຈະເປັນສີຊົມພູ/ມ່ວງ): ເພື່ອໃຫ້ເດັ່ນອອກມາວ່າ "ຈ່າຍເງິນແລ້ວ" ແຍກຈາກອະນຸມັດ
+    case 'rejected': return 'badge-error';      // 🔴 ສີແດງ: ໝາຍເຖິງ "ຖືກປະຕິເສດ" ຫຼື ມີບັນຫາ
+    case 'closed': return 'badge-neutral';    // ⚫️ ສີເທົາເຂັ້ມ: ໝາຍເຖິງ "ປິດການເຄື່ອນໄຫວ" ຈົບຂະບວນການແລ້ວ
+    default:  return 'badge-ghost';      // ⚪️ ສີເທົາອ່ອນໆ: ສຳລັບກໍລະນີບໍ່ມີສະຖານະ (ປ້ອງກັນ Error)
   }
 };
 
@@ -48,6 +50,7 @@ export const getStatusText = (status: string): string => {
   const statusMap: Record<string, string> = {
     'pending': 'ລໍຖ້າ',
     'verifying': 'ກຳລັງກວດ',
+    'verified': 'ກວດແລ້ວ',
     'approved': 'ອະນຸມັດ',
     'rejected': 'ປະຕິເສດ',
     'disbursed': 'ຈ່າຍເງິນແລ້ວ',
@@ -78,7 +81,7 @@ export const getDocumentTypeName = (type: string): string => {
  */
 export const formatDateToDDMMYYYY = (dateString: string | null | undefined): string => {
   if (!dateString) return '';
-  
+
   // ກວດສອບວ່າມີເຄື່ອງໝາຍ - ຫຼືບໍ່ (ປ້ອງກັນ error ຖ້າຂໍ້ມູນຜິດຮູບແບບ)
   if (dateString.includes('-')) {
     const [year, month, day] = dateString.split('-');
@@ -87,7 +90,7 @@ export const formatDateToDDMMYYYY = (dateString: string | null | undefined): str
       return `${day}/${month}/${year}`;
     }
   }
-  
+
   // ຖ້າຮູບແບບບໍ່ກົງ ກໍສົ່ງຄ່າເດີມກັບຄືນໄປ
   return dateString;
 }

@@ -180,6 +180,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
+import { useLoanContractStore } from '@/stores/loanContract'
 import apiClient from '@/api/apiclient'
 import { formatPrice, formatCurrencyInput, formatDateToDDMMYYYY } from '@/utils/formatters'
 import { alert } from '@/utils/alert'
@@ -194,6 +195,7 @@ const props = defineProps<{
 const emit = defineEmits(['close'])
 
 const loanApplicationStore = useLoanApplicationStore()
+const loanContractStore = useLoanContractStore()
 const isSaving = ref(false)
 
 const isScheduleSaved = ref(false)
@@ -467,6 +469,10 @@ const saveSchedule = async () => {
     // (ສົມມຸດວ່າທ່ານມີຟັງຊັນ updateLoanApplication ຢູ່ແລ້ວ ຄືກັບໜ້າ Verify)
     await loanApplicationStore.updateLoanApplication(props.loan.id, {
       payment_day: newPaymentDay
+    });
+
+    await loanContractStore.updateContract(props.loan.id, {
+      paymentDay: newPaymentDay
     });
 
     // ອັບເດດ UI ໃຫ້ສະແດງຄ່າໃໝ່

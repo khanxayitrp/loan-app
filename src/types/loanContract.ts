@@ -14,7 +14,8 @@ export interface LoanContract {
   cusPhone: string;
   cusMaritalStatus: string;
   cusIdPassNumber: string;
-  cusIdPassDate?: string | null;
+  cusIdPassDateStart?: string | null;
+  cusIdPassDateExpired?: string | null;
   cusCensusNumber?: string | null;
   cusCensusCreated?: string | null;
   cusCensusAuthorizeBy: string;
@@ -61,7 +62,8 @@ export interface LoanContract {
   refSex: string;
   refMaritalStatus: string;
   refIdPassNumber: string;
-  refIdPassDate?: string | null;
+  refIdPassDateStart?: string | null;
+  refIdPassDateExpired?: string | null;
   refCensusNumber?: string | null;
   refCensusCreated?: string | null;
   refCensusAuthorizeBy: string;
@@ -88,4 +90,4 @@ export interface LoanContract {
   updatedAt?: string;
 }
 
-export type CreateLoanContractRequest = Omit<LoanContract, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;
+export type CreateLoanContractRequest = Omit<LoanContract, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt' >;

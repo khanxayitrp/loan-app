@@ -5,9 +5,14 @@
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ລາຍການຮ່າງສິນເຊື່ອ</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການຮ່າງຄຳຂໍສິນເຊື່ອທີ່ຍັງບໍ່ໄດ້ສົ່ງ</p>
       </div>
-      <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
-        <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
-      </button>
+      <div class="flex items-center gap-2">
+        <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
+          <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
+        </button>
+        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success">
+          <span class="icon-[tabler--file-spreadsheet] size-4 mr-1"></span> Export Excel
+        </button>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -109,6 +114,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import * as XLSX from 'xlsx' // 🟢 ເພີ່ມແຖວນີ້
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useProductStore } from '@/stores/product'
 import { useShopStore } from '@/stores/shop'
@@ -238,8 +244,22 @@ const exportToCSV = () => {
     'ສິນຄ້າ': getProductName(d), 'ຈຳນວນເງິນ': formatPrice(d.total_amount), 'ວັນທີ່ສ້າງ': d.createdAt ? formatDate(d.createdAt) : '-'
   }))
   const csv = Papa.unparse(csvData)
-  const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv]))
-  link.download = `drafts_${new Date().toISOString().split('T')[0]}.csv`; link.click()
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `Draft_export_${new Date().toISOString().split('T')[0]}.csv`
+  link.click()
+}
+
+const exportToExcel = () => {
+  const excelData = displayedDrafts.value.map(d => ({
+    'Loan ID': d.loan_id, 'ລູກຄ້າ': getDraftDisplayName(d), 'ເບີໂທ': getDraftPhone(d),
+    'ສິນຄ້າ': getProductName(d), 'ຈຳນວນເງິນ': formatPrice(d.total_amount), 'ວັນທີ່ສ້າງ': d.createdAt ? formatDate(d.createdAt) : '-'
+  }))
+  const worksheet = XLSX.utils.json_to_sheet(excelData)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Draft Loans')
+  XLSX.writeFile(workbook, `Draft_Loans_${new Date().toISOString().split('T')[0]}.xlsx`)
 }
 
 onMounted(async () => {

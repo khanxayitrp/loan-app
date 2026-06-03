@@ -597,6 +597,8 @@ import { formatPrice, formatCurrencyInput, getDocumentTypeName } from '@/utils/f
 import { getFullImageUrl } from '@/utils/url'
 import { alert } from '@/utils/alert'
 
+import imageCompression from 'browser-image-compression'
+
 import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue'
 import LoanContractForm from '@/components/loans/form/LoanContractForm.vue'
 
@@ -936,8 +938,9 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusMaritalStatus: cData.maritalStatus || 'ບໍ່ລະບຸ',
       cusIdPassNumber: cData.idCard || 'ບໍ່ລະບຸ',
       cusIdPassDate: cData.idCardIssueDate || new Date().toISOString().split('T')[0],
+      cusIdPassExpiryDate: cData.idCardExpiryDate || new Date().toISOString().split('T')[0],
       cusCensusNumber: cData.censusBook || 'ບໍ່ມີ',
-      cusCensusCreated: cData.idCardExpiryDate || new Date().toISOString().split('T')[0],
+      cusCensusCreated: cData.censusBookIssueDate || new Date().toISOString().split('T')[0],
       cusCensusAuthorizeBy: cData.censusAuthorizeBy || 'ບໍ່ລະບຸ',
       cusHouseNumber: cData.houseNumber || 'ບໍ່ລະບຸ',
       cusUnit: Number(cData.unit) || 0,
@@ -986,6 +989,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       refMaritalStatus: gData.maritalStatus || 'ບໍ່ລະບຸ',
       refIdPassNumber: gData.idCard || 'ບໍ່ມີ',
       refIdPassDate: gData.idCardIssueDate || new Date().toISOString().split('T')[0],
+      refIdPassExpiryDate: gData.idCardExpiryDate || new Date().toISOString().split('T')[0],
       refCensusNumber: gData.censusBook || 'ບໍ່ມີ',
       refCensusCreated: gData.censusBookIssueDate || new Date().toISOString().split('T')[0],
       refCensusAuthorizeBy: gData.censusAuthorizeBy || 'ບໍ່ມີ',
@@ -1128,16 +1132,74 @@ const debounceModalProductSearch = () => { clearTimeout(modalProductSearchTimer)
 const handleModalProductBlur = () => setTimeout(() => showModalProductDropdown.value = false, 200)
 
 // 🟢 Docs Handlers ... (ໂຄ້ດເກົ່າ)
-const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') => {
+// const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') => {
+//   const target = event.target as HTMLInputElement;
+//   const file = target.files?.[0];
+//   if (!file) return;
+
+//   const docs = type === 'req' ? draftDocuments.value : optionalDocuments.value;
+//   const reader = new FileReader();
+//   reader.onload = (e) => {
+//     if (docs[index]) { 
+//       docs[index].file = file;
+//       docs[index].preview = e.target?.result as string;
+//     }
+//   };
+//   reader.readAsDataURL(file);
+// }
+
+// 🟢 Docs Handlers (ອັບເດດໃໝ່: ຮອງຮັບການບີບອັດຮູບ < 3MB ແລະ ຈຳກັດ PDF < 8MB)
+const handleDocumentUpload = async (index: number, event: Event, type: 'req' | 'opt') => {
   const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
+  let file = target.files?.[0];
   if (!file) return;
 
   const docs = type === 'req' ? draftDocuments.value : optionalDocuments.value;
+
+  // 🔴 1. ກວດສອບໄຟລ໌ PDF (ຫ້າມເກີນ 8MB)
+  if (file.type === 'application/pdf') {
+    const maxPdfSizeMB = 8;
+    if (file.size > maxPdfSizeMB * 1024 * 1024) {
+      alert.error(`ໄຟລ໌ PDF ໃຫຍ່ເກີນໄປ! ກະລຸນາອັບໂຫຼດໄຟລ໌ຂະໜາດບໍ່ເກີນ ${maxPdfSizeMB} MB`);
+      target.value = ''; // ລ້າງຄ່າ input ຖິ້ມ
+      return;
+    }
+  }
+
+  // 🟢 2. ບີບອັດໄຟລ໌ຮູບພາບ (ໃຫ້ບໍ່ເກີນ 3MB)
+  if (file.type.startsWith('image/')) {
+    try {
+      const options = {
+        maxSizeMB: 3,           // ບັງຄັບໃຫ້ບີບອັດລົງມາບໍ່ໃຫ້ເກີນ 3MB
+        maxWidthOrHeight: 1920, // ຂະໜາດຄວາມລະອຽດສູງສຸດ 1920px
+        useWebWorker: true,     // ບໍ່ໃຫ້ໜ້າຈໍຄ້າງຕອນປະມວນຜົນ
+      };
+
+      // ເລີ່ມການບີບອັດ
+      const compressedBlob = await imageCompression(file, options);
+      
+      // ແປງກັບມາເປັນ File Object ເພື່ອໃຫ້ API ຮັບຊື່ໄຟລ໌ໄດ້ຄືເກົ່າ
+      file = new File([compressedBlob], file.name, {
+        type: compressedBlob.type,
+        lastModified: Date.now(),
+      });
+      
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      // ຖ້າ Error ແລ້ວໄຟລ໌ເດີມໃຫຍ່ກວ່າ 3MB ໃຫ້ແຈ້ງເຕືອນແລ້ວຢຸດ
+      if (file.size > 3 * 1024 * 1024) {
+        alert.error('ບໍ່ສາມາດບີບອັດຮູບພາບໄດ້ ແລະ ຮູບມີຂະໜາດໃຫຍ່ເກີນ 3 MB');
+        target.value = '';
+        return;
+      }
+    }
+  }
+
+  // 🟢 3. ອັບເດດ State ແລະ ສະແດງ Preview
   const reader = new FileReader();
   reader.onload = (e) => {
     if (docs[index]) { 
-      docs[index].file = file;
+      docs[index].file = file; // ຈະໄດ້ຮັບ PDF ທີ່ຜ່ານເງື່ອນໄຂ ຫຼື ຮູບທີ່ບີບອັດແລ້ວ
       docs[index].preview = e.target?.result as string;
     }
   };

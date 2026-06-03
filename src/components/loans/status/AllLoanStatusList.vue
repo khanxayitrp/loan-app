@@ -13,11 +13,20 @@
       </div>
 
       <!-- Export Button -->
-      <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap"
+      <!-- <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap"
         :disabled="isLoading || displayedLoans.length === 0">
         <span class="icon-[tabler--file-export] size-4 mr-1"></span>
         Export CSV
-      </button>
+      </button> -->
+
+      <div class="flex items-center gap-2">
+        <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap" :disabled="isLoading || displayedLoans.length === 0">
+          <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
+        </button>
+        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success" :disabled="isLoading || displayedLoans.length === 0">
+          <span class="icon-[tabler--file-spreadsheet] size-4 mr-1"></span> Export Excel
+        </button>
+      </div>
     </div>
 
     <!-- Filter Section -->
@@ -269,6 +278,7 @@
 <script setup lang="ts">
 import { formatPrice } from '@/utils/formatters'
 import { ref, computed, watch, onMounted } from 'vue'
+import * as XLSX from 'xlsx' // 🟢 ເພີ່ມແຖວນີ້
 import { storeToRefs } from 'pinia'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
@@ -476,11 +486,31 @@ const exportToCSV = () => {
   }))
 
   const csv = Papa.unparse(csvData)
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
   link.download = `all_loans_history_${new Date().toISOString().split('T')[0]}.csv`
   link.click()
+}
+const exportToExcel = () => {
+  if (!displayedLoans.value.length) return
+
+  const worksheetData = displayedLoans.value.map(loan => ({
+    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
+    'ຊື່ລູກຄ້າ': getCustomerFullName(loan),
+    'ເບີໂທ': getCustomerPhone(loan),
+    'ຈຳນວນເງິນ': formatPrice(Number(loan.total_amount)),
+    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply || '-',
+    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '-',
+    'ສະຖານະ': getStatusText(loan.status),
+    'ຜູ້ອະນຸມາ': loan.approver?.username || '-',
+    'createdAt': formatDate(loan.createdAt)
+  }))
+
+  const worksheet = XLSX.utils.json_to_sheet(worksheetData)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Loans')
+  XLSX.writeFile(workbook, `all_loans_history_${new Date().toISOString().split('T')[0]}.xlsx`)
 }
 
 // 📄 Pagination

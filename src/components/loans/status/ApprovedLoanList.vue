@@ -6,10 +6,14 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການສິນເຊື່ອທີ່ໄດ້ຮັບການອະນຸມັດແລ້ວ</p>
       </div>
 
-      <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
-        <span class="icon-[tabler--file-export] size-4 mr-1"></span>
-        Export CSV
-      </button>
+      <div class="flex items-center gap-2">
+        <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
+          <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
+        </button>
+        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success">
+          <span class="icon-[tabler--file-spreadsheet] size-4 mr-1"></span> Export Excel
+        </button>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -444,6 +448,7 @@
 <script setup lang="ts">
 import { formatPrice } from '@/utils/formatters'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
+import * as XLSX from 'xlsx'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useDeliveryReceiptStore } from '@/stores/delivery_receipt'
 import { useLoanContractStore } from '@/stores/loanContract' 
@@ -920,11 +925,30 @@ const exportToCSV = () => {
   }))
 
   const csv = Papa.unparse(csvData)
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
   link.download = `approved_loans_${new Date().toISOString().split('T')[0]}.csv`
   link.click()
+}
+
+const exportToExcel = () => {
+  // alert.info('ກຳລັງພັດທະນາ', 'ຟັງຊັນນີ້ກຳລັງເຮັດໃນເນື້ອໃນ, ກະລຸນາຮັບການອັບເດດໃນອີກຄົນໜ້າ!')
+  const excelData = displayedLoans.value.map(loan => ({
+    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id,
+    'ຊື່ລູກຄ້າ': getCustomerName(loan),
+    'ເບີໂທ': getCustomerPhone(loan),
+    'ຈຳນວນເງິນ': formatPrice(Number(loan.total_amount) || 0),
+    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply,
+    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
+    'ສະຖານະການຈ່າຍ': getDisbursementStatusText(loan),
+    'ผู้อนุมัติ': loan.approver?.username || '-',
+    'วันที่อนุมัติ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '')
+  }))
+  const worksheet = XLSX.utils.json_to_sheet(excelData)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Loans')
+  XLSX.writeFile(workbook, `approved_loans_${new Date().toISOString().split('T')[0]}.xlsx`)
 }
 
 const previousPage = () => {

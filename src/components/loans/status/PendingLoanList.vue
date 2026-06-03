@@ -12,9 +12,18 @@
           <span class="icon-[tabler--info-circle] size-4 mr-1"></span> ເກນການໃຫ້ຄະແນນ
         </button>
 
+        <!-- <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
+          <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
+        </button> -->
+
+        <div class="flex items-center gap-2">
         <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
           <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
         </button>
+        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success">
+          <span class="icon-[tabler--file-spreadsheet] size-4 mr-1"></span> Export Excel
+        </button>
+      </div>
       </div>
     </div>
 
@@ -425,6 +434,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
+import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { useLoanContractStore } from '@/stores/loanContract';
@@ -813,11 +823,24 @@ const exportToCSV = () => {
     'ສະຖານະ': getStatusBadge(loan.status).text, 'ຄະແນນສິນເຊື່ອ': loan.credit_score || '-', 'ວັນທີ່ສ້າງ': formatDate(loan.createdAt)
   }));
   const csv = Papa.unparse(csvData);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `pending_loans_${new Date().toISOString().split('T')[0]}.csv`;
   link.click();
+}
+
+const exportToExcel = () => {
+  // alert.error('ຍັງບໍ່ສາມາດສົ່ງອອກເປັນ Excel ໄດ້', 'ກະລຸນາໃຊ້ CSV ແທນ ຫຼື รอการอัปเดตในอนาคต!');
+  const excelData = displayedLoans.value.map(loan => ({
+    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id, 'ຊື່ລູກຄ້າ': getCustomerName(loan), 'ເບີໂທ': getCustomerPhone(loan),
+    'ຈຳນວນເງິນ': formatPrice(loan.total_amount), 'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply, 'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
+    'ສະຖານະ': getStatusBadge(loan.status).text, 'ຄະແນນ': loan.credit_score || '-', 'ວັນที่สร้าง': formatDate(loan.createdAt)
+  }));
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Pending Loans');
+  XLSX.writeFile(workbook, `pending_loans_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 const fetchData = async () => {

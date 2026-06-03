@@ -41,3 +41,17 @@ export const saveLoanContract = async (loanId: number, data: CreateLoanContractR
     throw new Error(error.response?.data?.message || 'Failed to save loan contract')
   }
 }
+
+// เปลี่ยนจาก: data: CreateLoanContractRequest
+// เป็น: data: Partial<CreateLoanContractRequest>
+
+export const updateLoanContract = async (loanId: number, data: Partial<CreateLoanContractRequest>): Promise<LoanContract> => {
+  try {
+    const response = await apiClient.put(`/loan-contract/${loanId}/updated`, data)
+    console.log('this UpdateLoanContract ', response.data)
+    return response.data
+  } catch (error: any) {
+    console.error('❌ Error updating loan contract:', error)
+    throw new Error(error.response?.data?.message || 'Failed to update loan contract')
+  }
+}

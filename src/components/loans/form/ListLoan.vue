@@ -5,9 +5,14 @@
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ລາຍການສິນເຊື່ອ</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການຄຳຂໍສິນເຊື່ອ</p>
       </div>
-      <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
-        <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
-      </button>
+      <div class="flex items-center gap-2">
+        <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
+          <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
+        </button>
+        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success">
+          <span class="icon-[tabler--file-spreadsheet] size-4 mr-1"></span> Export Excel
+        </button>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -109,6 +114,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import * as XLSX from 'xlsx' // 🟢 ເພີ່ມແຖວນີ້
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useProductStore } from '@/stores/product'
 import { useShopStore } from '@/stores/shop'
@@ -270,8 +276,56 @@ const exportToCSV = () => {
     'ເຈົ້າໜ້າທີ່': getRequesterName(d), 'ສະຖານະ': getStatusText(d.status), 'ວັນທີ່ສ້າງ': d.createdAt ? formatDate(d.createdAt) : '-'
   }))
   const csv = Papa.unparse(csvData)
-  const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv]))
-  link.download = `loans_${new Date().toISOString().split('T')[0]}.csv`; link.click()
+  // 🟢 เติม \uFEFF (UTF-8 BOM) นำหน้า csv data
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `loans_export_${new Date().toISOString().split('T')[0]}.csv`
+  link.click()
+}
+
+// 🟢 ฟังก์ชัน Export To Excel (แทนที่ exportToCSV)
+const exportToExcel = () => {
+  // 1. เตรียมข้อมูล
+  const excelData = displayedLoans.value.map(d => ({
+    'Loan ID': d.loan_id, 
+    'ລູກຄ້າ': getCustomerName(d), 
+    'ເບີໂທ': getCustomerPhone(d), // xlsx จัดการ String ได้ดี ไม่ตัดเลข 0
+    'ສິນຄ້າ': getProductName(d), 
+    'ປະເພດ': getProductType(d), 
+    'ຈຳນວນເງິນ': Number(d.total_amount || 0), // ใส่เป็น Number ให้ Excel ค้นหา/คำนวณต่อได้
+    'ດອກເບ້ຍ (%)': d.interest_rate_at_apply, 
+    'ໄລຍະເວລາ (ເດືອນ)': d.loan_period,
+    'ເຈົ້າໜ້າທີ່': getRequesterName(d), 
+    'ສະຖານະ': getStatusText(d.status), 
+    'ວັນທີ່ສ້າງ': (d.created_at || d.createdAt) ? formatDate((d.created_at || d.createdAt) as string) : '-'
+  }))
+
+  // 2. สร้าง Worksheet จาก JSON
+  const worksheet = XLSX.utils.json_to_sheet(excelData)
+
+  // 3. ปรับความกว้างของคอลัมน์ให้อ่านง่าย (Optional)
+  const wscols = [
+    { wch: 15 }, // Loan ID
+    { wch: 25 }, // ลູກຄ້ๅ
+    { wch: 15 }, // เບີໂທ
+    { wch: 25 }, // ສິນຄ້ๅ
+    { wch: 15 }, // ປະເພດ
+    { wch: 15 }, // ຈຳນວນเງິນ
+    { wch: 10 }, // ດອກเບ້ຍ
+    { wch: 15 }, // ໄລຍະเวລๅ
+    { wch: 20 }, // เจ້ົๅໜ້ๅທີ່
+    { wch: 15 }, // ສະຖๅນະ
+    { wch: 15 }, // วັນທີ່ສ้ๅງ
+  ];
+  worksheet['!cols'] = wscols;
+
+  // 4. สร้าง Workbook และแนบ Worksheet เข้าไป
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Loan List")
+
+  // 5. สั่งดาวน์โหลดไฟล์
+  XLSX.writeFile(workbook, `Loan_Report_${new Date().toISOString().split('T')[0]}.xlsx`)
 }
 
 onMounted(async () => {

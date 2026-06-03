@@ -584,6 +584,7 @@ import type { CustomerLocation } from '@/types/customer'
 import { formatPrice, formatCurrencyInput, getStatusBadgeClass, getStatusText, getDocumentTypeName } from '@/utils/formatters'
 import { getFullImageUrl } from '@/utils/url'
 import { alert as customAlert } from '@/utils/alert' 
+import imageCompression from 'browser-image-compression';
 
 import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue'
 import LoanContractForm from '@/components/loans/form/LoanContractForm.vue'
@@ -850,20 +851,27 @@ const handleSaveContract = async (customerId: number, formData: any) => {
   try {
     const loanId = selectedLoan.value.id;
 
+    // 🟢 ເຊັກວ່າມີການເລືອກຜູ້ຄ້ຳບໍ່ (ເພື່ອແກ້ໄຂ Error Null)
+    const hasGuarantorOrRef = formData.hasGuarantor || formData.hasReference;
+
     // ແຍກຂໍ້ມູນເພື່ອໃຫ້ອ່ານງ່າຍ
     const cData = formData?.customer || {};
     const wData = formData?.work || {};
-    const gData = formData?.guarantor || {};
-    const gwData = formData?.guarantorWork || {};
     const pData = formData?.product || {};
     const sData = formData?.shop || {};
+    
+    // 🟢 ຖ້າບໍ່ມີການຕິກເລືອກຄົນຄ້ຳ ໃຫ້ເປັນ Object ຫວ່າງເປົ່າໄປເລີຍ
+    const gData = hasGuarantorOrRef ? (formData?.guarantor || {}) : {};
+    const gwData = hasGuarantorOrRef ? (formData?.guarantorWork || {}) : {};
 
     const fullNameString = String(cData.fullname || '').trim();
     const nameParts = fullNameString ? fullNameString.split(' ') : [];
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
+    // =====================================
     // 1. ອັບເດດຂໍ້ມູນ Loan Application (ໃບຄຳຂໍ)
+    // =====================================
     const updateAppPayload = {
       total_amount: Number(pData.price) || 0,
       down_payment: Number(pData.downPayment) || 0,
@@ -891,7 +899,9 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     };
     await loanApplicationStore.updateDraftLoanApplication(loanId, updateAppPayload);
 
+    // =====================================
     // 2. Proposal Data (ໃບສະເໜີປ່ອຍສິນຄ້າ)
+    // =====================================
     const proposalData = {
       company_name: wData.companyName || '',
       province_id: wData.address?.province_id || null,
@@ -906,30 +916,33 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       position: wData.position || '',
       salary: wData.salary || null,
 
-      name: gData.fullname || '',
-      identity_number: gData.idCard || '',
-      GuarantorDOB: gData.dob || '',
-      GuarantorAGE: gData.age || null,
-      Guarantorprovince_id: gData.address?.province_id || null,
-      Guarantordistrict_id: gData.address?.district_id || null,
-      Guarantoraddress: gData.address?.village || '',
-      Guarantorphone: gData.phone || '',
-      occupation: gData.occupation || '',
-      relationship: gData.relationship || '',
+      // 🟢 ข้อมูลคนค้ำประกัน (ถ้าไม่ได้ติ๊ก ส่ง Null หรือ 'ບໍ່ມີ' ตามที่ Schema รับได้)
+      name: hasGuarantorOrRef && gData.fullname ? gData.fullname : 'ບໍ່ມີ',
+      identity_number: hasGuarantorOrRef && gData.idCard ? gData.idCard : 'ບໍ່ມີ',
+      GuarantorDOB: hasGuarantorOrRef && gData.dob ? gData.dob : null,
+      GuarantorAGE: hasGuarantorOrRef ? (gData.age || 0) : 0,
+      Guarantorprovince_id: hasGuarantorOrRef ? (gData.address?.province_id || null) : null,
+      Guarantordistrict_id: hasGuarantorOrRef ? (gData.address?.district_id || null) : null,
+      Guarantoraddress: hasGuarantorOrRef && gData.address?.village ? gData.address.village : 'ບໍ່ມີ',
+      Guarantorphone: hasGuarantorOrRef && gData.phone ? gData.phone : 'ບໍ່ມີ',
+      occupation: hasGuarantorOrRef && gData.occupation ? gData.occupation : 'ບໍ່ມີ',
+      relationship: hasGuarantorOrRef && gData.relationship ? gData.relationship : 'ບໍ່ມີ',
 
-      work_company_name: gwData.companyName || '',
-      work_phone: gwData.phone || '',
-      work_location: gwData.address?.village || '',
-      work_province_id: gwData.address?.province_id || null,
-      work_district_id: gwData.address?.district_id || null,
-      work_position: gwData.position || '',
-      work_salary: String(gwData.salary || '0')
+      work_company_name: hasGuarantorOrRef && gwData.companyName ? gwData.companyName : 'ບໍ່ມີ',
+      work_phone: hasGuarantorOrRef && gwData.phone ? gwData.phone : 'ບໍ່ມີ',
+      work_location: hasGuarantorOrRef && gwData.address?.village ? gwData.address.village : 'ບໍ່ມີ',
+      work_province_id: hasGuarantorOrRef ? (gwData.address?.province_id || null) : null,
+      work_district_id: hasGuarantorOrRef ? (gwData.address?.district_id || null) : null,
+      work_position: hasGuarantorOrRef && gwData.position ? gwData.position : 'ບໍ່ມີ',
+      work_salary: hasGuarantorOrRef ? String(gwData.salary || '0') : '0'
     };
 
     const { saveCustProposal } = await import('@/api/proposal');
     await saveCustProposal(customerId, loanId, proposalData);
 
+    // =====================================
     // 3. Flat Contract Payload (ຂໍ້ມູນສັນຍາກູ້ຢືມຕົວຈິງ)
+    // =====================================
     const formatAddr = (addr: any) => addr ? [addr.village, addr.district, addr.province].filter(Boolean).join(', ') : 'ບໍ່ລະບຸ';
 
     const flatContractPayload = {
@@ -941,8 +954,9 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusMaritalStatus: cData.maritalStatus || 'ບໍ່ລະບຸ',
       cusIdPassNumber: cData.idCard || 'ບໍ່ລະບຸ',
       cusIdPassDate: cData.idCardIssueDate || new Date().toISOString().split('T')[0],
+      cusIdPassExpiryDate: cData.idCardExpiryDate || new Date().toISOString().split('T')[0],
       cusCensusNumber: cData.censusBook || 'ບໍ່ມີ',
-      cusCensusCreated: cData.idCardExpiryDate || new Date().toISOString().split('T')[0],
+      cusCensusCreated: cData.censusBookIssueDate || new Date().toISOString().split('T')[0],
       cusCensusAuthorizeBy: cData.censusAuthorizeBy || 'ບໍ່ລະບຸ',
       cusHouseNumber: cData.houseNumber || 'ບໍ່ລະບຸ',
       cusUnit: Number(cData.unit) || 0,
@@ -984,37 +998,39 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       firstInstallmentAmount: Number(pData.firstInstallment) || 0,
       paymentDay: Number(pData.paymentDay) || 1,
 
-      refName: gData.fullname || 'ບໍ່ມີ',
-      refDateOfBirth: gData.dob || new Date().toISOString().split('T')[0],
-      refPhone: gData.phone || 'ບໍ່ມີ',
-      refSex: gData.gender || 'ບໍ່ລະບຸ',
-      refMaritalStatus: gData.maritalStatus || 'ບໍ່ລະບຸ',
-      refIdPassNumber: gData.idCard || 'ບໍ່ມີ',
-      refIdPassDate: gData.idCardIssueDate || new Date().toISOString().split('T')[0],
-      refCensusNumber: gData.censusBook || 'ບໍ່ມີ',
-      refCensusCreated: gData.censusBookIssueDate || new Date().toISOString().split('T')[0],
-      refCensusAuthorizeBy: gData.censusAuthorizeBy || 'ບໍ່ມີ',
-      refHouseNumber: gData.houseNumber || 'ບໍ່ມີ',
-      refUnit: Number(gData.unit) || 0,
-      refAddress: formatAddr(gData.address),
-      refProvinceId: gData.address?.province_id || null,
-      refDistrictId: gData.address?.district_id || null,
-      refLivedYear: Number(gData.residenceYears) || 0,
-      refLivedWith: gData.liveWith || 'ບໍ່ມີ',
-      refLivedSituation: gData.residenceStatus || 'ບໍ່ມີ',
-      refOccupation: gData.occupation || 'ບໍ່ມີ',
-      refRelationship: gData.relationship || 'ບໍ່ມີ',
+      // 🟢 ຂ้อมูลคนค้ำประกัน (ใช้ Ternary Operator จัดการ NotNull Violation)
+      refName: hasGuarantorOrRef && gData.fullname ? gData.fullname : 'ບໍ່ມີ',
+      refDateOfBirth: hasGuarantorOrRef && gData.dob ? gData.dob : null,
+      refPhone: hasGuarantorOrRef && gData.phone ? gData.phone : 'ບໍ່ມີ',
+      refSex: hasGuarantorOrRef && gData.gender ? gData.gender : 'ບໍ່ລະບຸ',
+      refMaritalStatus: hasGuarantorOrRef && gData.maritalStatus ? gData.maritalStatus : 'ບໍ່ລະບຸ',
+      refIdPassNumber: hasGuarantorOrRef && gData.idCard ? gData.idCard : 'ບໍ່ມີ',
+      refIdPassDate: hasGuarantorOrRef && gData.idCardIssueDate ? gData.idCardIssueDate : null,
+      refIdPassExpiryDate: hasGuarantorOrRef && gData.idCardExpiryDate ? gData.idCardExpiryDate : null,
+      refCensusNumber: hasGuarantorOrRef && gData.censusBook ? gData.censusBook : 'ບໍ່ມີ',
+      refCensusCreated: hasGuarantorOrRef && gData.censusBookIssueDate ? gData.censusBookIssueDate : null,
+      refCensusAuthorizeBy: hasGuarantorOrRef && gData.censusAuthorizeBy ? gData.censusAuthorizeBy : 'ບໍ່ມີ',
+      refHouseNumber: hasGuarantorOrRef && gData.houseNumber ? gData.houseNumber : 'ບໍ່ມີ',
+      refUnit: hasGuarantorOrRef ? (Number(gData.unit) || 0) : 0,
+      refAddress: hasGuarantorOrRef ? formatAddr(gData.address) : 'ບໍ່ມີ',
+      refProvinceId: hasGuarantorOrRef ? (gData.address?.province_id || null) : null,
+      refDistrictId: hasGuarantorOrRef ? (gData.address?.district_id || null) : null,
+      refLivedYear: hasGuarantorOrRef ? (Number(gData.residenceYears) || 0) : 0,
+      refLivedWith: hasGuarantorOrRef && gData.liveWith ? gData.liveWith : 'ບໍ່ມີ',
+      refLivedSituation: hasGuarantorOrRef && gData.residenceStatus ? gData.residenceStatus : 'ບໍ່ມີ',
+      refOccupation: hasGuarantorOrRef && gData.occupation ? gData.occupation : 'ບໍ່ມີ',
+      refRelationship: hasGuarantorOrRef && gData.relationship ? gData.relationship : 'ບໍ່ມີ',
 
-      refCompanyName: gwData.companyName || 'ບໍ່ມີ',
-      refCompanyBusinessType: gwData.businessType || 'ບໍ່ມີ',
-      refCompanyLocation: formatAddr(gwData.address),
-      refCompanyWorkYear: Number(gwData.workYears) || 0,
-      refPosition: gwData.position || 'ບໍ່ມີ',
-      refIncome: Number(gwData.salary) || 0,
-      refPayrollDate: String(gwData.salaryDay || '0'),
-      refCompanyEmpNumber: Number(gwData.totalEmployees) || 0,
-      refIncomeOther: Number(gwData.otherIncome) || 0,
-      refIncomeOtherSource: gwData.otherIncomeSource || 'ບໍ່ມີ',
+      refCompanyName: hasGuarantorOrRef && gwData.companyName ? gwData.companyName : 'ບໍ່ມີ',
+      refCompanyBusinessType: hasGuarantorOrRef && gwData.businessType ? gwData.businessType : 'ບໍ່ມີ',
+      refCompanyLocation: hasGuarantorOrRef ? formatAddr(gwData.address) : 'ບໍ່ມີ',
+      refCompanyWorkYear: hasGuarantorOrRef ? (Number(gwData.workYears) || 0) : 0,
+      refPosition: hasGuarantorOrRef && gwData.position ? gwData.position : 'ບໍ່ມີ',
+      refIncome: hasGuarantorOrRef ? (Number(gwData.salary) || 0) : 0,
+      refPayrollDate: hasGuarantorOrRef && gwData.salaryDay ? String(gwData.salaryDay) : '0',
+      refCompanyEmpNumber: hasGuarantorOrRef ? (Number(gwData.totalEmployees) || 0) : 0,
+      refIncomeOther: hasGuarantorOrRef ? (Number(gwData.otherIncome) || 0) : 0,
+      refIncomeOtherSource: hasGuarantorOrRef && gwData.otherIncomeSource ? gwData.otherIncomeSource : 'ບໍ່ມີ',
 
       motorId: pData.motorcycle?.motorId || '',
       tankNumber: pData.motorcycle?.tankNumber || '',
@@ -1027,7 +1043,9 @@ const handleSaveContract = async (customerId: number, formData: any) => {
 
     await loanContractStore.createContract(loanId, flatContractPayload);
 
+    // =====================================
     // 4. ອັບໂຫຼດເອກະສານທີ່ແນບມາໃນໜ້າສັນຍາ (ຖ້າມີ)
+    // =====================================
     const newUploadDocs = [...loanDocuments.value, ...optionalDocuments.value].filter(doc => doc.file !== null);
     if (newUploadDocs.length > 0) {
       isUploadingDocuments.value = true;
@@ -1133,15 +1151,82 @@ const debounceModalProductSearch = () => { clearTimeout(modalProductSearchTimer)
 const handleModalProductBlur = () => setTimeout(() => showModalProductDropdown.value = false, 200)
 
 // Docs Handlers
-const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') => {
-  const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return;
+// const handleDocumentUpload = (index: number, event: Event, type: 'req' | 'opt') => {
+//   const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return;
+//   const docs = type === 'req' ? loanDocuments.value : optionalDocuments.value;
+//   const reader = new FileReader(); reader.onload = (e) => {
+//     if (docs[index]) {
+//       docs[index].file = file;
+//       docs[index].preview = e.target?.result as string;
+//     }
+//   }; reader.readAsDataURL(file);
+// }
+
+const handleDocumentUpload = async (index: number, event: Event, type: 'req' | 'opt') => {
+  let file = (event.target as HTMLInputElement).files?.[0]; 
+  if (!file) return;
+
   const docs = type === 'req' ? loanDocuments.value : optionalDocuments.value;
-  const reader = new FileReader(); reader.onload = (e) => {
+
+  // 🔴 1. ตรวจสอบไฟล์ PDF (ห้ามเกิน 8MB)
+  if (file.type === 'application/pdf') {
+    const maxPdfSizeMB = 8; // กำหนด PDF สูงสุด 8MB
+    if (file.size > maxPdfSizeMB * 1024 * 1024) {
+      customAlert.error(`ໄຟລ໌ PDF ໃຫຍ່ເກີນໄປ! ກະລຸນາອັບໂຫຼດໄຟລ໌ຂະໜາດບໍ່ເກີນ ${maxPdfSizeMB} MB`);
+      (event.target as HTMLInputElement).value = ''; // ล้างค่า input ทิ้ง
+      return; 
+    }
+  }
+
+  // 🟢 2. ตรวจสอบและบีบอัดไฟล์รูปภาพ (ให้ผลลัพธ์ไม่เกิน 3MB)
+  if (file.type.startsWith('image/')) {
+    
+    // (Optional) ถ่ายากบล็อกรูปที่ใหญ่เกิน 3MB ตั้งแต่ต้นเลยโดยไม่บีบอัด ให้เอาคอมเมนต์ด้านล่างออก
+    /*
+    const maxImageSizeMB = 3;
+    if (file.size > maxImageSizeMB * 1024 * 1024) {
+      customAlert.error(`ຮູບພາບໃຫຍ່ເກີນໄປ! ກະລຸນາເລືອກຮູບຂະໜາດບໍ່ເກີນ ${maxImageSizeMB} MB`);
+      (event.target as HTMLInputElement).value = '';
+      return;
+    }
+    */
+
+    try {
+      const options = {
+        maxSizeMB: 3,           // 👈 กำหนดเป้าหมายการบีบอัดให้ไม่เกิน 3MB
+        maxWidthOrHeight: 1920, // ความละเอียดสูงสุด 1920px (เหมาะสำหรับจอ Full HD)
+        useWebWorker: true,
+      };
+
+      // ทำการบีบอัดรูปภาพ
+      const compressedBlob = await imageCompression(file, options);
+      
+      // แปลงกลับเป็น File Object เพื่อเตรียมส่งให้ API
+      file = new File([compressedBlob], file.name, {
+        type: compressedBlob.type,
+        lastModified: Date.now(),
+      });
+      
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      // กรณี Error เราอาจจะดักเช็คขนาดอีกรอบป้องกันไฟล์เดิมใหญ่เกินไปหลุดรอดไป API
+      if (file.size > 3 * 1024 * 1024) {
+         customAlert.error('ບໍ່ສາມາດບີບອັດຮູບພາບໄດ້ ແລະ ຮູບມີຂະໜາດໃຫຍ່ເກີນໄປ');
+         (event.target as HTMLInputElement).value = '';
+         return;
+      }
+    }
+  }
+
+  // 🟢 3. อัปเดต State เพื่อแสดง Preview
+  const reader = new FileReader(); 
+  reader.onload = (e) => {
     if (docs[index]) {
-      docs[index].file = file;
+      docs[index].file = file; // ไฟล์นี้คือ PDF (<=8MB) หรือ Image (บีบอัด <=3MB แล้ว)
       docs[index].preview = e.target?.result as string;
     }
-  }; reader.readAsDataURL(file);
+  }; 
+  reader.readAsDataURL(file);
 }
 
 const removeDocument = (index: number, type: 'req' | 'opt') => {

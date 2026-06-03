@@ -74,11 +74,12 @@
 
       <form @submit.prevent="saveForm" class="space-y-8">
         
-        <CustomerSection :data="formData.customer" :is-editing="isEditing" />
+        <CustomerSection ref="customerSectionRef" :data="formData.customer" :is-editing="isEditing" />
         
-        <WorkSection :data="formData.work" :is-editing="isEditing" />
+        <WorkSection ref="workSectionRef" :data="formData.work" :is-editing="isEditing" />
         
         <ProductSection 
+        ref="productSectionRef"
           :data="formData.product" 
           :product-type="formData.productType"
           :is-editing="isEditing" 
@@ -113,6 +114,7 @@
         <ShopSection :data="formData.shop" :is-editing="isEditing" />
         
         <GuarantorSection 
+          ref="guarantorSectionRef"
           :data="formData.guarantor" 
           :has-guarantor="formData.hasGuarantor"
           :has-reference="formData.hasReference"
@@ -121,6 +123,7 @@
           @update:hasReference="formData.hasReference = $event" />
           
         <GuarantorWorkSection 
+        ref="guarantorWorkSectionRef"
           :data="formData.guarantorWork" 
           :has-guarantor="formData.hasGuarantor"
           :has-reference="formData.hasReference"
@@ -205,6 +208,13 @@ const isEditing = ref(props.isEditing || false)
 const hasProductConflict = ref(false);
 const productDifferences = reactive<Record<string, any>>({});
 
+// 🟢 2. ສ້າງ ref ສຳລັບ CustomerSection
+const customerSectionRef = ref<InstanceType<typeof CustomerSection> | null>(null);
+const workSectionRef = ref<InstanceType<typeof WorkSection> | null>(null);
+const productSectionRef = ref<InstanceType<typeof ProductSection> | null>(null);
+const guarantorSectionRef = ref<InstanceType<typeof GuarantorSection> | null>(null);
+const guarantorWorkSectionRef = ref<InstanceType<typeof GuarantorWorkSection> | null>(null);
+
 // 🟢 Data State หลัก
 const formData = reactive({
   contractNumber: '',
@@ -213,7 +223,7 @@ const formData = reactive({
   customer: {
     fullname: '', dob: '', phone: '', gender: '', maritalStatus: '',
     idCard: '', idCardIssueDate: '', idCardExpiryDate: '', idCardPlace: '',
-    censusBook: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
+    censusBook: '', censusBookIssueDate: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
     address: { village: '', district: '', district_id: '', province: '', province_id: '' },
     residenceYears: null as number | null, liveWith: '', residenceStatus: '',
     occupation: '', relationship: '', age: null as number | null
@@ -241,7 +251,7 @@ const formData = reactive({
   hasGuarantor: false,
   hasReference: false,
   guarantor: {
-    fullname: '', dob: '', phone: '', gender: '', maritalStatus: '', idCard: '', idCardIssueDate: '',
+    fullname: '', dob: '', phone: '', gender: '', maritalStatus: '', idCard: '', idCardIssueDate: '', idCardExpiryDate: '',
     censusBook: '', censusBookIssueDate: '', idCardPlace: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
     address: { village: '', district: '', district_id: '', province: '', province_id: '' },
     residenceYears: null as number | null, liveWith: '', residenceStatus: '',
@@ -499,12 +509,55 @@ const enableEdit = () => { isEditing.value = true; emit('enable-edit') }
 const cancelEdit = () => { emit('cancel-edit'); isEditing.value = false; loadDataFromProps() }
 
 const saveForm = async () => {
+  const el = document.querySelector('.form-section');
+
+  // 1. ກວດສອບ Validation ທຸກໆຟອມ
+  if (customerSectionRef.value && !customerSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນລູກຄ້າໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return; 
+  }
+  if (workSectionRef.value && !workSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນບ່ອນເຮັດວຽກໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (productSectionRef.value && !productSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນສິນຄ້າໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  // if (shopSectionRef.value && !shopSectionRef.value.validateForm()) {
+  //   customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນຮ້ານຄ້າຕົວແທນໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
+  //   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  //   return;
+  // }
+  if (guarantorSectionRef.value && !guarantorSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນຜູ້ຄ້ຳປະກັນ/ຜູ້ອ້າງອີງໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (guarantorWorkSectionRef.value && !guarantorWorkSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນບ່ອນເຮັດວຽກຂອງຜູ້ຄ້ຳປະກັນໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  // 2. ກຽມສົ່ງຂໍ້ມູນອອກໄປໜ້າຫຼັກ
   const customerId = props.loanContract?.customer_id || props.loanContract?.data?.customer_id || props.loanApplication?.customer_id;
   if (!customerId) return customAlert.error('ຂໍ້ຜິດພາດ', 'ບໍ່ພົບຂໍ້ມູນລູກຄ້າ');
+  
   isSaving.value = true;
-  try { emit('save-form', customerId, formData); } 
-  catch (error: any) { customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message); } 
-  finally { isSaving.value = false; }
+  try { 
+    // ສົ່ງຂໍ້ມູນໄປໃຫ້ Parent Page ເຮັດວຽກຕໍ່
+    emit('save-form', customerId, formData); 
+  } 
+  catch (error: any) { 
+    customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message); 
+  } 
+  finally { 
+    isSaving.value = false; 
+  }
 }
 
 const parseAddress = (addressStr: string) => {
@@ -544,9 +597,10 @@ const loadDataFromProps = () => {
     formData.customer.maritalStatus = sourceData.cus_marital_status || ''
     formData.customer.occupation = sourceData.cus_occupation || ''
     formData.customer.idCard = sourceData.cus_id_pass_number || ''
-    formData.customer.idCardIssueDate = sourceData.cus_id_pass_date || ''
+    formData.customer.idCardIssueDate = sourceData.cus_id_pass_date_start || ''
+    formData.customer.idCardExpiryDate = sourceData.cus_id_pass_date_expired || ''
     formData.customer.censusBook = sourceData.cus_census_number || ''
-    formData.customer.idCardExpiryDate = sourceData.cus_census_created || ''
+    formData.customer.censusBookIssueDate = sourceData.cus_census_created || ''
     formData.customer.censusAuthorizeBy = sourceData.cus_census_authorize_by || ''
     formData.customer.houseNumber = sourceData.cus_house_number || ''
     formData.customer.unit = sourceData.cus_unit || ''
@@ -583,11 +637,9 @@ const loadDataFromProps = () => {
     formData.shop.branch = sourceData.shop_branch || ''
     formData.shop.code = sourceData.shop_id || ''
 
-    // 2. 🟢 Fallback: ถ้า Contract ไม่มีข้อมูล Shop (ขาด id หรือ name) ให้ไปดึงจาก Loan Application แทน
     if (!formData.shop.id || !formData.shop.name) {
       const appPartner = props.loanApplication?.product?.partner;
       if (appPartner) {
-        // ใช้ค่าเดิมถ้ามี แต่ถ้าไม่มีให้เอาของ appPartner มาใส่
         formData.shop.id = formData.shop.id || appPartner.id || '';
         formData.shop.name = formData.shop.name || appPartner.shop_name || '';
         formData.shop.branch = formData.shop.branch || appPartner.address || '';
@@ -604,7 +656,8 @@ const loadDataFromProps = () => {
       formData.guarantor.gender = sourceData.ref_sex || ''
       formData.guarantor.maritalStatus = sourceData.ref_marital_status || ''
       formData.guarantor.idCard = sourceData.ref_id_pass_number || ''
-      formData.guarantor.idCardIssueDate = sourceData.ref_id_pass_date || ''
+      formData.guarantor.idCardIssueDate = sourceData.ref_id_pass_date_start || ''
+      formData.guarantor.idCardExpiryDate = sourceData.ref_id_pass_date_expired || ''
       formData.guarantor.censusBook = sourceData.ref_census_number || ''
       formData.guarantor.censusBookIssueDate = sourceData.ref_census_created || ''
       formData.guarantor.censusAuthorizeBy = sourceData.ref_census_authorize_by || ''
@@ -768,19 +821,19 @@ const loadDataFromProps = () => {
     }
   }
 
-  if (isFromContract && contractData) {  // ถ้ามาจาก Contract ให้ใช้ข้อมูล Product จาก Contract เป็นหลัก เพราะอาจมีการแก้ไขข้อมูลใน Contract ที่ต่างจาก Application
+  if (isFromContract && contractData) {
     formData.product.description = contractData.product_detail || contractData.productDetail || '';
     formData.product.type = contractData["producttype.type_name"] || '';
     formData.product.brand = contractData.product_brand || contractData.productBrand || '';
     formData.product.model = contractData.product_model || contractData.productModel || '';
-  } else if (app && app.id) { // ถ้ามาจาก Application ให้ใช้ข้อมูลจาก Application
+  } else if (app && app.id) {
     formData.product.description = app.product?.product_name || app.product_detail || '';
     formData.product.type = app.product?.type || app.product_type || '';
     formData.product.brand = app.product?.brand || app.product_brand || '';
     formData.product.model = app.product?.model || app.product_model || '';
   }
 
-  if (app && app.id) { // ถ้ามาจาก Application ให้ใช้ข้อมูลจาก Application เป็นหลักสำหรับข้อมูลที่อาจไม่มีใน Contract
+  if (app && app.id) {
     formData.product.variantId = app.variant_id || app.variant?.id || null;
     formData.product.price = Number(app.total_amount) || 0;
     formData.product.downPayment = Number(app.down_payment) || 0;
@@ -799,23 +852,52 @@ const loadDataFromProps = () => {
     formData.product.motorcycle.motorWarranty = app.motor_warranty || app.motorWarranty || null;
   }
 
-  if (formData.product.motorcycle.motorId || formData.product.motorcycle.tankNumber) {
-    formData.productType.motorcycle = true;
-    formData.productType.gold = false;
-    formData.productType.general = false;
-  } else {
-    formData.productType.general = true;
-    formData.product.description = app.product?.product_name || app.product_detail || '';
-    formData.product.brand = app.product?.brand || '';
-    formData.product.model = app.product?.model || '';
-    formData.product.price = Number(app.total_amount) || 0;
+  // ==========================================
+  // 🟢 1. จัดการแยกประเภทสินค้าให้ถูกต้อง (ล้าง Logic บั๊กตัวเก่าออกแล้ว)
+  // ==========================================
+  formData.productType.gold = false;
+  formData.productType.general = false;
+  formData.productType.motorcycle = false;
 
-    // 🟢 2. ອັບເດດຂໍ້ມູນ Variant (ສີ ແລະ ຂະໜາດ)
-    if (app.variant) {
+  // ดึงชื่อและไอดีประเภทสินค้าจาก API มาเช็ค (รองรับทั้งแบบแบนและแบบเนส)
+  const typeName = String(sourceData?.["producttype.type_name"] || sourceData?.product_type || app?.product?.producttype?.type_name || app?.producttype?.type_name || '').trim();
+  const typeId = Number(sourceData?.producttype_id || sourceData?.["producttype.id"] || app?.producttype_id || app?.product?.producttype_id || 0);
+
+  if (formData.product.motorcycle.motorId || formData.product.motorcycle.tankNumber || typeName.includes('ລົດຈັກ') || typeId === 1) {
+    formData.productType.motorcycle = true;
+  } 
+  else if (typeName.includes('ຄຳ') || typeId === 8) {
+    formData.productType.gold = true; // 🌟 ติ๊กเลือกสินค้าทองคำสำเร็จ!
+  } 
+  else {
+    formData.productType.general = true;
+  }
+
+  // ==========================================
+  // 🟢 2. โหลดข้อมูลจำเพาะ (Description & Variant)
+  // ==========================================
+  if (!formData.productType.motorcycle) {
+    // โอนย้ายข้อมูลเข้าฟอร์มหลัก
+    if (app && app.id) {
+      formData.product.description = app.product?.product_name || app.product_detail || '';
+      formData.product.brand = app.product?.brand || '';
+      formData.product.model = app.product?.model || '';
+      formData.product.price = Number(app.total_amount) || 0;
+    } else if (contractData) {
+      formData.product.description = contractData.product_detail || '';
+      formData.product.brand = contractData.product_brand || '';
+      formData.product.model = contractData.product_model || '';
+      formData.product.price = Number(contractData.product_price) || 0;
+    }
+
+    // จัดการสีและขนาด
+    if (app?.variant) {
         formData.product.productColor = app.variant.color || '';
         formData.product.productSize = app.variant.size_or_capacity || app.variant.size || '';
+    } else if (contractData) {
+        formData.product.productColor = contractData.product_color || '';
+        formData.product.productSize = contractData.product_size || '';
     } else {
-        // ຖ້າບໍ່ມີ variant ໃຫ້ເປັນຄ່າວ່າງ
         formData.product.productColor = '';
         formData.product.productSize = '';
     }
@@ -932,7 +1014,7 @@ onMounted(async () => {
   gap: 5px;
 }
 
-:deep(.input-sub span) {
+:deep(.input-sub span:not(.text-error)) {
   font-size: 12px;
   white-space: nowrap;
   color: #666;
