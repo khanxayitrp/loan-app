@@ -37,13 +37,13 @@ export const uploadApplicationDocument = async (
 }
 
 /**
- * อัปโหลดเอกสารหลายไฟล์สำหรับ Loan Application
- * @param applicationId - ID ของ Loan Application
+ * อัปโหลดเอกสารหลายไฟล์สำหรับลูกค้า
+ * @param customerId - ID ของ ลูกค้า (Customer)
  * @param files - รายการไฟล์เอกสาร
- * @param docTypes - รายการประเภทเอกสาร (ต้องมีจำนวนเท่ากับไฟล์)
+ * @param docTypes - รายการประเภทเอกสาร
  */
 export const uploadMultipleApplicationDocuments = async (
-  applicationId: number,
+  customerId: number,
   files: File[],
   docTypes: string[]
 ): Promise<any> => {
@@ -52,18 +52,29 @@ export const uploadMultipleApplicationDocuments = async (
       throw new Error('ຈຳນວນໄຟລ໌ ແລະ ປະເພດເອກະສານຕ້ອງເທົ່າກັນ')
     }
 
-    // อัปโหลดทีละไฟล์พร้อมประเภท
-    const uploadPromises = files.map((file, index) =>
-      // 🟢 เติมเครื่องหมาย ! (Non-null assertion) เพื่อยืนยันกับ TS ว่ามีค่า string แน่นอน หรือใช้ || 'other' สำรองไว้
-      uploadApplicationDocument(applicationId, file, docTypes[index] || 'other')
-    )
+    const formData = new FormData();
+    
+    files.forEach((file, index) => {
+      formData.append('files', file); 
+      // 🟢 แนบ doc_types คู่ไปกับไฟล์ เพื่อให้หลังบ้านรู้ว่าไฟล์ไหนคือเอกสารอะไร
+      formData.append('doc_types', docTypes[index] || 'other'); 
+    });
 
-    const results = await Promise.all(uploadPromises)
-    console.log('[Upload API] Multiple documents uploaded:', results.length)
-    return { success: true, documents: results }
+    // 🟢 เปลี่ยน URL เป็น /upload/application/${customerId}/documents ตาม Swagger
+    const response = await apiClient.post(
+      `/upload/application/${customerId}/documents`, 
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      }
+    );
+
+    console.log('[Upload API] Multiple documents uploaded successfully');
+    return { success: true, documents: response.data };
+
   } catch (error: any) {
-    console.error('[Upload API] Upload multiple documents failed:', error)
-    throw error
+    console.error('[Upload API] Upload multiple documents failed:', error);
+    throw error;
   }
 }
 

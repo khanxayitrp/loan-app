@@ -585,7 +585,8 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
      * อัปโหลดเอกสารหลายไฟล์พร้อมกัน
      */
     async uploadMultipleDocuments(
-      applicationId: number,
+      customerId: number, // 🟢 เปลี่ยนมารับ customerId เพื่อยิง API
+      applicationId: number, // รับมาไว้เพื่อใช้ fetchDocuments ท้ายสุด
       files: File[],
       docTypes: string[]
     ) {
@@ -593,21 +594,18 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       this.documentError = null
 
       try {
+        // 🟢 ส่ง customerId เข้า API
         const result = await uploadMultipleApplicationDocuments(
-          applicationId,
+          customerId,
           files,
           docTypes
         )
 
-        // อัปเดตเอกสารใน currentDocuments
+        // โหลดข้อมูลเอกสารใหม่จาก Server เพื่ออัปเดตหน้าจอ
         if (this.currentLoanApplication?.id === applicationId) {
-          this.currentDocuments = [
-            ...this.currentDocuments,
-            ...result.documents.map((d: any) => d.document)
-          ]
+          await this.fetchDocuments(applicationId);
         }
 
-        console.log('[Store] Multiple documents uploaded:', result)
         return result
       } catch (error: any) {
         console.error('[Store] Upload multiple documents failed:', error)

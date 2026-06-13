@@ -520,91 +520,57 @@
       </div>
 
       <div v-else class="space-y-6">
-        <div>
-          <h3 class="font-medium mb-3">ເອກະສານທີ່ຕ້ອງການ</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div v-for="(doc, index) in requiredDocuments" :key="index"
-              class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
-              <div class="flex items-center justify-between mb-2">
-                <div>
-                  <h4 class="font-medium">{{ doc.name }}</h4>
-                  <p class="text-xs text-gray-500">{{ doc.description }}</p>
-                </div>
-                <span v-if="doc.required" class="badge badge-soft badge-error text-xs">
-                  ຕ້ອງການ
-                </span>
+        <div v-for="(cat, catIndex) in allDocumentCategories" :key="'edit-cat-' + cat.id" 
+             class="border rounded-2xl p-5 bg-white shadow-sm border-slate-200">
+          
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h5 class="font-bold text-slate-800">{{ cat.name }}</h5>
+              <p class="text-[11px] text-slate-400 mt-1">{{ cat.description }}</p>
+            </div>
+            <span v-if="cat.required" class="badge badge-error badge-soft text-[10px] font-bold px-2 py-1">ຕ້ອງການ</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+            
+            <div v-for="(f, fileIndex) in cat.files" :key="fileIndex" 
+                 class="relative aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-50 group">
+              
+              <button type="button" @click.stop="removeDocument(cat.id, fileIndex)" 
+                class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 z-10 shadow-md hover:scale-110 transition-transform">
+                <span class="icon-[tabler--x] size-4"></span>
+              </button>
+
+              <img v-if="!f.isPdf" :src="f.preview" class="w-full h-full object-cover cursor-pointer hover:opacity-75 transition-opacity" @click="openInNewTab(f.preview)" />
+              <div v-else class="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors" @click="openInNewTab(f.preview)">
+                <span class="icon-[tabler--file-type-pdf] size-10 text-red-500 mb-1"></span>
+                <span class="text-[10px] text-center truncate px-2 w-full">{{ f.name }}</span>
               </div>
 
-              <div v-if="doc.preview" class="mt-2">
-                <div class="relative w-full h-32 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
-                  <img :src="doc.preview" alt="Document preview" class="w-full h-full object-contain" />
-                  <button type="button"
-                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                    @click="removeDocument(index)">
-                    <span class="icon-[tabler--x] size-4"></span>
-                  </button>
-                  <div v-if="!doc.file" class="absolute bottom-2 left-2 pointer-events-none">
-                     <span class="badge badge-neutral badge-sm shadow-sm opacity-80">ໄຟລ໌ເກົ່າໃນລະບົບ</span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-else class="mt-2">
-                <label
-                  class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                    <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
-                    <p class="text-sm text-gray-500">ຄລິກເພື່ອອັບໂຫຼດ</p>
-                    <p class="text-xs text-gray-500 mt-1">JPG, PNG, PDF (ສູງສຸດ 5MB)</p>
-                  </div>
-                  <input type="file" class="hidden" accept="image/*,.pdf"
-                    @change="(event) => handleFileSelect(index, event)" />
-                </label>
+              <div class="absolute bottom-1 left-1 pointer-events-none">
+                <span v-if="f.file" class="text-[9px] bg-green-500 text-white px-1.5 py-0.5 rounded shadow">ໃໝ່</span>
+                <span v-else class="text-[9px] bg-slate-500 text-white px-1.5 py-0.5 rounded shadow">ໄຟລ໌ເດີມ</span>
               </div>
             </div>
+
+            <label class="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all group">
+              <input type="file" class="hidden" multiple accept="image/*,.pdf" @change="(e) => handleDocumentUpload(cat.id, e)" />
+              <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                <span class="icon-[tabler--plus] size-6 text-slate-400 group-hover:text-indigo-600"></span>
+              </div>
+              <span class="text-[11px] font-bold text-slate-400 mt-2 group-hover:text-indigo-600">ເພີ່ມໄຟລ໌</span>
+            </label>
+
+          </div>
+          
+          <div class="mt-3 text-[11px] text-gray-500 text-right font-medium border-t pt-3">
+            ອັບໂຫຼດແລ້ວ: <span :class="cat.files.length > 0 ? 'text-success' : 'text-error'">{{ cat.files.length }} ໄຟລ໌</span>
           </div>
         </div>
 
-        <div>
-          <h3 class="font-medium mb-3">เອກະສານເພີ່ມເຕີມ</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div v-for="(doc, index) in optionalDocuments" :key="index + requiredDocuments.length"
-              class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
-              <div class="flex items-center justify-between mb-2">
-                <div>
-                  <h4 class="font-medium">{{ doc.name }}</h4>
-                  <p class="text-xs text-gray-500">{{ doc.description }}</p>
-                </div>
-              </div>
-
-              <div v-if="doc.preview" class="mt-2">
-                <div class="relative w-full h-32 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
-                  <img :src="doc.preview" alt="Document preview" class="w-full h-full object-contain" />
-                  <button type="button"
-                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                    @click="removeDocument(index + requiredDocuments.length)">
-                    <span class="icon-[tabler--x] size-4"></span>
-                  </button>
-                  <div v-if="!doc.file" class="absolute bottom-2 left-2 pointer-events-none">
-                     <span class="badge badge-neutral badge-sm shadow-sm opacity-80">ໄຟລ໌ເກົ່າໃນລະບົບ</span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-else class="mt-2">
-                <label
-                  class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                    <span class="icon-[tabler--upload] size-8 text-gray-400 mb-2"></span>
-                    <p class="text-sm text-gray-500">ຄລິກເພື່ອອັບໂຫຼດ</p>
-                    <p class="text-xs text-gray-500 mt-1">JPG, PNG, PDF (ສູງສຸດ 5MB)</p>
-                  </div>
-                  <input type="file" class="hidden" accept="image/*,.pdf"
-                    @change="(event) => handleFileSelect(index + requiredDocuments.length, event)" />
-                </label>
-              </div>
-            </div>
-          </div>
+        <div v-if="isSubmitting" class="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-center font-bold text-indigo-700 shadow-sm flex items-center justify-center gap-2">
+          <span class="loading loading-spinner loading-sm"></span>
+          ກຳລັງອັບໂຫຼດເອກະສານ... ກະລຸນາລໍຖ້າ
         </div>
 
         <div class="flex justify-end mt-6">
@@ -628,7 +594,7 @@
 
             <template v-if="!existingCustomerId">
               <p class="text-gray-600 dark:text-gray-400 mb-6">
-                ຄຳຂໍສິນເຊື່ອຖືກສ້າງເຂົ້າລະບົບແແລ້ວ ກະລຸນາອັບໂຫຼດເອກະສานຢັ້ງຢືນ.
+                ຄຳຂໍສິນເຊື່ອຖືກສ້າງເຂົ້າລະບົບແແລ້ວ ກະລຸນາອັບໂຫຼດເອກະສານຢັ້ງຢືນ.
               </p>
               <button type="button" class="btn btn-primary w-full" @click="switchToDocumentsTab">
                 ດຳເນີນການອັບໂຫຼດເອກະສານ
@@ -640,7 +606,7 @@
                 ລະບົບພົບວ່າເປັນລູກຄ້າເກົ່າ ທີ່ມີປະຫວັດເອກະສານໃນລະບົບແລ້ວ.
               </p>
               <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-sm text-blue-800 dark:text-blue-200 mb-6 text-left">
-                ທ່ານຕ້ອງການໃຊ້ເອກະສານເດີມ ຫຼື ອັບໂຫຼດเອກະສານຊຸດໃໝ່?
+                ທ່ານຕ້ອງການໃຊ້ເອກະສານເດີມ ຫຼື ອັບໂຫຼດເອກະສານຊຸດໃໝ່?
                 <br><span class="text-xs opacity-70">(ລະບົບອາດຈະຮຽກຮ້ອງບາງເອກະສານໃໝ່ຖ້າອັນເກົ່າໝົດອາຍຸ)</span>
               </div>
               <div class="flex flex-col gap-3">
@@ -648,7 +614,7 @@
                   <span class="icon-[tabler--file-check] size-4 mr-2"></span> ໃຊ້ເອກະສານເດີມທີ່ມີຢູ່
                 </button>
                 <button type="button" class="btn btn-outline btn-secondary w-full" @click="switchToDocumentsTab">
-                  <span class="icon-[tabler--upload] size-4 mr-2"></span> ອັບໂຫຼດເอกະສານໃໝ່ເພີ່ມເຕີມ
+                  <span class="icon-[tabler--upload] size-4 mr-2"></span> ອັບໂຫຼດເອກະສານໃໝ່ເພີ່ມເຕີມ
                 </button>
               </div>
             </template>
@@ -688,13 +654,21 @@ interface Customer {
   other_debts: number
 }
 
-interface Document {
-  id: string
-  name: string
-  description: string
-  required: boolean
-  file: File | null
-  preview: string | null
+// 🟢 ປ່ຽນແປງ Interface ໃໝ່ເພື່ອຮອງຮັບ Multi-file
+interface UploadedFile {
+  id?: number;
+  file: File | null;
+  preview: string;
+  isPdf: boolean;
+  name: string;
+}
+
+interface DocumentCategory {
+  id: string;
+  name: string;
+  description: string;
+  required: boolean;
+  files: UploadedFile[];
 }
 
 const shopStore = useShopStore()
@@ -710,7 +684,6 @@ const canAccessDocuments = ref(false)
 
 const loanNumber = ref('LN' + Date.now().toString().slice(-6))
 
-// 🟢 เพิ่มตัวแปรเก็บสถานะรายการย่อย (Variants)
 const productVariants = ref<any[]>([])
 const selectedVariant = ref<any>(null)
 const isLoadingVariants = ref(false)
@@ -744,10 +717,9 @@ const loanErrors = reactive({
   downPayment: '',
   interestRate: '',
   termMonths: '',
-  variant: '' // 🟢 เพิ่ม Error สำหรับเคสลืมเลือก Variant
+  variant: '' 
 })
 
-// 🟢 ปรับฟังก์ชันให้รับราคาเพื่อใช้คำนวณ (สลับไปมาระหว่างราคาหลักกับราคา Variant)
 const calculateInitialLoanDetails = (priceToUse?: number) => {
   if (!selectedProduct.value) return
 
@@ -891,15 +863,14 @@ const validateLoanDetails = (): boolean => {
   })
   let isValid = true
 
-  // 🟢 ตรวจสอบความถูกต้องของเคสสินค้ามี Variant
   if (productVariants.value.length > 0 && !selectedVariant.value) {
-    loanErrors.variant = 'ກະລຸນາເລືອກ ສີ / ຂະໜາດ ຂອງສินຄ້າ';
+    loanErrors.variant = 'ກະລຸນາເລືອກ ສີ / ຂະໜາດ ຂອງສິນຄ້າ';
     isValid = false;
   }
 
   if (loanDetails.totalAmount <= 0) { loanErrors.totalAmount = 'ລາຄາສິນຄ້າຕ້ອງຫຼາຍກວ່າ 0'; isValid = false }
   if (loanDetails.downPayment < 0) { loanErrors.downPayment = 'ເງິນດາວຕ້ອງບໍ່ຕິດລົບ'; isValid = false }
-  if (loanDetails.downPayment > loanDetails.totalAmount) { loanErrors.downPayment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າລາຄาສິນຄ້າ'; isValid = false }
+  if (loanDetails.downPayment > loanDetails.totalAmount) { loanErrors.downPayment = 'ເງິນດາວຕ້ອງໜ້ອຍກວ່າລາຄາສິນຄ້າ'; isValid = false }
   if (loanDetails.interestRate < 0 || loanDetails.interestRate > 100) { loanErrors.interestRate = 'ดອກເບ້ຍຕ້ອງຢູ່ລະຫວ່າງ 0-100%'; isValid = false }
   if (!loanDetails.termMonths || loanDetails.termMonths <= 0) { loanErrors.termMonths = 'ກະລຸນາເລືອກຈຳນວນງວດ'; isValid = false }
 
@@ -1011,15 +982,19 @@ const customerErrors = reactive({
   first_name: '', phone: '', id_card: '', province_id: '', district_id: '', age: '', address: '', occupation: '', monthly_income: ''
 })
 
-const requiredDocuments = ref<Document[]>([
-  { id: 'id_card', name: 'ບັດປະຈຳຕົວ', description: 'ຮູບຖ່າຍບັດປະຈຳຕົວທັງໜ້າ-ຫຼັງ', required: true, file: null, preview: null },
-  { id: 'house_reg', name: 'ປື້ມສຳມະໂນຄົວ', description: 'ໃບຄອບຄົວຫຼືເອກະສານຢືນຢັນທີ່ຢູ່', required: true, file: null, preview: null }
+// 🟢 ປັບໂຄງສ້າງຂໍ້ມູນ Array ເປັນແບບໃໝ່ (ຮອງຮັບ Multi-file)
+const requiredDocuments = ref<DocumentCategory[]>([
+  { id: 'id_card', name: 'ບັດປະຈຳຕົວ', description: 'ຮູບຖ່າຍບັດປະຈຳຕົວທັງໜ້າ-ຫຼັງ', required: true, files: [] },
+  { id: 'house_reg', name: 'ປື້ມສຳມະໂນຄົວ', description: 'ໃບຄອບຄົວຫຼືເອກະສານຢືນຢັນທີ່ຢູ່', required: true, files: [] }
 ])
 
-const optionalDocuments = ref<Document[]>([
-  { id: 'salary_slip', name: 'ຫຼັກຖານລາຍຮັບ', description: 'ໃບເງິນເດືອນ ຫຼື ໃບຮັບລາຍຮັບ', required: false, file: null, preview: null },
-  { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເอกະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, file: null, preview: null }
+const optionalDocuments = ref<DocumentCategory[]>([
+  { id: 'salary_slip', name: 'ຫຼັກຖານລາຍຮັບ', description: 'ໃບເງິນເດືອນ ຫຼື ໃບຮັບລາຍຮັບ', required: false, files: [] },
+  { id: 'other', name: 'ເອກະສານອື່ນໆ', description: 'ເອກະສານອື່ນໆທີ່ກ່ຽວຂ້ອງ', required: false, files: [] }
 ])
+
+// 🟢 ລວມ Array ເພື່ອໃຫ້ໃຊ້ງານງ່າຍໃນ Template
+const allDocumentCategories = computed(() => [...requiredDocuments.value, ...optionalDocuments.value]);
 
 const showSuccessModal = ref(false)
 
@@ -1050,8 +1025,9 @@ const filteredProducts = computed(() => {
     : []
 })
 
+// 🟢 ກວດສອບວ່າມີຮູບໃນໝວດໝູ່ທີ່ບັງຄັບແລ້ວ ຫຼື ຍັງ
 const allRequiredDocumentsUploaded = computed(() => {
-  return requiredDocuments.value.every(doc => doc.file !== null || doc.preview !== null)
+  return requiredDocuments.value.every(cat => cat.files.length > 0)
 })
 
 const switchTab = (tab: 'application' | 'documents') => {
@@ -1068,12 +1044,23 @@ const switchToDocumentsTab = async () => {
       await loanApplicationStore.fetchDocuments(existingCustomerId.value);
       const currentDocs = loanApplicationStore.currentDocuments || [];
 
-      const allFormDocs = [...requiredDocuments.value, ...optionalDocuments.value];
+      // ເຄລຍຂໍ້ມູນເກົ່າກ່ອນ
+      requiredDocuments.value.forEach(c => c.files = []);
+      optionalDocuments.value.forEach(c => c.files = []);
+
+      // ຈັດລຽງໄຟລ໌ລົງໃນໝວດໝູ່
       currentDocs.forEach(serverDoc => {
         const docType = serverDoc.document_type || serverDoc.doc_type;
-        const targetDoc = allFormDocs.find(d => d.id === docType);
-        if (targetDoc && serverDoc.file_url) {
-          targetDoc.preview = getFullImageUrl(serverDoc.file_url) || null;
+        const targetCat = allDocumentCategories.value.find(d => d.id === docType);
+        
+        if (targetCat && serverDoc.file_url) {
+          targetCat.files.push({
+            id: serverDoc.id,
+            file: null, // ໄຟລ໌ຈາກ Server
+            preview: getFullImageUrl(serverDoc.file_url) || '',
+            isPdf: serverDoc.file_url?.toLowerCase().endsWith('.pdf') || false,
+            name: serverDoc.original_filename || serverDoc.file_name || 'Document'
+          });
         }
       });
     } catch (e) {
@@ -1131,7 +1118,6 @@ const selectShop = async (shop: shopType) => {
   productSearch.value = ''
   selectedProductType.value = ''
 
-  // เคลียร์ค่า Variant และข้อมูลเงินกู้ใหม่ทั้งหมด
   selectedVariant.value = null
   productVariants.value = []
   loanErrors.variant = ''
@@ -1162,11 +1148,10 @@ const clearShopSelection = () => {
   loanErrors.variant = ''
 }
 
-// 🟢 ฟังก์ชันสำหรับอัปเดตราคาเงินกู้เมื่อมีการคลิกเลือก Variant ย่อย
 const selectVariant = (variant: any) => {
   selectedVariant.value = variant
   loanErrors.variant = ''
-  calculateInitialLoanDetails(variant.price) // ใช้ราคาเฉพาะของ Variant นั้นมาคำนวณเงินกู้
+  calculateInitialLoanDetails(variant.price) 
 }
 
 const selectProduct = async (product: Product) => {
@@ -1174,28 +1159,24 @@ const selectProduct = async (product: Product) => {
   productSearch.value = product.product_name
   showProductDropdown.value = false
 
-  // 🟢 เคลียร์ค่าตัวเลือกย่อยของสินค้าอันเก่าทิ้งก่อน
   selectedVariant.value = null
   productVariants.value = []
   loanErrors.variant = ''
 
-  // 🟢 ยิง API ไปโหลดข้อมูล Variants ของสินค้าชิ้นนี้มาตรวจสอบทันที
   isLoadingVariants.value = true
   try {
     const variants = await productStore.fetchVariantsByProductId(product.id)
     productVariants.value = variants || []
     
-    // ถ้าร้านค้านี้ไม่มีตัวเลือกย่อย ให้ดึงค่าหลักมาคำนวณได้ทันที (variant_id จะเป็น null)
     if (productVariants.value.length === 0) {
       calculateInitialLoanDetails(Number(product.price))
     } else {
-      // หากมีตัวเลือกย่อย ให้ตั้งราคากู้เป็น 0 รอจนกว่า User จะกดเลือกสีก่อน
       loanDetails.totalAmount = 0
       loanDetails.monthlyPayment = 0
     }
   } catch (error) {
     console.error('Failed to load variants:', error)
-    calculateInitialLoanDetails(Number(product.price)) // เคสฉุกเฉินให้ดึงราคาหลักมาสstalk ไว้ก่อน
+    calculateInitialLoanDetails(Number(product.price)) 
   } finally {
     isLoadingVariants.value = false
   }
@@ -1313,7 +1294,6 @@ const submitLoanApplication = async () => {
       income_per_month: customerForm.monthly_income,
 
       product_id: selectedProduct.value.id,
-      // 🟢 บันทึกค่า variant_id ไปยังระบบหลังบ้านอย่างถูกต้อง (เป็น ID ตัวเลข หรือ null)
       variant_id: selectedVariant.value?.id || null, 
       quantity: 1,
       total_amount: loanDetails.totalAmount, 
@@ -1335,54 +1315,61 @@ const submitLoanApplication = async () => {
   }
 }
 
-const handleFileSelect = (index: number, event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
+// 🟢 ຟັງຊັນອັບໂຫຼດຮອງຮັບຫຼາຍໄຟລ໌
+const handleDocumentUpload = async (typeId: string, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files || files.length === 0) return;
 
-  if (file) {
+  const category = allDocumentCategories.value.find(c => c.id === typeId);
+  if (!category) return;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    // 🟢 ເພີ່ມບັນທັດນີ້: ເພື່ອກວດສອບວ່າ file ບໍ່ແມ່ນ undefined ກ່ອນເອົາໄປໃຊ້ງານ
+    if (!file) continue;
+    
     if (file.size > 5 * 1024 * 1024) {
-      alert.error('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 5MB')
-      return
+      alert.error(`ໄຟລ໌ ${file.name} ໃຫຍ່ເກີນໄປ (ສູງສຸດ 5MB)`);
+      continue;
     }
-    if (!file.type.match(/^(image\/.*|application\/pdf)$/)) {
-      alert.error('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ ຫຼື PDF')
-      return
-    }
-    const allDocs = [...requiredDocuments.value, ...optionalDocuments.value]
-    const reader = new FileReader()
+
+    const isPdf = file.type === 'application/pdf';
+    const reader = new FileReader();
+    
     reader.onload = (e) => {
-      if (allDocs[index]) {
-        allDocs[index].file = file
-        allDocs[index].preview = (e.target?.result as string) || null
-      }
-      if (index < requiredDocuments.value.length) {
-        requiredDocuments.value = [...allDocs.slice(0, requiredDocuments.value.length)]
-      } else {
-        optionalDocuments.value = [...allDocs.slice(requiredDocuments.value.length)]
-      }
-    }
-    reader.readAsDataURL(file)
+      category.files.push({
+        file: file,
+        preview: (e.target?.result as string) || '',
+        isPdf: isPdf,
+        name: file.name
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+  target.value = ''; // ຣີເຊັດ input
+}
+
+// 🟢 ຟັງຊັນລຶບໄຟລ໌ສະເພາະຕົວ
+const removeDocument = (typeId: string, fileIndex: number) => {
+  const category = allDocumentCategories.value.find(c => c.id === typeId);
+  if (category && category.files[fileIndex]) {
+    category.files.splice(fileIndex, 1);
   }
 }
 
-const removeDocument = (index: number) => {
-  const allDocs = [...requiredDocuments.value, ...optionalDocuments.value]
-  if (allDocs[index]) {
-    allDocs[index].file = null
-    allDocs[index].preview = null
-  }
-  if (index < requiredDocuments.value.length) {
-    requiredDocuments.value = [...allDocs.slice(0, requiredDocuments.value.length)]
-  } else {
-    optionalDocuments.value = [...allDocs.slice(requiredDocuments.value.length)]
-  }
-}
+// ເປີດໄຟລ໌ໃນແຖບໃໝ່
+const openInNewTab = (url: string | null | undefined) => {
+  if (url) window.open(url, '_blank');
+};
 
 const submitDocuments = async () => {
   if (!allRequiredDocumentsUploaded.value) {
     alert.error('ກະລຸນາອັບໂຫຼດເອກະສານທີ່ຕ້ອງການທັງໝົດ')
     return
   }
+  
   const currentLoan = loanApplicationStore.currentLoanApplication
   if (!currentLoan || !currentLoan.id) {
     alert.error('ບໍ່ພົບຂໍ້ມູນຄຳຂໍສິນເຊື່ອ', 'ກະລຸນາສ້າງຄຳຂໍໃໝ່.')
@@ -1391,17 +1378,37 @@ const submitDocuments = async () => {
 
   isSubmitting.value = true
   try {
-    const allDocs = [...requiredDocuments.value, ...optionalDocuments.value].filter(doc => doc.file)
-    for (const doc of allDocs) {
-      if (doc.file) {
-        await loanApplicationStore.uploadDocument(currentLoan.customer_id, doc.file, doc.id)
+    const filesToUpload: File[] = [];
+    const docTypesArray: string[] = [];
+
+    // 🟢 ດຶງສະເພາະໄຟລ໌ທີ່ອັບໂຫຼດໃໝ່ເທົ່ານັ້ນ
+    for (const cat of allDocumentCategories.value) {
+      for (const f of cat.files) {
+        if (f.file) {
+          const fileObj = f.file instanceof File ? f.file : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
+          filesToUpload.push(fileObj);
+          docTypesArray.push(cat.id);
+        }
       }
     }
+
+    // 🟢 ສົ່ງໄປໃຫ້ Store ຈັດການແບບ Bulk
+    if (filesToUpload.length > 0) {
+      await loanApplicationStore.uploadMultipleDocuments(
+        currentLoan.customer_id, 
+        currentLoan.id, 
+        filesToUpload,
+        docTypesArray
+      );
+    }
+
     alert.success('ບັນທຶກເອກະສານສຳເລັດ!')
     await loanApplicationStore.fetchDocuments(currentLoan.id)
     await loanApplicationStore.fetchLoanApplicationById(currentLoan.id)
     router.push({ name: 'ListDraftLoans' })
+    
   } catch (error) {
+    console.error('Error submitting documents:', error)
     alert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ')
   } finally {
     isSubmitting.value = false

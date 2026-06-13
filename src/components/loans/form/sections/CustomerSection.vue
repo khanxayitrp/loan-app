@@ -141,7 +141,7 @@
             maxlength="10"
             placeholder="dd/mm/yyyy"
             class="input input-sm input-bordered w-full pr-10"
-            :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.idCardStartDate ? 'input-error' : '']"
+            :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
             @input="handleDateTyping($event, 'idCardStartDate')"
             @blur="handleDateBlur($event, 'idCardStartDate')"
           />
@@ -157,9 +157,9 @@
             :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
             @click="isEditing ? triggerIdCardStartDatePicker() : null"
           ></span>
-          <label v-if="errors.idCardStartDate" class="label p-0 pt-1">
+          <!-- <label v-if="errors.idCardStartDate" class="label p-0 pt-1">
             <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.idCardStartDate }}</span>
-          </label>
+          </label> -->
         </div>
 
         <div class="form-control relative">
@@ -171,7 +171,7 @@
             maxlength="10"
             placeholder="dd/mm/yyyy"
             class="input input-sm input-bordered w-full pr-10"
-            :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.idCardExpiryDate ? 'input-error' : '']"
+            :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
             @input="handleDateTyping($event, 'idCardExpiryDate')"
             @blur="handleDateBlur($event, 'idCardExpiryDate')"
           />
@@ -187,9 +187,9 @@
             :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
             @click="isEditing ? triggerExpiryDatePicker() : null"
           ></span>
-          <label v-if="errors.idCardExpiryDate" class="label p-0 pt-1">
+          <!-- <label v-if="errors.idCardExpiryDate" class="label p-0 pt-1">
             <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.idCardExpiryDate }}</span>
-          </label>
+          </label> -->
         </div>
 
         <div class="form-control">
@@ -539,8 +539,8 @@ const validateForm = (): boolean => {
 
   // ກວດສອບເອກະສານຢັ້ງຢືນຕົວຕົນ
   if (!props.data.idCard?.trim()) { errors.value.idCard = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ/Passport'; isValid = false; }
-  if (!props.data.idCardStartDate) { errors.value.idCardStartDate = 'ກະລຸນາປ້ອນວັນເດືອນປີອອກບັດ'; isValid = false; }
-  if (!props.data.idCardExpiryDate) { errors.value.idCardExpiryDate = 'ກະລຸນາປ້ອນວັນເດືອນປີໝົດອາຍຸບັດ'; isValid = false; }
+  // if (!props.data.idCardStartDate) { errors.value.idCardStartDate = 'ກະລຸນາປ້ອນວັນເດືອນປີອອກບັດ'; isValid = false; }
+  // if (!props.data.idCardExpiryDate) { errors.value.idCardExpiryDate = 'ກະລຸນາປ້ອນວັນເດືອນປີໝົດອາຍຸບັດ'; isValid = false; }
 
   // ກວດສອບຂໍ້ມູນທີ່ຢູ່
   if (!props.data.address?.village?.trim()) { errors.value.village = 'ກະລຸນາປ້ອນບ້ານ'; isValid = false; }

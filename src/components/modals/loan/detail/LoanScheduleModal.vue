@@ -472,8 +472,9 @@ const saveSchedule = async () => {
     });
 
     await loanContractStore.updateContract(props.loan.id, {
-      paymentDay: newPaymentDay
-    });
+      paymentDay: newPaymentDay,     // สำหรับกรณี API ใช้ CamelCase
+      payment_day: newPaymentDay     // สำหรับกรณี API ใช้ SnakeCase
+    } as any);
 
     // ອັບເດດ UI ໃຫ້ສະແດງຄ່າໃໝ່
     if (props.loan) {

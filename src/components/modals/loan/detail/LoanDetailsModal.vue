@@ -824,31 +824,46 @@ const saveLoanFromModal = async () => {
   } catch (error: any) { customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message) } finally { isSaving.value = false }
 }
 
+// 
 const saveDocumentsOnly = async () => {
   isSaving.value = true;
+  
   try {
-    let hasNewUploads = false;
-    for (const cat of allDocumentCategories.value) {
-      const newFiles = cat.files.filter(f => f.file !== null);
-      if (newFiles.length > 0) hasNewUploads = true;
-    }
+    const filesToUpload: File[] = [];
+    const docTypesArray: string[] = [];
 
-    if (hasNewUploads) {
-      isUploadingDocuments.value = true;
-      
-      for (const cat of allDocumentCategories.value) {
-        for (const f of cat.files) {
-          if (f.file) { // อัปโหลดเฉพาะไฟล์ใหม่ (ไฟล์เดิมจาก Server ค่า file จะเป็น null)
-            const fileToUpload = f.file instanceof File ? f.file : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
-            await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, fileToUpload, cat.id);
-          }
+    // 1. 🟢 วนลูปเก็บเฉพาะ "ไฟล์ใหม่" และ "ประเภทเอกสาร" ใส่ Array
+    for (const cat of allDocumentCategories.value) {
+      for (const f of cat.files) {
+        if (f.file) { // ตรวจสอบว่ามีไฟล์ใหม่ถูกเลือก
+          const fileObj = f.file instanceof File 
+            ? f.file 
+            : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
+          
+          filesToUpload.push(fileObj);
+          docTypesArray.push(cat.id); // สมมติว่า cat.id คือ 'id_card', 'house_reg' ฯลฯ
         }
       }
+    }
+
+    // 2. 🟢 เช็คว่ามีไฟล์ใหม่ให้ส่งหรือไม่
+    if (filesToUpload.length > 0) {
+      isUploadingDocuments.value = true;
       
-      await loanApplicationStore.fetchDocuments(selectedLoan.value.id);
-      populateDocumentsFromStore(); // 🟢 ໂຫຼດຂໍ້ມູນມາຈັດລົງ Array ໃໝ່ເພື່ອໃຫ້ View Mode ອັບເດດທັນທີ
+      // ส่งข้อมูลไปที่ Store แค่ "ครั้งเดียว" (Bulk Upload)
+      await loanApplicationStore.uploadMultipleDocuments(
+        selectedLoan.value.customer_id, 
+        selectedLoan.value.id, 
+        filesToUpload,
+        docTypesArray
+      );
       
-      isUploadingDocuments.value = false;
+      // 3. 🟢 อัปเดตหน้าจอ
+      // (Store โหลดข้อมูลใหม่จาก DB ให้แล้ว เราแค่เรียกฟังก์ชันจัดเรียงลงหน้าจอ)
+      if (typeof populateDocumentsFromStore === 'function') {
+        populateDocumentsFromStore(); 
+      }
+      
       customAlert.success('ອັບໂຫຼດເອກະສານສຳເລັດ!');
     } else {
       customAlert.info('ບໍ່ມີເອກະສານໃໝ່ໃຫ້ອັບໂຫຼດ');
@@ -1016,25 +1031,25 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     await loanContractStore.createContract(loanId, flatContractPayload);
 
     // 4. ອັບໂຫຼດເອກະສານທີ່ແນບມາ (ຖ້າມີການເພີ່ມໃໝ່)
-    let hasNewUploads = false;
-    for (const cat of allDocumentCategories.value) {
-      if (cat.files.some(f => f.file !== null)) hasNewUploads = true;
-    }
+    // let hasNewUploads = false;
+    // for (const cat of allDocumentCategories.value) {
+    //   if (cat.files.some(f => f.file !== null)) hasNewUploads = true;
+    // }
 
-    if (hasNewUploads) {
-      isUploadingDocuments.value = true;
-      for (const cat of allDocumentCategories.value) {
-        for (const f of cat.files) {
-          if (f.file) { 
-            const fileToUpload = f.file instanceof File ? f.file : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
-            await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, fileToUpload, cat.id);
-          }
-        }
-      }
-      await loanApplicationStore.fetchDocuments(loanId);
-      populateDocumentsFromStore();
-      isUploadingDocuments.value = false;
-    }
+    // if (hasNewUploads) {
+    //   isUploadingDocuments.value = true;
+    //   for (const cat of allDocumentCategories.value) {
+    //     for (const f of cat.files) {
+    //       if (f.file) { 
+    //         const fileToUpload = f.file instanceof File ? f.file : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
+    //         await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, fileToUpload, cat.id);
+    //       }
+    //     }
+    //   }
+    //   await loanApplicationStore.fetchDocuments(loanId);
+    //   populateDocumentsFromStore();
+    //   isUploadingDocuments.value = false;
+    // }
 
     customAlert.success('ບັນທຶກຂໍ້ມູນສັນຍາ ແລະ ໃບສະເໜີສຳເລັດ!');
     isEditingInModal.value = false;
@@ -1072,9 +1087,18 @@ const handleModalCurrencyInput = (field: keyof typeof modalLoanForm, e: Event) =
 const handleModalPriceInput = (e: Event) => { handleModalCurrencyInput('total_amount', e); modalLoanForm.monthly_payment = calculateModalMonthlyPayment() }
 const handleModalDownPaymentInput = (e: Event) => { handleModalCurrencyInput('down_payment', e); modalLoanForm.monthly_payment = calculateModalMonthlyPayment() }
 
+// 🟢 เพิ่มฟังก์ชันคำนวณดอกเบี้ยตามเดือนที่คุณต้องการ
+const getInterestRateByTerm = (months: number): number => {
+  if (!months || months <= 6) return 2.50;
+  if (months <= 12) return 2.00;
+  if (months <= 18) return 1.89;
+  if (months <= 24) return 1.75;
+  return 1.69;
+}
+
+// 🟢 เรียกใช้ในตอนที่ User เปลี่ยนจำนวนงวด (ระยะเวลา)
 const handleModalTermChange = () => {
-  const m = modalLoanForm.loan_period;
-  modalLoanForm.interest_rate = m <= 6 ? 2.5 : m <= 12 ? 2.0 : m <= 18 ? 1.89 : 1.75;
+  modalLoanForm.interest_rate = getInterestRateByTerm(modalLoanForm.loan_period);
 }
 
 watch(() => [modalLoanForm.total_amount, modalLoanForm.down_payment, modalLoanForm.interest_rate, modalLoanForm.loan_period], () => {

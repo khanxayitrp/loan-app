@@ -525,9 +525,34 @@ const openDocumentModal = async (loan: any) => {
   }
 };
 
-const openDeliveryNoteModal = (loan: any) => {
-  loanForDeliveryNote.value = loan;
-  showDeliveryNoteModal.value = true;
+const openDeliveryNoteModal = async (loan: any) => {
+  try {
+    // 1. ກວດສອບວ່າມີຂໍ້ມູນສັນຍາແລ້ວຫຼືຍັງ?
+    const contractRes = await loanContractStore.fetchContract(loan.id);
+    const contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
+    
+    if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
+      alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຮ່າງສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
+      return;
+    }
+
+    // 2. ກວດສອບວ່າມີຕາຕະລາງຜ່ອນຊຳລະແລ້ວຫຼືຍັງ?
+    const repaymentRes = await loanApplicationStore.fetchRepaymentSchedule(loan.id);
+    const hasRepayments = Array.isArray(repaymentRes) ? repaymentRes.length > 0 : (repaymentRes?.data ? true : false);
+    
+    if (!hasRepayments) {
+      alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຕາຕະລາງຜ່ອນຊຳລະ" ໃຫ້ສຳເລັດກ່ອນ!');
+      return;
+    }
+
+    // ຖ້າຜ່ານທັງສອງເງື່ອນໄຂ ຈຶ່ງອະນຸຍາດໃຫ້ເປີດ Modal ໄດ້
+    loanForDeliveryNote.value = loan;
+    showDeliveryNoteModal.value = true;
+
+  } catch (error) {
+    console.error("Error checking prerequisites for delivery note:", error);
+    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດກວດສອບຂໍ້ມູນສັນຍາ ແລະ ຕາຕະລາງຜ່ອນໄດ້. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.');
+  }
 };
 
 const openDraftContractModal = async () => {
