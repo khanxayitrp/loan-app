@@ -4,8 +4,8 @@
     <div class="relative flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div class="bg-base-100 shadow-base-300/20 z-1 w-full space-y-6 rounded-xl p-6 shadow-md sm:min-w-md lg:p-8">
         <div class="flex items-center gap-3">
-          <img src="/image/LOGO INSEE.png" class="size-8" alt="brand-logo" />
-          <h2 class="text-base-content text-xl font-bold">ສະຖາບັນການເງິນຈຸລະພາກທີ່ບໍ່ຮັບເງິນຝາກອິນຊີ</h2>
+          <img src="/image/LOGO INSEE 2026.png" class="size-8" alt="brand-logo" />
+          <h2 class="text-base-content text-xl font-bold">ສະຖາບັນການເງິນຈຸລະພາກທີ່ຮັບເງິນຝາກອິນຊີ</h2>
         </div>
 
         <div>

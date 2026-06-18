@@ -685,7 +685,7 @@ watch(() => props.show, async (newVal) => {
       selectedLoan.value = await loanApplicationStore.fetchLoanApplicationById(props.loanId)
       
       // ໂຫຼດເອກະສານ ແລະ ຈັດລົງ Array
-      await loanApplicationStore.fetchDocuments(props.loanId)
+      await loanApplicationStore.fetchDocuments(selectedLoan.value.customer_id)
       populateDocumentsFromStore()
 
       try { selectedContract.value = await loanContractStore.fetchContract(props.loanId) } catch (e) { }
@@ -821,7 +821,8 @@ const saveLoanFromModal = async () => {
     isEditingInModal.value = false
     customAlert.success('ບັນທຶກຂໍ້ມູນລູກຄ້າສຳເລັດ!')
     emit('refresh')
-  } catch (error: any) { customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message) } finally { isSaving.value = false }
+  } catch (error: any) { const errorMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ';
+    customAlert.error('ເກີດຂໍ້ຜິດພາດ', errorMsg) } finally { isSaving.value = false }
 }
 
 // 
@@ -871,7 +872,8 @@ const saveDocumentsOnly = async () => {
 
     isEditingInModal.value = false;
   } catch (error: any) {
-    customAlert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ', error.message);
+    const errorMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ';
+    customAlert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ', errorMsg);
   } finally {
     isSaving.value = false;
     isUploadingDocuments.value = false;
@@ -884,7 +886,9 @@ const handleSaveContract = async (customerId: number, formData: any) => {
 
   try {
     const loanId = selectedLoan.value.id;
-    const hasGuarantorOrRef = formData.hasGuarantor || formData.hasReference;
+    // 🟢 1. ກວດສອບປະເພດຜູ້ຄ້ຳປະກັນ ຫຼື ຜູ້ອ້າງອີງ
+    const refType = formData.hasGuarantor ? 'guarantor' : (formData.hasReference ? 'reference' : null);
+    const hasGuarantorOrRef = !!refType;
 
     const cData = formData?.customer || {};
     const wData = formData?.work || {};
@@ -934,6 +938,8 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       duration_years: wData.workYears || null, duration_months: wData.workMonths || null,
       position: wData.position || '', salary: wData.salary || null,
 
+      ref_type: refType,
+
       name: hasGuarantorOrRef && gData.fullname ? gData.fullname : 'ບໍ່ມີ',
       identity_number: hasGuarantorOrRef && gData.idCard ? gData.idCard : 'ບໍ່ມີ',
       GuarantorDOB: hasGuarantorOrRef && gData.dob ? gData.dob : null,
@@ -964,8 +970,8 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       loanId: loanId, cusFullName: cData.fullname || 'ບໍ່ລະບຸ', cusSex: cData.gender || 'ບໍ່ລະບຸ',
       cusDateOfBirth: cData.dob || new Date().toISOString().split('T')[0], cusPhone: cData.phone || 'ບໍ່ລະບຸ',
       cusMaritalStatus: cData.maritalStatus || 'ບໍ່ລະບຸ', cusIdPassNumber: cData.idCard || 'ບໍ່ລະບຸ',
-      cusIdPassDate: cData.idCardIssueDate || new Date().toISOString().split('T')[0],
-      cusIdPassExpiryDate: cData.idCardExpiryDate || new Date().toISOString().split('T')[0],
+      cusIdPassDate: cData.idCardIssueDate || "",
+      cusIdPassExpiryDate: cData.idCardExpiryDate || "",
       cusCensusNumber: cData.censusBook || 'ບໍ່ມີ', cusCensusCreated: cData.censusBookIssueDate || new Date().toISOString().split('T')[0],
       cusCensusAuthorizeBy: cData.censusAuthorizeBy || 'ບໍ່ລະບຸ', cusHouseNumber: cData.houseNumber || 'ບໍ່ລະບຸ',
       cusUnit: Number(cData.unit) || 0, cusAddress: formatAddr(cData.address), cusProvinceId: cData.address?.province_id || null,
@@ -988,6 +994,8 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       loanPeriod: Number(pData.loanTerm) || 0, totalInterest: Number(pData.totalInterest) || 0,
       fee: Number(pData.fee) || 0, monthlyPay: Number(pData.monthlyPayment) || 0,
       firstInstallmentAmount: Number(pData.firstInstallment) || 0, paymentDay: Number(pData.paymentDay) || 1,
+
+      ref_Type: refType,
 
       refName: hasGuarantorOrRef && gData.fullname ? gData.fullname : 'ບໍ່ມີ',
       refDateOfBirth: hasGuarantorOrRef && gData.dob ? gData.dob : null,

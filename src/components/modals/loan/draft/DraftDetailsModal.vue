@@ -675,7 +675,7 @@ watch(() => props.show, async (newVal) => {
     try {
       selectedDraft.value = await loanApplicationStore.fetchLoanApplicationById(props.draftId)
       
-      await loanApplicationStore.fetchDocuments(props.draftId)
+      await loanApplicationStore.fetchDocuments(selectedDraft.value.customer_id)
       populateDocumentsFromStore()
 
       try { selectedContract.value = await loanContractStore.fetchContract(props.draftId) } catch (e) { }
@@ -823,7 +823,8 @@ const saveDraftFromModal = async () => {
     customAlert.success('ບັນທຶກສຳເລັດ!')
     
     emit('refresh')
-  } catch (error: any) { customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message) } finally { isSaving.value = false }
+  } catch (error: any) { const errorMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ';
+    customAlert.error('ເກີດຂໍ້ຜິດພາດ', errorMsg) } finally { isSaving.value = false }
 }
 
 // 🟢 ฟังก์ชันสำหรับบันทึกเฉพาะหน้าแท็บ Documents
@@ -860,7 +861,7 @@ const saveDocumentsOnly = async () => {
       );
       
       // อัปเดตหน้าจอให้แสดงไฟล์ล่าสุดจาก Server
-      await loanApplicationStore.fetchDocuments(selectedDraft.value.id);
+      await loanApplicationStore.fetchDocuments(selectedDraft.value.customer_id);
       populateDocumentsFromStore(); 
       
       customAlert.success('ອັບໂຫຼດເອກະສານສຳເລັດ!');
@@ -871,7 +872,8 @@ const saveDocumentsOnly = async () => {
     // ปิดโหมดแก้ไขเมื่อทำเสร็จ
     isEditingInModal.value = false;
   } catch (error: any) {
-    customAlert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ', error.message);
+    const errorMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ';
+    customAlert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ', errorMsg);
   } finally {
     isUploadingDocuments.value = false;
   }
@@ -883,7 +885,9 @@ const handleSaveContract = async (customerId: number, formData: any) => {
 
   try {
     const loanId = selectedDraft.value.id;
-    const hasGuarantorOrRef = formData.hasGuarantor || formData.hasReference;
+    // 🟢 1. ກວດສອບປະເພດຜູ້ຄ້ຳປະກັນ ຫຼື ຜູ້ອ້າງອີງ
+    const refType = formData.hasGuarantor ? 'guarantor' : (formData.hasReference ? 'reference' : null);
+    const hasGuarantorOrRef = !!refType;
 
     const cData = formData?.customer || {};
     const wData = formData?.work || {};
@@ -938,6 +942,8 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       duration_months: wData.workMonths || null,
       position: wData.position || '',
       salary: wData.salary || null,
+
+      ref_type: refType,
 
       name: hasGuarantorOrRef && gData.fullname ? gData.fullname : 'ບໍ່ມີ',
       identity_number: hasGuarantorOrRef && gData.idCard ? gData.idCard : 'ບໍ່ມີ',
@@ -994,6 +1000,8 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       loanPeriod: Number(pData.loanTerm) || 0, totalInterest: Number(pData.totalInterest) || 0,
       fee: Number(pData.fee) || 0, monthlyPay: Number(pData.monthlyPayment) || 0,
       firstInstallmentAmount: Number(pData.firstInstallment) || 0, paymentDay: Number(pData.paymentDay) || 1,
+
+      ref_Type: refType,
 
       refName: hasGuarantorOrRef && gData.fullname ? gData.fullname : 'ບໍ່ມີ',
       refDateOfBirth: hasGuarantorOrRef && gData.dob ? gData.dob : null,

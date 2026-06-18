@@ -191,7 +191,7 @@ const props = defineProps<{
   loanApplication?: any | null
   loanContract?: any | null
   isEditing?: boolean
-  viewOnly?: boolean // 🌟 🟢 เพิ่มบรรทัดนี้เข้าไปครับ
+  viewOnly?: boolean 
 }>()
 
 const emit = defineEmits<{
@@ -208,14 +208,12 @@ const isEditing = ref(props.isEditing || false)
 const hasProductConflict = ref(false);
 const productDifferences = reactive<Record<string, any>>({});
 
-// 🟢 2. ສ້າງ ref ສຳລັບ CustomerSection
 const customerSectionRef = ref<InstanceType<typeof CustomerSection> | null>(null);
 const workSectionRef = ref<InstanceType<typeof WorkSection> | null>(null);
 const productSectionRef = ref<InstanceType<typeof ProductSection> | null>(null);
 const guarantorSectionRef = ref<InstanceType<typeof GuarantorSection> | null>(null);
 const guarantorWorkSectionRef = ref<InstanceType<typeof GuarantorWorkSection> | null>(null);
 
-// 🟢 Data State หลัก
 const formData = reactive({
   contractNumber: '',
   contractDate: { day: '', month: '', year: '' },
@@ -236,9 +234,9 @@ const formData = reactive({
     otherIncome: null as number | null, otherIncomeSource: '', phone: '', department: ''
   },
   product: {
-    description: '', type: '', brand: '', model: '',productColor: '', // 🟢 ເພີ່ມ
-    productSize: '',  // 🟢 ເພີ່ມ
-    variantId: null as number | null, // 🟢 ເພີ່ມແຖວນີ້ໄວ້ກຳນົດຄ່າເລີ່ມຕົ້ນ
+    description: '', type: '', brand: '', model: '',productColor: '', 
+    productSize: '',  
+    variantId: null as number | null, 
     price: null as number | null, downPayment: null as number | null,
     approvedAmount: null as number | null, interestRate: null as number | null,
     interestType: 'flat_rate', interestRateType: 'monthly',
@@ -280,7 +278,6 @@ const calculateAge = (dob: string): number | null => {
   return age;
 };
 
-// 
 const checkProductConflicts = () => {
   hasProductConflict.value = false;
   Object.keys(productDifferences).forEach(k => delete productDifferences[k]);
@@ -292,7 +289,6 @@ const checkProductConflicts = () => {
 
   if (!contract || !contract.id) return;
 
-  // 1. ກວດສອບຂໍ້ມູນຕົວເລກ (ລາຄາ, ເງິນດາວ, ດອກເບ້ຍ, ໄລຍະເວລາ)
   const getCVal = (key: string) => Number(contract[key] || 0);
   const getAVal = (key: string) => Number(app[key] || 0);
 
@@ -304,7 +300,6 @@ const checkProductConflicts = () => {
   ];
 
   numberChecks.forEach(item => {
-    // ໃຊ້ Math.abs ເພື່ອປຽບທຽບຄວາມຕ່າງ
     if (Math.abs(item.cVal - item.aVal) > 1) {
       hasProductConflict.value = true;
       productDifferences[item.key] = {
@@ -314,7 +309,6 @@ const checkProductConflicts = () => {
     }
   });
 
-  // 2. 🟢 ກວດສອບຂໍ້ມູນຕົວໜັງສື (Brand, Model, Description)
   const stringChecks = [
     { key: 'description', label: 'ລາຍລະອຽດສິນຄ້າ', cVal: contract.product_detail || '', aVal: app.product?.product_name || '' },
     { key: 'brand', label: 'ຍີ່ຫໍ້', cVal: contract.product_brand || '', aVal: app.product?.brand || '' },
@@ -331,7 +325,6 @@ const checkProductConflicts = () => {
     }
   });
 
-  // 3. 🟢 ກວດສອບ Variant (ສີ ແລະ ຂະໜາດ)
   const appVariant = app.variant || {};
   const variantChecks = [
     { key: 'product_color', label: 'ສີ', cVal: contract.product_color || '', aVal: appVariant.color || '' },
@@ -339,7 +332,6 @@ const checkProductConflicts = () => {
   ];
 
   variantChecks.forEach(item => {
-    // ປ້ອງກັນ error ຖ້າຂໍ້ມູນເປັນ null/undefined
     const cValStr = String(item.cVal || '').trim();
     const aValStr = String(item.aVal || '').trim();
     
@@ -353,27 +345,20 @@ const checkProductConflicts = () => {
   });
 }
 
-// const syncProductWithApplication = () => {
-//   loadDataFromProps();
-//   customAlert.success('ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍສຳເລັດແລ້ວ. ກະລຸນາກວດສອບ ແລະ ກົດບັນທຶກ.');
-// }
 const syncProductWithApplication = () => {
   const app = props.loanApplication;
   if (!app) return;
 
-  // 1. ອັບເດດຂໍ້ມູນສິນຄ້າຫຼັກ (ໃສ່ product object ຕາມໂຄງສ້າງ formData)
   formData.product.description = app.product?.product_name || app.product_detail || '';
   formData.product.brand = app.product?.brand || '';
   formData.product.model = app.product?.model || '';
   
-  // 2. ອັບເດດຂໍ້ມູນລາຄາ ແລະ ອື່ນໆ
   formData.product.price = Number(app.total_amount) || 0;
   formData.product.downPayment = Number(app.down_payment) || 0;
   formData.product.interestRate = Number(app.interest_rate_at_apply) || 0;
   formData.product.loanTerm = Number(app.loan_period) || 1;
   formData.product.monthlyPayment = Number(app.monthly_pay) || 0;
   
-  // 3. 🟢 ອັບເດດຂໍ້ມູນ Variant (ເພີ່ມໃສ່ formData ໂດຍກົງ)
   if (app.variant) {
       formData.product.productColor = app.variant.color || '';
       formData.product.productSize = app.variant.size_or_capacity || '';
@@ -384,7 +369,6 @@ const syncProductWithApplication = () => {
 
   formData.product.variantId = app.variant_id || app.variant?.id || null;
 
-  // 4. ຣີຄຳນວນໃໝ່ ແລະ ກວດສອບ Conflict
   calculateLoanDetails();
   checkProductConflicts();
   
@@ -511,7 +495,6 @@ const cancelEdit = () => { emit('cancel-edit'); isEditing.value = false; loadDat
 const saveForm = async () => {
   const el = document.querySelector('.form-section');
 
-  // 1. ກວດສອບ Validation ທຸກໆຟອມ
   if (customerSectionRef.value && !customerSectionRef.value.validateForm()) {
     customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນລູກຄ້າໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -527,11 +510,6 @@ const saveForm = async () => {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
-  // if (shopSectionRef.value && !shopSectionRef.value.validateForm()) {
-  //   customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນຮ້ານຄ້າຕົວແທນໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
-  //   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  //   return;
-  // }
   if (guarantorSectionRef.value && !guarantorSectionRef.value.validateForm()) {
     customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນຜູ້ຄ້ຳປະກັນ/ຜູ້ອ້າງອີງໃຫ້ຄົບຖ້ວນ.');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -543,13 +521,11 @@ const saveForm = async () => {
     return;
   }
 
-  // 2. ກຽມສົ່ງຂໍ້ມູນອອກໄປໜ້າຫຼັກ
   const customerId = props.loanContract?.customer_id || props.loanContract?.data?.customer_id || props.loanApplication?.customer_id;
   if (!customerId) return customAlert.error('ຂໍ້ຜິດພາດ', 'ບໍ່ພົບຂໍ້ມູນລູກຄ້າ');
   
   isSaving.value = true;
   try { 
-    // ສົ່ງຂໍ້ມູນໄປໃຫ້ Parent Page ເຮັດວຽກຕໍ່
     emit('save-form', customerId, formData); 
   } 
   catch (error: any) { 
@@ -648,7 +624,19 @@ const loadDataFromProps = () => {
     }
 
     if (sourceData.ref_name) {
-      formData.hasGuarantor = true
+      // 🟢 1. Check ref_Type from contract data
+      const rawRefType = sourceData.ref_Type || sourceData.ref_type || '';
+      const currentRefType = rawRefType.toLowerCase();
+      
+      // Assign the checkboxes correctly
+      formData.hasGuarantor = currentRefType === 'guarantor';
+      formData.hasReference = currentRefType === 'reference';
+
+      // Fallback if ref_type is somehow empty but we have ref data
+      if (!formData.hasGuarantor && !formData.hasReference && sourceData.ref_name) {
+          formData.hasGuarantor = true; 
+      }
+
       formData.guarantor.fullname = sourceData.ref_name || ''
       formData.guarantor.dob = sourceData.ref_date_of_birth || ''
       formData.guarantor.age = calculateAge(formData.guarantor.dob) || 0
@@ -754,7 +742,17 @@ const loadDataFromProps = () => {
 
     const guarantor = sourceData.loan_guarantors?.[0] || sourceData.loanGuarantors?.[0]
     if (guarantor) {
-      formData.hasGuarantor = true
+      // 🟢 2. Check ref_Type from application data
+      const rawRefType = guarantor.ref_type || guarantor.ref_Type || '';
+      const currentRefType = rawRefType.toLowerCase();
+
+      formData.hasGuarantor = currentRefType === 'guarantor';
+      formData.hasReference = currentRefType === 'reference';
+      
+      if (!formData.hasGuarantor && !formData.hasReference && (guarantor.name || guarantor.fullname)) {
+          formData.hasGuarantor = true; 
+      }
+
       formData.guarantor.fullname = guarantor.name || guarantor.fullname || ''
       formData.guarantor.dob = guarantor.date_of_birth || guarantor.dob || ''
       formData.guarantor.age = guarantor.age || calculateAge(formData.guarantor.dob) || 0
@@ -852,14 +850,10 @@ const loadDataFromProps = () => {
     formData.product.motorcycle.motorWarranty = app.motor_warranty || app.motorWarranty || null;
   }
 
-  // ==========================================
-  // 🟢 1. จัดการแยกประเภทสินค้าให้ถูกต้อง (ล้าง Logic บั๊กตัวเก่าออกแล้ว)
-  // ==========================================
   formData.productType.gold = false;
   formData.productType.general = false;
   formData.productType.motorcycle = false;
 
-  // ดึงชื่อและไอดีประเภทสินค้าจาก API มาเช็ค (รองรับทั้งแบบแบนและแบบเนส)
   const typeName = String(sourceData?.["producttype.type_name"] || sourceData?.product_type || app?.product?.producttype?.type_name || app?.producttype?.type_name || '').trim();
   const typeId = Number(sourceData?.producttype_id || sourceData?.["producttype.id"] || app?.producttype_id || app?.product?.producttype_id || 0);
 
@@ -867,17 +861,13 @@ const loadDataFromProps = () => {
     formData.productType.motorcycle = true;
   } 
   else if (typeName.includes('ຄຳ') || typeId === 8) {
-    formData.productType.gold = true; // 🌟 ติ๊กเลือกสินค้าทองคำสำเร็จ!
+    formData.productType.gold = true; 
   } 
   else {
     formData.productType.general = true;
   }
 
-  // ==========================================
-  // 🟢 2. โหลดข้อมูลจำเพาะ (Description & Variant)
-  // ==========================================
   if (!formData.productType.motorcycle) {
-    // โอนย้ายข้อมูลเข้าฟอร์มหลัก
     if (app && app.id) {
       formData.product.description = app.product?.product_name || app.product_detail || '';
       formData.product.brand = app.product?.brand || '';
@@ -890,7 +880,6 @@ const loadDataFromProps = () => {
       formData.product.price = Number(contractData.product_price) || 0;
     }
 
-    // จัดการสีและขนาด
     if (app?.variant) {
         formData.product.productColor = app.variant.color || '';
         formData.product.productSize = app.variant.size_or_capacity || app.variant.size || '';

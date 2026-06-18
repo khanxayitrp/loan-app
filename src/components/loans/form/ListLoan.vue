@@ -196,8 +196,9 @@ const openSchedule = async (loan: any) => {
 
     selectedScheduleLoan.value = fullLoan;
     showScheduleModal.value = true;
-  } catch (error) {
-    alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້');
+  } catch (error: any) {
+    const errorMsg = error.response?.data?.message || error.message || 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້';
+    alert.error('ເກີດຂໍ້ຜິດພາດ', errorMsg);
   }
 }
 
@@ -260,7 +261,18 @@ const debounceSearch = () => { clearTimeout(debounceTimer); debounceTimer = setT
 const applyDateFilter = () => currentPage.value = 1
 
 const fetchData = async () => {
-  await loanApplicationStore.fetchLoanApplications({ status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING, LoanApplicationStatus.VERIFIED] as any, is_confirmed: 1, limit: 1000 })
+  try {
+    // 🟢 ເພີ່ມ try...catch ເຂົ້າໄປກວມເອົາ API
+    await loanApplicationStore.fetchLoanApplications({ 
+      status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING, LoanApplicationStatus.VERIFIED] as any, 
+      is_confirmed: 1, 
+      limit: 1000 
+    })
+  } catch (error: any) {
+    // 🟢 ດຶງ Error ແຈ້ງ Client ທັນທີ ຖ້າດຶງຂໍ້ມູນຈາກ Server ບໍ່ສຳເລັດ
+    const errorMsg = error.response?.data?.message || error.message || 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນລາຍການສິນເຊື່ອໄດ້';
+    alert.error('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ', errorMsg);
+  }
 }
 
 const viewLoanDetails = (id: number) => {

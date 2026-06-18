@@ -49,23 +49,26 @@ export const uploadMultipleApplicationDocuments = async (
 ): Promise<any> => {
   try {
     if (files.length !== docTypes.length) {
-      throw new Error('ຈຳນວນໄຟລ໌ ແລະ ປະເພດເອກະສານຕ້ອງເທົ່າກັນ')
+      throw new Error('ຈຳນວນໄຟລ໌ ແລະ ປະເພດເອກະສານຕ້ອງເທົ່າກັນ');
     }
 
     const formData = new FormData();
     
+    // 🟢 1. แนบไฟล์เข้า FormData โดยใช้คีย์คำว่า 'files' (เติม s ให้ตรงกับ Backend)
     files.forEach((file, index) => {
       formData.append('files', file); 
-      // 🟢 แนบ doc_types คู่ไปกับไฟล์ เพื่อให้หลังบ้านรู้ว่าไฟล์ไหนคือเอกสารอะไร
       formData.append('doc_types', docTypes[index] || 'other'); 
     });
 
-    // 🟢 เปลี่ยน URL เป็น /upload/application/${customerId}/documents ตาม Swagger
+    // 🟢 2. ยิง API พร้อม "บังคับ" Header ให้เป็น multipart/form-data
+    // เพื่อป้องกันไม่ให้ apiClient แปลงข้อมูลไฟล์กลายเป็น JSON ก้อนเปล่าๆ
     const response = await apiClient.post(
       `/upload/application/${customerId}/documents`, 
       formData,
       {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data' 
+        }
       }
     );
 
@@ -82,10 +85,10 @@ export const uploadMultipleApplicationDocuments = async (
  * ดึงรายการเอกสารทั้งหมดของ Loan Application
  * @param applicationId - ID ของ Loan Application
  */
-export const getApplicationDocuments = async (applicationId: number): Promise<any> => {
+export const getApplicationDocuments = async (customerId: number): Promise<any> => {
   try {
     const response = await apiClient.get(
-      `/upload/application/${applicationId}/documents`
+      `/upload/application/${customerId}/documents`
     )
 
     console.log('[Upload API] Documents fetched:', response.data)

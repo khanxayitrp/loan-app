@@ -133,7 +133,7 @@
         </div>
 
         <div class="form-control relative">
-          <label class="label"><span class="label-text font-bold">ວັນເດືອນປີອອກບັດ: <span class="text-error">*</span></span></label>
+          <label class="label"><span class="label-text font-bold">ວັນເດືອນປີອອກບັດ: </span></label>
           <input 
             type="text" 
             :value="displayIdCardStartDate" 
@@ -142,12 +142,12 @@
             placeholder="dd/mm/yyyy"
             class="input input-sm input-bordered w-full pr-10"
             :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
-            @input="handleDateTyping($event, 'idCardStartDate')"
-            @blur="handleDateBlur($event, 'idCardStartDate')"
+            @input="handleDateTyping($event, 'idCardIssueDate')"
+            @blur="handleDateBlur($event, 'idCardIssueDate')"
           />
           <input 
             ref="hiddenIdCardStartDateInput"
-            v-model="data.idCardStartDate" 
+            v-model="data.idCardIssueDate" 
             type="date" 
             class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
             tabindex="-1"
@@ -163,7 +163,7 @@
         </div>
 
         <div class="form-control relative">
-          <label class="label"><span class="label-text font-bold">ວັນເດືອນປີໝົດອາຍຸບັດ: <span class="text-error">*</span></span></label>
+          <label class="label"><span class="label-text font-bold">ວັນເດືອນປີໝົດອາຍຸບັດ: </span></label>
           <input 
             type="text" 
             :value="displayIdCardExpiryDate" 
@@ -346,7 +346,7 @@ const errors = ref<Record<string, string>>({})
 // 🟢 Date Pickers Logic
 // ==========================================
 const displayDob = computed(() => formatDateToDDMMYYYY(props.data.dob))
-const displayIdCardStartDate = computed(() => formatDateToDDMMYYYY(props.data.idCardStartDate))
+const displayIdCardStartDate = computed(() => formatDateToDDMMYYYY(props.data.idCardIssueDate))
 const displayIdCardExpiryDate = computed(() => formatDateToDDMMYYYY(props.data.idCardExpiryDate))
 const displayCensusBookIssueDate = computed(() => formatDateToDDMMYYYY(props.data.censusBookIssueDate))
 
@@ -448,20 +448,20 @@ watch(() => props.data.dob, (newDob: string | undefined | null) => {
   props.data.age = calculatedAge;
 });
 
-watch(() => props.data.idCardStartDate, (newStartDate: string | undefined | null) => {
+watch(() => props.data.idCardIssueDate, (newStartDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newStartDate) return;
   
   if (newStartDate > getTodayDateString()) {
-    errors.value.idCardStartDate = 'ວັນທີອອກບັດບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້';
-    props.data.idCardStartDate = '';
+    errors.value.idCardIssueDate = 'ວັນທີອອກບັດບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້';
+    props.data.idCardIssueDate = '';
     return;
   }
 
   const expiryDate = props.data.idCardExpiryDate;
   if (expiryDate && newStartDate >= expiryDate) {
-    errors.value.idCardStartDate = 'ວັນທີອອກບັດບໍ່ສາມາດກາຍ ຫຼື ເທົ່າກັບວັນທີໝົດອາຍຸບັດໄດ້';
-    props.data.idCardStartDate = '';
+    errors.value.idCardIssueDate = 'ວັນທີອອກບັດບໍ່ສາມາດກາຍ ຫຼື ເທົ່າກັບວັນທີໝົດອາຍຸບັດໄດ້';
+    props.data.idCardIssueDate = '';
   }
 });
 
@@ -469,7 +469,7 @@ watch(() => props.data.idCardExpiryDate, (newExpiryDate: string | undefined | nu
   if (!props.isEditing) return;
   if (!newExpiryDate) return;
 
-  const startDate = props.data.idCardStartDate;
+  const startDate = props.data.idCardIssueDate;
   
   if (startDate && newExpiryDate <= startDate) {
     errors.value.idCardExpiryDate = 'ວັນເດືອນປີໝົດອາຍຸບັດຕ້ອງຫຼາຍກວ່າວັນທີອອກບັດ';

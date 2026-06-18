@@ -250,10 +250,10 @@
           <div class="md:col-span-4">
             <div class="address-grid-custom mt-1">
               <div class="input-sub">
-                <span class="font-bold">ບ້ານ: <span class="text-error">*</span></span>
+                <span class="font-bold">ບ້ານ: </span>
                 <input v-model="data.address.village" type="text" :readonly="!isEditing"
                   class="input input-sm input-bordered w-full" placeholder="ບ້ານ"
-                  :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.village ? 'input-error' : '']"
+                  :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
                   @input="errors.village = ''" />
                 <label v-if="errors.village" class="label p-0 pt-1">
                   <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.village }}</span>
@@ -261,11 +261,11 @@
               </div>
               
               <div class="input-sub">
-                <span class="font-bold">ເມືອງ: <span class="text-error">*</span></span>
+                <span class="font-bold">ເມືອງ: </span>
                 <select v-model="data.address.district_id" :disabled="!isEditing || !data.address.province_id"
                   @change="handleDistrictChange(); errors.district_id = ''" 
                   class="select-addr select-sm select-bordered w-full"
-                  :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.district_id ? 'select-error' : '']">
+                  :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'">
                   <option value="">-- ເລືອກເມືອງ --</option>
                   <option v-for="d in localDistricts" :key="d.district_id" :value="d.district_id">{{ d.district_name }}</option>
                 </select>
@@ -275,10 +275,10 @@
               </div>
               
               <div class="input-sub">
-                <span class="font-bold">ແຂວງ: <span class="text-error">*</span></span>
+                <span class="font-bold">ແຂວງ: </span>
                 <select v-model="data.address.province_id" :disabled="!isEditing"
                   class="select-addr select-sm select-bordered w-full"
-                  :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.province_id ? 'select-error' : '']"
+                  :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
                   @change="errors.province_id = ''">
                   <option value="">-- ເລືອກແຂວງ --</option>
                   <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{ p.province_name }}</option>
@@ -516,9 +516,9 @@ const validateForm = (): boolean => {
   // 🟢 ກວດສອບສະເພາະ 5 ຈຸດ ຕາມທີ່ກຳນົດ
   if (!props.data.fullname?.trim()) { errors.value.fullname = 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ'; isValid = false; }
   if (!props.data.relationship?.trim()) { errors.value.relationship = 'ກະລຸນາປ້ອນສາຍພົວພັນ'; isValid = false; }
-  if (!props.data.address?.village?.trim()) { errors.value.village = 'ກະລຸນາປ້ອນບ້ານ'; isValid = false; }
-  if (!props.data.address?.district_id) { errors.value.district_id = 'ກະລຸນາເລືອກເມືອງ'; isValid = false; }
-  if (!props.data.address?.province_id) { errors.value.province_id = 'ກະລຸນາເລືອກແຂວງ'; isValid = false; }
+  // if (!props.data.address?.village?.trim()) { errors.value.village = 'ກະລຸນາປ້ອນບ້ານ'; isValid = false; }
+  // if (!props.data.address?.district_id) { errors.value.district_id = 'ກະລຸນາເລືອກເມືອງ'; isValid = false; }
+  // if (!props.data.address?.province_id) { errors.value.province_id = 'ກະລຸນາເລືອກແຂວງ'; isValid = false; }
 
   return isValid;
 };

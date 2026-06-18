@@ -585,52 +585,54 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
      * อัปโหลดเอกสารหลายไฟล์พร้อมกัน
      */
     async uploadMultipleDocuments(
-      customerId: number, // 🟢 เปลี่ยนมารับ customerId เพื่อยิง API
-      applicationId: number, // รับมาไว้เพื่อใช้ fetchDocuments ท้ายสุด
+      customerId: number, 
+      applicationId: number, 
       files: File[],
       docTypes: string[]
     ) {
-      this.isUploadingDocuments = true
-      this.documentError = null
+      this.isUploadingDocuments = true;
+      this.documentError = null;
 
       try {
-        // 🟢 ส่ง customerId เข้า API
+        // 🟢 ส่งข้อมูลเข้า API
         const result = await uploadMultipleApplicationDocuments(
           customerId,
           files,
           docTypes
-        )
+        );
 
-        // โหลดข้อมูลเอกสารใหม่จาก Server เพื่ออัปเดตหน้าจอ
+        console.log('[Store] Multiple documents uploaded:', result);
+        // 🟢 โหลดข้อมูลเอกสารใหม่จาก Server เพื่ออัปเดตหน้าจอ
         if (this.currentLoanApplication?.id === applicationId) {
-          await this.fetchDocuments(applicationId);
+          // แจ้งหลังบ้านให้ดึงรูปของลูกค้ารหัสนี้กลับมาโชว์
+          await this.fetchDocuments(customerId); 
         }
 
-        return result
+        return result;
       } catch (error: any) {
-        console.error('[Store] Upload multiple documents failed:', error)
-        this.documentError = error.message
-        throw error
+        console.error('[Store] Upload multiple documents failed:', error);
+        this.documentError = error.message;
+        throw error;
       } finally {
-        this.isUploadingDocuments = false
+        this.isUploadingDocuments = false;
       }
     },
 
     /**
      * ดึงรายการเอกสารทั้งหมดของ Loan Application
      */
-    async fetchDocuments(applicationId: number) {
+    async fetchDocuments(customerId: number) {
       this.isLoading = true
       this.documentError = null
 
       try {
-        const documents = await getApplicationDocuments(applicationId)
+        const documents = await getApplicationDocuments(customerId)
 
-        // ตั้งค่าเอกสารปัจจุบัน
+        // ตั้งค่าเอกสารปัจจุบัน (รองรับทั้งกรณี response มี .data หรือเป็น array โดยตรง)
         this.currentDocuments = documents.data || documents
 
-        // อัปเดต currentLoanApplication ด้วยข้อมูลเอกสาร
-        if (this.currentLoanApplication?.id === applicationId) {
+        // 🟢 แก้ไขตรงนี้: เปลี่ยนจากเช็ค applicationId เป็นเช็ค customer_id แทน
+        if (this.currentLoanApplication && this.currentLoanApplication.customer_id === customerId) {
           this.currentLoanApplication = {
             ...this.currentLoanApplication,
             documents: this.currentDocuments

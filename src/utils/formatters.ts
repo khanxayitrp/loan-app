@@ -94,3 +94,15 @@ export const formatDateToDDMMYYYY = (dateString: string | null | undefined): str
   // ຖ້າຮູບແບບບໍ່ກົງ ກໍສົ່ງຄ່າເດີມກັບຄືນໄປ
   return dateString;
 }
+
+/**
+ * ດຶງວັນທີປັດຈຸບັນ ແລະ ແປງເປັນ DD/MM/YYYY ສະເໝີ (ສຳລັບວັນທີພິມເອກະສານ)
+ */
+export const getCurrentDateDDMMYYYY = (): string => {
+  const date = new Date();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0'); 
+  const year = date.getFullYear();
+  
+  return `${day}/${month}/${year}`;
+};

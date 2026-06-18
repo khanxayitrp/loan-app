@@ -219,7 +219,8 @@ const deleteDraft = async (id: number) => {
     await loanApplicationStore.updateLoanApplication(id, { status: LoanApplicationStatus.REJECTED, remarks: 'ລຶບຮ່າງ' } as any)
     alert.success('ລຶບສຳເລັດ!')
     await fetchData()
-  } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.message) }
+  } catch (error: any) { const errorMsg = error.response?.data?.message || error.message || 'ບໍ່ສາມາດລຶບຮ່າງໄດ້';
+    alert.error('ເກີດຂໍ້ຜິດພາດ', errorMsg) }
 }
 
 const confirmSubmitDraft = async (draft: any) => {
@@ -234,7 +235,8 @@ const submitDraft = async () => {
     alert.success('ສົ່ງຄຳຂໍສຳເລັດ!')
     showSubmitModal.value = false
     await fetchData()
-  } catch (error: any) { alert.error('ສົ່ງຄຳຂໍລົ້ມເຫຼວ', error.message) }
+  } catch (error: any) { const errorMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດໃນການສົ່ງຄຳຂໍ';
+    alert.error('ສົ່ງຄຳຂໍລົ້ມເຫຼວ', errorMsg) }
   isVerifying.value = false
 }
 

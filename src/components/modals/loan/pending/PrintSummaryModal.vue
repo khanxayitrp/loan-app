@@ -24,8 +24,8 @@
           </div>
 
           <div class="flex justify-between text-sm mb-4">
-            <div><strong>ເລກທີສິນເຊື່ອ (Loan ID):</strong> {{ printData.loan.loan_id }}</div>
-            <div><strong>ວັນທີພິມ:</strong> {{ new Date().toLocaleDateString('lo-LA') }}</div>
+            <div><strong>ເລກທີສັນຍາ:</strong> {{ printData.loan.loan_contracts?.[0]?.loan_contract_number }}</div>
+            <div><strong>ວັນທີພິມ:</strong> {{ getCurrentDateDDMMYYYY() }}</div>
           </div>
 
           <div class="mb-4">
@@ -157,7 +157,7 @@
 import { ref } from 'vue';
 import apiClient from '@/api/apiclient';
 import { alert } from '@/utils/alert';
-import { formatPrice } from '@/utils/formatters';
+import { formatPrice, getCurrentDateDDMMYYYY } from '@/utils/formatters';
 
 const props = defineProps<{ isOpen: boolean; printData: any }>();
 const emit = defineEmits<{ (e: 'close'): void }>();

@@ -898,6 +898,51 @@ const customerSearchMessage = ref('')
 const allowEditFoundCustomer = ref(false)
 const existingCustomerId = ref<number | undefined>(undefined)
 
+// const searchCustomerByPhone = async () => {
+//   if (!customerSearchPhone.value || customerSearchPhone.value.trim().length < 8) {
+//     customerSearchMessage.value = 'ກະລຸນາປ້ອນເບີໂທລະສັບທີ່ຖືກຕ້ອງ'
+//     return
+//   }
+
+//   isSearchingCustomer.value = true
+//   customerSearchMessage.value = ''
+//   foundCustomer.value = null
+
+//   try {
+//     const customer = await loanApplicationStore.fetchCustomerByPhone(customerSearchPhone.value.trim())
+
+//     if (customer) {
+//       foundCustomer.value = customer
+//       existingCustomerId.value = customer.id
+//       customerSearchMessage.value = `ພົບຂໍ້ມູນລູກຄ້າ: ${customer.first_name} ${customer.last_name}`
+
+//       customerForm.first_name = customer.first_name || ''
+//       customerForm.last_name = customer.last_name || ''
+//       customerForm.phone = customer.phone
+//       customerForm.id_card = customer.identity_number || ''
+//       customerForm.address = customer.address || ''
+//       customerForm.province_id = customer.province_id || ''
+//       if (customer.province_id) await addressStore.fetchDistricts(customer.province_id)
+//       customerForm.district_id = customer.district_id || ''
+//       customerForm.occupation = customer.occupation || ''
+//       customerForm.monthly_income = Math.floor(Number(customer.income_per_month)) || 0
+//       customerForm.other_debts = Math.floor(Number(customer.other_debts)) || 0
+//       customerForm.age = customer.age || 18
+
+//       Object.keys(customerErrors).forEach(key => {
+//         customerErrors[key as keyof typeof customerErrors] = ''
+//       })
+//     } else {
+//       customerSearchMessage.value = 'ບໍ່ພົບຂໍ້ມູນລູກຄ້າ - ສາມາດປ້ອນຂໍ້ມູນໃໝ່ໄດ້'
+//       customerForm.phone = customerSearchPhone.value.trim()
+//     }
+//   } catch (error: any) {
+//     customerSearchMessage.value = 'ເກີດຂໍ້ຜິດພາດການຄົ້ນຫາ'
+//   } finally {
+//     isSearchingCustomer.value = false
+//   }
+// }
+
 const searchCustomerByPhone = async () => {
   if (!customerSearchPhone.value || customerSearchPhone.value.trim().length < 8) {
     customerSearchMessage.value = 'ກະລຸນາປ້ອນເບີໂທລະສັບທີ່ຖືກຕ້ອງ'
@@ -907,12 +952,16 @@ const searchCustomerByPhone = async () => {
   isSearchingCustomer.value = true
   customerSearchMessage.value = ''
   foundCustomer.value = null
+  
+  // 🟢 1. สิ่งที่หายไป: ต้องรีเซ็ต ID ลูกค้าเก่าทิ้งทุกครั้งที่เริ่มค้นหาใหม่
+  existingCustomerId.value = undefined
 
   try {
     const customer = await loanApplicationStore.fetchCustomerByPhone(customerSearchPhone.value.trim())
 
     if (customer) {
       foundCustomer.value = customer
+      // 🟢 2. ถ้าเจอลูกค้าเก่า ค่อยเซ็ต ID ให้มัน
       existingCustomerId.value = customer.id
       customerSearchMessage.value = `ພົບຂໍ້ມູນລູກຄ້າ: ${customer.first_name} ${customer.last_name}`
 
@@ -935,9 +984,19 @@ const searchCustomerByPhone = async () => {
     } else {
       customerSearchMessage.value = 'ບໍ່ພົບຂໍ້ມູນລູກຄ້າ - ສາມາດປ້ອນຂໍ້ມູນໃໝ່ໄດ້'
       customerForm.phone = customerSearchPhone.value.trim()
+      // 🟢 3. ถ้าไม่เจอลูกค้าเก่า ต้องมั่นใจว่า ID เป็น undefined เพื่อให้ระบบสร้างลูกค้าใหม่
+      existingCustomerId.value = undefined
     }
   } catch (error: any) {
-    customerSearchMessage.value = 'ເກີດຂໍ້ຜິດພາດການຄົ້ນຫາ'
+    // ຖ້າເປັນ 404 (ບໍ່ພົບ) ໃຫ້ສະແດງວ່າບໍ່ພົບຂໍ້ມູນ (ເປັນເລື່ອງປົກກະຕິຂອງລູກຄ້າໃໝ່)
+    if (error.response?.status === 404) {
+        customerSearchMessage.value = 'ບໍ່ພົບຂໍ້ມູນລູກຄ້າ - ສາມາດປ້ອນຂໍ້ມູນໃໝ່ໄດ້'
+    } else {
+        // ແຕ່ຖ້າເປັນ Error ອື່ນ (ເຊັ່ນ 500) ໃຫ້ດຶງຂໍ້ຄວາມມາແຈ້ງເຕືອນ
+        const backendMessage = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດການຄົ້ນຫາ';
+        customerSearchMessage.value = backendMessage;
+    }
+    existingCustomerId.value = undefined
   } finally {
     isSearchingCustomer.value = false
   }
@@ -973,6 +1032,7 @@ watch(selectedProduct, () => {
     calculateInitialLoanDetails()
   }
 })
+
 
 const customerForm = reactive({
   first_name: '', last_name: '', phone: '', id_card: '', age: 18, province_id: '', district_id: '', address: '', occupation: '', monthly_income: 0, other_debts: 0
@@ -1069,10 +1129,13 @@ const switchToDocumentsTab = async () => {
   }
 }
 
-const useExistingDocuments = () => {
+const useExistingDocuments = async () => {
+  // 🟢 ກໍລະນີທີ່ລູກຄ້າເລືອກໃຊ້ເອກະສານເດີມ
+  // ຄວນມີ API ບອກຫຼັງບ້ານໃຫ້ Copy ເອກະສານຈາກ Customer ID ມາໃສ່ Loan ID ໃໝ່
+  // ຖ້າຫຼັງບ້ານທ່ານອອກແບບໃຫ້ດຶງຈາກ Customer ຢູ່ແລ້ວ ກໍສາມາດຂ້າມໄປໄດ້ເລີຍ
   showSuccessModal.value = false;
   alert.success('ສຳເລັດ', 'ບັນທຶກຮ່າງຄຳຂໍ ແລະ ນຳໃຊ້ເອກະສານເດີມຮຽບຮ້ອຍແລ້ວ');
-  router.push({ name: 'ListDraftLoans' })
+  router.push({ name: 'ListDraftLoans' });
 }
 
 let shopSearchTimer: NodeJS.Timeout | null = null
@@ -1251,24 +1314,45 @@ const handleDirectSubmit = async () => {
 
   isSubmitting.value = true
   try {
+
+    // =========================================================
+    // 🟢 เพิ่มโค้ดดักจับตรงนี้: ถ้าพนักงานไม่ได้กดค้นหา แต่กรอกเบอร์ลงไปเลย
+    // ให้ระบบแอบเอาเบอร์ไปเช็คหลังบ้านก่อนว่ามีลูกค้าคนนี้อยู่แล้วหรือไม่
+    // =========================================================
+    if (!existingCustomerId.value && customerForm.phone) {
+      try {
+        const checkCustomer = await loanApplicationStore.fetchCustomerByPhone(customerForm.phone.trim());
+        if (checkCustomer && checkCustomer.id) {
+          // ถ้ามีเบอร์นี้ในระบบแล้ว ให้ผูก ID ให้เลย Backend จะได้ไม่ Error เบอร์ซ้ำ
+          existingCustomerId.value = checkCustomer.id;
+        }
+      } catch (err) {
+        // ถ้าไม่เจอ หรือ error ก็ปล่อยผ่านให้เป็นลูกค้าใหม่ตามปกติ
+        console.log("No existing customer found, proceeding as new customer.");
+      }
+    }
+    // =========================================================
     const result = await submitLoanApplication();
     const resData = result as any;
+    console.log('✅ Loan application submitted successfully:', resData);
 
-    if (resData.existing_customer_id) {
-        existingCustomerId.value = resData.existing_customer_id;
-    } else if (resData.customer?.id) {
-        existingCustomerId.value = resData.customer.id;
-    } else if (result.application?.customer_id) {
-        existingCustomerId.value = result.application.customer_id;
-    } else if (resData.data?.customer_id) {
-        existingCustomerId.value = resData.data.customer_id;
-    }
+    // if (resData.existing_customer_id) {
+    //     existingCustomerId.value = resData.existing_customer_id;
+    // } else if (resData.customer?.id) {
+    //     existingCustomerId.value = resData.customer.id;
+    // } else if (result.application?.customer_id) {
+    //     existingCustomerId.value = result.application.customer_id;
+    // } else if (resData.data?.customer_id) {
+    //     existingCustomerId.value = resData.data.customer_id;
+    // }
 
     showSuccessModal.value = true
     canAccessDocuments.value = true
   } catch (error: any) {
     console.error('❌ Failed to submit loan application:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດການສົ່ງຄຳຂໍ', error.message || 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ')
+    // 🌟 ແກ້ໄຂບ່ອນນີ້: ດຶງຂໍ້ຄວາມ Error ຈາກຫຼັງບ້ານມາສະແດງ
+    const backendMessage = error.response?.data?.message || error.message || 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ';
+    alert.error('ເກີດຂໍ້ຜິດພາດການສົ່ງຄຳຂໍ', backendMessage);
   } finally {
     isSubmitting.value = false
   }
@@ -1380,19 +1464,23 @@ const submitDocuments = async () => {
   try {
     const filesToUpload: File[] = [];
     const docTypesArray: string[] = [];
+    const existingDocIds: number[] = []; // 🟢 ເພີ່ມ Array ເກັບ ID ຂອງເອກະສານເກົ່າ
 
-    // 🟢 ດຶງສະເພາະໄຟລ໌ທີ່ອັບໂຫຼດໃໝ່ເທົ່ານັ້ນ
     for (const cat of allDocumentCategories.value) {
       for (const f of cat.files) {
         if (f.file) {
+          // 🟢 ໄຟລ໌ໃໝ່
           const fileObj = f.file instanceof File ? f.file : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
           filesToUpload.push(fileObj);
           docTypesArray.push(cat.id);
+        } else if (f.id) {
+          // 🟢 ໄຟລ໌ເກົ່າທີ່ດຶງມາຈາກລະບົບ
+          existingDocIds.push(f.id);
         }
       }
     }
 
-    // 🟢 ສົ່ງໄປໃຫ້ Store ຈັດການແບບ Bulk
+    // 🟢 ຍິງ API ອັບໂຫຼດສະເພາະເມື່ອມີ "ໄຟລ໌ໃໝ່"
     if (filesToUpload.length > 0) {
       await loanApplicationStore.uploadMultipleDocuments(
         currentLoan.customer_id, 
@@ -1402,21 +1490,48 @@ const submitDocuments = async () => {
       );
     }
 
+    // 🟢 (ທາງເລືອກ) ຖ້າຫຼັງບ້ານຕ້ອງການໃຫ້ສົ່ງ existingDocIds ໄປຜູກກັບ Loan ID ໃໝ່
+    // ຖ້າບໍ່ຈຳເປັນ, ລະບົບຈະຖືວ່າສຳເລັດເລີຍ
+    
     alert.success('ບັນທຶກເອກະສານສຳເລັດ!')
-    await loanApplicationStore.fetchDocuments(currentLoan.id)
+    
+    // 🟢 ແກ້ໄຂການ Fetch ເອກະສານຫຼັງຈາກບັນທຶກ: ໃຊ້ ID ໃຫ້ຖືກຕ້ອງ
+    // ຖ້າເອກະສານຜູກກັບລູກຄ້າ ໃຫ້ໃຊ້ currentLoan.customer_id
+    await loanApplicationStore.fetchDocuments(currentLoan.customer_id) 
+    
     await loanApplicationStore.fetchLoanApplicationById(currentLoan.id)
     router.push({ name: 'ListDraftLoans' })
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting documents:', error)
-    alert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ')
+    // 🌟 ແກ້ໄຂບ່ອນນີ້: ດຶງຂໍ້ຄວາມ Error ຈາກຫຼັງບ້ານມາສະແດງ
+    const backendMessage = error.response?.data?.message || error.message || 'ກະລຸນາກວດສອບ Backend ຂອງທ່ານ';
+    alert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກເອກະສານ', backendMessage);
   } finally {
     isSubmitting.value = false
   }
 }
 
 onMounted(async () => {
-  await shopStore.fetchAllShop()
+  // 🟢 ล้างข้อมูลฟอร์มและ ID ให้สะอาดหมดจดทุกครั้งที่เข้ามาหน้านี้ใหม่
+  existingCustomerId.value = undefined;
+  foundCustomer.value = null;
+  customerSearchPhone.value = '';
+  customerSearchMessage.value = '';
+  
+  customerForm.first_name = '';
+  customerForm.last_name = '';
+  customerForm.phone = '';
+  customerForm.id_card = '';
+  customerForm.address = '';
+  customerForm.province_id = '';
+  customerForm.district_id = '';
+  customerForm.occupation = '';
+  customerForm.monthly_income = 0;
+  customerForm.other_debts = 0;
+  customerForm.age = 18;
+
+  await shopStore.fetchAllShop();
   await addressStore.fetchProvinces();
 })
 </script>
