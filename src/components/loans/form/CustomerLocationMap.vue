@@ -256,6 +256,7 @@ const toggleIsPrimary = () => {
 }
 
 // ✅ ຟັງຊັນດຶງພິກັດຈາກ Link ທີ່ວາງ (Paste Link Logic)
+// ✅ ຟັງຊັນດຶງພິກັດຈາກ Link ທີ່ວາງ (Paste Link Logic - Best Practice)
 const handleMapLinkPaste = () => {
   const url = pastedMapUrl.value.trim();
   if (!url) return;
@@ -263,26 +264,34 @@ const handleMapLinkPaste = () => {
   let lat: number | null = null;
   let lng: number | null = null;
 
-  // 1. ແຍກພິກັດຈາກຮູບແບບ @lat,lng (Google Maps ເທິງເວັບ)
-  // ຕົວຢ່າງ: https://www.google.com/maps/place/.../@17.9757,102.6331,15z
-  const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (atMatch) {
-    // ຖ້າ atMatch[1] ເປັນ undefined, ມັນຈະເອົາ '0' ໄປແປງເປັນຕົວເລກແທນ
-    lat = parseFloat(atMatch[1] || '0');
-    lng = parseFloat(atMatch[2] || '0');
+  // 🟢 Priority 1: ດຶງຕຳແໜ່ງໝຸດແທ້ໆຈາກ (Data parameters: !3d... !4d...)
+  // ຕົວຢ່າງ: ...!3d17.99775!4d102.632236...
+  const pinMatch = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if (pinMatch) {
+    lat = parseFloat(pinMatch[1] || '0');
+    lng = parseFloat(pinMatch[2] || '0');
   }
 
-  // 2. ແຍກພິກັດຈາກຮູບແບບ ?q=lat,lng ຫລື &q=lat,lng
-  // ຕົວຢ່າງ: https://maps.google.com/?q=17.9757,102.6331
+  // 🟢 Priority 2: ດຶງຈາກ Query parameters (?q= ຫຼື &q= ຫຼື query=)
   if (!lat || !lng) {
-    const qMatch = url.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    // ຮອງຮັບທັງການຂັ້ນດ້ວຍຈຸດ (,) ແລະ URL Encode (%2C)
+    const qMatch = url.match(/[?&](?:q|query|ll)=(-?\d+\.\d+)[,%2C]+(-?\d+\.\d+)/i);
     if (qMatch) {
       lat = parseFloat(qMatch[1] || '0');
       lng = parseFloat(qMatch[2] || '0');
     }
   }
 
-  // 3. ແຍກພິກັດຈາກຮູບແບບທີ່ພິມຕົວເລກລ້ວນໆ "17.9757, 102.6331"
+  // 🟢 Priority 3: ດຶງຈາກ Viewport / Camera (@lat,lng) - ໃຊ້ເປັນທາງເລືອກສຳຮອງ
+  if (!lat || !lng) {
+    const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (atMatch) {
+      lat = parseFloat(atMatch[1] || '0');
+      lng = parseFloat(atMatch[2] || '0');
+    }
+  }
+
+  // 🟢 Priority 4: ກໍລະນີພິມພິກັດມາລ້ວນໆ "17.9757, 102.6331"
   if (!lat || !lng) {
     const rawMatch = url.match(/^(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)$/);
     if (rawMatch) {
@@ -291,7 +300,14 @@ const handleMapLinkPaste = () => {
     }
   }
 
-  if (lat && lng) {
+  // ກວດສອບຄວາມຖືກຕ້ອງ ແລະ ນຳໄປໃຊ້
+  if (lat !== null && lng !== null) {
+    // ປ້ອງກັນການດຶງພິກັດທີ່ຜິດພາດ (Validation)
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      alert('ພິກັດບໍ່ຖືກຕ້ອງ (ຄ່າທີ່ອ່ານໄດ້ຢູ່ນອກເໜືອແຜນທີ່ໂລກ)');
+      return;
+    }
+
     // ບັນທຶກຄ່າລົງຟອມ
     locationForm.value.latitude = lat;
     locationForm.value.longitude = lng;
@@ -311,11 +327,15 @@ const handleMapLinkPaste = () => {
       }
 
       map.value.panTo(position);
-      map.value.setZoom(16);
+      map.value.setZoom(17); // ຊູມເຂົ້າໄປໃກ້ຂຶ້ນອີກໜ້ອຍໜຶ່ງເມື່ອໄດ້ພິກັດທີ່ຊັດເຈນ
     }
-  } else if (url.includes('maps.app.goo.gl')) {
-    // ກໍລະນີເປັນ Short Link (ເຊິ່ງ JavaScript ບໍ່ສາມາດອ່ານ redirect ໄດ້ໂດຍກົງ)
+  } 
+  // ກວດຈັບ Short Link ຂອງ Google Maps ທີ່ມັກພົບເຫັນ
+  else if (url.includes('goo.gl') || url.includes('maps.app.goo.gl') || url.includes('g.page')) {
     alert('ລະບົບບໍ່ສາມາດດຶງພິກັດຈາກ Short link ໄດ້ອັດຕະໂນມັດ, ກະລຸນາເປີດລີ້ງໃນ Browser ກ່ອນ ແລ້ວກັອບປີ້ລີ້ງຍາວ (URL) ດ້ານເທິງມາໃສ່ແທນ');
+  } 
+  else {
+    alert('ບໍ່ສາມາດອ່ານພິກັດຈາກລີ້ງທີ່ວາງໄດ້, ກະລຸນາກວດສອບລີ້ງອີກຄັ້ງ');
   }
 }
 

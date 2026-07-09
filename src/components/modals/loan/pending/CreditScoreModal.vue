@@ -14,10 +14,10 @@
 
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-6 text-sm border border-gray-200 dark:border-gray-700">
           <div><span class="text-gray-500 block mb-1">ອາຍຸລູກຄ້າ</span><span class="font-bold text-base">{{ form.age }} ປີ</span></div>
-          <div><span class="text-gray-500 block mb-1">ອາຍຸການເຮັດວຽກ</span><span class="font-bold text-base">{{ form.job_tenure_years }} ປີ</span></div>
+          <div><span class="text-gray-500 block mb-1">ອາຍຸການເຮັດວຽກ</span><span class="font-bold text-base">{{ form.job_tenure_years }} ປີ {{ form.job_tenure_months }} ເດືອນ</span></div>
           <div><span class="text-gray-500 block mb-1">ສະຖານະ CIB</span><span class="font-bold text-base text-indigo-600">{{ getCibLabel(form.cib_status) }}</span></div>
           <div><span class="text-gray-500 block mb-1">ອັດຕາສ່ວນໜີ້ສິນ (DSR)</span><span class="font-bold text-base text-red-500">{{ form.dsr_percent.toFixed(2) }}%</span></div>
-          
+
           <div v-if="form.is_gold">
             <span class="text-gray-500 block mb-1">ອັດຕາສ່ວນເງິນກູ້ (LTV)</span>
             <span class="font-bold text-base text-blue-600">{{ form.ltv_percent.toFixed(2) }}%</span>
@@ -44,11 +44,22 @@
                   <tr><th>ປັດໄຈປະເມີນ (Scoring Factor)</th><th class="text-right w-24">ຄະແນນທີ່ໄດ້</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>1. ອາຍຸ (Age)</td><td class="text-right font-medium">{{ result.details.ageScore }} / 15</td></tr>
-                  <tr><td>2. ອາຍຸການເຮັດວຽກ (Job Tenure)</td><td class="text-right font-medium">{{ result.details.tenureScore }} / 15</td></tr>
-                  <tr><td>3. ລາຍຮັບ ແລະ ໜີ້ສິນ (Income & DSR)</td><td class="text-right font-medium">{{ result.details.dsrScore }} / 25</td></tr>
-                  <tr><td>4. ປະຫວັດສິນເຊື່ອ (Credit History / CIB)</td><td class="text-right font-medium">{{ result.details.cibScore }} / 20</td></tr>
-                  
+                  <tr>
+                    <td>1. ອາຍຸ (Age)</td>
+                    <td class="text-right font-medium">{{ result.details.ageScore }} / {{ result.details.factor1Max }}</td>
+                  </tr>
+                  <tr>
+                    <td>2. ອາຍຸການເຮັດວຽກ (Job Tenure)</td>
+                    <td class="text-right font-medium">{{ result.details.tenureScore }} / {{ result.details.factor2Max }}</td>
+                  </tr>
+                  <tr>
+                    <td>3. ລາຍຮັບ ແລະ ໜີ້ສິນ (Income & DSR)</td>
+                    <td class="text-right font-medium">{{ result.details.dsrScore }} / 25</td>
+                  </tr>
+                  <tr>
+                    <td>4. ປະຫວັດສິນເຊື່ອ (Credit History / CIB)</td>
+                    <td class="text-right font-medium">{{ result.details.cibScore }} / 20</td>
+                  </tr>
                   <tr>
                     <td>5. {{ form.is_gold ? 'ອັດຕາສ່ວນເງິນກູ້ (LTV)' : 'ເງິນວາງດາວ (Down Payment)' }}</td>
                     <td class="text-right font-medium">{{ result.details.dpScore }} / {{ result.details.factor5Max }}</td>
@@ -92,11 +103,12 @@ const result = ref<any>(null);
 const form = reactive({
   age: 0,
   job_tenure_years: 0,
+  job_tenure_months: 0,
   cib_status: 'no_delay',
   dsr_percent: 0,
   down_payment_percent: 0,
-  ltv_percent: 0, // 🟢 ເພີ່ມໂຕແປເກັບ LTV
-  is_gold: false  // 🟢 ເພີ່ມໂຕແປເຊັກປະເພດສິນຄ້າຄຳ
+  ltv_percent: 0,
+  is_gold: false
 });
 
 const getCibLabel = (status: string) => {
@@ -104,6 +116,39 @@ const getCibLabel = (status: string) => {
   return map[status] || status;
 };
 
+// watch(() => props.isOpen, (newVal) => {
+//   if (newVal && props.loan && props.summaryData) {
+//     result.value = null;
+//     const basic = props.summaryData.basic_verification || {};
+//     const income = props.summaryData.income_assessment || {};
+//     const cib = props.summaryData.cib_check || {};
+
+//     let age = props.loan.customer?.age || 0;
+//     if (!age && basic.verified_dob) {
+//       const diffMs = Date.now() - new Date(basic.verified_dob).getTime();
+//       age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+//     }
+//     form.age = age;
+//     form.job_tenure_years = Number(basic.work_years) || 0;
+//     form.job_tenure_months = Number(basic.work_months) || 0;
+//     form.cib_status = cib.cib_status || cib.overall_cib_status || 'no_delay';
+
+//     const totalIncome = (Number(income.average_monthly_income) || 0) + (Number(income.other_verified_income) || 0);
+//     const totalDebt = (Number(income.existing_debt_payments) || 0) + (Number(income.proposed_installment) || 0);
+//     form.dsr_percent = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 100;
+
+//     const price = Number(basic.verified_price) || Number(props.loan.product?.price) || Number(props.loan.total_amount) || 1;
+//     const dp = Number(basic.verified_down_payment) || Number(props.loan.down_payment) || 0;
+
+//     form.down_payment_percent = (dp / price) * 100;
+//     const remainingLoan = price - dp;
+//     form.ltv_percent = (remainingLoan / price) * 100;
+
+//     const typeName = String(props.loan.product?.productType?.type_name || props.loan.producttype?.type_name || '').trim();
+//     const typeId = Number(props.loan.product?.productType_id || props.loan.producttype_id || 0);
+//     form.is_gold = typeName.includes('ຄຳ') || typeId === 8 || typeId === 1;
+//   }
+// });
 watch(() => props.isOpen, (newVal) => {
   if (newVal && props.loan && props.summaryData) {
     result.value = null;
@@ -111,28 +156,47 @@ watch(() => props.isOpen, (newVal) => {
     const income = props.summaryData.income_assessment || {};
     const cib = props.summaryData.cib_check || {};
 
+    // 1. ຄິດໄລ່ອາຍຸ
     let age = props.loan.customer?.age || 0;
     if (!age && basic.verified_dob) {
       const diffMs = Date.now() - new Date(basic.verified_dob).getTime();
       age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
     }
     form.age = age;
-    form.job_tenure_years = Number(basic.work_years) || 0;
+
+    // 2. ອາຍຸການເຮັດວຽກ
+    const workInfo = props.loan.customer?.customer_work_infos?.[0] || props.loan.customer?.work_info?.[0];
+    form.job_tenure_years = Number(basic.work_years) || Number(workInfo?.duration_years) || 0;
+    form.job_tenure_months = Number(basic.work_months) || Number(workInfo?.duration_months) || 0;
+
+    // 3. ສະຖານະ CIB
     form.cib_status = cib.cib_status || cib.overall_cib_status || 'no_delay';
 
-    const totalIncome = (Number(income.average_monthly_income) || 0) + (Number(income.other_verified_income) || 0);
-    const totalDebt = (Number(income.existing_debt_payments) || 0) + (Number(income.proposed_installment) || 0);
+    // 4. ຄິດໄລ່ DSR ໃໝ່ໃຫ້ເປະ 100% ໂດຍອ້າງອີງຈາກ Loan ຖ້າ Income ຍັງບໍ່ Update
+    const contractIncome = Number(props.loan.loan_contracts?.[0]?.cus_income_other) || 0;
+    const cusIncome = Number(props.loan.customer?.income_per_month) || 0;
+    const cusDebt = Number(props.loan.customer?.other_debts) || 0;
+    const monthlyPay = Number(props.loan.monthly_pay) || 0;
+
+    const finalAvgIncome = Number(income.average_monthly_income || 0) === 0 ? cusIncome : Number(income.average_monthly_income);
+    const finalOtherIncome = Number(income.other_verified_income || 0) === 0 ? contractIncome : Number(income.other_verified_income);
+    const finalDebt = Number(income.existing_debt_payments || 0) === 0 ? cusDebt : Number(income.existing_debt_payments);
+    const finalInstallment = Number(income.proposed_installment || 0) === 0 ? monthlyPay : Number(income.proposed_installment);
+
+    const totalIncome = finalAvgIncome + finalOtherIncome;
+    const totalDebt = finalDebt + finalInstallment;
+
     form.dsr_percent = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 100;
 
+    // 5. ຄິດໄລ່ເງິນດາວ / LTV
     const price = Number(basic.verified_price) || Number(props.loan.product?.price) || Number(props.loan.total_amount) || 1;
     const dp = Number(basic.verified_down_payment) || Number(props.loan.down_payment) || 0;
-    
-    // 🟢 ຄຳນວນທັງເງິນດາວ ແລະ LTV
+
     form.down_payment_percent = (dp / price) * 100;
     const remainingLoan = price - dp;
     form.ltv_percent = (remainingLoan / price) * 100;
 
-    // 🟢 ກວດສອບວ່າເປັນສິນຄ້າຄຳຫຼືບໍ່
+    // 6. ກວດສອບປະເພດສິນຄ້າ (ຄຳ ຫຼື ບໍ່)
     const typeName = String(props.loan.product?.productType?.type_name || props.loan.producttype?.type_name || '').trim();
     const typeId = Number(props.loan.product?.productType_id || props.loan.producttype_id || 0);
     form.is_gold = typeName.includes('ຄຳ') || typeId === 8 || typeId === 1;
@@ -144,58 +208,112 @@ const calculateCreditScore = async () => {
   await new Promise(res => setTimeout(res, 800));
 
   let totalScore = 0;
-  
-  // 🟢 1. ອາຍຸ (Age) - ອັບເດດຕາມ Guideline ໃໝ່
   const age = form.age;
-  let ageScore = (age >= 25 && age <= 35) ? 15 : (age >= 36 && age <= 45) ? 13 : (age >= 46 && age <= 55) ? 12 : (age >= 18 && age <= 24) ? 10 : 8;
-  
-  // 🟢 2. ອາຍຸການເຮັດວຽກ (Job Tenure) - ອັບເດດຕາມ Guideline ໃໝ່
-  const tenure = form.job_tenure_years;
-  let tenureScore = (tenure >= 3) ? 15 : (tenure >= 1) ? 12 : (tenure >= 0.5) ? 10 : 5;
-  
-  // 3. ປະຫວັດ CIB
+  // คำนวณอายุงานรวมเป็นปี (เช่น 0 ปี 6 เดือน = 0 + (6 / 12) = 0.5 ปี)
+  const totalTenureInYears = form.job_tenure_years + (form.job_tenure_months / 12);
+  const tenure = totalTenureInYears;
   const cib = form.cib_status;
-  let cibScore = (cib === 'no_delay') ? 20 : (cib === 'delay_30_days') ? 15 : (cib === 'delay_60_days') ? 10 : (cib === 'delay_90_days') ? 5 : 0;
-  
-  // 4. DSR
   const dsr = form.dsr_percent;
-  let dsrScore = (dsr <= 30) ? 25 : (dsr <= 40) ? 20 : (dsr <= 50) ? 15 : (dsr <= 60) ? 10 : 5;
 
-  // 🟢 5. ເງິນດາວ / LTV
+  let ageScore = 0;
+  let tenureScore = 0;
+  let cibScore = 0;
+  let dsrScore = 0;
   let dpScore = 0;
-  let factor5Max = 15;
-  
+
+  let factor1Max = 0;
+  let factor2Max = 0;
+  let factor5Max = 0;
+
   if (form.is_gold) {
-    // ໃຊ້ໂລຈິກ LTV ສຳລັບສິນຄ້າຄຳ
+    // === ເກນສຳລັບສິນຄ້າຄຳ (Gold) ===
+
+    // 1. ອາຍຸ (Max 15)
+    ageScore = (age >= 25 && age <= 35) ? 15 :
+               (age >= 36 && age <= 45) ? 13 :
+               (age >= 46 && age <= 55) ? 12 :
+               (age >= 18 && age <= 24) ? 10 : 8;
+    factor1Max = 15;
+
+    // 2. ອາຍຸການເຮັດວຽກ (Max 15)
+    tenureScore = (tenure >= 3) ? 15 :
+                  (tenure >= 1) ? 12 :
+                  (tenure >= 0.5) ? 10 : 5;
+    factor2Max = 15;
+
+    // 5. LTV ສຳລັບຄຳ (Max 25)
     const ltv = form.ltv_percent;
-    dpScore = (ltv <= 60) ? 25 : (ltv <= 70) ? 20 : (ltv <= 80) ? 15 : (ltv <= 90) ? 10 : 5;
+    dpScore = (ltv <= 60) ? 25 :
+              (ltv <= 70) ? 20 :
+              (ltv <= 80) ? 15 :
+              (ltv <= 90) ? 10 : 5;
     factor5Max = 25;
+
   } else {
-    // ໃຊ້ໂລຈິກເງິນດາວສຳລັບສິນຄ້າທົ່ວໄປ
+    // === ເກນສຳລັບສິນຄ້າທົ່ວໄປ ແລະ ລົດຈັກ (General / Motorcycle) ===
+
+    // 1. ອາຍຸ (Max 20)
+    ageScore = (age >= 25 && age <= 35) ? 20 :
+               (age >= 36 && age <= 45) ? 18 :
+               (age >= 46 && age <= 55) ? 12 :
+               (age >= 18 && age <= 24) ? 10 : 8;
+    factor1Max = 20;
+
+    // 2. ອາຍຸການເຮັດວຽກ (Max 20)
+    tenureScore = (tenure >= 3) ? 20 :
+                  (tenure >= 1) ? 15 :
+                  (tenure >= 0.5) ? 10 : 5;
+    factor2Max = 20;
+
+    // 5. ເງິນວາງດາວ ສຳລັບທົ່ວໄປ/ລົດຈັກ (Max 15)
     const dp = form.down_payment_percent;
-    dpScore = (dp >= 30) ? 15 : (dp >= 20) ? 12 : (dp >= 10) ? 8 : 5;
+    dpScore = (dp >= 30) ? 15 :
+              (dp >= 20) ? 12 :
+              (dp >= 10) ? 8 : 5;
     factor5Max = 15;
   }
 
-  // ຄິດໄລ່ຄະແນນລວມ ແລະ ຄະແນນເຕັມ
-  const maxTotalScore = 15 + 15 + 20 + 25 + factor5Max; // ຄຳ: 100, ທົ່ວໄປ: 90
-  totalScore = ageScore + tenureScore + cibScore + dsrScore + dpScore;
+  // === ເກນລວມ (DSR & CIB ໃຊ້ເກນດຽວກັນທັງໝົດ) ===
 
-  // ປັບເກນອັດຕາສ່ວນການຜ່ານ (ໃຊ້ເປີເຊັນເພື່ອໃຫ້ເກນຍຸດຕິທຳສຳລັບທັງສອງປະເພດ)
+  // 3. ພາລະໜີ້ສິນ (DSR) (Max 25)
+  dsrScore = (dsr <= 30) ? 25 :
+             (dsr <= 40) ? 20 :
+             (dsr <= 50) ? 15 :
+             (dsr <= 60) ? 10 : 5;
+
+  // 4. ປະຫວັດ CIB (Max 20)
+  cibScore = (cib === 'no_delay') ? 20 :
+             (cib === 'delay_30_days') ? 15 :
+             (cib === 'delay_60_days') ? 10 :
+             (cib === 'delay_90_days') ? 5 : 0;
+
+  // ຄິດໄລ່ຄະແນນລວມ (Max Score ເຕັມ 100 ທັງສອງກໍລະນີ)
+  const maxTotalScore = factor1Max + factor2Max + 25 + 20 + factor5Max;
+  totalScore = ageScore + tenureScore + dsrScore + cibScore + dpScore;
+
   const percentScore = (totalScore / maxTotalScore) * 100;
   let grade = percentScore >= 80 ? 'APPROVE' : percentScore >= 65 ? 'CONDITIONAL APPROVAL' : 'REJECT';
   let description = percentScore >= 80 ? 'ຜ່ານອະນຸມັດ' : percentScore >= 65 ? 'ອະນຸມັດແບບມີເງື່ອນໄຂ' : 'ປະຕິເສດການອະນຸມັດ';
   let colorClass = percentScore >= 80 ? 'bg-gradient-to-r from-emerald-500 to-green-600' : percentScore >= 65 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-red-500 to-rose-600';
 
-  result.value = { 
-    score: totalScore, 
-    maxScore: maxTotalScore, 
-    grade, 
-    description, 
-    colorClass, 
-    details: { ageScore, tenureScore, cibScore, dsrScore, dpScore, factor5Max } 
+  result.value = {
+    score: totalScore,
+    maxScore: maxTotalScore,
+    grade,
+    description,
+    colorClass,
+    details: {
+      ageScore,
+      tenureScore,
+      cibScore,
+      dsrScore,
+      dpScore,
+      factor1Max,
+      factor2Max,
+      factor5Max
+    }
   };
-  
+
   isCalculating.value = false;
 };
 

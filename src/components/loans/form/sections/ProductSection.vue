@@ -165,7 +165,7 @@
           <label class="label"><span class="label-text font-bold">ເລກຈັກ (ລົດຈັກ): <span class="text-error">*</span></span></label>
           <input v-model="data.motorcycle.motorId" type="text" :readonly="!isEditing"
             class="input input-sm input-bordered w-full"
-            :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.motorId ? 'input-error' : '']"
+            :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
             @input="errors.motorId = ''" />
           <label v-if="errors.motorId" class="label p-0 pt-1">
             <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.motorId }}</span>
@@ -181,7 +181,7 @@
           <label class="label"><span class="label-text font-bold">ເລກຖັງ (ລົດຈັກ): <span class="text-error">*</span></span></label>
           <input v-model="data.motorcycle.tankNumber" type="text" :readonly="!isEditing"
             class="input input-sm input-bordered w-full"
-            :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.tankNumber ? 'input-error' : '']"
+            :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
             @input="errors.tankNumber = ''" />
           <label v-if="errors.tankNumber" class="label p-0 pt-1">
             <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.tankNumber }}</span>
@@ -268,10 +268,10 @@ const validateForm = (): boolean => {
   }
 
   // ຖ້າເປັນສິນຄ້າລົດຈັກ ຕ້ອງບັງຄັບໃສ່ເລກຈັກ ແລະ ເລກຖັງ
-  if (props.data.type === 'ສິນຄ້າລົດຈັກ') {
-    if (!props.data.motorcycle?.motorId?.trim()) { errors.value.motorId = 'ກະລຸນາປ້ອນເລກຈັກ'; isValid = false; }
-    if (!props.data.motorcycle?.tankNumber?.trim()) { errors.value.tankNumber = 'ກະລຸນາປ້ອນເລກຖັງ'; isValid = false; }
-  }
+  // if (props.data.type === 'ສິນຄ້າລົດຈັກ') {
+  //   if (!props.data.motorcycle?.motorId?.trim()) { errors.value.motorId = 'ກະລຸນາປ້ອນເລກຈັກ'; isValid = false; }
+  //   if (!props.data.motorcycle?.tankNumber?.trim()) { errors.value.tankNumber = 'ກະລຸນາປ້ອນເລກຖັງ'; isValid = false; }
+  // }
 
   return isValid;
 };

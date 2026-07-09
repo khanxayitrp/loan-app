@@ -60,9 +60,9 @@
             <td>{{ draft.createdAt ? formatDate(draft.createdAt) : '-' }}</td>
             <td>
               <div class="flex gap-2">
-                <button class="btn btn-circle btn-text btn-sm" @click="viewDraftDetails(draft.id)"><span class="icon-[tabler--eye] size-4"></span></button>
-                <button v-if="isDraft(draft)" class="btn btn-circle btn-text btn-sm text-error" @click="deleteDraft(draft.id)"><span class="icon-[tabler--trash] size-4"></span></button>
-                <button v-if="isDraft(draft)" class="btn btn-circle btn-text btn-sm text-success" @click="confirmSubmitDraft(draft)"><span class="icon-[tabler--check] size-4"></span></button>
+                <button class="btn btn-circle btn-text btn-sm" @click="viewDraftDetails(draft.id)" title="ເບີ່ງລາຍລະອຽດ"><span class="icon-[tabler--eye] size-4"></span></button>
+                <button v-if="isDraft(draft)" class="btn btn-circle btn-text btn-sm text-error" @click="deleteDraft(draft.id)" title="ລົບ"><span class="icon-[tabler--trash] size-4"></span></button>
+                <button v-if="isDraft(draft)" class="btn btn-circle btn-text btn-sm text-success" @click="confirmSubmitDraft(draft)" title="ສົ່ງຄຳຂໍ"><span class="icon-[tabler--check] size-4"></span></button>
               </div>
             </td>
           </tr>

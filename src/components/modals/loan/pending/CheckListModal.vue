@@ -79,7 +79,7 @@
 
                   <div class="border p-3 rounded-lg bg-gray-50 dark:bg-base-200">
                     <label class="label p-0 mb-2"><span class="label-text font-bold">ທີ່ຢູ່ປັດຈຸບັນ (ຢືນຢັນແລ້ວ)</span></label>
-                    
+
                     <div class="form-control mb-2">
                         <label class="label pt-0"><span class="label-text text-xs">ບ້ານ / ລາຍລະອຽດເຮືອນ</span></label>
                         <input v-model="formBasic.verified_village" type="text" placeholder="ປ້ອນຊື່ບ້ານ, ໜ່ວຍ, ເຮືອນເລກທີ..." class="input input-bordered input-sm w-full" />
@@ -88,7 +88,7 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div class="form-control">
                             <label class="label pt-0"><span class="label-text text-xs">ແຂວງ</span></label>
-                            <select v-model="formBasic.verified_province_id" 
+                            <select v-model="formBasic.verified_province_id"
                                     class="select select-bordered select-sm w-full">
                                 <option value="">-- ເລືອກແຂວງ --</option>
                                 <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
@@ -98,7 +98,7 @@
                         </div>
                         <div class="form-control">
                             <label class="label pt-0"><span class="label-text text-xs">ເມືອງ</span></label>
-                            <select v-model="formBasic.verified_district_id" 
+                            <select v-model="formBasic.verified_district_id"
                                     :disabled="!formBasic.verified_province_id"
                                     class="select select-bordered select-sm w-full">
                                 <option value="">-- ເລືອກເມືອງ --</option>
@@ -174,39 +174,47 @@
                 </div>
 
                 <div class="border rounded-lg p-4 bg-white dark:bg-base-100 shadow-sm">
-                  <h4 class="font-bold border-b pb-2 mb-4">ສ່ວນທີ 3: ຂໍ້ມູນທີ່ເຮັດວຽກ (ຈາກການສຳພາດ)</h4>
-                  <div class="space-y-3">
-                    <div class="form-control">
-                      <label class="label"><span class="label-text">ຊື່ບໍລິສັດ/ບ່ອນເຮັດວຽກ</span></label>
-                      <input v-model="formBasic.work_company_name" type="text" class="input input-bordered input-sm" />
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                      <div class="form-control">
-                        <label class="label"><span class="label-text">ຕຳແໜ່ງ</span></label>
-                        <input v-model="formBasic.work_position" type="text" class="input input-bordered input-sm" />
-                      </div>
-                      <div class="form-control">
-                        <label class="label"><span class="label-text">ອາຍຸການ (ປີ)</span></label>
-                        <input v-model.number="formBasic.work_years" type="number"
-                          class="input input-bordered input-sm" />
-                      </div>
-                    </div>
-                    <div class="form-control">
-                      <label class="label"><span class="label-text">ເງິນເດືອນທີ່ແຈ້ງ (ກີບ)</span></label>
-                      <input v-model.number="formBasic.work_salary" type="number"
-                        class="input input-bordered input-sm text-right font-bold" />
-                    </div>
-                    <div class="form-control">
-                      <label class="label"><span
-                          class="label-text font-bold">ປະເມີນຄວາມໜ້າເຊື່ອຖືຂອງບ່ອນເຮັດວຽກ</span></label>
-                      <select v-model="formBasic.workplace_assessment" class="select select-bordered select-sm">
-                        <option value="good">ດີ (Good)</option>
-                        <option value="moderate">ປານກາງ (Moderate)</option>
-                        <option value="bad">ບໍ່ດີ / ບໍ່ຊັດເຈນ (Bad)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
+  <h4 class="font-bold border-b pb-2 mb-4">ສ່ວນທີ 3: ຂໍ້ມູນທີ່ເຮັດວຽກ (ຈາກການສຳພາດ)</h4>
+  <div class="space-y-3">
+    <div class="form-control">
+      <label class="label"><span class="label-text">ຊື່ບໍລິສັດ/ບ່ອນເຮັດວຽກ</span></label>
+      <input v-model="formBasic.work_company_name" type="text" class="input input-bordered input-sm" />
+    </div>
+
+    <div class="form-control">
+      <label class="label"><span class="label-text">ຕຳແໜ່ງ</span></label>
+      <input v-model="formBasic.work_position" type="text" class="input input-bordered input-sm" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div class="form-control">
+        <label class="label"><span class="label-text">ອາຍຸການ (ປີ)</span></label>
+        <input v-model.number="formBasic.work_years" type="number"
+          class="input input-bordered input-sm" />
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text">ອາຍຸການ (ເດືອນ)</span></label>
+        <input v-model.number="formBasic.work_months" type="number"
+          class="input input-bordered input-sm" />
+      </div>
+    </div>
+
+    <div class="form-control">
+      <label class="label"><span class="label-text">ເງິນເດືອນທີ່ແຈ້ງ (ກີບ)</span></label>
+      <input v-model.number="formBasic.work_salary" type="number"
+        class="input input-bordered input-sm text-right font-bold" />
+    </div>
+    <div class="form-control">
+      <label class="label"><span
+          class="label-text font-bold">ປະເມີນຄວາມໜ້າເຊື່ອຖືຂອງບ່ອນເຮັດວຽກ</span></label>
+      <select v-model="formBasic.workplace_assessment" class="select select-bordered select-sm">
+        <option value="good">ດີ (Good)</option>
+        <option value="moderate">ປານກາງ (Moderate)</option>
+        <option value="bad">ບໍ່ດີ / ບໍ່ຊັດເຈນ (Bad)</option>
+      </select>
+    </div>
+  </div>
+</div>
               </div>
             </div>
 
@@ -510,7 +518,7 @@
                   <div class="form-control">
                     <label class="label"><span class="label-text">ລາຍຮັບອື່ນໆທີ່ຢືນຢັນໄດ້ (ກີບ)</span></label>
                     <input v-model.number="formIncome.other_verified_income" type="number"
-                      class="input input-bordered text-right" readonly />
+                      class="input input-bordered text-right font-bold text-green-600"  readonly />
                   </div>
                   <div class="divider my-1"></div>
                   <div class="flex justify-between items-center font-bold text-lg">
@@ -614,7 +622,7 @@ const checklistTabTitle = computed(() => {
 
 const unlockedTabs = computed(() => {
   return {
-    basic: true, 
+    basic: true,
     call: formBasic.status === 'completed',
     cib: formBasic.status === 'completed' && formCalls.value.length > 0 && formCalls.value[0].id,
     field: formCIBDetails.value.length > 0 || formCIB.remark !== '',
@@ -654,6 +662,7 @@ const formBasic = reactive({
   work_company_name: '',
   work_position: '',
   work_years: 0,
+  work_months: 0,
   work_salary: 0,
   workplace_assessment: 'good',
   status: 'draft'
@@ -664,7 +673,7 @@ watch(() => formBasic.verified_province_id, async (newVal) => {
   if (newVal) {
     await addressStore.fetchDistricts(newVal);
     localDistricts.value = [...addressStore.districts];
-    
+
     // ຖ້າເມືອງທີ່ເລືອກໄວ້ບໍ່ຢູ່ໃນແຂວງໃໝ່, ໃຫ້ເຄລຍຄ່າຖິ້ມ
     const isValidDistrict = localDistricts.value.some(d => d.district_id === formBasic.verified_district_id);
     if (!isValidDistrict) {
@@ -771,7 +780,7 @@ const fetchChecklistData = async (loanId: number) => {
             // ໝາຍເຫດ: ລະບົບບໍ່ສາມາດເດົາ ID ແຂວງ/ເມືອງຈາກຊື່ໄດ້ຊັດເຈນ, ດັ່ງນັ້ນ User ອາດຕ້ອງເລືອກໃໝ່ຖ້າເປັນຂໍ້ມູນເກົ່າ
         }
       }
-      
+
       if (summaryData.call_verifications && summaryData.call_verifications.length > 0) formCalls.value = summaryData.call_verifications;
       else { formCalls.value = []; addCallRecord(); }
 
@@ -815,11 +824,13 @@ watch(() => props.isOpen, async (newVal) => {
 
     const workInfo = fullDetails.customer?.customer_work_infos?.[0] || fullDetails.customer?.work_info?.[0];
 
+    const loanContract = fullDetails.loan_contracts?.[0];
+
     // 🟢 ດຶງຂໍ້ມູນ Default ຖ້າບໍ່ເຄີຍເຊບ
     formBasic.verified_first_name = formBasic.verified_first_name || fullDetails.customer?.first_name || '';
     formBasic.verified_last_name = formBasic.verified_last_name || fullDetails.customer?.last_name || '';
     formBasic.verified_dob = formBasic.verified_dob || (fullDetails.customer?.date_of_birth ? new Date(fullDetails.customer.date_of_birth).toISOString().slice(0, 10) : '');
-    
+
     // 🟢 ດຶງຂໍ້ມູນທີ່ຢູ່ຈາກ Customer ເຂົ້າໄປໃນ Dropdown ອັດຕະໂນມັດ
     if (!formBasic.verified_village && fullDetails.customer?.address) {
         formBasic.verified_village = fullDetails.customer.address;
@@ -840,14 +851,28 @@ watch(() => props.isOpen, async (newVal) => {
     formBasic.work_years = formBasic.work_years || workInfo?.duration_years || 0;
     formBasic.work_salary = formBasic.work_salary || Number(workInfo?.salary || 0);
 
-    if (!formIncome.max_approved_amount) {
-      Object.assign(formIncome, {
-        average_monthly_income: Number(fullDetails.customer?.income_per_month || 0),
-        existing_debt_payments: Number(fullDetails.customer?.other_debts || 0),
-        proposed_installment: Number(fullDetails.monthly_pay || 0),
-        max_approved_amount: Number(fullDetails.total_amount || 0)
-      });
-    }
+    // ==========================================
+    // 🟢 ດຶງຂໍ້ມູນຈາກສັນຍາແລະລູກຄ້າມາເກັບໄວ້ກ່ອນ
+    const contractOtherIncome = Number(fullDetails.loan_contracts?.[0]?.cus_income_other || loanContract?.cus_income_other || 0);
+    const customerIncome = Number(workInfo?.salary || 0);
+    const customerDebts = Number(fullDetails.customer?.other_debts || 0);
+    const proposedPay = Number(fullDetails.monthly_pay || 0);
+    const maxAmount = Number(fullDetails.total_amount || 0) - Number(fullDetails.down_payment || 0);
+
+    // 🟢 ບັງຄັບກວດສອບດ້ວຍ Number() ສະເໝີ ເພື່ອປ້ອງກັນບັນຫາ String "0.00"
+    // ຖ້າຊ່ອງໃດຍັງເປັນ 0 (ຫຼື "0.00") ໃຫ້ດຶງຂໍ້ມູນໃໝ່ມາໃສ່ທັບທັນທີ
+
+    // 🌟 🟢 ບັງຄັບອັບເດດຄ່າໃຫ້ກົງກັບຖານຂໍ້ມູນຫຼັກສະເໝີ (Always Sync)
+    // ເພາະຊ່ອງພວກນີ້ເປັນ readonly ຈຶ່ງຕ້ອງດຶງຄ່າຫຼ້າສຸດມາສະແດງສະເໝີ ໂດຍບໍ່ຕ້ອງເຊັກ === 0
+    formIncome.average_monthly_income = customerIncome;
+    formIncome.other_verified_income = contractOtherIncome;
+    formIncome.existing_debt_payments = customerDebts;
+    formIncome.proposed_installment = proposedPay;
+
+
+      formIncome.max_approved_amount = maxAmount;
+
+    // ==========================================
   }
 });
 
@@ -858,7 +883,7 @@ const saveChecklist = async () => {
 
   try {
     if (checklistTab.value === 'basic') {
-      
+
       // 🟢 ປະກອບທີ່ຢູ່ໃຫ້ເປັນ String ດຽວກ່ອນເຊບລົງ DB
       let fullAddressStr = formBasic.verified_village;
       if (formBasic.verified_district_id) {
@@ -871,9 +896,9 @@ const saveChecklist = async () => {
       }
       formBasic.verified_address = fullAddressStr; // ອັບເດດຄ່າ
 
-      await checklistApi.saveBasic(loanId, { 
-          ...formBasic, 
-          full_name: `${formBasic.verified_first_name} ${formBasic.verified_last_name}`.trim() 
+      await checklistApi.saveBasic(loanId, {
+          ...formBasic,
+          full_name: `${formBasic.verified_first_name} ${formBasic.verified_last_name}`.trim()
       });
 
     } else if (checklistTab.value === 'call') {
@@ -910,7 +935,7 @@ const saveChecklist = async () => {
 
     alert.success(`ບັນທຶກຂໍ້ມູນ ${checklistTabTitle.value} ສຳເລັດ`);
     await fetchChecklistData(loanId);
-    
+
     if (checklistTab.value === 'basic' && formBasic.status === 'completed') {
       checklistTab.value = 'call';
     }

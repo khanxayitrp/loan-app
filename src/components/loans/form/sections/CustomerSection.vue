@@ -122,7 +122,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
         <div class="form-control">
-          <label class="label"><span class="label-text font-bold">IDCard/Passport: <span class="text-error">*</span></span></label>
+          <label class="label"><span class="label-text font-bold">IDCard/Passport: </span></label>
           <input v-model="data.idCard" type="text" :readonly="!isEditing" 
                  class="input input-sm input-bordered w-full"
                  :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.idCard ? 'input-error' : '']"
@@ -538,7 +538,7 @@ const validateForm = (): boolean => {
   if (!props.data.occupation?.trim()) { errors.value.occupation = 'ກະລຸນາປ້ອນອາຊີບ'; isValid = false; }
 
   // ກວດສອບເອກະສານຢັ້ງຢືນຕົວຕົນ
-  if (!props.data.idCard?.trim()) { errors.value.idCard = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ/Passport'; isValid = false; }
+    // if (!props.data.idCard?.trim()) { errors.value.idCard = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ/Passport'; isValid = false; }
   // if (!props.data.idCardStartDate) { errors.value.idCardStartDate = 'ກະລຸນາປ້ອນວັນເດືອນປີອອກບັດ'; isValid = false; }
   // if (!props.data.idCardExpiryDate) { errors.value.idCardExpiryDate = 'ກະລຸນາປ້ອນວັນເດືອນປີໝົດອາຍຸບັດ'; isValid = false; }
 

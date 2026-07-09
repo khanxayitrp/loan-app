@@ -93,12 +93,12 @@
                   <td class="border border-gray-400 px-2 py-1 w-2/3">{{ getCibLabel(printData.cibStatus) }}</td>
                 </tr>
                 <tr>
-                  <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ອັດຕາສ່ວນໜີ້ສິນ (DSR):</td>
+                  <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ອັດຕาສ່ວນໜີ້ສິນ (DSR):</td>
                   <td class="border border-gray-400 px-2 py-1 font-bold" :class="printData.dsrPercent > 50 ? 'text-error' : 'text-success'">{{ printData.dsrPercent.toFixed(2) }}%</td>
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ສະຖານະການໂທ (Call Check):</td>
-                  <td class="border border-gray-400 px-2 py-1">{{ printData.callStatus === 'completed' ? 'ໂທຢືນຢັນສຳເລັດ ຂໍ້ມູນຖືກຕ້ອງ' : 'ມີບັນຫາໃນການໂທກວດສອບ' }}</td>
+                  <td class="border border-gray-400 px-2 py-1">{{ printData.callStatus === 'completed' ? 'ໂທຢືນຢັນສຳເລັດ ຂໍ້ມູນຖືກຕ້ອງ' : 'ມີບັນຫາໃນการໂທກວດສອບ' }}</td>
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ໝາຍເຫດເພີ່ມເຕີມ:</td>
@@ -109,16 +109,16 @@
           </div>
 
           <div class="mb-6">
-            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">4. ຄະແນນການປະເມີນ (Credit Score)</div>
+            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">4. ຄะແນນການປະເມີນ (Credit Score)</div>
             <table class="w-full text-sm border-collapse border border-gray-400">
               <tbody>
                 <tr>
                   <td class="border border-gray-400 px-4 py-3 w-1/2 text-center bg-gray-50">
-                    <div class="text-sm font-semibold">ຄະແນນລວມ (Total Score)</div>
-                    <div class="text-4xl font-black mt-1">{{ printData.creditScore }}</div>
+                    <div class="text-sm font-semibold">ຄະແນนລວມ (Total Score)</div>
+                    <div class="text-4xl font-black mt-1 text-primary">{{ printData.creditScore }}</div>
                   </td>
                   <td class="border border-gray-400 px-4 py-3 w-1/2 text-center"
-                      :class="printData.creditScore >= 80 ? 'bg-green-100' : (printData.creditScore >= 65 ? 'bg-yellow-100' : 'bg-red-100')">
+                      :class="printData.creditScore >= 80 ? 'bg-green-700 text-white' : (printData.creditScore >= 65 ? 'bg-amber-600 text-white' : 'bg-red-700 text-white')">
                     <div class="text-sm font-semibold">ຜົນການປະເມີນ (Recommendation)</div>
                     <div class="text-xl font-bold mt-1">
                       {{ printData.creditScore >= 80 ? 'ອະນຸມັດ (APPROVE)' : (printData.creditScore >= 65 ? 'ອະນຸມັດແບບມີເງື່ອນໄຂ' : 'ປະຕິເສດ (REJECT)') }}
@@ -171,8 +171,8 @@ const getCibLabel = (status: string) => {
     'no_delay': 'ດີຫຼາຍ (ບໍ່ມີຊັກຊ້າ)',
     'delay_30_days': 'ດີ (ຊັກຊ້າບໍ່ເກີນ 30 ວັນ)',
     'delay_60_days': 'ປານກາງ (ຊັກຊ້າ 30-60 ວັນ)',
-    'delay_90_days': 'ສ່ຽງສູງ (ຊັກຊ້າ 60-90 ວັນ)',
-    'blacklist': 'ບໍ່ດີ (ຊັກຊ້າ 90+ ວັນ/Blacklist)'
+    'delay_90_days': 'ສ່ຽງສູງ (ຊັກซ້າ 60-90 ວັນ)',
+    'blacklist': 'ບໍ່ດີ (ຊັກซ້າ 90+ ວັນ/Blacklist)'
   }
   return map[status] || status;
 };
