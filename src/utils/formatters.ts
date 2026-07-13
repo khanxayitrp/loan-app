@@ -41,7 +41,7 @@ export const getStatusBadgeClass = (status: string): string => {
     case 'disbursed': return 'badge-secondary';  // 💖 ສີສຳຮອງ (ມັກຈະເປັນສີຊົມພູ/ມ່ວງ): ເພື່ອໃຫ້ເດັ່ນອອກມາວ່າ "ຈ່າຍເງິນແລ້ວ" ແຍກຈາກອະນຸມັດ
     case 'rejected': return 'badge-error';      // 🔴 ສີແດງ: ໝາຍເຖິງ "ຖືກປະຕິເສດ" ຫຼື ມີບັນຫາ
     case 'closed': return 'badge-neutral';    // ⚫️ ສີເທົາເຂັ້ມ: ໝາຍເຖິງ "ປິດການເຄື່ອນໄຫວ" ຈົບຂະບວນການແລ້ວ
-    default:  return 'badge-ghost';      // ⚪️ ສີເທົາອ່ອນໆ: ສຳລັບກໍລະນີບໍ່ມີສະຖານະ (ປ້ອງກັນ Error)
+    default: return 'badge-ghost';      // ⚪️ ສີເທົາອ່ອນໆ: ສຳລັບກໍລະນີບໍ່ມີສະຖານະ (ປ້ອງກັນ Error)
   }
 };
 
@@ -101,9 +101,9 @@ export const formatDateToDDMMYYYY = (dateString: string | null | undefined): str
 export const getCurrentDateDDMMYYYY = (): string => {
   const date = new Date();
   const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0'); 
+  const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
-  
+
   return `${day}/${month}/${year}`;
 };
 
@@ -113,9 +113,9 @@ export const getCurrentDateDDMMYYYY = (): string => {
  */
 export const normalizePhoneNumber = (phone: string | null | undefined): string => {
   if (!phone) return '';
-  
+
   // ລຶບຊ່ອງຫວ່າງ, ຂີດ, ວົງເລັບ ແລະ ເຄື່ອງໝາຍບວກອອກກ່ອນ
-  let cleanPhone = phone.replace(/[\s\-\+\(\)]/g, ''); 
+  let cleanPhone = phone.replace(/[\s\-\+\(\)]/g, '');
 
   // ຕັດ Prefix ອອກ (ກວດຈາກຍາວໄປຫາສັ້ນ)
   if (cleanPhone.startsWith('020')) {
@@ -127,16 +127,16 @@ export const normalizePhoneNumber = (phone: string | null | undefined): string =
   } else if (cleanPhone.startsWith('30')) {
     cleanPhone = cleanPhone.substring(2);
   }
-  
-  return cleanPhone; 
+
+  return cleanPhone;
 };
 
 // 🟢 Helper ສຳລັບແປງເບີໂທໃຫ້ເປັນມາດຕະຖານ (020 ຫຼື 030 ນຳໜ້າສະເໝີ)
 export const formatStandardPhoneNumber = (phone: string | null | undefined): string => {
   if (!phone) return '';
-  
+
   // 1. ລຶບຕົວອັກສອນອື່ນໆທີ່ບໍ່ແມ່ນຕົວເລກອອກໝົດ (ເຊັ່ນ ຍະຫວ່າງ, - , +)
-  let cleanPhone = phone.replace(/\D/g, ''); 
+  let cleanPhone = phone.replace(/\D/g, '');
 
   // 2. ຕັດ Prefix ທີ່ອາດຈະຕິດມາອອກໃຫ້ເຫຼືອແຕ່ເລກຫຼັກ
   if (cleanPhone.startsWith('85620')) cleanPhone = cleanPhone.substring(5);
@@ -145,14 +145,35 @@ export const formatStandardPhoneNumber = (phone: string | null | undefined): str
   else if (cleanPhone.startsWith('20')) cleanPhone = cleanPhone.substring(2);
   else if (cleanPhone.startsWith('030')) cleanPhone = cleanPhone.substring(3);
   else if (cleanPhone.startsWith('30')) cleanPhone = cleanPhone.substring(2);
-  
+
   // 3. ປະກອບຮ່າງໃໝ່
   if (cleanPhone.length === 8) {
-      return '020' + cleanPhone; // ເບີມືຖື
+    return '020' + cleanPhone; // ເບີມືຖື
   } else if (cleanPhone.length === 7) {
-      return '030' + cleanPhone; // ເບີຕັ້ງໂຕະ/ເບີຫຼັກ 7
+    return '030' + cleanPhone; // ເບີຕັ້ງໂຕະ/ເບີຫຼັກ 7
   }
-  
+
   // ຖ້າຄວາມຍາວຜິດປົກກະຕິ ກໍສົ່ງຄ່າເດີມໄປ (ເພື່ອໃຫ້ Validation ແຈ້ງເຕືອນ)
-  return cleanPhone; 
+  return cleanPhone;
+};
+
+/**
+ * 🟢 ແປງວັນທີ ແລະ ເວລາເປັນຮູບແບບ: DD/MM/YYYY ເວລາ HH:mm
+ */
+export const formatDateTime = (dateString: string | null | undefined): string => {
+  if (!dateString) return '-';
+
+  const date = new Date(dateString);
+
+  // ກວດສອບວ່າເປັນວັນທີທີ່ຖືກຕ້ອງຫຼືບໍ່
+  if (isNaN(date.getTime())) return dateString;
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${day}/${month}/${year} ເວລາ ${hours}:${minutes}`;
 };

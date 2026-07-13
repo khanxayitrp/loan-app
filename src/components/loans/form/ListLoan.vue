@@ -59,7 +59,7 @@
               <div>{{ getProductName(loan) }}</div>
               <div class="text-sm text-gray-500">{{ getProductType(loan) }}</div>
             </td>
-            <td class="font-medium">{{ formatPrice(loan.total_amount) }}</td>
+            <td class="font-medium">{{ formatPrice(Number(loan.total_amount || 0) - Number(loan.down_payment || 0)) }}</td>
             <td>{{ getRequesterName(loan) }}</td>
             <td><span class="badge badge-soft" :class="getStatusBadgeClass(loan.status)">{{ getStatusText(loan.status) }}</span></td>
             <td>{{ (loan.created_at || loan.createdAt) ? formatDate((loan.created_at || loan.createdAt) || '') : '-' }}</td>
@@ -96,18 +96,18 @@
       </div>
     </div>
 
-    <LoanDetailsModal 
-      :show="showDetailsModal" 
-      :loan-id="selectedLoanId" 
+    <LoanDetailsModal
+      :show="showDetailsModal"
+      :loan-id="selectedLoanId"
       :open-in-edit="isEditMode"
-      @close="showDetailsModal = false" 
-      @refresh="fetchData" 
+      @close="showDetailsModal = false"
+      @refresh="fetchData"
     />
 
-    <LoanScheduleModal 
-      :show="showScheduleModal" 
-      :loan="selectedScheduleLoan" 
-      @close="showScheduleModal = false" 
+    <LoanScheduleModal
+      :show="showScheduleModal"
+      :loan="selectedScheduleLoan"
+      @close="showScheduleModal = false"
     />
   </div>
 </template>
@@ -167,7 +167,7 @@ const openSchedule = async (loan: any) => {
     try {
       const contractRes = await loanContractStore.fetchContract(loan.id);
       contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
-      
+
       // 🟢 ປັບປຸງເງື່ອນໄຂ: ຖ້າ Object ວ່າງເປົ່າ ຫຼື ບໍ່ມີ ID ສະແດງວ່າບໍ່ມີສັນຍາແທ້ໆ
       if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
         throw new Error("Contract is empty");
@@ -213,21 +213,21 @@ const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('lo-LA') : 
 
 const filteredLoans = computed(() => {
   let list = loanApplicationStore.loanApplications.filter(app => isConfirmed(app.is_confirmed))
-  
+
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(d => d.customer?.first_name?.toLowerCase().includes(q) || d.customer?.phone?.includes(q) || d.loan_id?.toLowerCase().includes(q))
   }
-  
+
   if (statusFilter.value) list = list.filter(d => d.status === statusFilter.value)
-  
+
   if (dateFrom.value || dateTo.value) {
     // 🟢 ແກ້ໄຂຈຸດນີ້: ປ່ຽນຈາກ filtered = filtered.filter(...) ມາເປັນ list = list.filter(...)
     // 🟢 ແລະ ເພີ່ມ (loan: any) ເພື່ອປ້ອງກັນ TypeScript Error
     list = list.filter((loan: any) => {
       // 1. ດຶງຄ່າວັນທີ (ຮອງຮັບທັງສອງຊື່ Field ທີ່ Backend ອາດຈະສົ່ງມາ)
       const dateString = loan.created_at || loan.createdAt;
-      
+
       // 2. ຖ້າບໍ່ມີວັນທີສ້າງ ໃຫ້ຂ້າມການສະແດງຜົນລາຍການນີ້ (ຫຼື return true ຖ້າຢາກໃຫ້ສະແດງ)
       if (!dateString) return false;
 
@@ -263,10 +263,10 @@ const applyDateFilter = () => currentPage.value = 1
 const fetchData = async () => {
   try {
     // 🟢 ເພີ່ມ try...catch ເຂົ້າໄປກວມເອົາ API
-    await loanApplicationStore.fetchLoanApplications({ 
-      status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING, LoanApplicationStatus.VERIFIED] as any, 
-      is_confirmed: 1, 
-      limit: 1000 
+    await loanApplicationStore.fetchLoanApplications({
+      status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING, LoanApplicationStatus.VERIFIED] as any,
+      is_confirmed: 1,
+      limit: 1000
     })
   } catch (error: any) {
     // 🟢 ດຶງ Error ແຈ້ງ Client ທັນທີ ຖ້າດຶງຂໍ້ມູນຈາກ Server ບໍ່ສຳເລັດ
@@ -283,7 +283,7 @@ const viewLoanDetails = (id: number) => {
 const exportToCSV = () => {
   const csvData = displayedLoans.value.map(d => ({
     'Loan ID': d.loan_id, 'ລູກຄ້າ': getCustomerName(d), 'ເບີໂທ': getCustomerPhone(d),
-    'ສິນຄ້າ': getProductName(d), 'ປະເພດ': getProductType(d), 'ຈຳນວນເງິນ': formatPrice(d.total_amount), 
+    'ສິນຄ້າ': getProductName(d), 'ປະເພດ': getProductType(d), 'ຈຳນວນເງິນ': formatPrice(d.total_amount),
     'ດອກເບ້ຍ (%)': d.interest_rate_at_apply, 'ໄລຍະເວລາ': d.loan_period,
     'ເຈົ້າໜ້າທີ່': getRequesterName(d), 'ສະຖານະ': getStatusText(d.status), 'ວັນທີ່ສ້າງ': d.createdAt ? formatDate(d.createdAt) : '-'
   }))
@@ -300,16 +300,16 @@ const exportToCSV = () => {
 const exportToExcel = () => {
   // 1. เตรียมข้อมูล
   const excelData = displayedLoans.value.map(d => ({
-    'Loan ID': d.loan_id, 
-    'ລູກຄ້າ': getCustomerName(d), 
+    'Loan ID': d.loan_id,
+    'ລູກຄ້າ': getCustomerName(d),
     'ເບີໂທ': getCustomerPhone(d), // xlsx จัดการ String ได้ดี ไม่ตัดเลข 0
-    'ສິນຄ້າ': getProductName(d), 
-    'ປະເພດ': getProductType(d), 
+    'ສິນຄ້າ': getProductName(d),
+    'ປະເພດ': getProductType(d),
     'ຈຳນວນເງິນ': Number(d.total_amount || 0), // ใส่เป็น Number ให้ Excel ค้นหา/คำนวณต่อได้
-    'ດອກເບ້ຍ (%)': d.interest_rate_at_apply, 
+    'ດອກເບ້ຍ (%)': d.interest_rate_at_apply,
     'ໄລຍະເວລາ (ເດືອນ)': d.loan_period,
-    'ເຈົ້າໜ້າທີ່': getRequesterName(d), 
-    'ສະຖານະ': getStatusText(d.status), 
+    'ເຈົ້າໜ້າທີ່': getRequesterName(d),
+    'ສະຖານະ': getStatusText(d.status),
     'ວັນທີ່ສ້າງ': (d.created_at || d.createdAt) ? formatDate((d.created_at || d.createdAt) as string) : '-'
   }))
 

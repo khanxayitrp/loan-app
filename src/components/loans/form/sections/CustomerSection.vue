@@ -7,10 +7,10 @@
         <span class="icon-[tabler--user] size-5"></span> ຂໍ້ມູນທົ່ວໄປ
       </h4>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        
+
         <div class="form-control lg:col-span-2">
           <label class="label"><span class="label-text font-bold">ຊື່ ແລະ ນາມສະກຸນ: <span class="text-error">*</span></span></label>
-          <input v-model="data.fullname" type="text" :readonly="!isEditing" 
+          <input v-model="data.fullname" type="text" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.fullname ? 'input-error' : '']"
                  @input="errors.fullname = ''" />
@@ -21,9 +21,9 @@
 
         <div class="form-control relative">
           <label class="label"><span class="label-text font-bold">ວັນເດືອນປີເກີດ: <span class="text-error">*</span></span></label>
-          <input 
-            type="text" 
-            :value="displayDob" 
+          <input
+            type="text"
+            :value="displayDob"
             :readonly="!isEditing"
             maxlength="10"
             placeholder="dd/mm/yyyy"
@@ -32,14 +32,14 @@
             @input="handleDateTyping($event, 'dob')"
             @blur="handleDateBlur($event, 'dob')"
           />
-          <input 
+          <input
             ref="hiddenDateInput"
-            v-model="data.dob" 
-            type="date" 
-            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
+            v-model="data.dob"
+            type="date"
+            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none"
             tabindex="-1"
           />
-          <span 
+          <span
             class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
             :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
             @click="isEditing ? triggerDatePicker() : null"
@@ -52,7 +52,7 @@
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ອາຍຸ:</span></label>
           <div class="join w-full">
-            <input v-model.number="data.age" type="number" :readonly="!isEditing" 
+            <input v-model.number="data.age" type="number" :readonly="!isEditing"
                    class="input input-sm input-bordered w-full join-item"
                    :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
             <span class="btn btn-sm btn-disabled join-item">ປີ</span>
@@ -61,7 +61,7 @@
 
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ເບີໂທລະສັບມືຖື: <span class="text-error">*</span></span></label>
-          <input v-model="data.phone" type="tel" :readonly="!isEditing" 
+          <input v-model="data.phone" type="tel" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.phone ? 'input-error' : '']"
                  @input="errors.phone = ''" />
@@ -72,7 +72,7 @@
 
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ເພດ: <span class="text-error">*</span></span></label>
-          <select v-model="data.gender" :disabled="!isEditing" 
+          <select v-model="data.gender" :disabled="!isEditing"
                   class="select select-sm select-bordered w-full"
                   :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.gender ? 'select-error' : '']"
                   @change="errors.gender = ''">
@@ -87,7 +87,7 @@
 
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ສະຖານະພາບ: <span class="text-error">*</span></span></label>
-          <select v-model="data.maritalStatus" :disabled="!isEditing" 
+          <select v-model="data.maritalStatus" :disabled="!isEditing"
                   class="select select-sm select-bordered w-full"
                   :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.maritalStatus ? 'select-error' : '']"
                   @change="errors.maritalStatus = ''">
@@ -103,7 +103,7 @@
 
         <div class="form-control lg:col-span-2">
           <label class="label"><span class="label-text font-bold">ອາຊີບ: <span class="text-error">*</span></span></label>
-          <input v-model="data.occupation" type="text" :readonly="!isEditing" 
+          <input v-model="data.occupation" type="text" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.occupation ? 'input-error' : '']"
                  @input="errors.occupation = ''" />
@@ -120,10 +120,10 @@
         <span class="icon-[tabler--id] size-5"></span> ເອກະສານຢັ້ງຢືນຕົວຕົນ
       </h4>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        
+
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">IDCard/Passport: </span></label>
-          <input v-model="data.idCard" type="text" :readonly="!isEditing" 
+          <input v-model="data.idCard" type="text" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.idCard ? 'input-error' : '']"
                  @input="errors.idCard = ''" />
@@ -134,9 +134,9 @@
 
         <div class="form-control relative">
           <label class="label"><span class="label-text font-bold">ວັນເດືອນປີອອກບັດ: </span></label>
-          <input 
-            type="text" 
-            :value="displayIdCardStartDate" 
+          <input
+            type="text"
+            :value="displayIdCardStartDate"
             :readonly="!isEditing"
             maxlength="10"
             placeholder="dd/mm/yyyy"
@@ -145,14 +145,14 @@
             @input="handleDateTyping($event, 'idCardIssueDate')"
             @blur="handleDateBlur($event, 'idCardIssueDate')"
           />
-          <input 
+          <input
             ref="hiddenIdCardStartDateInput"
-            v-model="data.idCardIssueDate" 
-            type="date" 
-            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
+            v-model="data.idCardIssueDate"
+            type="date"
+            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none"
             tabindex="-1"
           />
-          <span 
+          <span
             class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
             :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
             @click="isEditing ? triggerIdCardStartDatePicker() : null"
@@ -164,9 +164,9 @@
 
         <div class="form-control relative">
           <label class="label"><span class="label-text font-bold">ວັນເດືອນປີໝົດອາຍຸບັດ: </span></label>
-          <input 
-            type="text" 
-            :value="displayIdCardExpiryDate" 
+          <input
+            type="text"
+            :value="displayIdCardExpiryDate"
             :readonly="!isEditing"
             maxlength="10"
             placeholder="dd/mm/yyyy"
@@ -175,14 +175,14 @@
             @input="handleDateTyping($event, 'idCardExpiryDate')"
             @blur="handleDateBlur($event, 'idCardExpiryDate')"
           />
-          <input 
+          <input
             ref="hiddenIdCardExpiryDateInput"
-            v-model="data.idCardExpiryDate" 
-            type="date" 
-            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
+            v-model="data.idCardExpiryDate"
+            type="date"
+            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none"
             tabindex="-1"
           />
-          <span 
+          <span
             class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
             :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
             @click="isEditing ? triggerExpiryDatePicker() : null"
@@ -194,16 +194,16 @@
 
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ປຶ້ມສຳມະໂນຄົວ ເລກທີ:</span></label>
-          <input v-model="data.censusBook" type="text" :readonly="!isEditing" 
+          <input v-model="data.censusBook" type="text" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
         </div>
 
         <div class="form-control relative">
           <label class="label"><span class="label-text font-bold">ວັນເດືອນປີອອກ:</span></label>
-          <input 
-            type="text" 
-            :value="displayCensusBookIssueDate" 
+          <input
+            type="text"
+            :value="displayCensusBookIssueDate"
             :readonly="!isEditing"
             maxlength="10"
             placeholder="dd/mm/yyyy"
@@ -212,14 +212,14 @@
             @input="handleDateTyping($event, 'censusBookIssueDate')"
             @blur="handleDateBlur($event, 'censusBookIssueDate')"
           />
-          <input 
+          <input
             ref="hiddenCensusBookIssueDateInput"
-            v-model="data.censusBookIssueDate" 
-            type="date" 
-            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
+            v-model="data.censusBookIssueDate"
+            type="date"
+            class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none"
             tabindex="-1"
           />
-          <span 
+          <span
             class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
             :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
             @click="isEditing ? triggerCensusBookIssueDatePicker() : null"
@@ -228,7 +228,7 @@
 
         <div class="form-control md:col-span-2 lg:col-span-3">
           <label class="label"><span class="label-text font-bold">ສະຖານທີ່ອອກເອກະສານ:</span></label>
-          <input v-model="data.censusAuthorizeBy" type="text" :readonly="!isEditing" 
+          <input v-model="data.censusAuthorizeBy" type="text" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
         </div>
@@ -242,13 +242,13 @@
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="label"><span class="label-text font-bold">ເຮືອນເລກທີ:</span></label>
-          <input v-model="data.houseNumber" type="text" :readonly="!isEditing" 
+          <input v-model="data.houseNumber" type="text" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
         </div>
         <div>
           <label class="label"><span class="label-text font-bold">ໜ່ວຍ:</span></label>
-          <input v-model="data.unit" type="text" :readonly="!isEditing" 
+          <input v-model="data.unit" type="text" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
         </div>
@@ -257,16 +257,16 @@
           <div class="address-grid-custom mt-1">
             <div class="input-sub">
               <span class="font-bold">ບ້ານ: <span class="text-error">*</span></span>
-              <input v-model="data.address.village" type="text" :readonly="!isEditing" 
-                     class="input input-sm input-bordered w-full" 
+              <input v-model="data.address.village" type="text" :readonly="!isEditing"
+                     class="input input-sm input-bordered w-full"
                      :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.village ? 'input-error' : '']"
-                     placeholder="ບ້ານ" 
+                     placeholder="ບ້ານ"
                      @input="errors.village = ''" />
               <label v-if="errors.village" class="label p-0 pt-1">
                 <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.village }}</span>
               </label>
             </div>
-            
+
             <div class="input-sub">
               <span class="font-bold">ເມືອງ: <span class="text-error">*</span></span>
               <select v-model="data.address.district_id" :disabled="!isEditing || !data.address.province_id"
@@ -283,7 +283,7 @@
 
             <div class="input-sub">
               <span class="font-bold">ແຂວງ: <span class="text-error">*</span></span>
-              <select v-model="data.address.province_id" :disabled="!isEditing" 
+              <select v-model="data.address.province_id" :disabled="!isEditing"
                       class="select-addr select-sm select-bordered w-full"
                       :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.province_id ? 'select-error' : '']"
                       @change="errors.province_id = ''">
@@ -300,7 +300,7 @@
         <div>
           <label class="label"><span class="label-text font-bold">ຈຳນວນປີທີ່ອາໄສ:</span></label>
           <div class="join w-full">
-            <input v-model.number="data.residenceYears" type="number" :readonly="!isEditing" 
+            <input v-model.number="data.residenceYears" type="number" :readonly="!isEditing"
                    class="input input-sm input-bordered w-full join-item"
                    :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
             <span class="btn btn-sm btn-disabled join-item">ປີ</span>
@@ -308,13 +308,13 @@
         </div>
         <div class="md:col-span-2">
           <label class="label"><span class="label-text font-bold">ອາໄສຢູ່ກັບ:</span></label>
-          <input v-model="data.liveWith" type="text" :readonly="!isEditing" 
+          <input v-model="data.liveWith" type="text" :readonly="!isEditing"
                  class="input input-sm input-bordered w-full"
                  :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
         </div>
         <div>
           <label class="label"><span class="label-text font-bold">ສະຖານະການຢູ່ອາໄສ:</span></label>
-          <select v-model="data.residenceStatus" :disabled="!isEditing" 
+          <select v-model="data.residenceStatus" :disabled="!isEditing"
                   class="select select-sm select-bordered w-full"
                   :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'">
             <option value="">ເລືອກ</option>
@@ -369,7 +369,7 @@ const handleDateTyping = (e: Event, field: string) => {
   if (errors.value[field]) errors.value[field] = ''; // ເຄລຍ Error ອັດຕະໂນມັດເມື່ອພິມໃໝ່
 
   const target = e.target as HTMLInputElement;
-  let val = target.value.replace(/\D/g, ''); 
+  let val = target.value.replace(/\D/g, '');
 
   if (val.length > 8) val = val.substring(0, 8);
 
@@ -396,6 +396,11 @@ const handleDateTyping = (e: Event, field: string) => {
     }
   } else if (val.length === 0) {
     props.data[field] = '';
+    errors.value[field] = ''; // 🟢 Clear error ทิ้งด้วยเมื่อผู้ใช้ลบข้อมูลจนว่างเปล่า
+  } else {
+    // 🟢 ถ้ากรอกยังไม่ครบ 8 ตัว หรือถูกลบกลางคัน ให้เซ็ตตัวแปรหลังบ้านเป็นค่าว่างไว้ก่อน
+    // ป้องกันการเซฟค่าวันที่แหว่งๆ เช่น "2026-05-" ลงฐานข้อมูล
+    props.data[field] = '';
   }
 };
 
@@ -419,7 +424,7 @@ watch(() => props.data.dob, (newDob: string | undefined | null) => {
     props.data.age = null;
     return;
   }
-  
+
   if (newDob > getTodayDateString()) {
     errors.value.dob = 'ວັນເດືອນປີເກີດບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້';
     props.data.dob = '';
@@ -428,7 +433,7 @@ watch(() => props.data.dob, (newDob: string | undefined | null) => {
   }
 
   const calculatedAge = calculateAge(newDob);
-  
+
   if (calculatedAge !== null) {
     if (calculatedAge < 18) {
        errors.value.dob = 'ລູກຄ້າຕ້ອງມີອາຍຸ 18 ປີຂຶ້ນໄປ';
@@ -436,7 +441,7 @@ watch(() => props.data.dob, (newDob: string | undefined | null) => {
        props.data.age = null;
        return;
     }
-    
+
     if (calculatedAge > 100) {
        errors.value.dob = 'ອາຍຸບໍ່ສາມາດເກີນ 100 ປີໄດ້';
        props.data.dob = '';
@@ -451,7 +456,7 @@ watch(() => props.data.dob, (newDob: string | undefined | null) => {
 watch(() => props.data.idCardIssueDate, (newStartDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newStartDate) return;
-  
+
   if (newStartDate > getTodayDateString()) {
     errors.value.idCardIssueDate = 'ວັນທີອອກບັດບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້';
     props.data.idCardIssueDate = '';
@@ -470,7 +475,7 @@ watch(() => props.data.idCardExpiryDate, (newExpiryDate: string | undefined | nu
   if (!newExpiryDate) return;
 
   const startDate = props.data.idCardIssueDate;
-  
+
   if (startDate && newExpiryDate <= startDate) {
     errors.value.idCardExpiryDate = 'ວັນເດືອນປີໝົດອາຍຸບັດຕ້ອງຫຼາຍກວ່າວັນທີອອກບັດ';
     props.data.idCardExpiryDate = '';
@@ -480,7 +485,7 @@ watch(() => props.data.idCardExpiryDate, (newExpiryDate: string | undefined | nu
 watch(() => props.data.censusBookIssueDate, (newDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newDate) return;
-  
+
   if (newDate > getTodayDateString()) {
     errors.value.censusBookIssueDate = 'ວັນເດືອນປີອອກປຶ້ມສຳມະໂນຄົວບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້';
     props.data.censusBookIssueDate = '';

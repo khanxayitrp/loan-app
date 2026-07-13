@@ -54,7 +54,7 @@
               <div>{{ getProductName(draft) }}</div>
               <div class="text-sm text-gray-500">ID: {{ draft.product_id }}</div>
             </td>
-            <td class="font-medium">{{ formatPrice(draft.total_amount) }}</td>
+            <td class="font-medium">{{ formatPrice(Number(draft.total_amount || 0) - Number(draft.down_payment || 0)) }}</td>
             <td>{{ getRequesterName(draft) || `ID: ${draft.requester_id || '-'}` }}</td>
             <td><span class="badge badge-soft" :class="getStatusBadgeClass(draft.status)">{{ getStatusText(draft.status) }}</span></td>
             <td>{{ draft.createdAt ? formatDate(draft.createdAt) : '-' }}</td>
@@ -85,11 +85,11 @@
       </div>
     </div>
 
-    <DraftDetailsModal 
-      :show="showDetailsModal" 
-      :draft-id="selectedDraftId" 
-      @close="showDetailsModal = false" 
-      @refresh="fetchData" 
+    <DraftDetailsModal
+      :show="showDetailsModal"
+      :draft-id="selectedDraftId"
+      @close="showDetailsModal = false"
+      @refresh="fetchData"
     />
 
     <teleport to="body">
@@ -169,11 +169,11 @@ const filteredDrafts = computed(() => {
     list = list.filter(d => d.customer?.first_name?.toLowerCase().includes(q) || d.customer?.phone?.includes(q) || d.loan_id?.toLowerCase().includes(q))
   }
   if (staffFilter.value) list = list.filter(d => d.requester_id === parseInt(staffFilter.value))
-  
+
   if (dateFrom.value || dateTo.value) {
     list = list.filter((d: any) => { // 🟢 ໃສ່ (d: any) ເພື່ອປ້ອງກັນ Implicit any
       if (!d.createdAt) return false;
-      
+
       // 🟢 ບັງຄັບໃຫ້ເປັນ String ແບບ 100% ດ້ວຍ String() ແລະ ໃສ່ || '' ກວມອີກຊັ້ນ
       const dateString = String(d.createdAt);
       const date: string = (dateString.includes('T') ? dateString.split('T')[0] : dateString) || '';

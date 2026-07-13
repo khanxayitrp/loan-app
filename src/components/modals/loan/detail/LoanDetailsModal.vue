@@ -3,7 +3,7 @@
     <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
       <div
         class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto">
-        
+
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-bold">
             {{ isEditingInModal ? 'ແກ້ໄຂຂໍ້ມູນສິນເຊື່ອ' : 'ລາຍລະອຽດສິນເຊື່ອ' }}
@@ -134,7 +134,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-if="selectedLoan?.product" class="border-t pt-4 mt-4">
               <h4 class="font-medium mb-3">ຂໍ້ມູນສິນຄ້າ</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -291,18 +291,18 @@
                 <label class="label pt-0">
                   <span class="label-text font-medium text-gray-800 dark:text-white">ເລືອກ ສີ / ຂະໜາດ <span v-if="modalProductVariants.length > 0">*</span></span>
                 </label>
-                
+
                 <div v-if="isModalLoadingVariants" class="text-sm text-gray-500 flex items-center gap-2">
                   <span class="loading loading-spinner loading-xs"></span> ກຳລັງໂຫຼດຕົວເລືອກຍ່ອຍ...
                 </div>
-                
+
                 <div v-else-if="modalProductVariants.length === 0" class="text-sm text-gray-500 flex items-center gap-2">
                   <span class="icon-[tabler--info-circle] size-4 text-gray-400"></span>
                   <span>ສິນຄ້ານີ້ບໍ່ມີຕົວເລືອກຍ່ອຍ</span>
                 </div>
-                
+
                 <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div v-for="variant in modalProductVariants" :key="variant.id" 
+                  <div v-for="variant in modalProductVariants" :key="variant.id"
                        class="border rounded p-2 cursor-pointer flex justify-between items-center transition-all bg-white"
                        :class="modalSelectedVariant?.id === variant.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 hover:border-primary/30'"
                        @click="selectModalVariant(variant)">
@@ -397,9 +397,9 @@
         </div>
 
         <div v-else-if="activeTab === 'documents'" class="space-y-6">
-          
+
           <div v-if="!isEditingInModal" class="space-y-6 bg-slate-50/50 p-2 sm:p-4 rounded-xl">
-            
+
             <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
               class="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
               <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -408,12 +408,12 @@
               <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
               <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີເອກະສານທີ່ອັບໂຫຼດສຳລັບສິນເຊື່ອນີ້</p>
             </div>
-            
+
             <template v-else>
               <div v-for="(cat, catIndex) in allDocumentCategories" :key="'view-cat-' + catIndex"
                    v-show="cat.files && cat.files.length > 0"
                    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-                
+
                 <div class="flex items-center justify-between mb-4 border-b pb-3">
                   <h4 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                     <span class="icon-[tabler--folder-open] size-5 text-indigo-600"></span> {{ cat.name }}
@@ -423,10 +423,10 @@
                 </div>
 
                 <div class="flex flex-wrap gap-4">
-                  <div v-for="(f, fileIndex) in cat.files" :key="fileIndex" 
+                  <div v-for="(f, fileIndex) in cat.files" :key="fileIndex"
                        class="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50 w-full sm:w-48 group cursor-pointer shadow-sm hover:shadow-md transition-all"
                        @click="openInNewTab(f.preview)">
-                    
+
                     <div class="h-32 w-full overflow-hidden bg-slate-100">
                       <img v-if="!f.isPdf" :src="f.preview" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       <div v-else class="w-full h-full flex flex-col items-center justify-center">
@@ -445,9 +445,9 @@
           </div>
 
           <div v-else class="space-y-6">
-            <div v-for="(cat, catIndex) in allDocumentCategories" :key="'edit-cat-' + cat.id" 
+            <div v-for="(cat, catIndex) in allDocumentCategories" :key="'edit-cat-' + cat.id"
                  class="border rounded-2xl p-5 bg-white shadow-sm border-slate-200">
-              
+
               <div class="flex justify-between items-start mb-4">
                 <div>
                   <h5 class="font-bold text-slate-800">{{ cat.name }}</h5>
@@ -457,11 +457,11 @@
               </div>
 
               <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-                
-                <div v-for="(f, fileIndex) in cat.files" :key="fileIndex" 
+
+                <div v-for="(f, fileIndex) in cat.files" :key="fileIndex"
                      class="relative aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-50 group">
-                  
-                  <button type="button" @click.stop="removeDocument(cat.id, fileIndex)" 
+
+                  <button type="button" @click.stop="removeDocument(cat.id, fileIndex)"
                     class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 z-10 shadow-md hover:scale-110 transition-transform">
                     <span class="icon-[tabler--x] size-4"></span>
                   </button>
@@ -486,7 +486,7 @@
                 </label>
 
               </div>
-              
+
               <div class="mt-3 text-[11px] text-gray-500 text-right font-medium border-t pt-3">
                 ອັບໂຫຼດແລ້ວ: <span :class="cat.files.length > 0 ? 'text-success' : 'text-error'">{{ cat.files.length }} ໄຟລ໌</span>
               </div>
@@ -549,7 +549,7 @@ import { LoanApplicationStatus } from '@/types/loanApplication'
 import type { CustomerLocation } from '@/types/customer'
 import { formatPrice, formatCurrencyInput, getStatusBadgeClass, getStatusText, getDocumentTypeName } from '@/utils/formatters'
 import { getFullImageUrl } from '@/utils/url'
-import { alert as customAlert } from '@/utils/alert' 
+import { alert as customAlert } from '@/utils/alert'
 import imageCompression from 'browser-image-compression';
 
 import CustomerLocationMap from '@/components/loans/form/CustomerLocationMap.vue'
@@ -596,7 +596,7 @@ const isLocationLoading = ref(false)
 // Form Data
 const modalLoanForm = reactive({
   customer_name: '', customer_phone: '', customer_id_card: '', customer_address: '', occupation: '', age: 0,
-  province_id: '', district_id: '', dob: '', 
+  province_id: '', district_id: '', dob: '',
   product_id: 0, product_name: '', product_type: '', total_amount: 0, down_payment: 0, interest_rate: 0, loan_period: 0,
   monthly_payment: 0, monthly_income: 0, interest_type: 'flat_rate', interest_rate_type: 'monthly'
 })
@@ -608,19 +608,19 @@ const modalFormErrors = reactive({
 
 // 🟢 Document State Interfaces
 interface UploadedFile {
-  id?: number; 
-  file: File | Blob | null; 
+  id?: number;
+  file: File | Blob | null;
   preview: string;
   isPdf: boolean;
   name: string;
 }
 
-interface DocumentCategory { 
-  id: string; 
-  name: string; 
-  description: string; 
-  required: boolean; 
-  files: UploadedFile[]; 
+interface DocumentCategory {
+  id: string;
+  name: string;
+  description: string;
+  required: boolean;
+  files: UploadedFile[];
 }
 
 const loanDocuments = ref<DocumentCategory[]>([
@@ -661,7 +661,7 @@ const populateDocumentsFromStore = () => {
       const reqDoc = loanDocuments.value.find(d => d.id === docType);
       const optDoc = optionalDocuments.value.find(d => d.id === docType);
       const fileUrl = getFullImageUrl(serverDoc.file_url);
-      
+
       if (fileUrl) {
         const newFileObj: UploadedFile = {
           id: serverDoc.id,
@@ -683,7 +683,7 @@ watch(() => props.show, async (newVal) => {
   if (newVal && props.loanId) {
     try {
       selectedLoan.value = await loanApplicationStore.fetchLoanApplicationById(props.loanId)
-      
+
       // ໂຫຼດເອກະສານ ແລະ ຈັດລົງ Array
       await loanApplicationStore.fetchDocuments(selectedLoan.value.customer_id)
       populateDocumentsFromStore()
@@ -730,7 +730,7 @@ const loadVariantsForEdit = async (productId: number, variantId?: number) => {
     try {
         const variants = await productStore.fetchVariantsByProductId(productId);
         modalProductVariants.value = variants || [];
-        
+
         if (variantId) {
             modalSelectedVariant.value = modalProductVariants.value.find(v => v.id === variantId) || null;
         } else {
@@ -755,9 +755,9 @@ const startEditInModal = async () => {
     await productStore.fetchProducts({ shop_id: shopId, limit: 100 })
     if (loanData.product_id) {
       const currentProduct = productStore.products.find(p => p.id === loanData.product_id)
-      if (currentProduct) { 
-          selectedModalProduct.value = currentProduct; 
-          modalProductSearch.value = currentProduct.product_name 
+      if (currentProduct) {
+          selectedModalProduct.value = currentProduct;
+          modalProductSearch.value = currentProduct.product_name
           await loadVariantsForEdit(currentProduct.id, loanData.variant_id);
       }
     }
@@ -784,7 +784,7 @@ const startEditInModal = async () => {
   modalLoanForm.monthly_payment = calculateModalMonthlyPayment()
   modalLoanForm.monthly_income = Math.round(Number(loanData.customer?.income_per_month || 0))
 
-  // เอกสารเตรียมพร้อมไว้ตั้งแต่ Watch show ແລ້ວ 
+  // เอกสารเตรียมพร้อมไว้ตั้งแต่ Watch show ແລ້ວ
   isEditingInModal.value = true
 }
 
@@ -802,7 +802,7 @@ const saveLoanFromModal = async () => {
 
     const updateData = {
       product_id: selectedModalProduct.value?.id || selectedLoan.value.product_id,
-      variant_id: modalSelectedVariant.value?.id || null, 
+      variant_id: modalSelectedVariant.value?.id || null,
       customer_id: selectedLoan.value?.customer_id,
       first_name: firstName, last_name: lastName,
       phone: modalLoanForm.customer_phone, identity_number: modalLoanForm.customer_id_card,
@@ -817,7 +817,7 @@ const saveLoanFromModal = async () => {
 
     await loanApplicationStore.updateDraftLoanApplication(selectedLoan.value.id, updateData)
     selectedLoan.value = await loanApplicationStore.fetchLoanApplicationById(selectedLoan.value.id)
-    
+
     isEditingInModal.value = false
     customAlert.success('ບັນທຶກຂໍ້ມູນລູກຄ້າສຳເລັດ!')
     emit('refresh')
@@ -825,10 +825,10 @@ const saveLoanFromModal = async () => {
     customAlert.error('ເກີດຂໍ້ຜິດພາດ', errorMsg) } finally { isSaving.value = false }
 }
 
-// 
+//
 const saveDocumentsOnly = async () => {
   isSaving.value = true;
-  
+
   try {
     const filesToUpload: File[] = [];
     const docTypesArray: string[] = [];
@@ -837,10 +837,10 @@ const saveDocumentsOnly = async () => {
     for (const cat of allDocumentCategories.value) {
       for (const f of cat.files) {
         if (f.file) { // ตรวจสอบว่ามีไฟล์ใหม่ถูกเลือก
-          const fileObj = f.file instanceof File 
-            ? f.file 
+          const fileObj = f.file instanceof File
+            ? f.file
             : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
-          
+
           filesToUpload.push(fileObj);
           docTypesArray.push(cat.id); // สมมติว่า cat.id คือ 'id_card', 'house_reg' ฯลฯ
         }
@@ -850,21 +850,21 @@ const saveDocumentsOnly = async () => {
     // 2. 🟢 เช็คว่ามีไฟล์ใหม่ให้ส่งหรือไม่
     if (filesToUpload.length > 0) {
       isUploadingDocuments.value = true;
-      
+
       // ส่งข้อมูลไปที่ Store แค่ "ครั้งเดียว" (Bulk Upload)
       await loanApplicationStore.uploadMultipleDocuments(
-        selectedLoan.value.customer_id, 
-        selectedLoan.value.id, 
+        selectedLoan.value.customer_id,
+        selectedLoan.value.id,
         filesToUpload,
         docTypesArray
       );
-      
+
       // 3. 🟢 อัปเดตหน้าจอ
       // (Store โหลดข้อมูลใหม่จาก DB ให้แล้ว เราแค่เรียกฟังก์ชันจัดเรียงลงหน้าจอ)
       if (typeof populateDocumentsFromStore === 'function') {
-        populateDocumentsFromStore(); 
+        populateDocumentsFromStore();
       }
-      
+
       customAlert.success('ອັບໂຫຼດເອກະສານສຳເລັດ!');
     } else {
       customAlert.info('ບໍ່ມີເອກະສານໃໝ່ໃຫ້ອັບໂຫຼດ');
@@ -894,7 +894,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     const wData = formData?.work || {};
     const pData = formData?.product || {};
     const sData = formData?.shop || {};
-    
+
     const gData = hasGuarantorOrRef ? (formData?.guarantor || {}) : {};
     const gwData = hasGuarantorOrRef ? (formData?.guarantorWork || {}) : {};
 
@@ -972,7 +972,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusMaritalStatus: cData.maritalStatus || 'ບໍ່ລະບຸ', cusIdPassNumber: cData.idCard || 'ບໍ່ລະບຸ',
       cusIdPassDate: cData.idCardIssueDate || "",
       cusIdPassExpiryDate: cData.idCardExpiryDate || "",
-      cusCensusNumber: cData.censusBook || 'ບໍ່ມີ', cusCensusCreated: cData.censusBookIssueDate || new Date().toISOString().split('T')[0],
+      cusCensusNumber: cData.censusBook || 'ບໍ່ມີ', cusCensusCreated: cData.censusBookIssueDate || null,
       cusCensusAuthorizeBy: cData.censusAuthorizeBy || 'ບໍ່ລະບຸ', cusHouseNumber: cData.houseNumber || 'ບໍ່ລະບຸ',
       cusUnit: Number(cData.unit) || 0, cusAddress: formatAddr(cData.address), cusProvinceId: cData.address?.province_id || null,
       cusDistrictId: cData.address?.district_id || null, cusLivedYear: Number(cData.residenceYears) || 0,
@@ -1048,7 +1048,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
     //   isUploadingDocuments.value = true;
     //   for (const cat of allDocumentCategories.value) {
     //     for (const f of cat.files) {
-    //       if (f.file) { 
+    //       if (f.file) {
     //         const fileToUpload = f.file instanceof File ? f.file : new File([f.file as Blob], f.name || 'document.pdf', { type: f.file?.type });
     //         await loanApplicationStore.uploadDocument(selectedLoan.value.customer_id, fileToUpload, cat.id);
     //       }
@@ -1128,22 +1128,22 @@ const selectModalProduct = async (product: any) => {
   selectedModalProduct.value = product;
   modalProductSearch.value = product.product_name;
   showModalProductDropdown.value = false;
-  
+
   await loadVariantsForEdit(product.id);
-  
+
   if (modalProductVariants.value.length === 0) {
       modalLoanForm.total_amount = product.price;
   } else {
-      modalLoanForm.total_amount = 0; 
+      modalLoanForm.total_amount = 0;
   }
-  
+
   modalLoanForm.loan_period = product.term || 12;
   handleModalTermChange();
 }
 
 const selectModalVariant = (variant: any) => {
     modalSelectedVariant.value = variant;
-    modalLoanForm.total_amount = variant.price; 
+    modalLoanForm.total_amount = variant.price;
 }
 
 const clearModalProductSelection = () => {
@@ -1168,7 +1168,7 @@ const handleDocumentUpload = async (typeId: string, event: Event) => {
 
   for (let i = 0; i < files.length; i++) {
     const currentFile = files[i];
-    if (!currentFile) continue; 
+    if (!currentFile) continue;
 
     if (currentFile.size > 8 * 1024 * 1024) {
       customAlert.error('ໄຟລ໌ໃຫຍ່ເກີນໄປ', `ໄຟລ໌ ${currentFile.name} ໃຫຍ່ເກີນໄປ (ເກີນ 8MB)`);
@@ -1176,17 +1176,17 @@ const handleDocumentUpload = async (typeId: string, event: Event) => {
     }
 
     let finalFile: File = currentFile;
-    
+
     if (finalFile.type.startsWith('image/')) {
       try {
         const compressedBlob = await imageCompression(currentFile, {
-          maxSizeMB: 3, 
-          maxWidthOrHeight: 1920, 
+          maxSizeMB: 3,
+          maxWidthOrHeight: 1920,
           useWebWorker: true
         });
-        finalFile = new File([compressedBlob], currentFile.name, { 
-          type: compressedBlob.type, 
-          lastModified: Date.now() 
+        finalFile = new File([compressedBlob], currentFile.name, {
+          type: compressedBlob.type,
+          lastModified: Date.now()
         });
       } catch (error) {
         console.error('Compress error:', error);
@@ -1202,13 +1202,13 @@ const handleDocumentUpload = async (typeId: string, event: Event) => {
           file: finalFile,
           preview: (e.target?.result as string) || '',
           isPdf: isPdf,
-          name: finalFile.name 
+          name: finalFile.name
         });
     };
     reader.readAsDataURL(finalFile);
   }
-  
-  target.value = ''; 
+
+  target.value = '';
 }
 
 const removeDocument = (typeId: string, fileIndex: number) => {

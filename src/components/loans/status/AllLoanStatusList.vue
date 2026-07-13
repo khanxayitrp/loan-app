@@ -108,7 +108,7 @@
             <td>{{ getCustomerPhone(loan) }}</td>
 
             <!-- Amount -->
-            <td class="font-medium">{{ formatPrice(loan.total_amount) }}</td>
+            <td class="font-medium">{{ formatPrice(Number(loan.total_amount || 0) - Number(loan.down_payment || 0)) }}</td>
 
             <!-- Interest Rate -->
             <td>{{ loan.interest_rate_at_apply || '-' }}%</td>
@@ -210,7 +210,7 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຈຳນວນເງິນ</label>
-                <p class="font-medium text-primary">{{ formatPrice(selectedLoan.total_amount) }}</p>
+                <p class="font-medium text-primary">{{ formatPrice(Number(selectedLoan.total_amount || 0) - Number(selectedLoan.down_payment || 0)) }}</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ດອກເບ້ຍ</label>

@@ -1,7 +1,12 @@
 <template>
   <teleport to="body">
-    <div v-if="isOpen && printData" class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-500/80 backdrop-blur-sm p-4 print:p-0 print:bg-white">
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col print:shadow-none print:max-h-none print:h-auto print:rounded-none">
+    <div id="print-modal-container" v-if="isOpen && printData"
+      class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-500/80 backdrop-blur-sm p-4 print:p-0 print:bg-white">
+      <!-- <teleport to="body">
+    <div v-if="isOpen && printData"
+      class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-500/80 backdrop-blur-sm p-4 print:p-0 print:bg-white"> -->
+      <div
+        class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col print:shadow-none print:max-h-none print:h-auto print:rounded-none">
 
         <div class="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-xl no-print">
           <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800">
@@ -28,8 +33,9 @@
             <div><strong>ວັນທີພິມ:</strong> {{ getCurrentDateDDMMYYYY() }}</div>
           </div>
 
-          <div class="mb-4">
-            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">1. ຂໍ້ມູນລູກຄ້າ (Applicant Information)</div>
+          <div class="mb-4 break-inside-avoid">
+            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">1. ຂໍ້ມູນລູກຄ້າ (Applicant
+              Information)</div>
             <table class="w-full text-sm border-collapse border border-gray-400">
               <tbody>
                 <tr>
@@ -42,20 +48,24 @@
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ເບີໂທຕິດຕໍ່:</td>
                   <td class="border border-gray-400 px-2 py-1">{{ printData.phone }}</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ບ່ອນເຮັດວຽກ:</td>
-                  <td class="border border-gray-400 px-2 py-1">{{ printData.companyName }} ({{ printData.jobTenure }} ປີ)</td>
+                  <td class="border border-gray-400 px-2 py-1">{{ printData.companyName }} ({{ printData.jobTenure }}
+                    ປີ)</td>
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ລາຍຮັບລວມ/ເດືອນ:</td>
-                  <td class="border border-gray-400 px-2 py-1 text-success font-bold">{{ formatPrice(printData.totalIncome) }} ກີບ</td>
+                  <td class="border border-gray-400 px-2 py-1 text-success font-bold">{{
+                    formatPrice(printData.totalIncome) }} ກີບ</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ໜີ້ສິນລວມ/ເດືອນ:</td>
-                  <td class="border border-gray-400 px-2 py-1 text-error font-bold">{{ formatPrice(printData.totalDebt) }} ກີບ</td>
+                  <td class="border border-gray-400 px-2 py-1 text-error font-bold">{{ formatPrice(printData.totalDebt)
+                  }} ກີບ</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div class="mb-4">
-            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">2. ຂໍ້ມູນສິນເຊື່ອ (Loan Details)</div>
+          <div class="mb-4 break-inside-avoid">
+            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">2. ຂໍ້ມູນສິນເຊື່ອ (Loan Details)
+            </div>
             <table class="w-full text-sm border-collapse border border-gray-400">
               <tbody>
                 <tr>
@@ -66,26 +76,31 @@
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ເງິນວາງດາວ:</td>
-                  <td class="border border-gray-400 px-2 py-1">{{ formatPrice(printData.downPayment) }} ກີບ ({{ printData.downPaymentPercent.toFixed(1) }}%)</td>
+                  <td class="border border-gray-400 px-2 py-1">{{ formatPrice(printData.downPayment) }} ກີບ ({{
+                    printData.downPaymentPercent.toFixed(1) }}%)</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ຍອດຈັດສິນເຊື່ອ:</td>
-                  <td class="border border-gray-400 px-2 py-1 font-bold">{{ formatPrice(printData.approvedAmount) }} ກີບ</td>
+                  <td class="border border-gray-400 px-2 py-1 font-bold">{{ formatPrice(printData.approvedAmount) }} ກີບ
+                  </td>
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ດອກເບ້ຍ:</td>
-                  <td class="border border-gray-400 px-2 py-1">{{ printData.interestRate }}% {{ printData.interestType }}</td>
+                  <td class="border border-gray-400 px-2 py-1">{{ printData.interestRate }}% {{ printData.interestType
+                  }}</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ໄລຍະເວລາ:</td>
                   <td class="border border-gray-400 px-2 py-1">{{ printData.loanPeriod }} ເດືອນ</td>
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ຄ່າງວດ/ເດືອນ:</td>
-                  <td colspan="3" class="border border-gray-400 px-2 py-1 font-bold text-primary text-base">{{ formatPrice(printData.monthlyPay) }} ກີບ</td>
+                  <td colspan="3" class="border border-gray-400 px-2 py-1 font-bold text-primary text-base">{{
+                    formatPrice(printData.monthlyPay) }} ກີບ</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div class="mb-4">
-            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">3. ຜົນການກວດສອບ (Verification Results)</div>
+          <div class="mb-4 break-inside-avoid">
+            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">3. ຜົນການກວດສອບ (Verification
+              Results)</div>
             <table class="w-full text-sm border-collapse border border-gray-400">
               <tbody>
                 <tr>
@@ -94,22 +109,22 @@
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ອັດຕาສ່ວນໜີ້ສິນ (DSR):</td>
-                  <td class="border border-gray-400 px-2 py-1 font-bold" :class="printData.dsrPercent > 50 ? 'text-error' : 'text-success'">{{ printData.dsrPercent.toFixed(2) }}%</td>
+                  <td class="border border-gray-400 px-2 py-1 font-bold"
+                    :class="printData.dsrPercent > 50 ? 'text-error' : 'text-success'">{{
+                      printData.dsrPercent.toFixed(2) }}%</td>
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ສະຖານະການໂທ (Call Check):</td>
-                  <td class="border border-gray-400 px-2 py-1">{{ printData.callStatus === 'completed' ? 'ໂທຢືນຢັນສຳເລັດ ຂໍ້ມູນຖືກຕ້ອງ' : 'ມີບັນຫາໃນการໂທກວດສອບ' }}</td>
-                </tr>
-                <tr>
-                  <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ໝາຍເຫດເພີ່ມເຕີມ:</td>
-                  <td class="border border-gray-400 px-2 py-1 text-xs whitespace-pre-line">{{ printData.remarks || '-' }}</td>
+                  <td class="border border-gray-400 px-2 py-1">{{ printData.callStatus === 'completed' ?
+                    'ໂທຢືນຢັນສຳເລັດຂໍ້ມູນຖືກຕ້ອງ' : 'ມີບັນຫາໃນการໂທກວດສອບ' }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div class="mb-6">
-            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">4. ຄะແນນການປະເມີນ (Credit Score)</div>
+          <div class="mb-6 break-inside-avoid">
+            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400">4. ຄະແນນການປະເມີນ (Credit Score)
+            </div>
             <table class="w-full text-sm border-collapse border border-gray-400">
               <tbody>
                 <tr>
@@ -118,10 +133,11 @@
                     <div class="text-4xl font-black mt-1 text-primary">{{ printData.creditScore }}</div>
                   </td>
                   <td class="border border-gray-400 px-4 py-3 w-1/2 text-center"
-                      :class="printData.creditScore >= 80 ? 'bg-green-700 text-white' : (printData.creditScore >= 65 ? 'bg-amber-600 text-white' : 'bg-red-700 text-white')">
+                    :class="printData.creditScore >= 80 ? 'bg-green-700 text-white' : (printData.creditScore >= 65 ? 'bg-amber-600 text-white' : 'bg-red-700 text-white')">
                     <div class="text-sm font-semibold">ຜົນການປະເມີນ (Recommendation)</div>
                     <div class="text-xl font-bold mt-1">
-                      {{ printData.creditScore >= 80 ? 'ອະນຸມັດ (APPROVE)' : (printData.creditScore >= 65 ? 'ອະນຸມັດແບບມີເງື່ອນໄຂ' : 'ປະຕິເສດ (REJECT)') }}
+                      {{ printData.creditScore >= 80 ? 'ອະນຸມັດ (APPROVE)' : (printData.creditScore >= 65 ?
+                        'ອະນຸມັດແບບມີເງື່ອນໄຂ' : 'ປະຕິເສດ (REJECT)') }}
                     </div>
                   </td>
                 </tr>
@@ -129,7 +145,39 @@
             </table>
           </div>
 
-          <div class="mt-12 flex justify-between px-8 text-center text-sm">
+          <div class="mb-6 break-inside-avoid" v-if="approvalLogs.length > 0">
+            <div class="bg-gray-200 font-bold px-2 py-1 text-sm border border-gray-400 border-b-0">5. ປະຫວັດການອະນຸມັດ
+              ແລະ ຄວາມຄິດເຫັນ (Approval History)</div>
+            <table class="w-full text-sm border-collapse border border-gray-400">
+              <thead>
+                <tr class="bg-gray-50">
+                  <th class="border border-gray-400 px-2 py-1 w-10 text-center">ລ/ດ</th>
+                  <th class="border border-gray-400 px-2 py-1 w-1/4 text-center">ວັນທີ/ເວລາ</th>
+                  <th class="border border-gray-400 px-2 py-1 w-1/4 text-left">ຜູ້ດຳເນີນການ</th>
+                  <th class="border border-gray-400 px-2 py-1 text-center whitespace-nowrap">ການກະທຳ</th>
+                  <th class="border border-gray-400 px-2 py-1 w-1/3 text-left">ຄວາມຄິດເຫັນ (Remarks)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(log, idx) in approvalLogs" :key="idx">
+                  <td class="border border-gray-400 px-2 py-1 text-center font-medium">{{ idx + 1 }}</td>
+                  <td class="border border-gray-400 px-2 py-1 text-[11px] text-center">{{
+                    formatDateTime(log.performed_at) }}</td>
+                  <td class="border border-gray-400 px-2 py-1 text-[11px]">
+                    <div class="font-bold">{{ log.performed_by_user?.full_name || log.performed_by_user?.username ||
+                      'ລະບົບ' }}</div>
+                    <div class="text-gray-600">{{ formatRoleName(log.performed_by_user?.staff_level) }}</div>
+                  </td>
+                  <td class="border border-gray-400 px-2 py-1 text-center text-[11px] font-bold">{{
+                    getStatusText(log.status_to) }}</td>
+                  <td class="border border-gray-400 px-2 py-1 text-[11px] whitespace-pre-line">{{ log.remarks || '-' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-12 flex justify-between px-8 text-center text-sm break-inside-avoid">
             <div class="w-1/3">
               <div class="border-b border-black mb-2 mx-4 h-16"></div>
               <div>ຜູ້ກວດສອບ / Prepared By</div>
@@ -154,17 +202,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import apiClient from '@/api/apiclient';
 import { alert } from '@/utils/alert';
-import { formatPrice, getCurrentDateDDMMYYYY } from '@/utils/formatters';
+import { formatPrice, getCurrentDateDDMMYYYY, formatDateTime, getStatusText } from '@/utils/formatters';
+
+// 🟢 Import ໃຊ້ Store ສຳລັບດຶງ Logs
+import { useLoanApplicationStore } from '@/stores/loanApplication';
 
 const props = defineProps<{ isOpen: boolean; printData: any }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
 
+const loanApplicationStore = useLoanApplicationStore();
+const approvalLogs = ref<any[]>([]);
 const isPrinting = ref(false);
 
 const close = () => emit('close');
+
+// 🟢 ດຶງຂໍ້ມູນປະຫວັດເມື່ອມີການເປີດ Modal ຂຶ້ນມາ
+watch(() => props.isOpen, async (newVal) => {
+  if (newVal && props.printData?.loan?.id) {
+    approvalLogs.value = await loanApplicationStore.fetchApprovalLogs(props.printData.loan.id);
+  } else {
+    approvalLogs.value = [];
+  }
+});
 
 const getCibLabel = (status: string) => {
   const map: Record<string, string> = {
@@ -175,6 +237,20 @@ const getCibLabel = (status: string) => {
     'blacklist': 'ບໍ່ດີ (ຊັກซ້າ 90+ ວັນ/Blacklist)'
   }
   return map[status] || status;
+};
+
+const formatRoleName = (role: string) => {
+  if (!role) return 'System';
+  const roles: Record<string, string> = {
+    'credit_officer': 'ພະນັກງານສິນເຊື່ອ',
+    'sales': 'ພະນັກງານຂາຍ',
+    'credit_manager': 'ຫົວໜ້າສິນເຊື່ອ',
+    'approver': 'ຜູ້ອະນຸມັດ',
+    'deputy_director': 'ຮອງຜູ້ອຳນວຍການ',
+    'director': 'ຜູ້ອຳນວຍການ',
+    'admin': 'ແອັດມິນ'
+  };
+  return roles[role] || role;
 };
 
 const handlePrint = async () => {
@@ -196,11 +272,164 @@ const handlePrint = async () => {
 };
 </script>
 
-<style scoped>
+<style>
 @media print {
-  body > *:not(#print-section) { display: none !important; }
-  .drawer, .navbar, .no-print { display: none !important; }
-  #print-section { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background-color: white; }
-  @page { size: A4; margin: 1.5cm; }
+
+  /* 1. ซ่อนหน้าเว็บหลักทั้งหมด (ตาราง, เมนู, navbar) */
+  #app,
+  body>div:not(#print-modal-container) {
+    display: none !important;
+  }
+
+  /* 2. ซ่อนส่วนที่ไม่ต้องการให้พริ้น (ปุ่มต่างๆ) */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 3. จัดการให้ Modal กางออกเต็มหน้ากระดาษ ไม่เป็นกรอบลอย */
+  #print-modal-container {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 4. ล้างค่า Scroll (แถบเลื่อน) และความสูงจำกัดทิ้ง */
+  #print-modal-container>div,
+  #print-section {
+    position: relative !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* 5. บังคับให้สีพื้นหลังติด */
+  #print-section {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 6. ตั้งค่าหน้ากระดาษ A4 */
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+
+  /* 7. ปรับขนาดฟอนต์ให้พอดีหน้ากระดาษ */
+  table {
+    font-size: 11px !important;
+  }
+
+  h1 {
+    font-size: 18px !important;
+  }
+
+  h2 {
+    font-size: 14px !important;
+  }
+
+  /* 8. ป้องกันตารางโดนหั่นครึ่ง */
+  .break-inside-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
 </style>
+
+
+<!-- <style scoped>
+@media print {
+
+  /* 1. ซ่อนทุกอย่างใน #app หรือ body ที่ไม่ใช่ Modal ของเรา (ถ้าโปรเจกต์ Vue ของคุณใช้ #app) */
+  #app,
+  body>*:not(.fixed) {
+    display: none !important;
+  }
+
+  /* ซ่อนส่วนอื่นๆ ที่ไม่ต้องการพิมพ์ */
+  .drawer,
+  .navbar,
+  .no-print {
+    display: none !important;
+  }
+
+  /* 2. ปลดล็อก Modal จากที่เคยเป็นกรอบลอย (fixed/absolute) ให้กลายเป็นบล็อกปกติ */
+  .fixed.inset-0 {
+    position: relative !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* 3. ปลดล็อกความสูงและหน้าตาของกล่องบรรจุเนื้อหา */
+  .max-h-\\[95vh\\] {
+    max-height: none !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* 4. กำหนดให้ส่วนที่ต้องการพิมพ์แสดงผลเต็มที่และบังคับให้มีสี */
+  #print-section {
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
+  }
+
+  /* 5. ตั้งค่าหน้ากระดาษ A4 */
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+
+  /* 6. ป้องกันไม่ให้ตารางหรือกลุ่มข้อมูลขาดครึ่งหน้า */
+  .break-inside-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 7. ย่อขนาดเพื่อให้อยู่ในหน้าเดียว */
+  table {
+    font-size: 11px !important;
+  }
+
+  h1 {
+    font-size: 18px !important;
+  }
+
+  h2 {
+    font-size: 14px !important;
+  }
+
+  /* ลดช่องว่างเล็กน้อย */
+  .mb-4 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .mb-6 {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .mt-12 {
+    margin-top: 1.5rem !important;
+  }
+}
+</style> -->

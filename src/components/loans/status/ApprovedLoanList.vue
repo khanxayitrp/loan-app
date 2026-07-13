@@ -56,6 +56,7 @@
         <thead>
           <tr>
             <th>ເລກທີ່ສິນເຊື່ອ</th>
+            <th>ເລກທີ່ສັນຍາ</th>
             <th>ລູກຄ້າ</th>
             <th>ເບີໂທ</th>
             <th>ຈຳນວນເງິນ</th>
@@ -70,12 +71,12 @@
         <tbody>
           <tr v-for="loan in displayedLoans" :key="loan.id">
             <td class="font-mono text-gray-600 dark:text-gray-400">{{ loan.loan_id }}</td>
-
+            <td class="font-mono text-gray-600 dark:text-gray-400">{{ getContractNumber(loan) }}</td>
             <td class="font-medium">{{ getCustomerName(loan) }}</td>
 
             <td>{{ getCustomerPhone(loan) }}</td>
 
-            <td class="font-medium text-primary">{{ formatPrice(Number(loan.total_amount) || 0) }}</td>
+            <td class="font-medium text-primary">{{ formatPrice(Number(loan.total_amount || 0) - Number(loan.down_payment || 0)) }}</td>
 
             <td>{{ loan.interest_rate_at_apply }}%</td>
 
@@ -105,7 +106,7 @@
                 </button>
 
                 <!-- ປຸ່ມຈັດການໃບມອບຮັບ -->
-                <!-- <button class="btn btn-circle btn-text btn-sm text-fuchsia-600 hover:bg-fuchsia-50" 
+                <!-- <button class="btn btn-circle btn-text btn-sm text-fuchsia-600 hover:bg-fuchsia-50"
                   @click="openDeliveryNoteModal(loan)" aria-label="Manage delivery note">
                   <span class="icon-[tabler--file-invoice] size-4"></span>
                 </button> -->
@@ -271,7 +272,7 @@
             <button class="btn btn-outline btn-warning" @click="openScheduleModal(selectedLoan)">
               <span class="icon-[tabler--calendar-stats] size-4 mr-1"></span> ຕາຕະລາງຜ່ອນ
             </button>
-            
+
             <button class="btn btn-outline btn-info" @click="openDraftContractModal">
               <span class="icon-[tabler--file-certificate] size-4 mr-1"></span> ເບິ່ງຮ່າງສັນຍາ
             </button>
@@ -299,14 +300,14 @@
               <span class="icon-[tabler--x] size-5"></span>
             </button>
           </div>
-          
+
           <!-- ເອີ້ນໃຊ້ Component ສັນຍາ ແບບ Read-only -->
-          <LoanContractForm 
+          <LoanContractForm
             v-if="selectedContract"
-            :loan-contract-id="selectedLoan?.id" 
+            :loan-contract-id="selectedLoan?.id"
             :loan-application="selectedLoan"
-            :loan-contract="selectedContract" 
-            :is-editing="false" 
+            :loan-contract="selectedContract"
+            :is-editing="false"
             :view-only="true"
             @cancel-edit="showContractModal = false"
           />
@@ -319,11 +320,11 @@
     </teleport>
 
     <!-- 🌟 Modal ສຳລັບສະແດງຕາຕະລາງຜ່ອນຊຳລະ -->
-    <LoanScheduleModal 
-      :show="showScheduleModal" 
-      :loan="loanForSchedule" 
+    <LoanScheduleModal
+      :show="showScheduleModal"
+      :loan="loanForSchedule"
       :view-only="true"
-      @close="showScheduleModal = false; loanForSchedule = null" 
+      @close="showScheduleModal = false; loanForSchedule = null"
     />
 
     <!-- Delivery Note Modal -->
@@ -435,11 +436,11 @@
     </teleport>
 
     <!-- 🌟 Modal ສຳລັບຈັດການລາຍເຊັນ (External Signature) -->
-    <ExternalSignatureModal 
-  :is-open="showSignatureModal" 
+    <ExternalSignatureModal
+  :is-open="showSignatureModal"
   :loan-id="loanForSignature?.id ?? null"
-  @close="showSignatureModal = false; loanForSignature = null" 
-  @updated="fetchLoans" 
+  @close="showSignatureModal = false; loanForSignature = null"
+  @updated="fetchLoans"
 />
 
   </div>
@@ -451,7 +452,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import * as XLSX from 'xlsx'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useDeliveryReceiptStore } from '@/stores/delivery_receipt'
-import { useLoanContractStore } from '@/stores/loanContract' 
+import { useLoanContractStore } from '@/stores/loanContract'
 import type { LoanApplication } from '@/types/loanApplication'
 import { LoanApplicationStatus } from '@/types/loanApplication'
 import Papa from 'papaparse'
@@ -465,12 +466,12 @@ import ExternalSignatureModal from '@/components/modals/loan/pending/ExternalSig
 
 const loanApplicationStore = useLoanApplicationStore()
 const deliveryReceiptStore = useDeliveryReceiptStore()
-const loanContractStore = useLoanContractStore() 
+const loanContractStore = useLoanContractStore()
 
 // Reactive state
 const isLoading = computed(() => loanApplicationStore.isLoading)
 const isLoadingDeliveryNote = ref(false)
-const isPrintingDeliveryNote = ref(false) 
+const isPrintingDeliveryNote = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchQuery = ref('')
@@ -505,9 +506,16 @@ const deliveryNoteForm = reactive({
 
 const isSavingDeliveryNote = ref(false)
 
+const getContractNumber = (loan: any): string => {
+  if (loan && loan.loan_contracts && loan.loan_contracts.length > 0) {
+    return loan.loan_contracts[0].loan_contract_number || '-';
+  }
+  return '-';
+};
+
 const getCustomerName = (loan: LoanApplication): string => {
   if (!loan.customer) return '-'
-  return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim()
+  return `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.trim()
 }
 const getCustomerPhone = (loan: LoanApplication): string => {
   return loan.customer?.phone || '-'
@@ -549,7 +557,9 @@ const filteredLoans = computed(() => {
     filtered = filtered.filter(loan =>
       getCustomerName(loan).toLowerCase().includes(query) ||
       getCustomerPhone(loan).includes(query) ||
-      loan.loan_id?.toLowerCase().includes(query)
+      (loan.loan_id ?? '').toLowerCase().includes(query) ||
+      getContractNumber(loan).toLowerCase().includes(query)
+
     )
   }
 
@@ -626,14 +636,14 @@ const closeDetailsModal = () => {
 // ຟັງຊັນສຳລັບເປີດ Modal ເບິ່ງຮ່າງສັນຍາ
 const openDraftContractModal = async () => {
   if (!selectedLoan.value) return;
-  
+
   try {
     showContractModal.value = true;
-    selectedContract.value = null; 
+    selectedContract.value = null;
 
     const contractRes = await loanContractStore.fetchContract(selectedLoan.value.id);
     const contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
-    
+
     if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
        throw new Error("No Contract");
     }
@@ -642,7 +652,7 @@ const openDraftContractModal = async () => {
 
   } catch (error) {
     showContractModal.value = false;
-    alert.error('ບໍ່ພົບຂໍ້ມູນ', 'ຍັງບໍ່ມີການສ້າງຮ່າງສັນຍາສຳລັບສິນເຊື່ອນີ້'); 
+    alert.error('ບໍ່ພົບຂໍ້ມູນ', 'ຍັງບໍ່ມີການສ້າງຮ່າງສັນຍາສຳລັບສິນເຊື່ອນີ້');
   }
 };
 
@@ -653,7 +663,7 @@ const openScheduleModal = async (loan: any) => {
     try {
       const contractRes = await loanContractStore.fetchContract(loan.id);
       contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
-      
+
       if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
         throw new Error("Contract is empty");
       }
@@ -665,7 +675,7 @@ const openScheduleModal = async (loan: any) => {
     const fullLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id);
     loanForSchedule.value = fullLoan;
     showScheduleModal.value = true;
-    
+
   } catch (error) {
     alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້');
   }
@@ -694,7 +704,7 @@ const openDeliveryNoteModal = async (loan: LoanApplication) => {
   isLoadingDeliveryNote.value = true;
 
   try {
-    let fullLoanData = loan; 
+    let fullLoanData = loan;
     try {
       const fetchedLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id);
       if (fetchedLoan) {
@@ -910,15 +920,21 @@ const confirmDisburseLoan = async () => {
 }
 
 const exportToCSV = () => {
-  if (!displayedLoans.value.length) return
+  // if (!displayedLoans.value.length) return
+  // 🟢 เปลี่ยนจาก displayedLoans เป็น filteredLoans เพื่อให้ Export ข้อมูลทุกหน้า
+  if (!filteredLoans.value.length) {
+    alert.warning('ບໍ່ມີຂໍ້ມູນ', 'ບໍ່ມີຂໍ້ມູນສຳລັບ Export');
+    return;
+  }
 
-  const csvData = displayedLoans.value.map(loan => ({
-    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id,
+  const csvData = filteredLoans.value.map(loan => ({
+    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
+    'ເລກທີ່ສັນຍາ': getContractNumber(loan), // 🟢 เพิ่มคอลัมน์เลขที่สัญญา
     'ຊື່ລູກຄ້າ': getCustomerName(loan),
     'ເບີໂທ': getCustomerPhone(loan),
     'ຈຳນວນເງິນ': formatPrice(Number(loan.total_amount) || 0),
-    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply,
-    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
+    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply || '0',
+    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '0',
     'ສະຖານະການຈ່າຍ': getDisbursementStatusText(loan),
     'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
     'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '')
@@ -934,16 +950,23 @@ const exportToCSV = () => {
 
 const exportToExcel = () => {
   // alert.info('ກຳລັງພັດທະນາ', 'ຟັງຊັນນີ້ກຳລັງເຮັດໃນເນື້ອໃນ, ກະລຸນາຮັບການອັບເດດໃນອີກຄົນໜ້າ!')
-  const excelData = displayedLoans.value.map(loan => ({
-    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id,
+  // 🟢 เปลี่ยนจาก displayedLoans เป็น filteredLoans
+  if (!filteredLoans.value.length) {
+    alert.warning('ບໍ່ມີຂໍ້ມູນ', 'ບໍ່ມີຂໍ້ມູນສຳລັບ Export');
+    return;
+  }
+
+  const excelData = filteredLoans.value.map(loan => ({
+    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
+    'ເລກທີ່ສັນຍາ': getContractNumber(loan), // 🟢 เพิ่มคอลัมน์เลขที่สัญญา
     'ຊື່ລູກຄ້າ': getCustomerName(loan),
     'ເບີໂທ': getCustomerPhone(loan),
     'ຈຳນວນເງິນ': formatPrice(Number(loan.total_amount) || 0),
-    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply,
-    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period,
+    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply || '0',
+    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '0',
     'ສະຖານະການຈ່າຍ': getDisbursementStatusText(loan),
-    'ผู้อนุมัติ': loan.approver?.username || '-',
-    'วันที่อนุมัติ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '')
+    'ຜູ້ອະນຸມັດ': loan.approver?.username || '-', // 🟢 เปลี่ยนจากไทยเป็นลาวให้สอดคล้องกัน
+    'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '') // 🟢 เปลี่ยนจากไทยเป็นลาว
   }))
   const worksheet = XLSX.utils.json_to_sheet(excelData)
   const workbook = XLSX.utils.book_new()
@@ -967,13 +990,13 @@ watch(pageSize, () => {
   currentPage.value = 1
 })
 
-// ຟັງຊັນສຳລັບການ Load ຂໍ້ມູນ 
+// ຟັງຊັນສຳລັບການ Load ຂໍ້ມູນ
 const fetchLoans = () => {
   // ດຶງຂໍ້ມູນສະເພາະສິນເຊື່ອທີ່ approved ແລະ disbursed ເທົ່ານັ້ນ
-  loanApplicationStore.fetchLoanApplications({ 
-    status: [LoanApplicationStatus.APPROVED, LoanApplicationStatus.DISBURSED] as any, 
+  loanApplicationStore.fetchLoanApplications({
+    status: [LoanApplicationStatus.APPROVED, LoanApplicationStatus.DISBURSED] as any,
     is_confirmed: 1,
-    limit: 1000 
+    limit: 1000
   });
 }
 

@@ -7,6 +7,7 @@
  */
 export interface LoanContract {
   id?: number;
+  loan_contract_number?: string;
   loanId: number;
   cusFullName: string;
   cusSex: string;

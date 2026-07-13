@@ -12,7 +12,8 @@ import {
   sentDraftApply,
   updateDraftLoanApplication,
   createRepaymentSchedule, // 🟢 Import API ໃໝ່ທີ່ຫາກໍ່ສ້າງ
-  fetchRepaymentSchedule
+  fetchRepaymentSchedule,
+  fetchApprovalLogs as fetchApprovalLogsApi // 🟢 ເພີ່ມໂຕນີ້ເຂົ້າໄປ
 } from '@/api/loanApplication';
 import { searchCustomerByFullname, searchCustomerByPhone } from '@/api/customer';
 import {
@@ -585,8 +586,8 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
      * อัปโหลดเอกสารหลายไฟล์พร้อมกัน
      */
     async uploadMultipleDocuments(
-      customerId: number, 
-      applicationId: number, 
+      customerId: number,
+      applicationId: number,
       files: File[],
       docTypes: string[]
     ) {
@@ -605,7 +606,7 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
         // 🟢 โหลดข้อมูลเอกสารใหม่จาก Server เพื่ออัปเดตหน้าจอ
         if (this.currentLoanApplication?.id === applicationId) {
           // แจ้งหลังบ้านให้ดึงรูปของลูกค้ารหัสนี้กลับมาโชว์
-          await this.fetchDocuments(customerId); 
+          await this.fetchDocuments(customerId);
         }
 
         return result;
@@ -742,6 +743,24 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async refresh() {
       // เรียกใช้โดยคง filter ไว้ แต่หน้าจะอยู่ที่เดิม
       await this.fetchLoanApplications()
+    },
+    // ໃນ Pinia Store (loanApplication.ts)
+    // ==========================================
+    // 🟢 ດຶງປະຫວັດການກວດກາ ແລະ ອະນຸມັດ (Approval Logs)
+    // ==========================================
+    async fetchApprovalLogs(loanId: number) {
+      this.isLoading = true
+      this.error = null
+      try {
+        const logs = await fetchApprovalLogsApi(loanId)
+        return logs
+      } catch (error: any) {
+        this.error = error.message || 'ບໍ່ສາມາດດຶງປະຫວັດການອະນຸມັດໄດ້'
+        console.error('Error in store fetchApprovalLogs:', error)
+        return [] // ສົ່ງ Array ວ່າງກັບຄືນຖ້າມີ Error ເພື່ອບໍ່ໃຫ້ໜ້າບ້ານພັງ
+      } finally {
+        this.isLoading = false
+      }
     }
   }
 })

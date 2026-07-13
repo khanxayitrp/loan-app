@@ -159,7 +159,8 @@ const roleTemplates = {
     { role: 'village_chief', label: 'ນາຍບ້ານ', checked: false, name: '' }
   ],
   repayment_schedule: [
-    { role: 'borrower', label: 'ລູກຄ້າຜູ້ກູ້', checked: true, name: '' }
+    { role: 'borrower', label: 'ລູກຄ້າຜູ້ກູ້', checked: true, name: '' },
+    { role: 'finance_staff', label: 'ພະນັກງານການເງິນ', checked: true, name: '' }
   ],
   delivery_note: [
     { role: 'borrower', label: 'ລູກຄ້າຜູ້ກູ້ / ຜູ້ຮັບສິນຄ້າ', checked: true, name: '' },

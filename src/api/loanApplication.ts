@@ -343,3 +343,32 @@ export const fetchRepaymentSchedule = async (
   }
 }
 
+/**
+ * 🟢 ດຶງປະຫວັດການກວດກາ ແລະ ຄວາມຄິດເຫັນ (Approval Logs)
+ */
+export const fetchApprovalLogs = async (
+  applicationId: number
+): Promise<any[]> => {
+  try {
+    console.log(`[LoanApplication API] Fetching Approval Logs for ID ${applicationId}`)
+
+    // ໝາຍເຫດ: ກວດເບິ່ງ Base URL ໃຫ້ກົງກັບ Route ຫຼັງບ້ານຂອງທ່ານ
+    // (ຖ້າ Route ຫຼັກແມ່ນ /loan-application ກໍໃຊ້ຕາມນີ້ເລີຍ)
+    const response = await apiClient.get(
+      `/loan-application/${applicationId}/approval-logs`
+    )
+
+    console.log('[LoanApplication API] Approval Logs fetch:', response.data)
+
+    if (response.data.success) {
+      return response.data.data
+    }
+
+    return []
+
+  } catch (error: any) {
+    console.error('[LoanApplication API] Fetch Approval Logs failed:', error)
+    throw new Error(error.response?.data?.message || 'Failed to fetch approval logs')
+  }
+}
+

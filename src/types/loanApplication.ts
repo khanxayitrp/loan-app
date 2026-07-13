@@ -1,6 +1,7 @@
 import type { Product } from './product';
 import type { CustomerLocation } from './customer';
 import type { DeliveryReceipt } from './delivery_receipt';
+import type { LoanContract } from './loanContract';
 export type { CustomerLocation };
 
 /**
@@ -74,11 +75,11 @@ export interface WorkInfo {
 
 export interface ProductVariant {
   // 🟢 2. ເພີ່ມ Object ຂອງ variant ເຂົ້າໄປ
-    id: number;
-    color: string;
-    size_or_capacity: string;
-    merchant_sku: string;
-    price: number;
+  id: number;
+  color: string;
+  size_or_capacity: string;
+  merchant_sku: string;
+  price: number;
 }
 
 
@@ -135,6 +136,8 @@ export interface LoanApplication {
 
   // Relations (ถ้า backend ส่งมา)
   customer?: CustomerLoan
+  contract?: LoanContract;
+  loan_contracts?: LoanContract[]; // ข้อมูล contracts แบบ array จาก backend
   product?: Product
   variant?: ProductVariant; // 🟢 เพิ่มข้อมูลสินค้าย่อย (Variant) เข้าไปใน LoanApplication เพื่อให้เข้าถึงได้ง่ายขึ้น
   guarantor?: Guarantor;
@@ -262,7 +265,7 @@ export interface CreateWithCustomerDto {
   first_name: string
   last_name: string
   address: string
-  province_id?: string | number 
+  province_id?: string | number
   district_id?: string | number
   occupation: string
   income_per_month: number
