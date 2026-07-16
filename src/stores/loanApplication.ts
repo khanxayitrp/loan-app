@@ -63,6 +63,8 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       status: undefined as LoanApplicationStatus | undefined,
       min: undefined as number | undefined,
       max: undefined as number | undefined,
+      minScore: undefined as number | undefined, // 🟢 เพิ่มตัวรับค่าคะแนน
+      maxScore: undefined as number | undefined, // 🟢 เพิ่มตัวรับค่าคะแนน
       page: 1, // เพิ่ม page ไว้ใน filters
       limit: 10 // เพิ่ม limit ไว้ใน filters
     } as LoanApplicationFilters & { page?: number; limit?: number }, // อัปเดต Type ชั่วคราวถ้ายอม
@@ -550,10 +552,13 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
         status: undefined,
         min: undefined,
         max: undefined,
+        minScore: undefined,
+        maxScore: undefined,
         page: 1,
         limit: 10
       }
-      await this.fetchLoanApplications()
+      // 🟢 Comment ອອກແລ້ວ: ໃຫ້ໜ້າແຕ່ລະໜ້າເປັນຜູ້ຕັດສິນໃຈເອງວ່າຈະດຶງຂໍ້ມູນຕອນໃດ
+      // await this.fetchLoanApplications();
     },
 
     /**

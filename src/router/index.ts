@@ -1,4 +1,3 @@
-
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
@@ -14,7 +13,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/Login.vue'),
     meta: { requiresAuth: false, layout: 'blank' } // 👈 เพิ่ม meta นี้
   },
-   // Error pages (public)
+  // Error pages (public)
   {
     path: '/unauthorized',
     name: 'Unauthorized',
@@ -22,7 +21,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: false,
       layout: 'blank' // 👈 เพิ่ม meta นี้
-     }
+    }
   },
   {
     path: '/:pathMatch(.*)*',
@@ -31,7 +30,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: false,
       layout: 'blank' // 👈 เพิ่ม meta นี้
-     }
+    }
   },
 
   // ==========================================
@@ -65,7 +64,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/users/UserManagement.vue'),
     meta: {
       requiresAuth: true,           // ต้อง login
-      // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
       permission: 'user_manage'
     }
   },
@@ -75,7 +73,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/ChangePassword.vue'),
     meta: {
       requiresAuth: true,           // ต้อง login
-      // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
       permission: 'user_manage'
     }
   },
@@ -85,7 +82,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/ChangeMyPass.vue'),
     meta: {
       requiresAuth: true,           // ต้อง login
-      // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
       permission: 'user_changepass'
     }
   },
@@ -95,28 +91,15 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/PermissionManagement.vue'),
     meta: {
       requiresAuth: true,           // ต้อง login
-      // bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
       permission: 'permission_manage'
     }
   },
-  // {
-  //   path: '/createLoan',
-  //   name: 'CreateLoan',
-  //   component: () => import('@/views/loans/LoanView.vue'),
-  //   meta: {
-  //     requiresAuth: false,           // ต้อง login
-  //     bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
-  //     permission: 'loan_create'
-  //   }
-  // },
   {
     path: '/loans',
     name: 'LoanList',
     component: () => import('@/views/loans/LoanList.vue'),
     meta: {
       requiresAuth: true,           // ต้อง login
-      // bypassAuth: true,
-      // permission: 'loan_view_all' // ลบออกเพื่อไม่ให้ block ทุก route ลูก
     },
     children: [
       {
@@ -126,30 +109,37 @@ const routes: RouteRecordRaw[] = [
         props: { loanStatus: 'all' },   // ส่ง props ไปบอกว่าแสดงทั้งหมด
         meta: {
           requiresAuth: true,
-          // bypassAuth: true,
           permission: 'loan_view_all'
         }
       },
       {
         path: '/pendingLoans',        // /loans/pendingLoans
         name: 'PendingLoans',
-        component: () => import('@/components/loans/status/PendingLoanList.vue'), // ใช้ component เดียวกัน
-        props: { loanStatus: 'pending' }, // ส่ง props ไปบอกว่า filter pending
+        component: () => import('@/components/loans/status/PendingLoanList.vue'),
+        props: { loanStatus: 'pending' },
         meta: {
           requiresAuth: true,
-          // bypassAuth: true,
           permission: 'loan_view_assigned'
         }
       },
       {
         path: '/approvedLoans',        // /loans/approvedLoans
         name: 'ApprovedLoans',
-        component: () => import('@/components/loans/status/ApprovedLoanList.vue'), // ใช้ component เดียวกัน
-        props: { loanStatus: 'approved' }, // ส่ง props ไปบอกว่า filter approved
+        component: () => import('@/components/loans/status/ApprovedLoanList.vue'),
+        props: { loanStatus: 'approved' },
         meta: {
           requiresAuth: true,
-          // bypassAuth: true,
           permission: 'loan_view_assigned'
+        }
+      },
+      // 🌟 🟢 ເພີ່ມ Route ໃໝ່ສຳລັບ ຕິດຕາມສິນເຊື່ອເງື່ອນໄຂ (Conditional Loans)
+      {
+        path: '/conditionalLoans',    // /loans/conditionalLoans
+        name: 'ConditionalLoans',
+        component: () => import('@/components/monitor/loans/Conditional_Loan.vue'), // 👈 ຊີ້ໄປຫາໄຟລ໌ໃໝ່ທີ່ທ່ານສ້າງໄວ້
+        meta: {
+          requiresAuth: true,
+          permission: 'loan_view_assigned' // ໃຊ້ສິດດຽວກັບ Approved
         }
       },
       {
@@ -158,7 +148,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/components/loans/status/RepaymentLoanList.vue'),
         meta: {
           requiresAuth: true,
-          // bypassAuth: true,
           permission: 'loan_view_assigned'
         }
       },
@@ -168,7 +157,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/components/loans/form/CreateDraftLoan.vue'),
         meta: {
           requiresAuth: true,
-          // bypassAuth: true,
           permission: 'loan_create'
         }
       },
@@ -178,7 +166,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/components/loans/form/ListDraftLoan.vue'),
         meta: {
           requiresAuth: true,
-          // bypassAuth: true,
           permission: 'loan_view_assigned'
         }
       },
@@ -188,11 +175,9 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/components/loans/form/ListLoan.vue'),
         meta: {
           requiresAuth: true,
-          // bypassAuth: true,
           permission: 'loan_view_assigned'
         }
       },
-
     ]
   },
   {
@@ -205,14 +190,12 @@ const routes: RouteRecordRaw[] = [
       permission: 'partner_manage'
     }
   },
-  // เปลี่ยนเป็น 2 routes แยกกัน
   {
     path: '/products',
     name: 'Products',
     component: () => import('@/views/products/ProductManagement.vue'),
     meta: {
       requiresAuth: true,
-      // bypassAuth: true,
       permission: 'partner_manage',
       pageType: 'products' // 👈 เพิ่ม meta data
     }
@@ -228,7 +211,6 @@ const routes: RouteRecordRaw[] = [
       pageType: 'types' // 👈 เพิ่ม meta data
     }
   },
-  // เพิ่ม route อื่น ๆ ที่ต้องการ layout และ auth ที่นี่
   {
     path: '/',
     redirect: (to) => {
@@ -249,9 +231,6 @@ const routes: RouteRecordRaw[] = [
       return { name: 'Login' };
     }
   },
-
-
-
 ]
 
 const router = createRouter({
@@ -260,7 +239,6 @@ const router = createRouter({
 })
 
 // ປັບປຸງສ່ວນ router.beforeEach ໃນ src/router/index.ts
-
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   const permissionStore = usePermissionStore()
@@ -285,7 +263,6 @@ router.beforeEach(async (to, from, next) => {
       if (permissionStore.hasPermission('loan_view_assigned')) return next({ name: 'ListLoans' })
       return next({ name: 'DashboardHome' })
     }
-    // if (role === 'partner') return next({ name: 'Stores' })
 
     return next({ name: 'PendingLoans' })
   }
@@ -314,7 +291,7 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
-// Optional: Re-init FlyonUI JS components after route change (ถ้ายังใช้)
+// Optional: Re-init FlyonUI JS components after route change
 router.afterEach(() => {
   setTimeout(() => {
     if (window.HSStaticMethods) {
@@ -324,6 +301,3 @@ router.afterEach(() => {
 })
 
 export default router
-
-
-

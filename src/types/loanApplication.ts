@@ -322,6 +322,8 @@ export interface LoanApplicationFilters {
   is_confirmed?: number
   page?: number  // ✅ เพิ่ม
   limit?: number // ✅ เพิ่ม
+  minScore?: number // 🌟 ເພີ່ມໃໝ່ ສຳລັບກັ່ນຕອງຄະແນນຕ່ຳສຸດ
+  maxScore?: number // 🌟 ເພີ່ມໃໝ່ ສຳລັບກັ່ນຕອງຄະແນນສູງສຸດ
 }
 
 

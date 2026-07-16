@@ -1,60 +1,37 @@
 <template>
   <div>
-    <button
-      type="button"
-      class="btn btn-text btn-square sm:hidden fixed top-4 left-4 z-30"
-      @click="toggleMobile"
-    >
+    <button type="button" class="btn btn-text btn-square sm:hidden fixed top-4 left-4 z-30" @click="toggleMobile">
       <span class="icon-[tabler--menu-2] size-6"></span>
     </button>
 
     <transition name="fade">
-      <div
-        v-if="isMobileOpen"
-        class="fixed inset-0 bg-black/50 z-40 sm:hidden"
-        @click="closeMobile"
-      ></div>
+      <div v-if="isMobileOpen" class="fixed inset-0 bg-black/50 z-40 sm:hidden" @click="closeMobile"></div>
     </transition>
 
-    <aside
-      id="collapsible-mini-sidebar"
-      :class="[
-        'bg-base-100 border-e border-base-content/20 flex flex-col transition-all duration-300',
-        // Desktop: always visible, controlled width
-        'sm:relative sm:z-0 sm:translate-x-0',
-        isMinified ? 'sm:w-20 overlay-minified' : 'sm:w-66',
-        // Mobile: fixed slide-in
-        'fixed top-0 left-0 z-50 h-full w-66',
-        isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
-        'sm:translate-x-0 sm:shadow-none' // desktop override
-      ]"
-    >
-      <div
-        class="drawer-header py-4 flex items-center justify-between border-b border-base-content/10"
-        :class="{ 'px-4': isMinified && !isMobileOpen, 'px-6': !isMinified || isMobileOpen }"
-      >
-        <h3
-          class="text-xl font-bold transition-all text-primary"
-          :class="{ 'opacity-0 w-0': isMinified && !isMobileOpen }"
-        >
+    <aside id="collapsible-mini-sidebar" :class="[
+      'bg-base-100 border-e border-base-content/20 flex flex-col transition-all duration-300',
+      // Desktop: always visible, controlled width
+      'sm:relative sm:z-0 sm:translate-x-0',
+      isMinified ? 'sm:w-20 overlay-minified' : 'sm:w-66',
+      // Mobile: fixed slide-in
+      'fixed top-0 left-0 z-50 h-full w-66',
+      isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
+      'sm:translate-x-0 sm:shadow-none' // desktop override
+    ]">
+      <div class="drawer-header py-4 flex items-center justify-between border-b border-base-content/10"
+        :class="{ 'px-4': isMinified && !isMobileOpen, 'px-6': !isMinified || isMobileOpen }">
+        <h3 class="text-xl font-bold transition-all text-primary"
+          :class="{ 'opacity-0 w-0': isMinified && !isMobileOpen }">
           INSEE LOAN
         </h3>
 
         <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="btn btn-circle btn-text sm:hidden"
-            @click="closeMobile"
-          >
+          <button type="button" class="btn btn-circle btn-text sm:hidden" @click="closeMobile">
             <span class="icon-[tabler--x] size-5"></span>
           </button>
 
-          <button
-            type="button"
-            class="btn btn-circle btn-text hidden sm:flex"
-            aria-label="Minify navigation"
-            @click="toggleMinified"
-          >
+          <button type="button" class="btn btn-circle btn-text hidden sm:flex" aria-label="Minify navigation"
+            @click="toggleMinified">
             <span class="icon-[tabler--menu-2] size-5"></span>
           </button>
         </div>
@@ -65,62 +42,41 @@
           <template v-for="item in menuItems" :key="item.label">
             <template v-if="!item.permission || can(item.permission)">
               <li v-if="!item.children">
-                <router-link
-                  :to="item.to"
-                  @click="closeMobileIfOpen"
-                  class="flex items-center gap-4 p-3 rounded-lg"
+                <router-link :to="item.to" @click="closeMobileIfOpen" class="flex items-center gap-4 p-3 rounded-lg"
                   :class="{
                     'bg-primary/10 text-primary font-semibold': isActive(item.to),
                     'hover:bg-base-200': !isActive(item.to)
-                  }"
-                >
+                  }">
                   <span :class="[item.icon, 'size-6 shrink-0']"></span>
-                  <span
-                    class="whitespace-nowrap transition-all"
-                    :class="{ 'opacity-0 w-0': isMinified && !isMobileOpen }"
-                  >
+                  <span class="whitespace-nowrap transition-all"
+                    :class="{ 'opacity-0 w-0': isMinified && !isMobileOpen }">
                     {{ item.label }}
                   </span>
                 </router-link>
               </li>
 
-              <li
-                v-else
-                class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:8] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]"
-              >
-                <button
-                  type="button"
-                  class="dropdown-toggle w-full flex items-center gap-4 p-3 rounded-lg"
-                  :class="{
-                    'bg-primary/10 text-primary': isSubmenuActive(item),
-                    'hover:bg-base-200': !isSubmenuActive(item)
-                  }"
-                  aria-haspopup="menu"
-                  aria-expanded="false"
-                >
+              <li v-else
+                class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:8] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]">
+                <button type="button" class="dropdown-toggle w-full flex items-center gap-4 p-3 rounded-lg" :class="{
+                  'bg-primary/10 text-primary': isSubmenuActive(item),
+                  'hover:bg-base-200': !isSubmenuActive(item)
+                }" aria-haspopup="menu" aria-expanded="false">
                   <span :class="[item.icon, 'size-6 shrink-0']"></span>
-                  <span
-                    class="whitespace-nowrap transition-all flex-grow text-left overlay-minified:hidden"
-                  >
+                  <span class="whitespace-nowrap transition-all flex-grow text-left overlay-minified:hidden">
                     {{ item.label }}
                   </span>
                   <span
-                    class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform dropdown-open:rotate-180 overlay-minified:hidden"
-                  ></span>
+                    class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform dropdown-open:rotate-180 overlay-minified:hidden"></span>
                 </button>
 
                 <ul
                   class="dropdown-menu mt-0 shadow-none overlay-minified:shadow-md overlay-minified:shadow-base-300/20 dropdown-open:opacity-100 hidden min-w-60 overlay-minified:before:absolute overlay-minified:before:-start-4 overlay-minified:before:top-0 overlay-minified:before:h-full overlay-minified:before:w-4 before:bg-transparent"
-                  role="menu"
-                >
+                  role="menu">
                   <template v-for="child in item.children" :key="child.label">
                     <li v-if="!child.permission || can(child.permission)">
-                      <router-link
-                        :to="child.to"
-                        @click="closeMobileIfOpen"
+                      <router-link :to="child.to" @click="closeMobileIfOpen"
                         class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-200"
-                        :class="{ 'bg-primary/10 text-primary font-medium': isActive(child.to) }"
-                      >
+                        :class="{ 'bg-primary/10 text-primary font-medium': isActive(child.to) }">
                         <span :class="[child.icon, 'size-5']"></span>
                         {{ child.label }}
                       </router-link>
@@ -134,11 +90,8 @@
           <div class="divider my-2"></div>
 
           <li>
-            <a
-              href="#"
-              @click.prevent="handleSignOut"
-              class="flex items-center gap-4 p-3 text-error hover:bg-error/10 rounded-lg"
-            >
+            <a href="#" @click.prevent="handleSignOut"
+              class="flex items-center gap-4 p-3 text-error hover:bg-error/10 rounded-lg">
               <span class="icon-[tabler--logout-2] size-6 shrink-0"></span>
               <span :class="{ 'opacity-0 w-0': isMinified && !isMobileOpen }">
                 ອອກຈາກລະບົບ
@@ -225,6 +178,12 @@ const menuItems = [
         label: 'ອະນຸມັດ (Approved)',
         icon: 'icon-[tabler--check]',
         to: '/approvedLoans',
+        permission: 'loan_view_assigned'
+      },
+      {
+        label: 'ຕິດຕາມສິນເຊື່ອເງື່ອນໄຂ (Condition)', // 👈 🌟 ເພີ່ມເມນູໃໝ່
+        icon: 'icon-[tabler--shield-check]',
+        to: '/conditionalLoans', // 👈 🌟 ກຳນົດ Route path (ປ່ຽນຕາມທີ່ຕັ້ງໄວ້ໃນ Router)
         permission: 'loan_view_assigned'
       },
       {

@@ -72,7 +72,7 @@
             <td>
               <div class="flex items-center gap-2">
                 <span class="font-medium" :class="!loan.credit_score ? 'text-gray-400' : ''">{{ loan.credit_score || '-'
-                  }}</span>
+                }}</span>
                 <div
                   v-if="loan.status !== 'approved' && loan.status !== 'rejected' && (isSalesOrOfficer || isApproverGroup)"
                   class="tooltip tooltip-top" data-tip="ຄຳນວນຄະແນນ" title="ຄຳນວນຄະແນນ">
@@ -363,7 +363,7 @@
       </div>
     </teleport>
 
-    <teleport to="body">
+    <!-- <teleport to="body">
       <div v-if="showApproveModal && loanToAction"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div
@@ -403,6 +403,56 @@
 
           <div class="flex justify-end gap-3 mt-6 border-t pt-4">
             <button class="btn btn-ghost" @click="showApproveModal = false">ຍົກເລີກ</button>
+            <button class="btn btn-success text-white" @click="confirmApproveLoan">ອະນຸມັດສິນເຊື່ອ</button>
+          </div>
+        </div>
+      </div>
+    </teleport> -->
+    <teleport to="body">
+      <div v-if="showApproveModal && loanToAction"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md mx-auto animate-in fade-in zoom-in duration-200">
+          <h3 class="font-bold text-xl mb-4 text-success flex items-center gap-2">
+            <span class="icon-[tabler--check] size-6"></span> ຢືນຢັນການອະນຸມັດ
+          </h3>
+          <p class="py-2 text-gray-700 dark:text-gray-300">
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການອະນຸມັດສິນເຊື່ອຂອງລູກຄ້າຊື່: <br>
+            <strong class="text-lg text-primary">"{{ getCustomerName(loanToAction) }}"</strong> ?
+          </p>
+          <div class="alert alert-info shadow-sm text-sm py-2 mb-4">
+            <span class="icon-[tabler--info-circle] size-4"></span>
+            ລະບົບຈະສ້າງຕາຕະລາງຜ່ອນຊຳລະ ແລະ ອັບເດດສະຖານະເປັນ "ປ່ອຍສິນເຊື່ອ (Disbursed)" ທັນທີ
+          </div>
+
+          <div class="form-control mt-4 p-4 rounded-xl border"
+            :class="isConditionalApproval ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'">
+            <label class="label pb-1">
+              <span class="label-text font-bold" :class="isConditionalApproval ? 'text-amber-700' : 'text-green-700'">
+                <span v-if="isConditionalApproval" class="icon-[tabler--alert-triangle] size-4 mr-1"></span>
+                <span v-else class="icon-[tabler--check] size-4 mr-1"></span>
+                ເງື່ອນໄຂ / ເຫດຜົນອະນຸມັດ (Remarks) <span v-if="isConditionalApproval" class="text-error">*</span>
+              </span>
+            </label>
+
+            <p v-if="isConditionalApproval" class="text-xs text-amber-600 mb-2">
+              ລູກຄ້າຢູ່ໃນເກນ (65-79 ຄະແນນ), ບັງຄັບໃຫ້ລະບຸເງື່ອນໄຂກ່ອນອະນຸມັດ.
+            </p>
+            <p v-else class="text-xs text-green-600 mb-2">
+              ຄະແນນຜ່ານເກນດີເລີດ (80+ ຄະແນນ), ສາມາດລະບຸເຫດຜົນເພີ່ມເຕີມໄດ້ (ບໍ່ບັງຄັບ).
+            </p>
+
+            <textarea v-model="actionRemark" class="textarea textarea-bordered w-full h-24 bg-white"
+              :placeholder="isConditionalApproval ? 'ລະບຸເງື່ອນໄຂເຊັ່ນ: ຕ້ອງເພີ່ມເງິນດາວ 10%... (ບັງຄັບ)' : 'ລະບຸເຫດຜົນເພີ່ມເຕີມ (ຖ້າມີ)...'"></textarea>
+          </div>
+
+          <div class="flex flex-wrap justify-end gap-3 mt-6 border-t pt-4">
+            <button class="btn btn-ghost" @click="showApproveModal = false">ຍົກເລີກ</button>
+
+            <button class="btn btn-warning text-white" @click="confirmReturnForEdit">
+              <span class="icon-[tabler--backspace] size-5"></span> ຕີກັບໃຫ້ແກ້ໄຂ
+            </button>
+
             <button class="btn btn-success text-white" @click="confirmApproveLoan">ອະນຸມັດສິນເຊື່ອ</button>
           </div>
         </div>
@@ -919,6 +969,37 @@ const isConditionalApproval = computed(() => {
 
 const approveLoan = (loan: any) => { loanToAction.value = loan; actionRemark.value = ''; showApproveModal.value = true; }
 const rejectLoan = (loan: any) => { loanToAction.value = loan; actionRemark.value = ''; showRejectModal.value = true; }
+
+
+// ==========================================
+// 🟢 ຟັງຊັນຕີກັບເອກະສານໃຫ້ປັບປຸງໃໝ່ (Return for Edit)
+// ==========================================
+const confirmReturnForEdit = async () => {
+  if (!loanToAction.value) return;
+
+  if (!actionRemark.value.trim()) {
+    return alert.error('ກະລຸນາປ້ອນເຫດຜົນ', 'ການຕີກັບເອກະສານຈຳເປັນຕ້ອງລະບຸເຫດຜົນໃນຊ່ອງ Remarks ເພື່ອໃຫ້ພະນັກງານແກ້ໄຂໄດ້ຖືກຕ້ອງ!');
+  }
+
+  try {
+    const updateData: any = {
+      status: LoanApplicationStatus.PENDING,
+      approver_id: authStore.user?.id,
+      remarks: actionRemark.value.trim()
+    };
+
+    await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData);
+
+    alert.success('ຕີກັບເອກະສານສຳເລັດແລ້ວ!', 'ລະບົບໄດ້ບັນທຶກປະຫວັດ ແລະ ສົ່ງກັບໃຫ້ພະນັກງານແກ້ໄຂແລ້ວ.');
+    showApproveModal.value = false;
+    fetchData();
+  } catch (error: any) {
+    const errorMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດໃນການຕີກັບເອກະສານ';
+    alert.error('ການຕີກັບເອກະສານຜິດພາດ!', errorMsg);
+  } finally {
+    loanToAction.value = null;
+  }
+}
 
 const confirmApproveLoan = async () => {
   if (!loanToAction.value) return;

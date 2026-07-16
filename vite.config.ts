@@ -30,4 +30,5 @@ export default defineConfig({
       usePolling: true, // ใช้ polling เพื่อให้การเปลี่ยนแปลงไฟล์ถูกตรวจจับได้ดีขึ้นในบางสภาพแวดล้อม
     },
   }
+
 })
