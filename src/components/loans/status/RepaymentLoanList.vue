@@ -161,7 +161,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="sch in currentSchedules" :key="sch.id"
+                  <tr v-for="(sch, index) in currentSchedules" :key="sch.id"
                     :class="{ 'bg-green-50/50 dark:bg-green-900/20': sch.payment_status === 'paid' }">
                     <td class="font-medium text-center">{{ sch.installment_no }}</td>
                     <td>{{ formatDate(sch.due_date) }}</td>
@@ -174,11 +174,18 @@
                       </span>
                     </td>
                     <td class="text-right">
-                      <button v-if="sch.payment_status !== 'paid'" class="btn btn-xs btn-success text-white"
+                      <!-- <button v-if="sch.payment_status !== 'paid'" class="btn btn-xs btn-success text-white"
                         @click="openPaymentModal(sch, false)">
                         ຊຳລະງວດນີ້
+                      </button> -->
+
+                      <button v-if="sch.payment_status !== 'paid'" class="btn btn-xs btn-success text-white"
+                        :class="{ 'opacity-50 cursor-not-allowed': !canPaySchedule(index) }"
+                        :disabled="!canPaySchedule(index)" @click="openPaymentModal(sch, false)">
+                        ຊຳລະງວດນີ້
                       </button>
-                      <button v-else class="btn btn-xs btn-ghost text-primary">
+                      <!-- ປ່ຽນຈາກອັນເກົ່າ ມາເປັນອັນນີ້ ເພີ່ມ @click="viewReceipt(sch)" -->
+                      <button v-else class="btn btn-xs btn-ghost text-primary" @click="viewReceipt(sch)">
                         <span class="icon-[tabler--receipt] size-4"></span> ເບິ່ງໃບບິນ
                       </button>
                     </td>
@@ -343,6 +350,107 @@
         </div>
       </div>
     </teleport>
+
+    <!-- ============================================== -->
+    <!-- 🟢 Receipt / Transaction History Modal -->
+    <!-- ============================================== -->
+    <teleport to="body">
+      <div v-if="showReceiptModal"
+        class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-lg mx-auto relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
+            @click="showReceiptModal = false">✕</button>
+
+          <h3 class="font-bold text-xl mb-4 border-b pb-2 flex items-center gap-2 text-primary">
+            <span class="icon-[tabler--receipt] size-6"></span> ປະຫວັດການຊຳລະເງິນ
+          </h3>
+
+          <div v-if="isReceiptLoading" class="flex justify-center py-8">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+          </div>
+
+          <div v-else-if="receiptTransactions.length > 0" class="space-y-4">
+            <div v-for="(tx, index) in receiptTransactions" :key="index"
+              class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border">
+              <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <span class="text-xs text-gray-500 font-medium">ໃບບິນອ້າງອີງ: {{ tx.id }}</span>
+                <span class="badge badge-success text-white badge-sm">ສຳເລັດ</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-y-2 text-sm">
+
+                <div class="text-gray-500">ປະເພດການຊຳລະ:</div>
+                <div class="font-bold text-right text-indigo-600">
+                  <span v-if="tx.transaction_type === 'closing'" class="text-error">ປິດບັນຊີ (Payoff)</span>
+                  <span v-else-if="tx.schedule?.installment_no">ງວດທີ {{ tx.schedule.installment_no }}</span>
+                  <span v-else>ຊຳລະຄ່າງວດ</span>
+                </div>
+
+                <div class="text-gray-500">ວັນທີຊຳລະ:</div>
+                <div class="font-medium text-right">{{ formatDate(tx.paid_at || tx.createdAt) }}</div>
+
+                <div class="text-gray-500 mt-1">ຍອດເງິນທີ່ຈ່າຍລວມ:</div>
+                <div class="font-bold text-right text-primary text-base">{{ formatPrice(tx.amount_paid) }} ກີບ</div>
+
+                <template v-if="parseAllocation(tx.remarks) as any">
+                  <div
+                    class="col-span-2 bg-white dark:bg-gray-800 rounded p-3 mt-1 mb-2 border border-dashed border-gray-300">
+                    <div class="text-[11px] font-bold text-gray-400 mb-2 border-b pb-1 uppercase tracking-wider">
+                      ລາຍລະອຽດການແບ່ງຕັດຍອດ:</div>
+                    <div class="flex justify-between mb-1">
+                      <span class="text-xs text-gray-600 dark:text-gray-400">ຕັດຕົ້ນທຶນ:</span>
+                      <span class="text-xs font-medium text-blue-600">
+                        {{ formatPrice(parseAllocation(tx.remarks)?.principal_paid || 0) }} ₭
+                      </span>
+                    </div>
+                    <div class="flex justify-between mb-1">
+                      <span class="text-xs text-gray-600 dark:text-gray-400">ຕັດດອກເບ້ຍ:</span>
+                      <span class="text-xs font-medium text-orange-500">
+                        {{ formatPrice(parseAllocation(tx.remarks)?.interest_paid || 0) }} ₭
+                      </span>
+                    </div>
+                    <div v-if="(parseAllocation(tx.remarks)?.penalty_paid || 0) > 0" class="flex justify-between mb-1">
+                      <span class="text-xs text-error">ຕັດຄ່າປັບໃໝ:</span>
+                      <span class="text-xs font-bold text-error">
+                        {{ formatPrice(parseAllocation(tx.remarks)?.penalty_paid || 0) }} ₭
+                      </span>
+                    </div>
+                    <div v-if="parseAllocation(tx.remarks)?.note" class="mt-2 pt-2 border-t text-[11px] text-gray-500">
+                      <span class="font-semibold">ໝາຍເຫດ:</span> {{ parseAllocation(tx.remarks)?.note }}
+                    </div>
+                  </div>
+                </template>
+
+                <div class="text-gray-500">ຊ່ອງທາງ:</div>
+                <div class="font-medium text-right">
+                  {{ tx.payment_channel === 'bank_transfer' ? 'ໂອນເງິນ' : 'ເງິນສົດ' }}
+                </div>
+
+                <div class="text-gray-500">ຜູ້ຮັບເງິນ:</div>
+                <div class="font-medium text-right">{{ tx.recorded_by_user?.full_name || tx.recorded_by_user?.username
+                  || 'ລະບົບ' }}
+                </div>
+              </div>
+
+              <div v-if="tx.proof_url" class="mt-4 pt-3 border-t text-center">
+                <a :href="tx.proof_url" target="_blank" class="btn btn-sm btn-outline btn-info w-full">
+                  <span class="icon-[tabler--photo] size-4 mr-1"></span> ເບິ່ງຮູບສະລິບໂອນເງິນ
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="text-center py-8 text-gray-500">
+            ບໍ່ພົບຂໍ້ມູນປະຫວັດການຊຳລະເງິນສຳລັບສັນຍານີ້.
+          </div>
+
+          <div class="modal-action mt-6">
+            <button class="btn btn-secondary w-full" @click="showReceiptModal = false">ປິດໜ້າຈໍ</button>
+          </div>
+        </div>
+      </div>
+    </teleport>
   </div>
 </template>
 
@@ -380,6 +488,11 @@ const selectedLoan = ref<LoanApplication | null>(null)
 const selectedSchedule = ref<any | null>(null)
 const isEarlyPayoff = ref(false)
 const slipInput = ref<HTMLInputElement | null>(null);
+
+// --- 🌟 State ສຳລັບ Modal ເບິ່ງໃບບິນ ---
+const showReceiptModal = ref(false);
+const isReceiptLoading = ref(false);
+const receiptTransactions = ref<any[]>([]);
 
 // Payment Form
 const paymentForm = reactive({
@@ -429,6 +542,26 @@ const getContractNumber = (loan: any): string => {
   }
   return '-';
 };
+
+// 🌟 Helper Function ສຳລັບແປງ JSON ຈາກ remarks ຂອງໃບບິນ
+const parseAllocation = (remarks: string | null) => {
+  if (!remarks) return null;
+  try {
+    const parsed = JSON.parse(remarks);
+    // ກວດສອບວ່າມີ Field ການຕັດເງິນຫຼືບໍ່ (ເພາະບາງໃບບິນເກົ່າອາດຈະມີແຕ່ Text ທຳມະດາ)
+    if (parsed && typeof parsed === 'object' && ('principal_paid' in parsed || 'interest_paid' in parsed)) {
+      return {
+        principal_paid: Number(parsed.principal_paid) || 0,
+        interest_paid: Number(parsed.interest_paid) || 0,
+        penalty_paid: Number(parsed.penalty_paid) || 0,
+        note: parsed.note || ''
+      };
+    }
+  } catch (e) {
+    // ຖ້າມັນບໍ່ແມ່ນ JSON ກໍປ່ອຍຜ່ານໄປ (return null)
+  }
+  return null;
+}
 
 const triggerSlipUpload = () => {
   if (slipInput.value) slipInput.value.click();
@@ -572,6 +705,36 @@ const summary = computed(() => {
   }
   return { totalPayable, totalPaid, remainingBalance: Math.max(0, totalPayable - totalPaid) };
 });
+
+// --- 🌟 ຟັງຊັນສຳລັບດຶງຂໍ້ມູນປະຫວັດການຈ່າຍຂອງງວດນັ້ນ ---
+const viewReceipt = async (schedule: any) => {
+  showReceiptModal.value = true;
+  isReceiptLoading.value = true;
+  receiptTransactions.value = [];
+
+  try {
+    // ຍິງ API ໄປດຶງປະຫວັດການຊຳລະເງິນ (Transactions) ຂອງ schedule_id ນີ້
+    // ໝາຍເຫດ: ໃຫ້ປ່ຽນ URL ນີ້ຕາມ Endpoint ຈິງຂອງ Backend ທ່ານ
+    const response = await apiClient.get(`/repayments/transactions/application/${schedule.application_id}`);
+
+    // ຖ້າ Backend ສົ່ງມາເປັນ Array
+    if (response.data && response.data.data) {
+      receiptTransactions.value = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
+    }
+  } catch (error) {
+    console.error('Failed to fetch receipt:', error);
+    // ຖ້າ API Error ຫຼື ຍັງບໍ່ມີ Endpoint, ເຮົາຈະໃຊ້ Mock Data ສະແດງແກ້ຂັດໄປກ່ອນ
+    // receiptTransactions.value = [{
+    //   id: 'TX-Mock',
+    //   paid_at: schedule.paid_at || new Date(),
+    //   amount_paid: schedule.paid_principal + schedule.paid_interest + schedule.paid_penalty,
+    //   payment_channel: 'cash',
+    // }];
+    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບບິນໄດ້ (API ອາດຍັງບໍ່ຮອງຮັບ)');
+  } finally {
+    isReceiptLoading.value = false;
+  }
+};
 
 const fetchLoans = async () => {
   try {
@@ -768,5 +931,15 @@ const submitPayment = async () => {
 onMounted(() => {
   fetchLoans();
 });
+
+// --- 🌟 Helper Function ສຳລັບກວດສອບວ່າສາມາດຈ່າຍງວດນີ້ໄດ້ບໍ່ ---
+const canPaySchedule = (scheduleIndex: number) => {
+  // ຖ້າເປັນງວດທຳອິດ (Index 0) ອະນຸຍາດໃຫ້ຈ່າຍໄດ້ສະເໝີ
+  if (scheduleIndex === 0) return true;
+
+  // ຖ້າບໍ່ແມ່ນງວດທຳອິດ ຕ້ອງໄປກວດເບິ່ງວ່າ "ງວດກ່ອນໜ້າ" (Index - 1) ຈ່າຍຄົບແລ້ວຫຼືຍັງ
+  // ຖ້າງວດກ່ອນໜ້າເປັນ 'paid' ແລ້ວ ຈຶ່ງຈະອະນຸຍາດໃຫ້ຈ່າຍງວດນີ້ໄດ້
+  const previousSchedule = currentSchedules.value[scheduleIndex - 1];
+  return previousSchedule && previousSchedule.payment_status === 'paid';
+}
 </script>
-"
