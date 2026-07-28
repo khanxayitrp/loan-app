@@ -7,12 +7,14 @@
 
     <div v-else class="loan-contract-form">
       <div class="print-button-container flex flex-col gap-2">
-        <button @click="printRequestForm" class="btn btn-info btn-sm gap-2 shadow-md text-white" :disabled="!canPrintProposal || isGeneratingPDF">
+        <button @click="printRequestForm" class="btn btn-info btn-sm gap-2 shadow-md text-white"
+          :disabled="!canPrintProposal || isGeneratingPDF">
           <span v-if="isGeneratingPDF" class="loading loading-spinner loading-xs"></span>
           <span v-else class="icon-[tabler--file-text] size-4"></span>
           ພິມໃບສະເໜີຂໍກູ້
         </button>
-        <button @click="printContract" class="btn btn-primary btn-sm gap-2 shadow-md" :disabled="!canPrintContract || isGeneratingPDF">
+        <button @click="printContract" class="btn btn-primary btn-sm gap-2 shadow-md"
+          :disabled="!canPrintContract || isGeneratingPDF">
           <span v-if="isGeneratingPDF" class="loading loading-spinner loading-xs"></span>
           <span v-else class="icon-[tabler--printer] size-4"></span>
           ພິມສັນຍາກູ້ຢືມ
@@ -37,7 +39,8 @@
 
         <h1 class="contract-title">ຂໍ້ມູນສັນຍາກູ້ຢືມປະເພດສິນເຊື່ອຊົມໃຊ້</h1>
 
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 flex flex-wrap gap-6 justify-center items-center">
+        <div
+          class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 flex flex-wrap gap-6 justify-center items-center">
           <div class="flex items-center gap-2">
             <span class="font-bold">ເລກທີສັນຍາ:</span>
             <input v-model="formData.contractNumber" type="text" :readonly="!isEditing"
@@ -58,35 +61,33 @@
 
         <div class="flex justify-center gap-6 mb-8">
           <label class="cursor-pointer flex items-center gap-2">
-            <input type="checkbox" v-model="formData.productType.gold" :disabled="!isEditing" class="checkbox checkbox-primary" />
+            <input type="checkbox" v-model="formData.productType.gold" :disabled="!isEditing"
+              class="checkbox checkbox-primary" />
             <span class="font-medium">ສິນຄ້າຄຳ</span>
           </label>
           <label class="cursor-pointer flex items-center gap-2">
-            <input type="checkbox" v-model="formData.productType.general" :disabled="!isEditing" class="checkbox checkbox-primary" />
+            <input type="checkbox" v-model="formData.productType.general" :disabled="!isEditing"
+              class="checkbox checkbox-primary" />
             <span class="font-medium">ສິນຄ້າທົ່ວໄປ</span>
           </label>
           <label class="cursor-pointer flex items-center gap-2">
-            <input type="checkbox" v-model="formData.productType.motorcycle" :disabled="!isEditing" class="checkbox checkbox-primary" />
+            <input type="checkbox" v-model="formData.productType.motorcycle" :disabled="!isEditing"
+              class="checkbox checkbox-primary" />
             <span class="font-medium">ສິນຄ້າລົດຈັກ</span>
           </label>
         </div>
       </div>
 
       <form @submit.prevent="saveForm" class="space-y-8">
-        
+
         <CustomerSection ref="customerSectionRef" :data="formData.customer" :is-editing="isEditing" />
-        
+
         <WorkSection ref="workSectionRef" :data="formData.work" :is-editing="isEditing" />
-        
-        <ProductSection 
-        ref="productSectionRef"
-          :data="formData.product" 
-          :product-type="formData.productType"
-          :is-editing="isEditing" 
-          :has-conflict="hasProductConflict"
-          @recalculate="calculateLoanDetails"
+
+        <ProductSection ref="productSectionRef" :data="formData.product" :product-type="formData.productType"
+          :is-editing="isEditing" :has-conflict="hasProductConflict" @recalculate="calculateLoanDetails"
           @sync="syncProductWithApplication">
-          
+
           <template #warnings v-if="hasProductConflict">
             <div class="alert alert-warning shadow-sm mb-6 flex-row items-start p-3">
               <span class="icon-[tabler--alert-triangle] size-6 shrink-0 mt-0.5"></span>
@@ -112,22 +113,13 @@
         </ProductSection>
 
         <ShopSection :data="formData.shop" :is-editing="isEditing" />
-        
-        <GuarantorSection 
-          ref="guarantorSectionRef"
-          :data="formData.guarantor" 
-          :has-guarantor="formData.hasGuarantor"
-          :has-reference="formData.hasReference"
-          :is-editing="isEditing"
-          @update:hasGuarantor="formData.hasGuarantor = $event"
-          @update:hasReference="formData.hasReference = $event" />
-          
-        <GuarantorWorkSection 
-        ref="guarantorWorkSectionRef"
-          :data="formData.guarantorWork" 
-          :has-guarantor="formData.hasGuarantor"
-          :has-reference="formData.hasReference"
-          :is-editing="isEditing" />
+
+        <GuarantorSection ref="guarantorSectionRef" :data="formData.guarantor" :has-guarantor="formData.hasGuarantor"
+          :has-reference="formData.hasReference" :is-editing="isEditing"
+          @update:hasGuarantor="formData.hasGuarantor = $event" @update:hasReference="formData.hasReference = $event" />
+
+        <GuarantorWorkSection ref="guarantorWorkSectionRef" :data="formData.guarantorWork"
+          :has-guarantor="formData.hasGuarantor" :has-reference="formData.hasReference" :is-editing="isEditing" />
 
         <div v-if="isEditing" class="flex justify-end gap-4 mt-8 pt-4 border-t">
           <button type="button" class="btn btn-ghost" @click="cancelEdit">ຍົກເລີກ</button>
@@ -141,7 +133,8 @@
   </div>
 
   <teleport to="body">
-    <div v-if="isGeneratingPDF" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
+    <div v-if="isGeneratingPDF"
+      class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
       <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
       <h2 class="text-xl font-bold tracking-wide">ກຳລັງສ້າງເອກະສານ PDF...</h2>
       <p class="text-sm mt-2 opacity-80">ກະລຸນາລໍຖ້າຈັກໜ້ອຍ ລະບົບກຳລັງປະມວນຜົນຂໍ້ມູນ</p>
@@ -149,20 +142,27 @@
   </teleport>
 
   <teleport to="body">
-    <div v-if="showPdfPreview" class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+    <div v-if="showPdfPreview"
+      class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div
+          class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-white">
             <span class="icon-[tabler--file-type-pdf] text-error size-6"></span>
             {{ pdfModalTitle }}
           </h3>
           <div class="flex gap-3">
-            <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm"><span class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ</button>
-            <button @click="closePdfPreview" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10"><span class="icon-[tabler--x] size-5"></span></button>
+            <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm"><span
+                class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ</button>
+            <button @click="closePdfPreview"
+              class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10"><span
+                class="icon-[tabler--x] size-5"></span></button>
           </div>
         </div>
         <div class="flex-1 w-full bg-gray-300 dark:bg-gray-800 relative">
-          <iframe v-if="pdfPreviewUrl" :src="pdfPreviewUrl" class="w-full h-full border-none" title="PDF Preview"></iframe>
+          <iframe v-if="pdfPreviewUrl" :src="pdfPreviewUrl" class="w-full h-full border-none"
+            title="PDF Preview"></iframe>
         </div>
       </div>
     </div>
@@ -191,7 +191,7 @@ const props = defineProps<{
   loanApplication?: any | null
   loanContract?: any | null
   isEditing?: boolean
-  viewOnly?: boolean 
+  viewOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -234,9 +234,9 @@ const formData = reactive({
     otherIncome: null as number | null, otherIncomeSource: '', phone: '', department: ''
   },
   product: {
-    description: '', type: '', brand: '', model: '',productColor: '', 
-    productSize: '',  
-    variantId: null as number | null, 
+    description: '', type: '', brand: '', model: '', productColor: '',
+    productSize: '',
+    variantId: null as number | null,
     price: null as number | null, downPayment: null as number | null,
     approvedAmount: null as number | null, interestRate: null as number | null,
     interestType: 'flat_rate', interestRateType: 'monthly',
@@ -262,7 +262,7 @@ const formData = reactive({
     salaryDay: null as number | null, totalEmployees: null as number | null,
     otherIncome: null as number | null, otherIncomeSource: ''
   },
-  
+
 })
 
 // =======================
@@ -334,7 +334,7 @@ const checkProductConflicts = () => {
   variantChecks.forEach(item => {
     const cValStr = String(item.cVal || '').trim();
     const aValStr = String(item.aVal || '').trim();
-    
+
     if (cValStr !== aValStr) {
       hasProductConflict.value = true;
       productDifferences[item.key] = {
@@ -352,26 +352,26 @@ const syncProductWithApplication = () => {
   formData.product.description = app.product?.product_name || app.product_detail || '';
   formData.product.brand = app.product?.brand || '';
   formData.product.model = app.product?.model || '';
-  
+
   formData.product.price = Number(app.total_amount) || 0;
   formData.product.downPayment = Number(app.down_payment) || 0;
   formData.product.interestRate = Number(app.interest_rate_at_apply) || 0;
   formData.product.loanTerm = Number(app.loan_period) || 1;
   formData.product.monthlyPayment = Number(app.monthly_pay) || 0;
-  
+
   if (app.variant) {
-      formData.product.productColor = app.variant.color || '';
-      formData.product.productSize = app.variant.size_or_capacity || '';
+    formData.product.productColor = app.variant.color || '';
+    formData.product.productSize = app.variant.size_or_capacity || '';
   } else {
-      formData.product.productColor = '';
-      formData.product.productSize = '';  
+    formData.product.productColor = '';
+    formData.product.productSize = '';
   }
 
   formData.product.variantId = app.variant_id || app.variant?.id || null;
 
   calculateLoanDetails();
   checkProductConflicts();
-  
+
   customAlert.success('ອັບເດດຂໍ້ມູນສິນຄ້າຈາກໃບຄຳຂໍສຳເລັດ!');
 }
 
@@ -393,20 +393,30 @@ const calculateLoanDetails = () => {
 
     if (ratePerMonth <= 0) {
       formData.product.monthlyPayment = Math.round(principal / loanTerm)
+      formData.product.totalInterest = 0
     } else {
       let monthlyPayment = 0
+      let calculatedTotalInterest = 0 // 🌟 เพิ่มตัวแปรนี้เพื่อเก็บดอกเบี้ยเป๊ะๆ ตามสูตร
+
       if (interestType === 'flat_rate') {
-        const totalInterest = principal * (ratePerMonth / 100) * loanTerm
-        monthlyPayment = (principal + totalInterest) / loanTerm
+        // คำนวณดอกเบี้ยตรงๆ แบบไม่ปัดเศษก่อน
+        calculatedTotalInterest = principal * (ratePerMonth / 100) * loanTerm
+        monthlyPayment = (principal + calculatedTotalInterest) / loanTerm
       } else if (interestType === 'effective_rate') {
         const r = ratePerMonth / 100
         const n = loanTerm
         monthlyPayment = (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+        calculatedTotalInterest = (monthlyPayment * loanTerm) - principal
       }
+
+      // ปัดเศษค่างวดรายเดือน
       formData.product.monthlyPayment = Math.round(monthlyPayment)
+
+      // 🌟 ใช้ดอกเบี้ยที่ได้จากสูตรโดยตรง (ไม่เอาค่างวดที่ปัดเศษมาคูณกลับ)
+      formData.product.totalInterest = Math.round(calculatedTotalInterest)
     }
-    const totalPayment = formData.product.monthlyPayment * loanTerm
-    formData.product.totalInterest = totalPayment - principal
+
+    // คำนวณค่างวดเดือนแรก (+ ค่าธรรมเนียม)
     formData.product.firstInstallment = formData.product.monthlyPayment + (formData.product.fee || 0)
   }
 }
@@ -498,7 +508,7 @@ const saveForm = async () => {
   if (customerSectionRef.value && !customerSectionRef.value.validateForm()) {
     customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນລູກຄ້າໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return; 
+    return;
   }
   if (workSectionRef.value && !workSectionRef.value.validateForm()) {
     customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນບ່ອນເຮັດວຽກໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
@@ -523,16 +533,16 @@ const saveForm = async () => {
 
   const customerId = props.loanContract?.customer_id || props.loanContract?.data?.customer_id || props.loanApplication?.customer_id;
   if (!customerId) return customAlert.error('ຂໍ້ຜິດພາດ', 'ບໍ່ພົບຂໍ້ມູນລູກຄ້າ');
-  
+
   isSaving.value = true;
-  try { 
-    emit('save-form', customerId, formData); 
-  } 
-  catch (error: any) { 
-    customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message); 
-  } 
-  finally { 
-    isSaving.value = false; 
+  try {
+    emit('save-form', customerId, formData);
+  }
+  catch (error: any) {
+    customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message);
+  }
+  finally {
+    isSaving.value = false;
   }
 }
 
@@ -547,8 +557,8 @@ const loadDataFromProps = () => {
   let hasRealContract = false;
 
   if (props.loanContract) {
-    if (props.loanContract.data?.data?.id) { contractData = props.loanContract.data.data; hasRealContract = true; } 
-    else if (props.loanContract.data?.id) { contractData = props.loanContract.data; hasRealContract = true; } 
+    if (props.loanContract.data?.data?.id) { contractData = props.loanContract.data.data; hasRealContract = true; }
+    else if (props.loanContract.data?.id) { contractData = props.loanContract.data; hasRealContract = true; }
     else if (props.loanContract.id) { contractData = props.loanContract; hasRealContract = true; }
   }
 
@@ -583,7 +593,7 @@ const loadDataFromProps = () => {
     formData.customer.residenceYears = sourceData.cus_lived_year || null
     formData.customer.liveWith = sourceData.cus_lived_with || ''
     formData.customer.residenceStatus = sourceData.cus_lived_situation || ''
-    
+
     formData.customer.age = calculateAge(formData.customer.dob)
 
     const addr = parseAddress(sourceData.cus_address)
@@ -627,14 +637,14 @@ const loadDataFromProps = () => {
       // 🟢 1. Check ref_Type from contract data
       const rawRefType = sourceData.ref_Type || sourceData.ref_type || '';
       const currentRefType = rawRefType.toLowerCase();
-      
+
       // Assign the checkboxes correctly
       formData.hasGuarantor = currentRefType === 'guarantor';
       formData.hasReference = currentRefType === 'reference';
 
       // Fallback if ref_type is somehow empty but we have ref data
       if (!formData.hasGuarantor && !formData.hasReference && sourceData.ref_name) {
-          formData.hasGuarantor = true; 
+        formData.hasGuarantor = true;
       }
 
       formData.guarantor.fullname = sourceData.ref_name || ''
@@ -668,7 +678,7 @@ const loadDataFromProps = () => {
       formData.guarantorWork.businessType = sourceData.ref_company_businessType || ''
       formData.guarantorWork.workYears = sourceData.ref_company_workYear || null
       formData.guarantorWork.position = sourceData.ref_position || ''
-      formData.guarantorWork.phone = sourceData.ref_work_phone || sourceData.ref_company_phone || '' 
+      formData.guarantorWork.phone = sourceData.ref_work_phone || sourceData.ref_company_phone || ''
       formData.guarantorWork.salary = parseFloat(sourceData.ref_work_salary || sourceData.ref_income) || null
       formData.guarantorWork.salaryDay = sourceData.ref_payroll_date || null
       formData.guarantorWork.totalEmployees = sourceData.ref_company_emp_number || null
@@ -748,9 +758,9 @@ const loadDataFromProps = () => {
 
       formData.hasGuarantor = currentRefType === 'guarantor';
       formData.hasReference = currentRefType === 'reference';
-      
+
       if (!formData.hasGuarantor && !formData.hasReference && (guarantor.name || guarantor.fullname)) {
-          formData.hasGuarantor = true; 
+        formData.hasGuarantor = true;
       }
 
       formData.guarantor.fullname = guarantor.name || guarantor.fullname || ''
@@ -783,7 +793,7 @@ const loadDataFromProps = () => {
       formData.guarantorWork.businessType = guarantor.work_business_type || guarantor.businessType || ''
       formData.guarantorWork.workYears = guarantor.work_year || guarantor.workYears || null
       formData.guarantorWork.position = guarantor.work_position || guarantor.position || ''
-      formData.guarantorWork.phone = guarantor.work_phone || guarantor.workPhone || '' 
+      formData.guarantorWork.phone = guarantor.work_phone || guarantor.workPhone || ''
       formData.guarantorWork.salary = parseFloat(guarantor.work_salary || guarantor.salary) || null
       formData.guarantorWork.salaryDay = guarantor.payroll_date || guarantor.salaryDay || null
       formData.guarantorWork.totalEmployees = guarantor.company_emp_number || guarantor.totalEmployees || null
@@ -801,16 +811,16 @@ const loadDataFromProps = () => {
 
   if (app && app.customer && app.customer.customer_work_infos?.length > 0) {
     const appWorkInfo = app.customer.customer_work_infos[0];
-    const guarantorInfo = app.loan_guarantors?.[0]; 
-    
+    const guarantorInfo = app.loan_guarantors?.[0];
+
     if (!formData.work.workMonths) formData.work.workMonths = appWorkInfo.duration_months || null;
     if (!formData.work.address.province_id) formData.work.address.province_id = appWorkInfo.province_id || null;
     if (!formData.work.address.district_id) formData.work.address.district_id = appWorkInfo.district_id || null;
     if (!formData.work.businessDetail) formData.work.businessDetail = appWorkInfo.business_detail || '';
     if (!formData.work.department) formData.work.department = appWorkInfo.department || '';
     if (!formData.work.phone) formData.work.phone = appWorkInfo.phone || '';
-    
-    if (guarantorInfo) { 
+
+    if (guarantorInfo) {
       if (!formData.guarantor.address.province_id) formData.guarantor.address.province_id = guarantorInfo.province_id || '';
       if (!formData.guarantor.address.district_id) formData.guarantor.address.district_id = guarantorInfo.district_id || '';
       if (!formData.guarantorWork.phone) formData.guarantorWork.phone = guarantorInfo.work_phone || '';
@@ -859,10 +869,10 @@ const loadDataFromProps = () => {
 
   if (formData.product.motorcycle.motorId || formData.product.motorcycle.tankNumber || typeName.includes('ລົດຈັກ') || typeId === 1) {
     formData.productType.motorcycle = true;
-  } 
+  }
   else if (typeName.includes('ຄຳ') || typeId === 8) {
-    formData.productType.gold = true; 
-  } 
+    formData.productType.gold = true;
+  }
   else {
     formData.productType.general = true;
   }
@@ -881,14 +891,14 @@ const loadDataFromProps = () => {
     }
 
     if (app?.variant) {
-        formData.product.productColor = app.variant.color || '';
-        formData.product.productSize = app.variant.size_or_capacity || app.variant.size || '';
+      formData.product.productColor = app.variant.color || '';
+      formData.product.productSize = app.variant.size_or_capacity || app.variant.size || '';
     } else if (contractData) {
-        formData.product.productColor = contractData.product_color || '';
-        formData.product.productSize = contractData.product_size || '';
+      formData.product.productColor = contractData.product_color || '';
+      formData.product.productSize = contractData.product_size || '';
     } else {
-        formData.product.productColor = '';
-        formData.product.productSize = '';
+      formData.product.productColor = '';
+      formData.product.productSize = '';
     }
   }
 
@@ -899,9 +909,9 @@ const loadDataFromProps = () => {
 watch(() => [props.loanContract, props.loanApplication], () => { loadDataFromProps() }, { deep: true, immediate: true })
 watch(() => props.isEditing, (newVal) => { isEditing.value = newVal })
 
-onMounted(async () => { 
-  loadDataFromProps() 
-  await addressStore.fetchProvinces(); 
+onMounted(async () => {
+  loadDataFromProps()
+  await addressStore.fetchProvinces();
   if (formData.customer.address.province_id) await addressStore.fetchDistricts(formData.customer.address.province_id);
   if (formData.work.address.province_id) await addressStore.fetchDistricts(formData.work.address.province_id);
   if (formData.guarantor.address.province_id) await addressStore.fetchDistricts(formData.guarantor.address.province_id);
@@ -1030,6 +1040,7 @@ onMounted(async () => {
 }
 
 @media print {
+
   .print-button-container,
   .edit-button-container {
     display: none !important;

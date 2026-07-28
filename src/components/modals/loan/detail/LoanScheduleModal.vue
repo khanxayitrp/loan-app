@@ -23,16 +23,19 @@
                 <div class="flex flex-col sm:flex-row sm:justify-between border-b border-warning/20 border-dashed pb-1">
                   <span class="font-medium">{{ diff.label }}:</span>
                   <span class="mt-1 sm:mt-0">
-                    <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal) }}</span>
+                    <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal)
+                    }}</span>
                     <span class="font-bold text-success">👉 ໃບຄຳຂໍປັດຈຸບັນ: {{ formatPrice(diff.appVal) }}</span>
                   </span>
                 </div>
               </template>
             </div>
-            
+
             <!-- 🟢 ສະແດງຂໍ້ຄວາມແຕກຕ່າງກັນຕາມໂໝດ -->
             <div v-if="!viewOnly" class="mt-3 text-sm font-semibold text-error bg-error/10 p-2 rounded">
-              * ກະລຸນາກົດປຸ່ມ <span class="badge badge-warning badge-sm"><span class="icon-[tabler--refresh] mr-1"></span>ຣີເຊັດຄ່າເລີ່ມຕົ້ນ</span> ເພື່ອສ້າງຕາຕະລາງໃໝ່ໃຫ້ກົງກັນ, ແລ້ວກົດບັນທຶກ.
+              * ກະລຸນາກົດປຸ່ມ <span class="badge badge-warning badge-sm"><span
+                  class="icon-[tabler--refresh] mr-1"></span>ຣີເຊັດຄ່າເລີ່ມຕົ້ນ</span> ເພື່ອສ້າງຕາຕະລາງໃໝ່ໃຫ້ກົງກັນ,
+              ແລ້ວກົດບັນທຶກ.
             </div>
             <div v-else class="mt-3 text-sm font-semibold text-error bg-error/10 p-2 rounded">
               * ຕາຕະລາງນີ້ຍອດເງິນບໍ່ກົງກັບໃບຄຳຂໍປັດຈຸບັນ ກະລຸນາແຈ້ງພະນັກງານໃຫ້ຣີເຊັດຕາຕະລາງກ່ອນອະນຸມັດ!
@@ -49,8 +52,11 @@
                 <span v-else class="badge badge-success text-white badge-sm ml-2">ບັນທຶກແລ້ວ</span>
               </h4>
               <p class="text-sm text-gray-600 mt-1">
-                ຍອດຈັດ (ຕົ້ນທຶນ): <span class="font-medium text-black">{{ formatPrice(Number(loan?.total_amount || 0) - Number(loan?.down_payment || 0)) }}</span> |
-                ດອກເບ້ຍ: <span class="font-medium text-black">{{ loan?.interest_rate_at_apply }}% {{ loan?.interest_rate_type === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>
+                ຍອດຈັດ (ຕົ້ນທຶນ): <span class="font-medium text-black">{{ formatPrice(Number(loan?.total_amount || 0) -
+                  Number(loan?.down_payment || 0)) }}</span> |
+                ດອກເບ້ຍ: <span class="font-medium text-black">{{ loan?.interest_rate_at_apply }}% {{
+                  loan?.interest_rate_type
+                    === 'yearly' ? '(ຕໍ່ປີ)' : '(ຕໍ່ເດືອນ)' }}</span>
               </p>
             </div>
             <div class="flex gap-2">
@@ -58,7 +64,7 @@
               <button v-if="!isScheduleSaved && !viewOnly" class="btn btn-warning btn-sm" @click="generateSchedule">
                 <span class="icon-[tabler--refresh] size-4 mr-1"></span> ຣີເຊັດຄ່າເລີ່ມຕົ້ນ
               </button>
-              
+
               <!-- 🟢 ປຸ່ມພິມ: ທຸກຄົນພິມໄດ້ ຂໍພຽງແຕ່ຕາຕະລາງເຄີຍຖືກບັນທຶກແລ້ວກໍພໍ -->
               <button v-if="isScheduleSaved" class="btn btn-outline btn-primary btn-sm" @click="printSchedule">
                 <span class="icon-[tabler--printer] size-4 mr-1"></span> ພິມຕາຕະລາງ
@@ -91,41 +97,36 @@
                   <td class="text-center align-middle font-medium">{{ row.installment_number }}</td>
                   <!-- 🟢 ລັອກ Input ຖ້າ View Only ຫຼຶ ເງື່ອນໄຂເດີມຂອງທ່ານ -->
                   <!-- <td class="align-middle">
-                    
-                    <input type="date" v-model="row.due_date" 
+
+                    <input type="date" v-model="row.due_date"
                       class="input input-sm input-bordered w-full"
                       :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
                       :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
                   </td> -->
                   <td class="align-middle relative">
-  <!-- <input type="text" 
+                    <!-- <input type="text"
     :value="formatDateToDDMMYYYY(row.due_date)"
     readonly
     placeholder="dd/mm/yyyy"
     class="input input-sm input-bordered w-full pr-8 cursor-pointer"
     :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
     :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')"
-    
+
   /> -->
-  <input type="text" 
-    :value="formatDateToDDMMYYYY(row.due_date)"
-    readonly
-    placeholder="dd/mm/yyyy"
-    class="input input-sm input-bordered w-full pr-8 cursor-pointer"
-    :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
-    :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')"
-    @click="triggerRowDatePicker($event)" 
-  />
+                    <input type="text" :value="formatDateToDDMMYYYY(row.due_date)" readonly placeholder="dd/mm/yyyy"
+                      class="input input-sm input-bordered w-full pr-8 cursor-pointer"
+                      :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
+                      :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')"
+                      @click="triggerRowDatePicker($event)" />
 
-  <input type="date" 
-    v-model="row.due_date" 
-    class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none"
-    :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" 
-    @change="recalculateDatesFromIndex(index)"
-  />
+                    <input type="date" v-model="row.due_date"
+                      class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none"
+                      :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')"
+                      @change="recalculateDatesFromIndex(index)" />
 
-  <span class="icon-[tabler--calendar] absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none size-4"></span>
-</td>
+                    <span
+                      class="icon-[tabler--calendar] absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none size-4"></span>
+                  </td>
                   <td class="align-middle text-right">
                     <input type="text" :value="formatCurrencyInput(row.principal)"
                       @input="handleScheduleInput(row, 'principal', $event)"
@@ -140,7 +141,8 @@
                       :class="viewOnly ? 'bg-gray-50' : 'bg-white'"
                       :disabled="viewOnly || (isScheduleSaved && loan?.status !== 'pending' && loan?.status !== 'verifying')" />
                   </td>
-                  <td class="text-right align-middle font-bold bg-gray-50 text-success">{{ formatPrice(row.total_amount) }}</td>
+                  <td class="text-right align-middle font-bold bg-gray-50 text-success">{{ formatPrice(row.total_amount)
+                  }}</td>
                   <td class="text-right align-middle font-bold"
                     :class="row.remaining_balance <= 0 ? 'text-success' : 'text-primary'">
                     {{ formatPrice(row.remaining_balance) }}
@@ -152,9 +154,11 @@
                   <td colspan="2" class="text-right align-middle">ລວມທັງໝົດ:</td>
                   <td class="text-right text-primary align-middle">{{ formatPrice(totalSchedulePrincipal) }}</td>
                   <td class="text-right text-error align-middle">{{ formatPrice(totalScheduleInterest) }}</td>
-                  <td class="text-right text-success align-middle">{{ formatPrice(totalSchedulePrincipal + totalScheduleInterest) }}</td>
+                  <td class="text-right text-success align-middle">{{ formatPrice(totalSchedulePrincipal +
+                    totalScheduleInterest) }}</td>
                   <td class="text-right align-middle">
-                    <span v-if="Math.abs(totalScheduleRemaining) > 10" class="text-error text-sm">(ຍອດບໍ່ລົງຕົວ {{ formatPrice(totalScheduleRemaining) }})</span>
+                    <span v-if="Math.abs(totalScheduleRemaining) > 10" class="text-error text-sm">(ຍອດບໍ່ລົງຕົວ {{
+                      formatPrice(totalScheduleRemaining) }})</span>
                     <span v-else class="text-success text-sm">(ລົງຕົວ)</span>
                   </td>
                 </tr>
@@ -165,7 +169,7 @@
 
         <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
           <button class="btn btn-soft btn-secondary" @click="closeModal">ປິດ</button>
-          
+
           <!-- 🟢 ເຊື່ອງປຸ່ມ ບັນທຶກ ຖ້າຢູ່ໃນໂໝດ View Only -->
           <button v-if="!viewOnly" class="btn btn-success text-white" @click="saveSchedule" :disabled="isSaving">
             <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
@@ -186,10 +190,10 @@ import { formatPrice, formatCurrencyInput, formatDateToDDMMYYYY } from '@/utils/
 import { alert } from '@/utils/alert'
 
 // 🟢 ເພີ່ມ Prop: viewOnly
-const props = defineProps<{ 
-  show: boolean, 
+const props = defineProps<{
+  show: boolean,
   loan: any | null,
-  viewOnly?: boolean 
+  viewOnly?: boolean
 }>()
 
 const emit = defineEmits(['close'])
@@ -207,17 +211,17 @@ const scheduleRows = ref<any[]>([])
 const triggerRowDatePicker = (e: Event) => {
   // ຈັບເອົາ Input ຕົວທີ່ເຮົາຄລິກ (Text Input)
   const textInput = e.currentTarget as HTMLInputElement;
-  
+
   // ຊອກຫາ Input ຕົວຖັດໄປທີ່ເຊື່ອງຢູ່ (Date Input)
   const hiddenDateInput = textInput.nextElementSibling as HTMLInputElement;
-  
+
   // ຖ້າຊ່ອງບໍ່ໄດ້ຖືກລັອກ (disabled) ໃຫ້ສັ່ງເປີດປະຕິທິນ
   if (!textInput.disabled && hiddenDateInput && hiddenDateInput.showPicker) {
     hiddenDateInput.showPicker();
   }
 }
 
-// Add this function anywhere in your script setup, 
+// Add this function anywhere in your script setup,
 // for example, right below your triggerRowDatePicker function
 
 const recalculateDatesFromIndex = (changedIndex: number) => {
@@ -237,7 +241,7 @@ const recalculateDatesFromIndex = (changedIndex: number) => {
   for (let i = changedIndex + 1; i < scheduleRows.value.length; i++) {
     // ບວກເດືອນເພີ່ມຂຶ້ນ 1 ເດືອນ
     currentMonth++;
-    
+
     // ຖ້າເດືອນກາຍເດືອນ 12 (ຄ່າ index > 11), ໃຫ້ປັດເປັນເດືອນ 1 ປີໃໝ່
     if (currentMonth > 11) {
       currentMonth = 0;
@@ -247,7 +251,7 @@ const recalculateDatesFromIndex = (changedIndex: number) => {
     // 3. ຫາມື້ສຸດທ້າຍຂອງເດືອນເປົ້າໝາຍ (ແກ້ບັນຫາເດືອນ 2 ທີ່ມີ 28/29 ມື້ ຫຼື ເດືອນທີ່ມີ 30 ມື້)
     // ການໃສ່ວັນທີ 0 ຂອງເດືອນຖັດໄປ ຈະໄດ້ມື້ສຸດທ້າຍຂອງເດືອນປັດຈຸບັນສະເໝີ
     const maxDaysInTargetMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    
+
     // 4. ທຽບເບິ່ງວ່າຈະໃຊ້ມື້ໃດ: ຖ້າ targetDay (ເຊັ່ນ 31) ໃຫຍ່ກວ່າມື້ທີ່ມີໃນເດືອນນັ້ນ (ເຊັ່ນ 28) ໃຫ້ໃຊ້ມື້ສຸດທ້າຍແທນ
     const actualDay = Math.min(targetDay, maxDaysInTargetMonth);
 
@@ -314,9 +318,9 @@ const fetchSavedSchedule = async () => {
 
         // 🟢 ຖ້າ View Only ໃຫ້ໂຊว์ຂອງເກົ່າ (ບໍ່ generate ໃໝ່)
         if (props.viewOnly) {
-           scheduleRows.value = tempRows;
+          scheduleRows.value = tempRows;
         } else {
-           generateSchedule();
+          generateSchedule();
         }
         hasScheduleConflict.value = true;
         isScheduleSaved.value = false;
@@ -334,6 +338,7 @@ const fetchSavedSchedule = async () => {
 }
 
 // ... ໂລຈິກ generateSchedule, handleScheduleInput, recalculate, computed ໄວ້ຄືເດີມປົກກະຕິ ...
+
 const generateSchedule = () => {
   scheduleRows.value = [];
   isScheduleSaved.value = false;
@@ -349,66 +354,135 @@ const generateSchedule = () => {
   const paymentDay = Number(loan.payment_day || new Date().getDate());
   const ratePerMonth = rateType === 'yearly' ? (interestRate / 12) / 100 : interestRate / 100;
 
-  let currentBalance = principal;
   let startDate = new Date();
-  let flatMonthlyPrincipal = principal / term;
-  let flatMonthlyInterest = principal * ratePerMonth;
-  let effectivePmt = ratePerMonth > 0 ? (principal * ratePerMonth * Math.pow(1 + ratePerMonth, term)) / (Math.pow(1 + ratePerMonth, term) - 1) : principal / term;
 
-  // for (let i = 1; i <= term; i++) {
-  //   let dueDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, paymentDay);
-  //   let rowPrincipal = 0; let rowInterest = 0;
+  // 🌟 ตัวแปรเก็บยอดสะสม เพื่อเอาไว้หักลบเศษในงวดสุดท้าย
+  let accumulatedPrincipal = 0;
+  let accumulatedInterest = 0;
 
-  //   if (interestType === 'flat_rate') {
-  //     rowPrincipal = flatMonthlyPrincipal; rowInterest = flatMonthlyInterest;
-  //   } else {
-  //     rowInterest = currentBalance * ratePerMonth; rowPrincipal = effectivePmt - rowInterest;
-  //   }
+  // ดอกเบี้ยรวมทั้งหมดตามสูตรเป๊ะๆ (ใช้สำหรับ Flat Rate)
+  const expectedTotalInterest = principal * ratePerMonth * term;
 
-  //   if (i === term) rowPrincipal = currentBalance;
-  //   let totalAmount = rowPrincipal + rowInterest;
-  //   currentBalance -= rowPrincipal;
+  // ค่างวดต่อเดือนสำหรับแบบ Effective (ลดต้นลดดอก)
+  const effectivePmt = ratePerMonth > 0
+    ? (principal * ratePerMonth * Math.pow(1 + ratePerMonth, term)) / (Math.pow(1 + ratePerMonth, term) - 1)
+    : principal / term;
 
-  //   scheduleRows.value.push({
-  //     installment_number: i, due_date: dueDate.toISOString().split('T')[0] || '',
-  //     principal: Math.round(rowPrincipal), interest: Math.round(rowInterest),
-  //     total_amount: Math.round(totalAmount), remaining_balance: Math.round(Math.max(0, currentBalance))
-  //   });
-  // }
+  let currentBalanceForEffective = principal;
+
   for (let i = 1; i <= term; i++) {
-    let rowPrincipal = 0; let rowInterest = 0;
+    let rowPrincipalRounded = 0;
+    let rowInterestRounded = 0;
 
-    // 🟢 ປັບປຸງການຄິດໄລ່ວັນທີ ເພື່ອແກ້ບັນຫາເດືອນທີ່ມີ 28, 29, 30 ມື້
+    // 🟢 คำนวณวันที่
     let targetYear = startDate.getFullYear();
     let targetMonth = startDate.getMonth() + i;
-    
-    // ຫາມື້ສຸດທ້າຍຂອງເດືອນເປົ້າໝາຍ
     let maxDaysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-    // ຖ້າ paymentDay ໃຫຍ່ກວ່າມື້ສຸດທ້າຍຂອງເດືອນ ໃຫ້ໃຊ້ມື້ສຸດທ້າຍແທນ
-    let actualDay = Math.min(paymentDay, maxDaysInTargetMonth); 
-    
+    let actualDay = Math.min(paymentDay, maxDaysInTargetMonth);
     let dueDate = new Date(targetYear, targetMonth, actualDay);
 
-    if (interestType === 'flat_rate') {
-      rowPrincipal = flatMonthlyPrincipal; rowInterest = flatMonthlyInterest;
+    // 🟢 ตรวจสอบว่าเป็น "งวดสุดท้าย" หรือไม่
+    if (i === term) {
+      // 🌟 งวดสุดท้าย: เงินต้นต้องเป็น "ยอดที่เหลือทั้งหมด" เพื่อให้ยอดรวมเป๊ะ 100%
+      rowPrincipalRounded = principal - accumulatedPrincipal;
+
+      if (interestType === 'flat_rate') {
+        // ดอกเบี้ยแบบคงที่: งวดสุดท้าย = ดอกเบี้ยรวมทั้งหมด - ดอกเบี้ยที่จ่ายสะสมมา
+        rowInterestRounded = Math.round(expectedTotalInterest) - accumulatedInterest;
+      } else {
+        // ดอกเบี้ยลดต้นลดดอก
+        rowInterestRounded = Math.round(currentBalanceForEffective * ratePerMonth);
+        rowPrincipalRounded = Math.round(currentBalanceForEffective);
+      }
     } else {
-      rowInterest = currentBalance * ratePerMonth; rowPrincipal = effectivePmt - rowInterest;
+      // 🌟 งวดที่ 1 ถึง งวดก่อนสุดท้าย (คำนวณและปัดเศษปกติ)
+      if (interestType === 'flat_rate') {
+        rowPrincipalRounded = Math.round(principal / term);
+        rowInterestRounded = Math.round(principal * ratePerMonth);
+      } else {
+        let exactInterest = currentBalanceForEffective * ratePerMonth;
+        let exactPrincipal = effectivePmt - exactInterest;
+        rowPrincipalRounded = Math.round(exactPrincipal);
+        rowInterestRounded = Math.round(exactInterest);
+        currentBalanceForEffective -= exactPrincipal; // ลดต้นคงเหลือสำหรับการคำนวณแบบ effective
+      }
     }
 
-    if (i === term) rowPrincipal = currentBalance;
-    let totalAmount = rowPrincipal + rowInterest;
-    currentBalance -= rowPrincipal;
+    // บวกสะสมยอดเข้าคลัง
+    accumulatedPrincipal += rowPrincipalRounded;
+    accumulatedInterest += rowInterestRounded;
 
+    let totalAmountRounded = rowPrincipalRounded + rowInterestRounded;
+
+    // Push เข้าตาราง
     scheduleRows.value.push({
-      installment_number: i, 
+      installment_number: i,
       due_date: dueDate.toISOString().split('T')[0] || '',
-      principal: Math.round(rowPrincipal), 
-      interest: Math.round(rowInterest),
-      total_amount: Math.round(totalAmount), 
-      remaining_balance: Math.round(Math.max(0, currentBalance))
+      principal: rowPrincipalRounded,
+      interest: rowInterestRounded,
+      total_amount: totalAmountRounded,
+      // ยอดคงเหลือ = เงินต้นจัดเต็ม - เงินต้นที่จ่ายไปแล้วถึงงวดนี้
+      remaining_balance: principal - accumulatedPrincipal
     });
   }
 }
+
+// const generateSchedule = () => {
+//   scheduleRows.value = [];
+//   isScheduleSaved.value = false;
+//   hasScheduleConflict.value = false;
+//   if (!props.loan) return;
+
+//   const loan = props.loan;
+//   const principal = Number(loan.total_amount || 0) - Number(loan.down_payment || 0);
+//   const term = Number(loan.loan_period || 1);
+//   const interestRate = Number(loan.interest_rate_at_apply || 0);
+//   const interestType = loan.interest_type || 'flat_rate';
+//   const rateType = loan.interest_rate_type || 'monthly';
+//   const paymentDay = Number(loan.payment_day || new Date().getDate());
+//   const ratePerMonth = rateType === 'yearly' ? (interestRate / 12) / 100 : interestRate / 100;
+
+//   let currentBalance = principal;
+//   let startDate = new Date();
+//   let flatMonthlyPrincipal = principal / term;
+//   let flatMonthlyInterest = principal * ratePerMonth;
+//   let effectivePmt = ratePerMonth > 0 ? (principal * ratePerMonth * Math.pow(1 + ratePerMonth, term)) / (Math.pow(1 + ratePerMonth, term) - 1) : principal / term;
+
+
+//   for (let i = 1; i <= term; i++) {
+//     let rowPrincipal = 0; let rowInterest = 0;
+
+//     // 🟢 ປັບປຸງການຄິດໄລ່ວັນທີ ເພື່ອແກ້ບັນຫາເດືອນທີ່ມີ 28, 29, 30 ມື້
+//     let targetYear = startDate.getFullYear();
+//     let targetMonth = startDate.getMonth() + i;
+
+//     // ຫາມື້ສຸດທ້າຍຂອງເດືອນເປົ້າໝາຍ
+//     let maxDaysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+//     // ຖ້າ paymentDay ໃຫຍ່ກວ່າມື້ສຸດທ້າຍຂອງເດືອນ ໃຫ້ໃຊ້ມື້ສຸດທ້າຍແທນ
+//     let actualDay = Math.min(paymentDay, maxDaysInTargetMonth);
+
+//     let dueDate = new Date(targetYear, targetMonth, actualDay);
+
+//     if (interestType === 'flat_rate') {
+//       rowPrincipal = flatMonthlyPrincipal; rowInterest = flatMonthlyInterest;
+//     } else {
+//       rowInterest = currentBalance * ratePerMonth; rowPrincipal = effectivePmt - rowInterest;
+//     }
+
+//     if (i === term) rowPrincipal = currentBalance;
+//     let totalAmount = rowPrincipal + rowInterest;
+//     currentBalance -= rowPrincipal;
+
+//     scheduleRows.value.push({
+//       installment_number: i,
+//       due_date: dueDate.toISOString().split('T')[0] || '',
+//       principal: Math.round(rowPrincipal),
+//       interest: Math.round(rowInterest),
+//       total_amount: Math.round(totalAmount),
+//       remaining_balance: Math.round(Math.max(0, currentBalance))
+//     });
+//   }
+// }
 
 const handleScheduleInput = (row: any, field: 'principal' | 'interest', event: Event) => {
   if (props.viewOnly) return; // ກັນໜຽວ
