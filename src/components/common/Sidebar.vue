@@ -10,13 +10,11 @@
 
     <aside id="collapsible-mini-sidebar" :class="[
       'bg-base-100 border-e border-base-content/20 flex flex-col transition-all duration-300',
-      // Desktop: always visible, controlled width
       'sm:relative sm:z-0 sm:translate-x-0',
       isMinified ? 'sm:w-20 overlay-minified' : 'sm:w-66',
-      // Mobile: fixed slide-in
       'fixed top-0 left-0 z-50 h-full w-66',
       isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
-      'sm:translate-x-0 sm:shadow-none' // desktop override
+      'sm:translate-x-0 sm:shadow-none'
     ]">
       <div class="drawer-header py-4 flex items-center justify-between border-b border-base-content/10"
         :class="{ 'px-4': isMinified && !isMobileOpen, 'px-6': !isMinified || isMobileOpen }">
@@ -40,7 +38,8 @@
       <div class="flex-grow overflow-y-auto px-2 pt-4">
         <ul class="menu p-0 gap-1">
           <template v-for="item in menuItems" :key="item.label">
-            <template v-if="!item.permission || can(item.permission)">
+
+            <template v-if="!item.permissions || canAny(item.permissions)">
               <li v-if="!item.children">
                 <router-link :to="item.to" @click="closeMobileIfOpen" class="flex items-center gap-4 p-3 rounded-lg"
                   :class="{
@@ -73,7 +72,8 @@
                   class="dropdown-menu mt-0 shadow-none overlay-minified:shadow-md overlay-minified:shadow-base-300/20 dropdown-open:opacity-100 hidden min-w-60 overlay-minified:before:absolute overlay-minified:before:-start-4 overlay-minified:before:top-0 overlay-minified:before:h-full overlay-minified:before:w-4 before:bg-transparent"
                   role="menu">
                   <template v-for="child in item.children" :key="child.label">
-                    <li v-if="!child.permission || can(child.permission)">
+
+                    <li v-if="!child.permissions || canAny(child.permissions)">
                       <router-link :to="child.to" @click="closeMobileIfOpen"
                         class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-200"
                         :class="{ 'bg-primary/10 text-primary font-medium': isActive(child.to) }">
@@ -115,126 +115,133 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { can } = usePermission()
 
+// 🌟 ເພີ່ມຟັງຊັນສຳລັບເຊັກ Array ຂອງ Permissions 🌟
+const canAny = (permissions: string | string[]) => {
+  if (!permissions) return true;
+  if (typeof permissions === 'string') return can(permissions);
+  return permissions.some(p => can(p));
+}
+
 const isMinified = ref(false)
 const isMobileOpen = ref(false)
 
-// 🟢 อัปเดต Menu Items ให้สอดคล้องกับ Route และ Permission ล่าสุด
+// 🟢 ອັບເດດ Menu Items ໃຫ້ໃຊ້ `permissions` (ເຕີມ s) ເປັນ Array
 const menuItems = [
   {
     label: 'Dashboard',
     icon: 'icon-[tabler--layout-dashboard]',
     to: '/dashboard',
-    permission: 'view_admin_dashboard' // 👈 Admin/Staff Dashboard
+    permissions: ['view_admin_dashboard']
   },
   {
     label: 'ຮ້ານຄ້າ Dashboard',
     icon: 'icon-[tabler--device-analytics]',
     to: '/partner-dashboard',
-    permission: 'view_partner_dashboard' // 👈 Partner Dashboard
+    permissions: ['view_partner_dashboard']
   },
   {
     label: 'ຈັດການຜູ້ໃຊ້ (Account)',
     icon: 'icon-[tabler--user]',
-    permission: 'user_manage',
+    permissions: ['user_manage', 'user_view'], // 👈 ແມ່ຕ້ອງອະນຸຍາດໃຫ້ຄົນທີ່ view ເຂົ້າໄດ້ນຳ
     children: [
       {
         label: 'ການຈັດການຜູ້ໃຊ້ (Manage User)',
         icon: 'icon-[tabler--users]',
         to: '/users',
-        permission: 'user_view'
+        permissions: ['user_view', 'user_manage']
       },
       {
         label: 'ການປ່ຽນPassword (Change Password)',
         icon: 'icon-[tabler--key]',
         to: '/changePassword',
-        permission: 'user_manage'
+        permissions: ['user_manage']
       },
       {
         label: 'ການຈັດການສິດ (Manage Permission)',
         icon: 'icon-[tabler--shield]',
         to: '/PermissionManagement',
-        permission: 'permission_manage'
+        permissions: ['permission_manage']
       }
     ]
   },
   {
     label: 'ຄຳຂໍສິນເຊື່ອ (Loans)',
     icon: 'icon-[tabler--report-money]',
-    permission: 'loan_view_all',
+    permissions: ['loan_view_all', 'loan_view_assigned'], // 👈 ແກ້ໃຫ້ທັງ 2 ສິດເຂົ້າກຸ່ມນີ້ໄດ້
     children: [
       {
         label: 'ຄຳຂໍສິນເຊື່ອທັງໝົດ (All Loans)',
         icon: 'icon-[tabler--list]',
         to: '/loans',
-        permission: 'loan_view_all'
+        permissions: ['loan_view_all']
       },
       {
         label: 'ລໍຖ້າການອະນຸມັດ (Pending)',
         icon: 'icon-[tabler--clock]',
         to: '/pendingLoans',
-        permission: 'loan_view_assigned'
+        permissions: ['loan_view_assigned', 'loan_view_all']
       },
       {
         label: 'ອະນຸມັດ (Approved)',
         icon: 'icon-[tabler--check]',
         to: '/approvedLoans',
-        permission: 'loan_view_assigned'
+        permissions: ['loan_view_assigned', 'loan_view_all']
       },
       {
-        label: 'ຕິດຕາມສິນເຊື່ອເງື່ອນໄຂ (Condition)', // 👈 🌟 ເພີ່ມເມນູໃໝ່
+        label: 'ຕິດຕາມສິນເຊື່ອເງື່ອນໄຂ (Condition)',
         icon: 'icon-[tabler--shield-check]',
-        to: '/conditionalLoans', // 👈 🌟 ກຳນົດ Route path (ປ່ຽນຕາມທີ່ຕັ້ງໄວ້ໃນ Router)
-        permission: 'loan_view_assigned'
+        to: '/conditionalLoans',
+        permissions: ['loan_view_assigned', 'loan_view_all']
       },
       {
         label: 'ການຈັດການການຈ່າຍ (Repayment)',
         icon: 'icon-[material-symbols--paid-outline]',
         to: '/repaymentLoans',
-        permission: 'loan_view_assigned'
+        permissions: ['loan_view_assigned', 'loan_view_all']
       },
     ]
   },
   {
     label: 'ຮ່າງສິນເຊື່ອ (Draft Loans)',
     icon: 'icon-[tabler--apps-filled]',
-    permission: 'loan_view_all',
+    permissions: ['loan_view_all', 'loan_view_assigned', 'loan_create'], // 👈 ແກ້ໃຫ້ທັງ 3 ສິດເຂົ້າກຸ່ມນີ້ໄດ້
     children: [
       {
         label: 'ສ້າງຮ່າງຂໍສິນເຊື່ອ (Create Draft)',
         icon: 'icon-[tabler--clipboard-plus]',
         to: '/createDraftLoan',
-        permission: 'loan_create'
+        permissions: ['loan_create']
       },
       {
         label: 'ລາຍການຮ່າງຂໍສິນເຊື່ອ (List Drafts)',
         icon: 'icon-[tabler--checkup-list]',
         to: '/listDraftsloan',
-        permission: 'loan_view_assigned'
+        permissions: ['loan_view_assigned', 'loan_view_all', 'loan_create']
       },
       {
         label: 'ລາຍການສິນເຊື່ອ (List Loans)',
         icon: 'icon-[tabler--list-check]',
         to: '/listLoans',
-        permission: 'loan_view_assigned'
+        permissions: ['loan_view_assigned', 'loan_view_all']
       }
     ]
   },
   {
     label: 'ຈັດການສິນຄ້າ (Product)',
     icon: 'icon-[tabler--shopping-bag]',
-    permission: 'partner_manage',
+    permissions: ['partner_manage'],
     children: [
       {
         label: 'ສິນຄ້າ (Products)',
         icon: 'icon-[tabler--box]',
         to: '/products',
-        permission: 'partner_manage'
+        permissions: ['partner_manage']
       },
       {
         label: 'ປະເພດສິນຄ້າ (Categories)',
         icon: 'icon-[tabler--category]',
         to: '/productTypes',
-        permission: 'partner_manage'
+        permissions: ['partner_manage']
       }
     ]
   },
@@ -242,7 +249,7 @@ const menuItems = [
     label: 'ຈັດການຮ້ານ (Store)',
     icon: 'icon-[tabler--building-store]',
     to: '/stores',
-    permission: 'partner_manage'
+    permissions: ['partner_manage']
   }
 ]
 
@@ -308,7 +315,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Fade transition for backdrop */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -319,7 +325,6 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* Smooth width & text transitions */
 .transition-all {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

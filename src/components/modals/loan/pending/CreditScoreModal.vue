@@ -83,11 +83,15 @@
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-2">
+          <div class="flex justify-end items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-2">
+            <span v-if="!canSaveScore" class="text-xs text-error font-medium mr-auto">
+              <span class="icon-[tabler--lock] size-3"></span> ທ່ານບໍ່ມີສິດບັນທຶກຄະແນນ
+            </span>
+
             <button type="button" class="btn btn-ghost" @click="close">ປິດ / ຍົກເລີກ</button>
 
-            <button v-if="result" type="button" class="btn btn-success w-40 text-white" @click="saveScore"
-              :disabled="isSaving">
+            <button v-if="result && canSaveScore" type="button" class="btn btn-success w-40 text-white"
+              @click="saveScore" :disabled="isSaving">
               <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
               <span v-else class="icon-[tabler--device-floppy] size-5"></span> ຢືນຢັນການບັນທຶກ
             </button>
@@ -100,17 +104,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, watch, computed } from 'vue';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
+import { usePermissionStore } from '@/stores/permission'; // 🌟 1. Import Permission Store
 import { alert } from '@/utils/alert';
 
 const props = defineProps<{ isOpen: boolean; loan: any; summaryData: any }>();
 const emit = defineEmits<{ (e: 'close'): void; (e: 'success'): void }>();
 
 const loanApplicationStore = useLoanApplicationStore();
+const permissionStore = usePermissionStore(); // 🌟 2. ປະກາດໃຊ້ Store
 
-const isSaving = ref(false); // 🟢 ປ່ຽນຊື່ຈາກ isCalculating ເປັນ isSaving ໃຫ້ກົງກັບໜ້າທີ່
+const isSaving = ref(false);
 const result = ref<any>(null);
+
+// 🌟 3. Computed Property ສຳລັບກວດສອບສິດການບັນທຶກຄະແນນ
+const canSaveScore = computed(() => {
+  return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve');
+});
 
 const form = reactive({
   age: 0,
@@ -174,17 +185,13 @@ watch(() => props.isOpen, (newVal) => {
     const typeId = Number(props.loan.product?.productType_id || props.loan.producttype_id || 0);
     form.is_gold = typeName.includes('ຄຳ') || typeId === 8 || typeId === 1;
 
-    // 🌟 🟢 ເອີ້ນໃຊ້ການຄຳນວນທັນທີ ຫຼັງຈາກກຽມຂໍ້ມູນສຳເລັດ
     calculateCreditScore();
   } else {
-    // ເມື່ອປິດ Modal ໃຫ້ລຶບຂໍ້ມູນຖິ້ມ
     result.value = null;
   }
 });
 
 const calculateCreditScore = () => {
-  // 🟢 ລຶບ Delay (setTimeout) ອອກ ເພື່ອໃຫ້ຄຳນວນແບບ Real-time
-
   let totalScore = 0;
   const age = form.age;
   const totalTenureInYears = form.job_tenure_years + (form.job_tenure_months / 12);
@@ -278,7 +285,8 @@ const calculateCreditScore = () => {
 };
 
 const saveScore = async () => {
-  if (!props.loan || !result.value) return;
+  if (!props.loan || !result.value || !canSaveScore.value) return; // 🌟 ເຊັກສິດກ່ອນບັນທຶກ
+
   isSaving.value = true;
   try {
     await loanApplicationStore.updateLoanApplication(props.loan.id, { credit_score: result.value.score });

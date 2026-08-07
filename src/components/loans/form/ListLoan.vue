@@ -6,23 +6,32 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການຄຳຂໍສິນເຊື່ອ</p>
       </div>
       <div class="flex items-center gap-2">
-        <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
+        <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap"
+          :disabled="isLoading || filteredLoans.length === 0">
           <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
         </button>
-        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success">
+        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success"
+          :disabled="isLoading || filteredLoans.length === 0">
           <span class="icon-[tabler--file-spreadsheet] size-4 mr-1"></span> Export Excel
         </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div
+      class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
       <div>
-        <label class="label"><span class="label-text text-sm font-medium">ຄົ້ນຫາ</span></label>
-        <input v-model="searchQuery" type="text" placeholder="ຊື່ລູກຄ້າ, ເບີໂທ..." class="input input-bordered w-full" @input="debounceSearch" />
+        <label class="label pb-1"><span
+            class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ</span></label>
+        <div class="relative">
+          <input v-model="searchQuery" type="text" placeholder="ຊື່ລູກຄ້າ, ເບີໂທ, ລະຫັດສິນເຊື່ອ..."
+            class="input input-sm input-bordered w-full pl-9" @input="debounceSearch" />
+          <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></span>
+        </div>
       </div>
       <div>
-        <label class="label"><span class="label-text text-sm font-medium">ສະຖານະ</span></label>
-        <select v-model="statusFilter" class="select select-bordered w-full">
+        <label class="label pb-1"><span
+            class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ສະຖານະ</span></label>
+        <select v-model="statusFilter" class="select select-sm select-bordered w-full">
           <option value="">ທັງໝົດສະຖານະ</option>
           <option value="pending">ລໍຖ້າ</option>
           <option value="verifying">ກຳລັງກວດ</option>
@@ -33,50 +42,98 @@
         </select>
       </div>
       <div>
-        <label class="label"><span class="label-text text-sm font-medium">ວັນທີ່ສ້າງ</span></label>
+        <label class="label pb-1"><span
+            class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ວັນທີ່ສ້າງ</span></label>
         <div class="flex gap-2">
-          <input v-model="dateFrom" type="date" class="input input-bordered w-full" @change="applyDateFilter" />
-          <input v-model="dateTo" type="date" class="input input-bordered w-full" @change="applyDateFilter" />
+          <input v-model="dateFrom" type="date" class="input input-sm input-bordered w-full"
+            @change="applyDateFilter" />
+          <input v-model="dateTo" type="date" class="input input-sm input-bordered w-full" @change="applyDateFilter" />
         </div>
       </div>
     </div>
 
-    <div v-if="isLoading" class="text-center py-8"><div class="loading loading-spinner"></div></div>
-    <div v-else class="w-full overflow-x-auto rounded-lg border border-base-content/10">
+    <div v-if="isLoading" class="text-center py-8">
+      <div class="loading loading-spinner text-primary"></div>
+    </div>
+    <div v-else
+      class="w-full overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
       <table class="table table-zebra w-full min-w-max">
-        <thead>
+        <thead class="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 text-sm">
           <tr>
-            <th>ລູກຄ້າ</th><th>ສິນຄ້າ</th><th>ຈຳນວນເງິນ</th><th>ເຈົ້າໜ້າທີ່</th><th>ສະຖານະ</th><th>ວັນທີ່ສ້າງ</th><th class="w-32">Actions</th>
+            <th>ລູກຄ້າ</th>
+            <th>ສິນຄ້າ</th>
+            <th>ຈຳນວນເງິນ</th>
+            <th>ເຈົ້າໜ້າທີ່</th>
+            <th>ສະຖານະ</th>
+            <th>ວັນທີ່ສ້າງ</th>
+            <th class="w-32 text-center">ACTIONS</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="loan in displayedLoans" :key="loan.id">
-            <td class="font-medium">
-              <div>{{ getCustomerName(loan) }}</div>
-              <div class="text-sm text-gray-500">{{ getCustomerPhone(loan) }}</div>
+          <tr v-for="loan in displayedLoans" :key="loan.id"
+            class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <td>
+              <div class="font-bold text-indigo-600 dark:text-indigo-400">{{ getCustomerName(loan) }}</div>
+              <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                <span class="icon-[tabler--phone] size-3"></span> {{ getCustomerPhone(loan) }}
+              </div>
             </td>
             <td>
-              <div>{{ getProductName(loan) }}</div>
-              <div class="text-sm text-gray-500">{{ getProductType(loan) }}</div>
+              <div class="font-medium text-gray-800 dark:text-gray-200 truncate max-w-[180px]"
+                :title="getProductName(loan)">{{ getProductName(loan) }}</div>
+              <div class="text-xs text-gray-500 mt-0.5">ID: {{ loan.product_id }}</div>
             </td>
-            <td class="font-medium">{{ formatPrice(Number(loan.total_amount || 0) - Number(loan.down_payment || 0)) }}</td>
-            <td>{{ getRequesterName(loan) }}</td>
-            <td><span class="badge badge-soft" :class="getStatusBadgeClass(loan.status)">{{ getStatusText(loan.status) }}</span></td>
-            <td>{{ (loan.created_at || loan.createdAt) ? formatDate((loan.created_at || loan.createdAt) || '') : '-' }}</td>
             <td>
-              <div class="flex gap-2">
-                <button class="btn btn-circle btn-text btn-sm" @click="openDetails(loan.id, false)" title="ລາຍລະອຽດ">
-                  <span class="icon-[tabler--eye] size-4"></span>
+              <div class="font-bold text-emerald-600">{{ formatPrice(Number(loan.total_amount || 0) -
+                Number(loan.down_payment || 0)) }} ₭</div>
+            </td>
+            <td>
+              <div class="flex items-center gap-2">
+                <div class="avatar placeholder">
+                  <div class="bg-neutral text-neutral-content rounded-full w-6 h-6 flex items-center justify-center">
+                    <span class="text-xs">{{ getRequesterName(loan).charAt(0).toUpperCase() }}</span>
+                  </div>
+                </div>
+                <span class="text-sm text-gray-700 dark:text-gray-300">{{ getRequesterName(loan) }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-sm" :class="getStatusBadgeClass(loan.status)">{{ getStatusText(loan.status)
+                }}</span>
+            </td>
+            <td class="text-sm text-gray-600 dark:text-gray-400">
+              {{ (loan.created_at || loan.createdAt) ? formatDate((loan.created_at || loan.createdAt) || '') : '-' }}
+            </td>
+            <td>
+              <div class="flex justify-center gap-1">
+                <button
+                  v-if="permissionStore.hasPermission('loan_view_all') || permissionStore.hasPermission('loan_view_assigned')"
+                  class="btn btn-square btn-ghost btn-sm text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-600"
+                  @click="openDetails(loan.id, false)" title="ລາຍລະອຽດ">
+                  <span class="icon-[tabler--eye] size-5"></span>
                 </button>
 
-                <button class="btn btn-circle btn-text btn-sm text-info" @click="openSchedule(loan)" title="ຕາຕະລາງຜ່ອນຊຳລະ">
-                  <span class="icon-[tabler--calendar-stats] size-4"></span>
+                <button
+                  v-if="permissionStore.hasPermission('loan_view_all') || permissionStore.hasPermission('loan_view_assigned')"
+                  class="btn btn-square btn-ghost btn-sm text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                  @click="openSchedule(loan)" title="ຕາຕະລາງຜ່ອນຊຳລະ">
+                  <span class="icon-[tabler--calendar-stats] size-5"></span>
                 </button>
 
-                <button v-if="loan.status !== 'closed' && loan.status !== 'disbursed'"
-                  class="btn btn-circle btn-text btn-sm" @click="openDetails(loan.id, true)" title="ແກ້ໄຂ">
-                  <span class="icon-[tabler--edit] size-4"></span>
+                <button
+                  v-if="loan.status !== 'closed' && loan.status !== 'disbursed' && (permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create'))"
+                  class="btn btn-square btn-ghost btn-sm text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/30"
+                  @click="openDetails(loan.id, true)" title="ແກ້ໄຂ">
+                  <span class="icon-[tabler--edit] size-5"></span>
                 </button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="displayedLoans.length === 0">
+            <td colspan="7" class="text-center py-12 text-gray-400">
+              <div class="flex flex-col items-center">
+                <span class="icon-[tabler--file-search] size-12 mb-2 opacity-50"></span>
+                <span>ບໍ່ມີຂໍ້ມູນຕາມເງື່ອນໄຂທີ່ຄົ້ນຫາ</span>
               </div>
             </td>
           </tr>
@@ -88,7 +145,9 @@
       <div>ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalLoans }} ລາຍການ</div>
       <div class="flex items-center gap-2">
         <select v-model.number="pageSize" class="select select-sm select-bordered">
-          <option :value="10">10 ຕໍ່ໜ້າ</option><option :value="25">25 ຕໍ່ໜ້າ</option><option :value="50">50 ຕໍ່ໜ້າ</option>
+          <option :value="10">10 ຕໍ່ໜ້າ</option>
+          <option :value="25">25 ຕໍ່ໜ້າ</option>
+          <option :value="50">50 ຕໍ່ໜ້າ</option>
         </select>
         <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
         <span class="px-2"> ໜ້າ {{ currentPage }} / {{ totalPages }} </span>
@@ -96,45 +155,36 @@
       </div>
     </div>
 
-    <LoanDetailsModal
-      :show="showDetailsModal"
-      :loan-id="selectedLoanId"
-      :open-in-edit="isEditMode"
-      @close="showDetailsModal = false"
-      @refresh="fetchData"
-    />
+    <LoanDetailsModal :show="showDetailsModal" :loan-id="selectedLoanId" :open-in-edit="isEditMode"
+      @close="showDetailsModal = false" @refresh="fetchData" />
 
-    <LoanScheduleModal
-      :show="showScheduleModal"
-      :loan="selectedScheduleLoan"
-      @close="showScheduleModal = false"
-    />
+    <LoanScheduleModal :show="showScheduleModal" :loan="selectedScheduleLoan" @close="showScheduleModal = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import * as XLSX from 'xlsx' // 🟢 ເພີ່ມແຖວນີ້
+import * as XLSX from 'xlsx'
+import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useProductStore } from '@/stores/product'
 import { useShopStore } from '@/stores/shop'
 import { useAddressStore } from '@/stores/address'
-import { useLoanContractStore } from '@/stores/loanContract' // 🟢 ເພີ່ມແຖວນີ້
+import { useLoanContractStore } from '@/stores/loanContract'
+import { usePermissionStore } from '@/stores/permission'
 import { LoanApplicationStatus } from '@/types/loanApplication'
-import Papa from 'papaparse'
 import { alert } from '@/utils/alert'
 import { formatPrice, getStatusBadgeClass, getStatusText } from '@/utils/formatters'
 
-// 🟢 Import Modal
 import LoanDetailsModal from '@/components/modals/loan/detail/LoanDetailsModal.vue'
-// 🟢 Import Schedule Modal ເພີ່ມ
 import LoanScheduleModal from '@/components/modals/loan/detail/LoanScheduleModal.vue'
 
 const loanApplicationStore = useLoanApplicationStore()
-const loanContractStore = useLoanContractStore() // 🟢 ເພີ່ມແຖວນີ້
+const loanContractStore = useLoanContractStore()
 const productStore = useProductStore()
 const shopStore = useShopStore()
 const addressStore = useAddressStore()
+const permissionStore = usePermissionStore()
 
 const isLoading = computed(() => loanApplicationStore.isLoading)
 
@@ -146,7 +196,6 @@ const dateTo = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// --- State ສຳລັບ Modal ລາຍລະອຽດ ---
 const showDetailsModal = ref(false)
 const selectedLoanId = ref<number | null>(null)
 const isEditMode = ref(false)
@@ -157,7 +206,6 @@ const openDetails = (id: number, edit: boolean) => {
   showDetailsModal.value = true
 }
 
-// --- State ສຳລັບ Modal ຕາຕະລາງຜ່ອນ ---
 const showScheduleModal = ref(false)
 const selectedScheduleLoan = ref<any | null>(null)
 
@@ -168,7 +216,6 @@ const openSchedule = async (loan: any) => {
       const contractRes = await loanContractStore.fetchContract(loan.id);
       contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
 
-      // 🟢 ປັບປຸງເງື່ອນໄຂ: ຖ້າ Object ວ່າງເປົ່າ ຫຼື ບໍ່ມີ ID ສະແດງວ່າບໍ່ມີສັນຍາແທ້ໆ
       if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
         throw new Error("Contract is empty");
       }
@@ -182,7 +229,6 @@ const openSchedule = async (loan: any) => {
     const appMonthlyPay = Number(fullLoan.monthly_pay || 0);
     const appTerm = Number(fullLoan.loan_period || 0);
 
-    // 🟢 ຮອງຮັບທັງ CamelCase (totalAmount) ແລະ SnakeCase (total_amount)
     const contractPrincipal = Number(contractData.totalAmount || contractData.total_amount || 0);
     const contractMonthlyPay = Number(contractData.monthlyPay || contractData.monthly_pay || 0);
     const contractTerm = Number(contractData.loanPeriod || contractData.loan_period || 0);
@@ -202,7 +248,6 @@ const openSchedule = async (loan: any) => {
   }
 }
 
-
 const isConfirmed = (v: any) => v === true || v === 1 || v === 'true' || v === '1'
 const getCustomerName = (loan: any) => loan.customer?.full_name || `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.trim() || '-'
 const getCustomerPhone = (loan: any) => loan.customer?.phone || '-'
@@ -215,33 +260,36 @@ const filteredLoans = computed(() => {
   let list = loanApplicationStore.loanApplications.filter(app => isConfirmed(app.is_confirmed))
 
   if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    list = list.filter(d => d.customer?.first_name?.toLowerCase().includes(q) || d.customer?.phone?.includes(q) || d.loan_id?.toLowerCase().includes(q))
+    const q = searchQuery.value.toLowerCase().trim()
+    list = list.filter(d =>
+      d.customer?.first_name?.toLowerCase().includes(q) ||
+      d.customer?.phone?.includes(q) ||
+      d.loan_id?.toLowerCase().includes(q)
+    )
   }
 
-  if (statusFilter.value) list = list.filter(d => d.status === statusFilter.value)
+  if (statusFilter.value) {
+    list = list.filter(d => d.status === statusFilter.value)
+  }
 
   if (dateFrom.value || dateTo.value) {
-    // 🟢 ແກ້ໄຂຈຸດນີ້: ປ່ຽນຈາກ filtered = filtered.filter(...) ມາເປັນ list = list.filter(...)
-    // 🟢 ແລະ ເພີ່ມ (loan: any) ເພື່ອປ້ອງກັນ TypeScript Error
     list = list.filter((loan: any) => {
-      // 1. ດຶງຄ່າວັນທີ (ຮອງຮັບທັງສອງຊື່ Field ທີ່ Backend ອາດຈະສົ່ງມາ)
       const dateString = loan.created_at || loan.createdAt;
-
-      // 2. ຖ້າບໍ່ມີວັນທີສ້າງ ໃຫ້ຂ້າມການສະແດງຜົນລາຍການນີ້ (ຫຼື return true ຖ້າຢາກໃຫ້ສະແດງ)
       if (!dateString) return false;
 
-      // 3. ບັງຄັບໃຫ້ date ເປັນ String ທີ່ປອດໄພ
       const date = dateString.includes('T') ? dateString.split('T')[0] : dateString;
-
-      // 4. ປຽບທຽບ
       const fromDate = dateFrom.value || '1970-01-01';
       const toDate = dateTo.value || '9999-12-31';
 
       return date >= fromDate && date <= toDate;
     });
   }
-  return list; // 🟢 ສົ່ງ list ກັບຄືນ
+
+  return list;
+})
+
+watch([searchQuery, statusFilter, dateFrom, dateTo, pageSize], () => {
+  currentPage.value = 1
 })
 
 const displayedLoans = computed(() => filteredLoans.value.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value))
@@ -254,7 +302,6 @@ const hasNextPage = computed(() => currentPage.value < totalPages.value)
 
 const previousPage = () => { if (hasPreviousPage.value) currentPage.value-- }
 const nextPage = () => { if (hasNextPage.value) currentPage.value++ }
-watch(pageSize, () => currentPage.value = 1)
 
 let debounceTimer: any = null
 const debounceSearch = () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => currentPage.value = 1, 300) }
@@ -262,50 +309,55 @@ const applyDateFilter = () => currentPage.value = 1
 
 const fetchData = async () => {
   try {
-    // 🟢 ເພີ່ມ try...catch ເຂົ້າໄປກວມເອົາ API
     await loanApplicationStore.fetchLoanApplications({
-      status: [LoanApplicationStatus.PENDING, LoanApplicationStatus.VERIFYING, LoanApplicationStatus.VERIFIED] as any,
+      status: [
+        LoanApplicationStatus.PENDING,
+        LoanApplicationStatus.VERIFYING,
+        LoanApplicationStatus.VERIFIED,
+        LoanApplicationStatus.APPROVED,
+        LoanApplicationStatus.REJECTED,
+        LoanApplicationStatus.DISBURSED,
+        LoanApplicationStatus.CLOSED
+      ] as any,
       is_confirmed: 1,
       limit: 1000
     })
   } catch (error: any) {
-    // 🟢 ດຶງ Error ແຈ້ງ Client ທັນທີ ຖ້າດຶງຂໍ້ມູນຈາກ Server ບໍ່ສຳເລັດ
     const errorMsg = error.response?.data?.message || error.message || 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນລາຍການສິນເຊື່ອໄດ້';
     alert.error('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ', errorMsg);
   }
 }
 
-const viewLoanDetails = (id: number) => {
-  selectedLoanId.value = id
-  showDetailsModal.value = true
-}
-
 const exportToCSV = () => {
-  const csvData = displayedLoans.value.map(d => ({
-    'Loan ID': d.loan_id, 'ລູກຄ້າ': getCustomerName(d), 'ເບີໂທ': getCustomerPhone(d),
-    'ສິນຄ້າ': getProductName(d), 'ປະເພດ': getProductType(d), 'ຈຳນວນເງິນ': formatPrice(d.total_amount),
-    'ດອກເບ້ຍ (%)': d.interest_rate_at_apply, 'ໄລຍະເວລາ': d.loan_period,
-    'ເຈົ້າໜ້າທີ່': getRequesterName(d), 'ສະຖານະ': getStatusText(d.status), 'ວັນທີ່ສ້າງ': d.createdAt ? formatDate(d.createdAt) : '-'
+  const csvData = filteredLoans.value.map(d => ({
+    'Loan ID': d.loan_id,
+    'ລູກຄ້າ': getCustomerName(d),
+    'ເບີໂທ': getCustomerPhone(d),
+    'ສິນຄ້າ': getProductName(d),
+    'ປະເພດ': getProductType(d),
+    'ຈຳນວນເງິນ': formatPrice(Number(d.total_amount || 0) - Number(d.down_payment || 0)),
+    'ດອກເບ້ຍ (%)': d.interest_rate_at_apply,
+    'ໄລຍະເວລາ (ເດືອນ)': d.loan_period,
+    'ເຈົ້າໜ້າທີ່': getRequesterName(d),
+    'ສະຖານະ': getStatusText(d.status),
+    'ວັນທີ່ສ້າງ': (d.created_at || d.createdAt) ? formatDate((d.created_at || d.createdAt) as string) : '-'
   }))
   const csv = Papa.unparse(csvData)
-  // 🟢 เติม \uFEFF (UTF-8 BOM) นำหน้า csv data
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
-  link.download = `loans_export_${new Date().toISOString().split('T')[0]}.csv`
+  link.download = `Loans_Export_${new Date().toISOString().split('T')[0]}.csv`
   link.click()
 }
 
-// 🟢 ฟังก์ชัน Export To Excel (แทนที่ exportToCSV)
 const exportToExcel = () => {
-  // 1. เตรียมข้อมูล
-  const excelData = displayedLoans.value.map(d => ({
+  const excelData = filteredLoans.value.map(d => ({
     'Loan ID': d.loan_id,
     'ລູກຄ້າ': getCustomerName(d),
-    'ເບີໂທ': getCustomerPhone(d), // xlsx จัดการ String ได้ดี ไม่ตัดเลข 0
+    'ເບີໂທ': getCustomerPhone(d),
     'ສິນຄ້າ': getProductName(d),
     'ປະເພດ': getProductType(d),
-    'ຈຳນວນເງິນ': Number(d.total_amount || 0), // ใส่เป็น Number ให้ Excel ค้นหา/คำนวณต่อได้
+    'ຈຳນວນເງິນ (ຍອດຈັດ)': Number(d.total_amount || 0) - Number(d.down_payment || 0),
     'ດອກເບ້ຍ (%)': d.interest_rate_at_apply,
     'ໄລຍະເວລາ (ເດືອນ)': d.loan_period,
     'ເຈົ້າໜ້າທີ່': getRequesterName(d),
@@ -313,34 +365,24 @@ const exportToExcel = () => {
     'ວັນທີ່ສ້າງ': (d.created_at || d.createdAt) ? formatDate((d.created_at || d.createdAt) as string) : '-'
   }))
 
-  // 2. สร้าง Worksheet จาก JSON
   const worksheet = XLSX.utils.json_to_sheet(excelData)
-
-  // 3. ปรับความกว้างของคอลัมน์ให้อ่านง่าย (Optional)
-  const wscols = [
-    { wch: 15 }, // Loan ID
-    { wch: 25 }, // ลູກຄ້ๅ
-    { wch: 15 }, // เບີໂທ
-    { wch: 25 }, // ສິນຄ້ๅ
-    { wch: 15 }, // ປະເພດ
-    { wch: 15 }, // ຈຳນວນเງິນ
-    { wch: 10 }, // ດອກเບ້ຍ
-    { wch: 15 }, // ໄລຍະเวລๅ
-    { wch: 20 }, // เจ້ົๅໜ້ๅທີ່
-    { wch: 15 }, // ສະຖๅນະ
-    { wch: 15 }, // วັນທີ່ສ้ๅງ
+  worksheet['!cols'] = [
+    { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 25 },
+    { wch: 15 }, { wch: 18 }, { wch: 12 }, { wch: 18 },
+    { wch: 20 }, { wch: 15 }, { wch: 15 }
   ];
-  worksheet['!cols'] = wscols;
 
-  // 4. สร้าง Workbook และแนบ Worksheet เข้าไป
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, "Loan List")
-
-  // 5. สั่งดาวน์โหลดไฟล์
   XLSX.writeFile(workbook, `Loan_Report_${new Date().toISOString().split('T')[0]}.xlsx`)
 }
 
 onMounted(async () => {
-  await Promise.all([ fetchData(), productStore.fetchProductTypes(), shopStore.fetchAllShop(), addressStore.fetchProvinces() ])
+  await Promise.all([
+    fetchData(),
+    productStore.fetchProductTypes(),
+    shopStore.fetchAllShop(),
+    addressStore.fetchProvinces()
+  ])
 })
 </script>

@@ -11,16 +11,19 @@ import type { Feature, UserWithPermissions, PermissionAssignment } from '@/types
 
 export const usePermissionStore = defineStore('permission', {
   state: () => ({
-    // เก็บรายการ permission ที่ผู้ใช้มีสิทธิ์
-    userPermissions: [] as string[],
+    // 🌟 1. ໃຊ້ Set ເພື່ອປະສິດທິພາບຄວາມໄວສູງສຸດ O(1)
+    userPermissions: new Set<string>(),
     features: [] as Feature[],
     isLoading: false
   }),
 
+  // 🌟 2. ເພີ່ມ Getters ເພື່ອໃຫ້ສະດວກຕອນຢາກດຶງຄ່າໄປໃຊ້ແບບ Array
+  getters: {
+    // ແປງ Set ກັບໄປເປັນ Array (ຖ້າມີບ່ອນໃດໃນລະບົບຕ້ອງການໃຊ້ Array)
+    permissionsArray: (state): string[] => Array.from(state.userPermissions)
+  },
+
   actions: {
-    /**
-     * โหลดรายการ features ทั้งหมด
-     */
     async fetchFeatures() {
       this.isLoading = true
       try {
@@ -32,60 +35,42 @@ export const usePermissionStore = defineStore('permission', {
         this.isLoading = false
       }
     },
-    /**
-     * ตั้งค่า permissions หลัง login
-     */
+
     setPermissions(permissions: any[]) {
+      // 🌟 3. ຖ້າບໍ່ມີຂໍ້ມູນ ໃຫ້ໃຊ້ຄຳສັ່ງ .clear() ຂອງ Set ແທນການກຳນົດຄ່າ = []
       if (!permissions || !Array.isArray(permissions)) {
-        this.userPermissions = []
+        this.userPermissions.clear()
         return
       }
-      
-      // แปลงให้อยู่ในรูปแบบ string เสมอ
-      this.userPermissions = permissions.map(p => {
+
+      const permStrings = permissions.map(p => {
         if (typeof p === 'string') return p
         if (p && p.feature_name) return p.feature_name
         if (p && p.feature && p.feature.feature_name) return p.feature.feature_name
         return String(p)
       })
+
+      // 🌟 4. ສ້າງ Set ໃໝ່ຂຶ້ນມາປ່ຽນແທນຂອງເກົ່າ
+      this.userPermissions = new Set<string>(permStrings)
     },
 
-    /**
-     * ตรวจสอบว่าผู้ใช้มีสิทธิ์นี้หรือไม่
-     */
     hasPermission(permission: string): boolean {
-      if (!this.userPermissions || !Array.isArray(this.userPermissions)) return false
-      
-      return this.userPermissions.some((p: any) => {
-        if (typeof p === 'string') return p === permission
-        if (p && p.feature_name) return p.feature_name === permission
-        if (p && p.feature && p.feature.feature_name) return p.feature.feature_name === permission
-        return false
-      })
+      // 🌟 5. ໃຊ້ .has() ຂອງ Set ເຊິ່ງໄວຫຼາຍ
+      return this.userPermissions.has(permission)
     },
-    /**
-     * ดึงสิทธิ์ของผู้ใช้เฉพาะคน
-     */
+
     async fetchUserPermissions(userId: number): Promise<UserWithPermissions> {
       return await getUserPermissions(userId)
     },
-      /**
-     * ลบสิทธิ์ทั้งหมดของผู้ใช้
-     */
+
     async deleteAllUserPermissions(userId: number): Promise<void> {
       await deleteAllUserPermissions(userId)
     },
 
-    /**
-     * กำหนดสิทธิ์ให้ผู้ใช้
-     */
     async assignPermissions(userId: number, featureIds: number[]): Promise<void> {
       await assignUserPermissions(userId, featureIds)
     },
 
-    /**
-     * อัปเดตสิทธิ์แบบกลุ่ม
-     */
     async updateUserPermissions(userId: number, featureIds: number[]): Promise<void> {
       const payload: PermissionAssignment[] = [{
         user_id: userId,
@@ -95,10 +80,12 @@ export const usePermissionStore = defineStore('permission', {
     },
 
     /**
-     * ล้างข้อมูลเมื่อ logout
+     * 🌟 6. ແກ້ໄຂ Error ຢູ່ຈຸດນີ້: ລ້າງຂໍ້ມູນເມື່ອ Logout
      */
     clearPermissions() {
-      this.userPermissions = []
+      // ❌ ຜິດ: this.userPermissions = []
+      // ✅ ຖືກຕ້ອງ: ໃຊ້ .clear() ສຳລັບ Set
+      this.userPermissions.clear()
       this.features = []
     }
   }

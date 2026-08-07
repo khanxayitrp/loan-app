@@ -1,4 +1,3 @@
-<!-- src/components/modals/loan/DeliveryNoteModal.vue -->
 <template>
   <teleport to="body">
     <div v-if="isOpen && loan" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -43,7 +42,6 @@
               class="textarea textarea-bordered w-full min-h-24 bg-gray-50" readonly></textarea>
           </div>
 
-          <!-- 🟢 ປິດກັ້ນການອະນຸມັດ ຖ້າຮຽກໃຊ້ຈາກໜ້າ Pending (ໃຫ້ອະນຸມັດໄດ້ສະເພາະຫົວໜ້າ/ຜູ້ບໍລິຫານ) -->
           <div v-if="!isPendingView" class="form-control">
             <label class="label cursor-pointer justify-start gap-4">
               <input type="checkbox" v-model="form.approved" class="checkbox checkbox-primary"
@@ -55,12 +53,16 @@
             </p>
           </div>
 
+          <div v-if="!hasDeliveryNote && !canEditNote" class="alert alert-warning shadow-sm mt-4 p-3 text-sm">
+            <span class="icon-[tabler--info-circle] size-5 shrink-0"></span>
+            <span>ຍັງບໍ່ມີການສ້າງໃບມອບຮັບສິນຄ້າສຳລັບລູກຄ້າຄົນນີ້.</span>
+          </div>
+
           <div class="flex flex-col sm:flex-row justify-end gap-3 mt-6 border-t pt-4">
             <button type="button" class="btn btn-soft btn-secondary" @click="closeModal">
-              ຍົກເລີກ
+              ປິດ
             </button>
 
-            <!-- ປຸ່ມພິມ PDF -->
             <button v-if="hasDeliveryNote" type="button" class="btn btn-outline btn-primary" @click="printDeliveryNote"
               :disabled="isPrinting || isSaving">
               <span v-if="isPrinting" class="loading loading-spinner loading-xs mr-1"></span>
@@ -68,7 +70,7 @@
               {{ isPrinting ? 'ກຳລັງພິມ...' : 'ພິມໃບມອບຮັບ' }}
             </button>
 
-            <button type="submit" class="btn btn-primary" :disabled="isSaving || isSaveDisabled">
+            <button v-if="canEditNote" type="submit" class="btn btn-primary" :disabled="isSaving || isSaveDisabled">
               <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
               <span v-else>
                 {{ deliveryReceiptStore.currentReceipt ? 'ບັນທຶກການປ່ຽນແປງ' : 'ສ້າງໃບມອບຮັບ' }}
@@ -85,19 +87,21 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { useDeliveryReceiptStore } from '@/stores/delivery_receipt';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
+import { usePermissionStore } from '@/stores/permission'; // 🌟 1. Import Permission Store
 import { alert } from '@/utils/alert';
 import apiClient from '@/api/apiclient';
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
   loan: { type: Object, default: null },
-  isPendingView: { type: Boolean, default: false } // ເອົາໄວ້ເຊັກວ່າຮຽກໃຊ້ຈາກໜ້າ Pending ຫຼືບໍ່
+  isPendingView: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['close', 'updated']);
 
 const deliveryReceiptStore = useDeliveryReceiptStore();
 const loanApplicationStore = useLoanApplicationStore();
+const permissionStore = usePermissionStore(); // 🌟 2. ປະກາດໃຊ້ Store
 
 const isLoading = ref(false);
 const isSaving = ref(false);
@@ -115,7 +119,12 @@ const originalData = ref<any>(null);
 const originalApprovedStatus = ref(false);
 const fullLoanDataRef = ref<any>(null);
 
-// ຟັງຊັນຊ່ວຍດຶງຂໍ້ມູນລູກຄ້າ
+// 🌟 3. Computed Property ສຳລັບເຊັກສິດການແກ້ໄຂ
+const canEditNote = computed(() => {
+  return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve');
+});
+
+// Helpers
 const getCustomerName = (loan: any): string => {
   if (!loan.customer) return '-';
   return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim();
@@ -125,7 +134,6 @@ const getCustomerPhone = (loan: any): string => {
   return loan.customer?.phone || '-';
 };
 
-// ເມື່ອ Props ປ່ຽນແປງ (Modal ຖືກເປີດ) ໃຫ້ໂຫຼດຂໍ້ມູນ
 watch(() => props.isOpen, async (newVal) => {
   if (newVal && props.loan) {
     await initModalData();
@@ -139,7 +147,6 @@ const initModalData = async () => {
   try {
     let fullLoanData = props.loan;
 
-    // ພະຍາຍາມດຶງຂໍ້ມູນເຕັມ (ຖ້າບໍ່ມີມາກັບ props)
     if (!fullLoanData.customer || !fullLoanData.customer.address) {
       try {
         const fetchedLoan = await loanApplicationStore.fetchLoanApplicationById(props.loan.id);
@@ -148,7 +155,7 @@ const initModalData = async () => {
         console.warn('Failed to fetch full loan details');
       }
     }
-    
+
     fullLoanDataRef.value = fullLoanData;
 
     const existingReceipt = await deliveryReceiptStore.fetchReceiptByApplicationId(props.loan.id);
@@ -205,9 +212,14 @@ const closeModal = () => {
 
 const hasDeliveryNote = computed(() => deliveryReceiptStore.currentReceipt !== null);
 
-const isEditingDisabled = computed(() => deliveryReceiptStore.currentReceipt?.status === 'approved');
+// 🌟 ອັບເດດ: ຖ້າບໍ່ມີສິດ ກໍໃຫ້ Disable ທັນທີ
+const isEditingDisabled = computed(() => {
+  if (!canEditNote.value) return true; // ສຳລັບ Auditor
+  return deliveryReceiptStore.currentReceipt?.status === 'approved';
+});
 
 const canApproveDeliveryNote = computed(() => {
+  if (!canEditNote.value) return false; // ສຳລັບ Auditor
   return deliveryReceiptStore.currentReceipt !== null && deliveryReceiptStore.currentReceipt.status !== 'approved';
 });
 
@@ -218,6 +230,7 @@ const isSaveDisabled = computed(() => {
 });
 
 const approvalDisabledMessage = computed(() => {
+  if (!canEditNote.value) return 'ທ່ານບໍ່ມີສິດອະນຸມັດ (Read-only)'; // ຂໍ້ຄວາມສຳລັບ Auditor
   if (!deliveryReceiptStore.currentReceipt) return 'ຕ້ອງສ້າງໃບມອບຮັບກ່ອນຈຶ່ງຈະສາມາດອະນຸມັດໄດ້';
   if (deliveryReceiptStore.currentReceipt.status === 'approved') return 'ໃບມອບຮັບນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ';
   return '';
@@ -232,7 +245,7 @@ const hasChanges = (): boolean => {
 };
 
 const saveDeliveryNote = async () => {
-  if (!props.loan) return;
+  if (!props.loan || !canEditNote.value) return; // 🌟 ປ້ອງກັນໄວ້ກ່ອນ
   isSaving.value = true;
 
   try {
@@ -251,7 +264,7 @@ const saveDeliveryNote = async () => {
       alert.success('ສ້າງໃບຮັບສິນຄ້າສຳເລັດ');
     }
 
-    emit('updated'); // ແຈ້ງໃຫ້ໜ້າຫຼັກໂຫຼດຂໍ້ມູນໃໝ່
+    emit('updated');
     closeModal();
   } catch (error: any) {
     alert.error('ເກີດຂໍ້ຜິດພາດ: ' + (error.message || 'ບໍ່ສາມາດບັນທຶກໄດ້'));

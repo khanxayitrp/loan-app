@@ -2,9 +2,7 @@
   <teleport to="body">
     <div id="print-modal-container" v-if="isOpen && printData"
       class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-500/80 backdrop-blur-sm p-4 print:p-0 print:bg-white">
-      <!-- <teleport to="body">
-    <div v-if="isOpen && printData"
-      class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-500/80 backdrop-blur-sm p-4 print:p-0 print:bg-white"> -->
+
       <div
         class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col print:shadow-none print:max-h-none print:h-auto print:rounded-none">
 
@@ -12,9 +10,14 @@
           <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800">
             <span class="icon-[tabler--printer] size-5"></span> ຕົວຢ່າງກ່ອນພິມ (Print Preview)
           </h3>
-          <div class="flex gap-2">
+          <div class="flex items-center gap-2">
+            <span v-if="!canPrintSummary" class="text-xs text-error font-medium mr-2">
+              <span class="icon-[tabler--lock] size-3"></span> ທ່ານບໍ່ມີສິດພິມເອກະສານນີ້
+            </span>
+
             <button @click="close" class="btn btn-ghost btn-sm">ປິດ</button>
-            <button @click="handlePrint" class="btn btn-primary btn-sm" :disabled="isPrinting">
+
+            <button @click="handlePrint" class="btn btn-primary btn-sm" :disabled="isPrinting || !canPrintSummary">
               <span v-if="isPrinting" class="loading loading-spinner loading-xs"></span>
               <span v-else class="icon-[tabler--printer] size-4"></span> ພິມເອກະສານ
             </button>
@@ -57,7 +60,7 @@
                     formatPrice(printData.totalIncome) }} ກີບ</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ໜີ້ສິນລວມ/ເດືອນ:</td>
                   <td class="border border-gray-400 px-2 py-1 text-error font-bold">{{ formatPrice(printData.totalDebt)
-                  }} ກີບ</td>
+                    }} ກີບ</td>
                 </tr>
               </tbody>
             </table>
@@ -85,7 +88,7 @@
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ດອກເບ້ຍ:</td>
                   <td class="border border-gray-400 px-2 py-1">{{ printData.interestRate }}% {{ printData.interestType
-                  }}</td>
+                    }}</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ໄລຍະເວລາ:</td>
                   <td class="border border-gray-400 px-2 py-1">{{ printData.loanPeriod }} ເດືອນ</td>
                 </tr>
@@ -129,7 +132,7 @@
               <tbody>
                 <tr>
                   <td class="border border-gray-400 px-4 py-3 w-1/2 text-center bg-gray-50">
-                    <div class="text-sm font-semibold">ຄະແນนລວມ (Total Score)</div>
+                    <div class="text-sm font-semibold">ຄະແນນລວມ (Total Score)</div>
                     <div class="text-4xl font-black mt-1 text-primary">{{ printData.creditScore }}</div>
                   </td>
                   <td class="border border-gray-400 px-4 py-3 w-1/2 text-center"
@@ -202,24 +205,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import apiClient from '@/api/apiclient';
 import { alert } from '@/utils/alert';
 import { formatPrice, getCurrentDateDDMMYYYY, formatDateTime, getStatusText } from '@/utils/formatters';
-
-// 🟢 Import ໃຊ້ Store ສຳລັບດຶງ Logs
 import { useLoanApplicationStore } from '@/stores/loanApplication';
+import { usePermissionStore } from '@/stores/permission'; // 🌟 1. Import Permission Store
 
 const props = defineProps<{ isOpen: boolean; printData: any }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
 
 const loanApplicationStore = useLoanApplicationStore();
+const permissionStore = usePermissionStore(); // 🌟 2. ປະກາດໃຊ້ Store
+
 const approvalLogs = ref<any[]>([]);
 const isPrinting = ref(false);
 
 const close = () => emit('close');
 
-// 🟢 ດຶງຂໍ້ມູນປະຫວັດເມື່ອມີການເປີດ Modal ຂຶ້ນມາ
+// 🌟 3. Computed Property ສຳລັບກວດສອບສິດການພິມ
+const canPrintSummary = computed(() => {
+  // ອະນຸຍາດໃຫ້ພິມສະເພາະຜູ້ທີ່ມີສິດ edit ຫຼື approve (ປ້ອງກັນບໍ່ໃຫ້ Auditor ກົດພິມໄດ້)
+  return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve');
+});
+
 watch(() => props.isOpen, async (newVal) => {
   if (newVal && props.printData?.loan?.id) {
     approvalLogs.value = await loanApplicationStore.fetchApprovalLogs(props.printData.loan.id);
@@ -248,24 +257,25 @@ const formatRoleName = (role: string) => {
     'approver': 'ຜູ້ອະນຸມັດ',
     'deputy_director': 'ຮອງຜູ້ອຳນວຍການ',
     'director': 'ຜູ້ອຳນວຍການ',
-    'admin': 'ແອັດມິນ'
+    'admin': 'ແອັດມິນ',
+    'auditor': 'ຜູ້ກວດສອບພາຍໃນ'
   };
   return roles[role] || role;
 };
 
 const handlePrint = async () => {
-  if (!props.printData?.loan) return;
+  // ປ້ອງກັນໄວ້ອີກຊັ້ນໜຶ່ງ: ຖ້າບໍ່ມີສິດພິມ ໃຫ້ return ທັນທີ
+  if (!props.printData?.loan || !canPrintSummary.value) return;
 
   isPrinting.value = true;
   try {
-    // ยิง API แจ้งหลังบ้านว่ามีการพิมพ์เกิดขึ้นแล้ว
     await apiClient.post(`/loan-application/${props.printData.loan.id}/print-summary`);
     window.print();
     alert.success('ພິມເອກະສານສຳເລັດ', 'ລະບົບໄດ້ບັນທຶກປະຫວັດການພິມເອກະສານແລ້ວ.');
     close();
   } catch (error) {
     console.error("Error logging print action:", error);
-    window.print(); // ยังคงให้พิมพ์ต่อได้แม้ API จะมีปัญหา
+    window.print();
   } finally {
     isPrinting.value = false;
   }
@@ -275,18 +285,15 @@ const handlePrint = async () => {
 <style>
 @media print {
 
-  /* 1. ซ่อนหน้าเว็บหลักทั้งหมด (ตาราง, เมนู, navbar) */
   #app,
   body>div:not(#print-modal-container) {
     display: none !important;
   }
 
-  /* 2. ซ่อนส่วนที่ไม่ต้องการให้พริ้น (ปุ่มต่างๆ) */
   .no-print {
     display: none !important;
   }
 
-  /* 3. จัดการให้ Modal กางออกเต็มหน้ากระดาษ ไม่เป็นกรอบลอย */
   #print-modal-container {
     position: absolute !important;
     left: 0 !important;
@@ -299,7 +306,6 @@ const handlePrint = async () => {
     margin: 0 !important;
   }
 
-  /* 4. ล้างค่า Scroll (แถบเลื่อน) และความสูงจำกัดทิ้ง */
   #print-modal-container>div,
   #print-section {
     position: relative !important;
@@ -310,19 +316,16 @@ const handlePrint = async () => {
     border-radius: 0 !important;
   }
 
-  /* 5. บังคับให้สีพื้นหลังติด */
   #print-section {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* 6. ตั้งค่าหน้ากระดาษ A4 */
   @page {
     size: A4 portrait;
     margin: 1cm;
   }
 
-  /* 7. ปรับขนาดฟอนต์ให้พอดีหน้ากระดาษ */
   table {
     font-size: 11px !important;
   }
@@ -335,101 +338,9 @@ const handlePrint = async () => {
     font-size: 14px !important;
   }
 
-  /* 8. ป้องกันตารางโดนหั่นครึ่ง */
   .break-inside-avoid {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 }
 </style>
-
-
-<!-- <style scoped>
-@media print {
-
-  /* 1. ซ่อนทุกอย่างใน #app หรือ body ที่ไม่ใช่ Modal ของเรา (ถ้าโปรเจกต์ Vue ของคุณใช้ #app) */
-  #app,
-  body>*:not(.fixed) {
-    display: none !important;
-  }
-
-  /* ซ่อนส่วนอื่นๆ ที่ไม่ต้องการพิมพ์ */
-  .drawer,
-  .navbar,
-  .no-print {
-    display: none !important;
-  }
-
-  /* 2. ปลดล็อก Modal จากที่เคยเป็นกรอบลอย (fixed/absolute) ให้กลายเป็นบล็อกปกติ */
-  .fixed.inset-0 {
-    position: relative !important;
-    display: block !important;
-    background: transparent !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-
-  /* 3. ปลดล็อกความสูงและหน้าตาของกล่องบรรจุเนื้อหา */
-  .max-h-\\[95vh\\] {
-    max-height: none !important;
-    height: auto !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-
-  /* 4. กำหนดให้ส่วนที่ต้องการพิมพ์แสดงผลเต็มที่และบังคับให้มีสี */
-  #print-section {
-    position: relative !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background-color: white !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    overflow: visible !important;
-  }
-
-  /* 5. ตั้งค่าหน้ากระดาษ A4 */
-  @page {
-    size: A4 portrait;
-    margin: 1cm;
-  }
-
-  /* 6. ป้องกันไม่ให้ตารางหรือกลุ่มข้อมูลขาดครึ่งหน้า */
-  .break-inside-avoid {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* 7. ย่อขนาดเพื่อให้อยู่ในหน้าเดียว */
-  table {
-    font-size: 11px !important;
-  }
-
-  h1 {
-    font-size: 18px !important;
-  }
-
-  h2 {
-    font-size: 14px !important;
-  }
-
-  /* ลดช่องว่างเล็กน้อย */
-  .mb-4 {
-    margin-bottom: 0.5rem !important;
-  }
-
-  .mb-6 {
-    margin-bottom: 0.75rem !important;
-  }
-
-  .mt-12 {
-    margin-top: 1.5rem !important;
-  }
-}
-</style> -->

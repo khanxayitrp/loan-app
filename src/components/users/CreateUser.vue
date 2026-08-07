@@ -16,7 +16,6 @@
 
     <form @submit.prevent="handleSubmit" class="space-y-5">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <!-- Full Name -->
         <div class="form-control">
           <label class="label">
             <span class="label-text font-medium">ຊື່ ແລະ ນາມສະກຸນ</span>
@@ -31,7 +30,6 @@
           </label>
         </div>
 
-        <!-- Username -->
         <div class="form-control">
           <label class="label">
             <span class="label-text font-medium">ຊື່ຜູ້ໃຊ້ (Username)</span>
@@ -46,7 +44,6 @@
           </label>
         </div>
 
-        <!-- Password -->
         <div class="form-control">
           <label class="label">
             <span class="label-text font-medium">ລະຫັດຜ່ານ</span>
@@ -66,7 +63,6 @@
           </label>
         </div>
 
-        <!-- Role -->
         <div class="form-control">
           <label class="label">
             <span class="label-text font-medium">ບົດບາດ (Role)</span>
@@ -78,7 +74,8 @@
               <option value="admin">Admin</option>
               <option value="staff">Staff</option>
               <option value="partner">Partner</option>
-              <!-- <option value="customer">Customer</ฦoption> -->
+              <!-- <option value="customer">Customer</option> -->
+              <option value="auditor">Auditor (ຜູ້ກວດສອບ)</option>
             </select>
             <span
               class="icon-[tabler--shield-check] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
@@ -88,7 +85,6 @@
           </label>
         </div>
 
-        <!-- Staff Level (Show only if role is staff) -->
         <div v-if="form.role === 'staff'" class="form-control">
           <label class="label">
             <span class="label-text font-medium">ລະດັບພະນັກງານ</span>
@@ -102,6 +98,8 @@
               <option value="credit_manager">ຫົວໜ້າພະແນກສິນເຊື່ອ (Credit Manager)</option>
               <option value="deputy_director">ຮອງຜູ້ອຳນວຍການ (Deputy Director)</option>
               <option value="director">ຜູ້ອຳນວຍການ (Director)</option>
+              <option value="approver">ຜູ້ອະນຸມັດ (Approver)</option>
+              <option value="auditor">ຜູ້ກວດສອບພາຍໃນ (Auditor)</option>
             </select>
             <span class="icon-[tabler--hierarchy] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
           </div>
@@ -110,17 +108,10 @@
           </label>
         </div>
 
-        <!-- Is Active Toggle -->
         <div class="form-control col-span-1 md:col-span-2">
           <label class="label cursor-pointer justify-start gap-4">
-            <!-- <input type="checkbox" v-model="form.is_active" :true-value="1" :false-value="0"
-              class="toggle toggle-primary" /> -->
-              <input 
-              type="checkbox" 
-              :checked="form.is_active === true" 
-              @change="form.is_active = ($event.target as HTMLInputElement).checked"
-              class="toggle toggle-primary" 
-            />
+            <input type="checkbox" :checked="form.is_active === true"
+              @change="form.is_active = ($event.target as HTMLInputElement).checked" class="toggle toggle-primary" />
             <span class="label-text font-medium">ສະຖານະຜູ້ໃຊ້ (Active/Inactive)</span>
           </label>
         </div>
@@ -156,7 +147,6 @@ const emit = defineEmits(['save', 'cancel'])
 const loading = ref(false)
 const showPassword = ref(false)
 
-// Validation errors
 const errors = reactive({
   full_name: '',
   username: '',
@@ -165,31 +155,27 @@ const errors = reactive({
   staff_level: ''
 })
 
-// สถานะโหมด Edit/Add
 const isEditMode = computed(() => !!props.initialUser)
 
 const form = reactive({
   full_name: '',
   username: '',
   password: '',
-  role: '' as 'admin' | 'staff' | 'partner' | 'customer',
-  // 👇 ປ່ຽນ type ຂອງ staff_level ໃຫ້ຄົບຕາມ Database
-  staff_level: 'none' as  'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'none',
+  // 🌟 ອັບເດດ Type ໃຫ້ກົງກັບ Database
+  role: '' as 'admin' | 'staff' | 'partner' | 'customer' | 'auditor',
+  staff_level: 'none' as 'approver' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none',
   is_active: false,
   created_at: ''
 })
 
-// โหลดข้อมูลเก่าเมื่อ props เปลี่ยน (โหมด Edit)
 watch(() => props.initialUser, (user) => {
   if (user) {
     Object.assign(form, {
       ...user,
-      password: '', // ไม่โหลด password เก่า
-      // ✅ ใช้ !! เพื่อแปลงค่า (ถ้าเป็น 1 หรือ true จะได้ true / ถ้าเป็น 0 หรือ undefined จะได้ false)
+      password: '',
       is_active: !!user.is_active
     })
   } else {
-    // โหมด Add → reset form
     Object.assign(form, {
       full_name: '',
       username: '',
@@ -202,9 +188,7 @@ watch(() => props.initialUser, (user) => {
   }
 }, { immediate: true })
 
-// Validation function
 const validateForm = (): boolean => {
-  // Reset errors
   Object.keys(errors).forEach(key => {
     errors[key as keyof typeof errors] = ''
   })
@@ -240,7 +224,6 @@ const validateForm = (): boolean => {
 }
 
 const handleRoleChange = () => {
-  // Reset staff_level เมื่อเปลี่ยน role
   if (form.role !== 'staff') {
     form.staff_level = 'none'
   }
@@ -251,13 +234,11 @@ const handleCancel = () => {
 }
 
 const handleSubmit = async () => {
-  // ✅ ป้องกันการ submit ซ้ำ
   if (loading.value) {
     console.log('[CreateUser] Already submitting, ignoring...')
     return
   }
 
-  // Validate form
   if (!validateForm()) {
     return
   }
@@ -265,29 +246,26 @@ const handleSubmit = async () => {
   loading.value = true
 
   try {
-    // ✅ เตรียมข้อมูลที่จะส่ง
     const userData = {
       full_name: form.full_name.trim(),
       username: form.username.trim(),
       role: form.role,
+      // ຖ້າບໍ່ແມ່ນ staff ໃຫ້ staff_level ເປັນ none
       staff_level: form.role === 'staff' ? form.staff_level : 'none',
-      // is_active: form.is_active,
       is_active: form.is_active ? 1 : 0,
-      ...(form.password && { password: form.password }) // ส่ง password ถ้ามี
+      ...(form.password && { password: form.password })
     }
 
     console.log('[CreateUser] Emitting save with data:', userData)
 
-    // ✅ ส่งข้อมูลกลับไปให้ parent จัดการ (ไม่เรียก API ที่นี่)
     emit('save', {
       ...userData,
-      id: props.initialUser?.id // ส่ง id ไปด้วยถ้าเป็นโหมด edit
+      id: props.initialUser?.id
     })
 
   } catch (error: any) {
     console.error('[CreateUser] Error:', error)
 
-    // Handle validation errors
     if (error.response?.data?.errors) {
       const apiErrors = error.response.data.errors
       if (apiErrors.full_name) errors.full_name = apiErrors.full_name[0]
@@ -307,7 +285,3 @@ onMounted(() => {
   console.log('[CreateUser] mounted, initialUser:', props.initialUser)
 })
 </script>
-
-<style scoped>
-/* Custom style if needed */
-</style>

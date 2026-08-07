@@ -4,33 +4,27 @@ import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePermissionStore } from '@/stores/permission'
 
-
 const routes: RouteRecordRaw[] = [
-  // Public routes (ไม่ต้อง login)
+  // ==========================================
+  // Public routes (ບໍ່ຕ້ອງ Login)
+  // ==========================================
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),
-    meta: { requiresAuth: false, layout: 'blank' } // 👈 เพิ่ม meta นี้
+    meta: { requiresAuth: false, layout: 'blank' }
   },
-  // Error pages (public)
   {
     path: '/unauthorized',
     name: 'Unauthorized',
     component: () => import('@/views/errors/Unauthorized.vue'),
-    meta: {
-      requiresAuth: false,
-      layout: 'blank' // 👈 เพิ่ม meta นี้
-    }
+    meta: { requiresAuth: false, layout: 'blank' }
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/errors/NotFound.vue'),
-    meta: {
-      requiresAuth: false,
-      layout: 'blank' // 👈 เพิ่ม meta นี้
-    }
+    meta: { requiresAuth: false, layout: 'blank' }
   },
 
   // ==========================================
@@ -42,7 +36,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/dashboard/AdminDashboard.vue'),
     meta: {
       requiresAuth: true,
-      permission: 'view_admin_dashboard' // 🟢 ໃຊ້ສິດໃໝ່ທີ່ເພີ່ມໃນ DB
+      permissions: ['view_admin_dashboard'] // 🌟 ໃຊ້ Array
     }
   },
   {
@@ -51,20 +45,21 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/dashboard/PartnerDashboard.vue'),
     meta: {
       requiresAuth: true,
-      permission: 'view_partner_dashboard' // 🟢 ໃຊ້ສິດໃໝ່ທີ່ເພີ່ມໃນ DB
+      permissions: ['view_partner_dashboard']
     }
   },
 
   // ==========================================
-  // Protected routes (ອື່ນໆ)
+  // Protected routes (ຈັດການລະບົບ)
   // ==========================================
   {
     path: '/users',
     name: 'UserManagement',
     component: () => import('@/views/users/UserManagement.vue'),
     meta: {
-      requiresAuth: true,           // ต้อง login
-      permission: 'user_manage'
+      requiresAuth: true,
+      // 🌟 ຄົນທີ່ຈັດການໄດ້ ຫຼື ເບິ່ງໄດ້ ສາມາດເຂົ້າໜ້ານີ້ໄດ້ (ແລ້ວຄ່ອຍໄປເຊື່ອງປຸ່ມແກ້ໄຂເອົາ)
+      permissions: ['user_manage', 'user_view']
     }
   },
   {
@@ -72,8 +67,8 @@ const routes: RouteRecordRaw[] = [
     name: 'ChangePassword',
     component: () => import('@/views/auth/ChangePassword.vue'),
     meta: {
-      requiresAuth: true,           // ต้อง login
-      permission: 'user_manage'
+      requiresAuth: true,
+      permissions: ['user_manage']
     }
   },
   {
@@ -81,8 +76,8 @@ const routes: RouteRecordRaw[] = [
     name: 'ChangeMyPassword',
     component: () => import('@/views/auth/ChangeMyPass.vue'),
     meta: {
-      requiresAuth: true,           // ต้อง login
-      permission: 'user_changepass'
+      requiresAuth: true,
+      permissions: ['user_changepass']
     }
   },
   {
@@ -90,104 +85,110 @@ const routes: RouteRecordRaw[] = [
     name: 'PermissionManagement',
     component: () => import('@/views/auth/PermissionManagement.vue'),
     meta: {
-      requiresAuth: true,           // ต้อง login
-      permission: 'permission_manage'
+      requiresAuth: true,
+      permissions: ['permission_manage']
     }
   },
+
+  // ==========================================
+  // Protected routes (ຈັດການສິນເຊື່ອ - Loans)
+  // ==========================================
   {
     path: '/loans',
     name: 'LoanList',
     component: () => import('@/views/loans/LoanList.vue'),
-    meta: {
-      requiresAuth: true,           // ต้อง login
-    },
+    meta: { requiresAuth: true }, // ປ່ອຍໃຫ້ Children ເຊັກສິດເອງ
     children: [
       {
-        path: '',                    // /loans
+        path: '',
         name: 'LoanListAll',
         component: () => import('@/components/loans/status/AllLoanStatusList.vue'),
-        props: { loanStatus: 'all' },   // ส่ง props ไปบอกว่าแสดงทั้งหมด
+        props: { loanStatus: 'all' },
         meta: {
           requiresAuth: true,
-          permission: 'loan_view_all'
+          permissions: ['loan_view_all']
         }
       },
       {
-        path: '/pendingLoans',        // /loans/pendingLoans
+        path: '/pendingLoans',
         name: 'PendingLoans',
         component: () => import('@/components/loans/status/PendingLoanList.vue'),
         props: { loanStatus: 'pending' },
         meta: {
           requiresAuth: true,
-          permission: 'loan_view_assigned'
+          // 🌟 ໃຫ້ທັງຄົນເບິ່ງລວມ ແລະ ຄົນເບິ່ງສະເພາະຂອງຕົນເອງ ເຂົ້າໄດ້
+          permissions: ['loan_view_assigned', 'loan_view_all']
         }
       },
       {
-        path: '/approvedLoans',        // /loans/approvedLoans
+        path: '/approvedLoans',
         name: 'ApprovedLoans',
         component: () => import('@/components/loans/status/ApprovedLoanList.vue'),
         props: { loanStatus: 'approved' },
         meta: {
           requiresAuth: true,
-          permission: 'loan_view_assigned'
+          permissions: ['loan_view_assigned', 'loan_view_all']
         }
       },
-      // 🌟 🟢 ເພີ່ມ Route ໃໝ່ສຳລັບ ຕິດຕາມສິນເຊື່ອເງື່ອນໄຂ (Conditional Loans)
       {
-        path: '/conditionalLoans',    // /loans/conditionalLoans
+        path: '/conditionalLoans',
         name: 'ConditionalLoans',
-        component: () => import('@/components/monitor/loans/Conditional_Loan.vue'), // 👈 ຊີ້ໄປຫາໄຟລ໌ໃໝ່ທີ່ທ່ານສ້າງໄວ້
+        component: () => import('@/components/monitor/loans/Conditional_Loan.vue'),
         meta: {
           requiresAuth: true,
-          permission: 'loan_view_assigned' // ໃຊ້ສິດດຽວກັບ Approved
+          permissions: ['loan_view_assigned', 'loan_view_all']
         }
       },
       {
-        path: '/repaymentLoans',        // /loans/repaymentLoans
+        path: '/repaymentLoans',
         name: 'RepaymentLoans',
         component: () => import('@/components/loans/status/RepaymentLoanList.vue'),
         meta: {
           requiresAuth: true,
-          permission: 'loan_view_assigned'
+          permissions: ['loan_view_assigned', 'loan_view_all']
         }
       },
       {
-        path: '/createDraftLoan',        // /loans/createDraftLoan
+        path: '/createDraftLoan',
         name: 'CreateDraftLoan',
         component: () => import('@/components/loans/form/CreateDraftLoan.vue'),
         meta: {
           requiresAuth: true,
-          permission: 'loan_create'
+          permissions: ['loan_create']
         }
       },
       {
-        path: '/listDraftsloan',        // /loans/listDrafts
+        path: '/listDraftsloan',
         name: 'ListDraftLoans',
         component: () => import('@/components/loans/form/ListDraftLoan.vue'),
         meta: {
           requiresAuth: true,
-          permission: 'loan_view_assigned'
+          // 🌟 ຄົນສ້າງ ຫຼື ຄົນເບິ່ງ ສາມາດເຂົ້າເບິ່ງ Draft ໄດ້
+          permissions: ['loan_view_assigned', 'loan_view_all', 'loan_create']
         }
       },
       {
-        path: '/listLoans',        // /loans/listLoans
+        path: '/listLoans',
         name: 'ListLoans',
         component: () => import('@/components/loans/form/ListLoan.vue'),
         meta: {
           requiresAuth: true,
-          permission: 'loan_view_assigned'
+          permissions: ['loan_view_assigned', 'loan_view_all']
         }
       },
     ]
   },
+
+  // ==========================================
+  // Protected routes (ຮ້ານຄ້າ ແລະ ສິນຄ້າ)
+  // ==========================================
   {
     path: '/stores',
     name: 'Stores',
     component: () => import('@/views/shops/ShopManagement.vue'),
     meta: {
-      requiresAuth: false,           // ต้อง login
-      bypassAuth: true,            // ถ้าต้องการ bypass ให้เปลี่ยนเป็น true
-      permission: 'partner_manage'
+      requiresAuth: true,
+      permissions: ['partner_manage'] // 🌟 ໃຊ້ Array
     }
   },
   {
@@ -196,8 +197,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/products/ProductManagement.vue'),
     meta: {
       requiresAuth: true,
-      permission: 'partner_manage',
-      pageType: 'products' // 👈 เพิ่ม meta data
+      permissions: ['partner_manage'],
+      pageType: 'products'
     }
   },
   {
@@ -205,27 +206,33 @@ const routes: RouteRecordRaw[] = [
     name: 'ProductTypes',
     component: () => import('@/views/products/ProductManagement.vue'),
     meta: {
-      requiresAuth: false,
-      bypassAuth: true,
-      permission: 'partner_manage',
-      pageType: 'types' // 👈 เพิ่ม meta data
+      requiresAuth: true,
+      permissions: ['partner_manage'],
+      pageType: 'types'
     }
   },
+
+  // ==========================================
+  // Redirect Root ('/')
+  // ==========================================
   {
     path: '/',
     redirect: (to) => {
-      // 🟢 Redirect logic for the base URL '/'
       const authStore = useAuthStore();
       if (authStore.isAuthenticated) {
         const role = authStore.currentUser?.role?.toLowerCase();
+
         if (role === 'admin') return { name: 'DashboardHome' };
         if (role === 'partner') return { name: 'PartnerDashboard' };
+        if (role === 'auditor') return { name: 'DashboardHome' }; // ຖ້າມີ Role ກວດສອບ
+
         if (role === 'staff') {
           const permissionStore = usePermissionStore();
-          // ເຊັກວ່າ Staff ມີສິດເບິ່ງ Dashboard ບໍ່ ຖ້າບໍ່ມີໃຫ້ໄປໜ້າສິນເຊື່ອ
+          // ເຊັກສິດແລ້ວ Redirect ຕາມລຳດັບຄວາມສຳຄັນ
           if (permissionStore.hasPermission('view_admin_dashboard')) return { name: 'DashboardHome' };
           if (permissionStore.hasPermission('loan_view_all')) return { name: 'LoanListAll' };
-          return { name: 'PendingLoans' };
+          if (permissionStore.hasPermission('loan_view_assigned')) return { name: 'PendingLoans' };
+          return { name: 'NotFound' }; // ຖ້າບໍ່ມີສິດຫຍັງເລີຍ
         }
       }
       return { name: 'Login' };
@@ -238,52 +245,59 @@ const router = createRouter({
   routes
 })
 
-// ປັບປຸງສ່ວນ router.beforeEach ໃນ src/router/index.ts
+// ==========================================
+// 🛡️ Global Route Guard (ກວດສອບກ່ອນເຂົ້າໜ້າ)
+// ==========================================
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   const permissionStore = usePermissionStore()
 
-  // 1. 🛡️ ໂຫຼດສະຖານະ Auth ຖ້າຍັງບໍ່ມີ (ກໍລະນີ Refresh ໜ້າຈໍ)
+  // 1. ໂຫຼດສະຖານະ Auth ຖ້າຍັງບໍ່ມີ (ກໍລະນີ Refresh ໜ້າຈໍ)
   if (authStore.isAuthenticated && authStore.isTokenExpired) {
     await authStore.checkAuth()
   }
 
   const isAuthenticated = authStore.isAuthenticated
 
-  // 2. 🚫 ຖ້າ Login ແລ້ວ ແຕ່ພະຍາຍາມຈະເຂົ້າໜ້າ Login (ຫຼື ກົດ Back ກັບມາ)
+  // 2. 🚫 ປ້ອງກັນເຂົ້າໜ້າ Login ຖ້າ Login ຢູ່ແລ້ວ
   if (to.path === '/login' && isAuthenticated) {
     const user = authStore.currentUser
     const role = user?.role?.toLowerCase()
 
-    // ບັງຄັບ Redirect ໄປໜ້າທີ່ຄວນຈະຢູ່ຕາມ Role (ໃຊ້ return ເພື່ອຢຸດການເຮັດວຽກ)
-    if (role === 'admin') return next({ name: 'DashboardHome' }) // 👈 Changed this line to point Admin to DashboardHome
+    if (role === 'admin') return next({ name: 'DashboardHome' })
     if (role === 'partner') return next({ name: 'PartnerDashboard' })
+    if (role === 'auditor') return next({ name: 'DashboardHome' })
+
     if (role === 'staff') {
+      if (permissionStore.hasPermission('view_admin_dashboard')) return next({ name: 'DashboardHome' })
       if (permissionStore.hasPermission('loan_view_all')) return next({ name: 'LoanListAll' })
-      if (permissionStore.hasPermission('loan_view_assigned')) return next({ name: 'ListLoans' })
-      return next({ name: 'DashboardHome' })
+      if (permissionStore.hasPermission('loan_view_assigned')) return next({ name: 'PendingLoans' })
     }
 
-    return next({ name: 'PendingLoans' })
+    return next('/')
   }
 
-  // 3. ✅ ອະນຸຍາດ Public Pages
+  // 3. ✅ ອະນຸຍາດ Public Pages ໃຫ້ຜ່ານເລີຍ
   if (to.meta.layout === 'blank' || to.meta.bypassAuth) {
     return next()
   }
 
-  // 4. 🔐 ເຊັກ Requires Auth
+  // 4. 🔐 ເຊັກ Requires Auth ແລະ Permissions ຫຼັກ
   if (to.meta.requiresAuth) {
     if (!isAuthenticated) {
-      // ຖ້າຍັງບໍ່ລັອກອິນ ສົ່ງໄປໜ້າ Login
       return next({ path: '/login', query: { redirect: to.fullPath } })
     }
 
-    // ເຊັກ Permission
-    if (to.meta.permission) {
-      const required = to.meta.permission as string
-      if (!permissionStore.hasPermission(required)) {
-        return next('/unauthorized')
+    // 🌟 ກວດສອບ Permission ຈາກ Array (ຢ່າງໜ້ອຍ 1 ສິດກໍໃຫ້ຜ່ານ) 🌟
+    if (to.meta.permissions && Array.isArray(to.meta.permissions)) {
+      const requiredPermissions = to.meta.permissions as string[];
+
+      const hasAccess = requiredPermissions.some(permission =>
+        permissionStore.hasPermission(permission)
+      );
+
+      if (!hasAccess) {
+        return next('/unauthorized'); // ຖ້າບໍ່ມີຈັກສິດໃນ Array ໃຫ້ໄປໜ້າ 403
       }
     }
   }
@@ -291,7 +305,9 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
-// Optional: Re-init FlyonUI JS components after route change
+// ==========================================
+// 🔄 Re-init UI Plugins ຫຼັງຈາກປ່ຽນໜ້າ
+// ==========================================
 router.afterEach(() => {
   setTimeout(() => {
     if (window.HSStaticMethods) {

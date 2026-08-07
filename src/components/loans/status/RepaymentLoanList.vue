@@ -11,23 +11,34 @@
           <span class="icon-[tabler--refresh] size-4 mr-1"></span> ໂຫຼດຂໍ້ມູນໃໝ່
         </button>
         <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap"
-          :disabled="isLoading || displayedLoans.length === 0">
+          :disabled="isLoading || filteredLoans.length === 0">
           <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
         </button>
         <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success"
-          :disabled="isLoading || displayedLoans.length === 0">
+          :disabled="isLoading || filteredLoans.length === 0">
           <span class="icon-[tabler--file-spreadsheet] size-4 mr-1"></span> Export Excel
         </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-w-2xl">
-      <div class="form-control">
-        <input v-model="searchQuery" type="text" placeholder="ຄົ້ນຫາເລກທີສັນຍາ, ຊື່, ເບີໂທ..."
-          class="input input-bordered w-full" @input="debounceSearch" />
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-w-2xl bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div>
+        <label class="label pb-1">
+          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ</span>
+        </label>
+        <div class="relative">
+          <input v-model="searchQuery" type="text" placeholder="ຄົ້ນຫາເລກທີສັນຍາ, ຊື່, ເບີໂທ..."
+            class="input input-sm input-bordered w-full pl-9" @input="debounceSearch" />
+          <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></span>
+        </div>
       </div>
-      <div class="form-control">
-        <select v-model="statusFilter" class="select select-bordered w-full">
+
+      <div>
+        <label class="label pb-1">
+          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ສະຖານະການຈ່າຍເງິນ</span>
+        </label>
+        <select v-model="statusFilter" class="select select-sm select-bordered w-full">
           <option value="active">ກຳລັງຜ່ອນຊຳລະ (Active)</option>
           <option value="completed">ປິດບັນຊີແລ້ວ (Completed)</option>
           <option value="late">ຊັກຊ້າ (Late)</option>
@@ -35,13 +46,14 @@
       </div>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-10">
+    <div v-if="isLoading" class="flex justify-center py-12">
       <span class="loading loading-spinner text-primary"></span>
     </div>
 
-    <div v-else class="w-full overflow-x-auto rounded-lg border border-base-content/10">
+    <div v-else
+      class="w-full overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
       <table class="table table-zebra w-full min-w-max">
-        <thead class="bg-base-200">
+        <thead class="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 text-sm">
           <tr>
             <th>ເລກທີ່ສິນເຊື່ອ</th>
             <th>ເລກທີ່ສັນຍາ</th>
@@ -49,42 +61,64 @@
             <th>ຍອດຈັດສິນເຊື່ອ</th>
             <th>ຄ່າຜ່ອນ/ງວດ</th>
             <th>ສະຖານະ</th>
-            <th class="text-center">ຈັດການ</th>
+            <th class="text-center w-32">ACTIONS</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="loan in displayedLoans" :key="loan.id">
-            <td class="font-medium text-primary">#{{ loan.loan_id || loan.id }}</td>
-            <td class="font-mono text-gray-600 dark:text-gray-400">{{ getContractNumber(loan) }}</td>
-            <td>
-              <div class="font-medium">{{ getCustomerName(loan) }}</div>
-              <div class="text-xs text-gray-500">{{ loan.customer?.phone || '-' }}</div>
+          <tr v-for="loan in displayedLoans" :key="loan.id"
+            class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <td class="font-mono text-gray-600 dark:text-gray-400 text-sm">#{{ loan.loan_id || loan.id }}</td>
+            <td class="font-mono text-indigo-600 dark:text-indigo-400 text-sm font-bold">{{ getContractNumber(loan) }}
             </td>
-            <td>{{ formatPrice((Number(loan.total_amount) || 0) - (Number(loan.down_payment) || 0)) }}</td>
-            <td class="font-semibold text-blue-600">{{ formatPrice(loan.monthly_pay) }}</td>
-            <td><span class="badge badge-sm badge-success text-white">ອະນຸມັດແລ້ວ</span></td>
+            <td>
+              <div class="font-bold text-gray-800 dark:text-white">{{ getCustomerName(loan) }}</div>
+              <div class="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                <span class="icon-[tabler--phone] size-3"></span> {{ loan.customer?.phone || '-' }}
+              </div>
+            </td>
+            <td>
+              <div class="font-bold text-emerald-600">
+                {{ formatPrice((Number(loan.total_amount) || 0) - (Number(loan.down_payment) || 0)) }} ₭
+              </div>
+            </td>
+            <td>
+              <div class="font-bold text-primary bg-primary/10 inline-block px-2 py-1 rounded">
+                {{ formatPrice(loan.monthly_pay) }} ₭
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-sm border-0 font-medium shadow-sm bg-indigo-600 text-white">
+                ອະນຸມັດແລ້ວ
+              </span>
+            </td>
 
-            <td class="text-center">
-              <div class="flex flex-col items-center justify-center gap-1">
-                <button class="btn btn-sm btn-primary btn-soft" @click="openRepaymentHub(loan)">
+            <td>
+              <div class="flex flex-col items-center justify-center gap-1.5">
+                <button class="btn btn-sm btn-primary w-full" @click="openRepaymentHub(loan)">
                   <span class="icon-[tabler--wallet] size-4 mr-1"></span> ຈັດການຊຳລະ
                 </button>
                 <div v-if="!hasApprovedDelivery(loan)"
-                  class="text-[10px] font-medium text-warning flex items-center gap-1 bg-warning/10 px-2 py-0.5 rounded">
+                  class="text-[10px] font-medium text-warning flex items-center gap-1 bg-warning/10 px-2 py-0.5 rounded w-full justify-center">
                   <span class="icon-[tabler--alert-circle] size-3"></span> ຍັງບໍ່ມອບຮັບ
                 </div>
               </div>
             </td>
           </tr>
           <tr v-if="!displayedLoans.length">
-            <td colspan="7" class="text-center py-8 text-gray-500">ບໍ່ພົບຂໍ້ມູນສິນເຊື່ອທີ່ອະນຸມັດແລ້ວ</td>
+            <td colspan="7" class="text-center py-12 text-gray-400">
+              <div class="flex flex-col items-center">
+                <span class="icon-[tabler--file-search] size-12 mb-2 opacity-50"></span>
+                <span>ບໍ່ພົບຂໍ້ມູນລາຍການຊຳລະສິນເຊື່ອ</span>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div v-if="!isLoading" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div>
+    <div v-if="!isLoading && totalLoans > 0"
+      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
+      <div class="text-gray-500">
         ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalLoans }} ລາຍການ
       </div>
 
@@ -111,83 +145,101 @@
 
     <teleport to="body">
       <div v-if="showRepaymentHub"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div
-          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-5xl mx-auto max-h-[90vh] flex flex-col relative">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" @click="closeRepaymentHub">✕</button>
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-5xl mx-auto max-h-[90vh] flex flex-col relative animate-in fade-in zoom-in duration-200">
+          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" @click="closeRepaymentHub">
+            <span class="icon-[tabler--x] size-5"></span>
+          </button>
 
-          <h3 class="font-bold text-xl mb-4 border-b pb-2 pr-8">
-            ຂໍ້ມູນການຜ່ອນຊຳລະ - ເລກທີ່ສັນຍາ: {{ getContractNumber(selectedLoan) }}
+          <h3 class="font-bold text-xl mb-4 border-b pb-4 pr-8 flex items-center gap-2">
+            <span class="icon-[tabler--calendar-stats] text-warning size-6"></span>
+            ຂໍ້ມູນການຜ່ອນຊຳລະ - ເລກທີ່ສັນຍາ: <span class="text-primary">{{ getContractNumber(selectedLoan) }}</span>
           </h3>
 
-          <div v-if="isScheduleLoading" class="flex justify-center py-10"><span
-              class="loading loading-spinner loading-lg text-primary"></span></div>
+          <div v-if="isScheduleLoading" class="flex justify-center py-10">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+          </div>
+
           <div v-else-if="selectedLoan" class="flex-1 overflow-y-auto space-y-6 pr-2">
+
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="p-4 rounded-lg bg-blue-50 border border-blue-100">
-                <p class="text-sm text-blue-600">ຍອດໜີ້ທັງໝົດລວມດອກເບ້ຍ</p>
-                <p class="text-xl font-bold">{{ formatPrice(summary.totalPayable) }}</p>
+              <div class="p-4 rounded-xl bg-blue-50/50 border border-blue-100 shadow-sm">
+                <p class="text-sm text-blue-600 font-medium">ຍອດໜີ້ທັງໝົດລວມດອກເບ້ຍ</p>
+                <p class="text-2xl font-black text-gray-800">{{ formatPrice(summary.totalPayable) }}</p>
               </div>
-              <div class="p-4 rounded-lg bg-green-50 border border-green-100">
-                <p class="text-sm text-green-600">ຈ່າຍແລ້ວທັງໝົດ</p>
-                <p class="text-xl font-bold">{{ formatPrice(summary.totalPaid) }}</p>
+              <div class="p-4 rounded-xl bg-green-50/50 border border-green-100 shadow-sm">
+                <p class="text-sm text-green-600 font-medium">ຈ່າຍແລ້ວທັງໝົດ</p>
+                <p class="text-2xl font-black text-gray-800">{{ formatPrice(summary.totalPaid) }}</p>
               </div>
-              <div class="p-4 rounded-lg bg-red-50 border border-red-100">
-                <p class="text-sm text-red-600">ຍອດໜີ້ຍັງເຫຼືອ</p>
-                <p class="text-xl font-bold text-red-600">{{ formatPrice(summary.remainingBalance) }}</p>
+              <div class="p-4 rounded-xl bg-red-50/50 border border-red-100 shadow-sm">
+                <p class="text-sm text-red-600 font-medium">ຍອດໜີ້ຍັງເຫຼືອ</p>
+                <p class="text-2xl font-black text-red-600">{{ formatPrice(summary.remainingBalance) }}</p>
               </div>
-              <div class="flex items-center">
-                <button v-if="summary.remainingBalance > 0" class="btn btn-error text-white w-full h-full shadow-sm"
-                  @click="openPaymentModal(null, true)">
+
+              <div class="flex items-center h-full">
+                <button v-if="summary.remainingBalance > 0 && canManagePayment"
+                  class="btn btn-error text-white w-full h-full shadow-md" @click="openPaymentModal(null, true)">
                   <span class="icon-[tabler--cash-banknote] size-5"></span> ປິດບັນຊີກ່ອນກຳນົດ
                 </button>
-                <div v-else class="text-success font-bold flex items-center justify-center w-full gap-2">
+                <div v-else-if="summary.remainingBalance <= 0"
+                  class="text-success font-bold flex items-center justify-center w-full h-full gap-2 bg-success/10 rounded-xl border border-success/20">
                   <span class="icon-[tabler--circle-check-filled] size-6"></span> ປິດບັນຊີແລ້ວ
+                </div>
+                <div v-else-if="!canManagePayment"
+                  class="flex items-center justify-center w-full h-full bg-gray-100 rounded-xl border text-gray-500 text-sm font-medium">
+                  <span class="icon-[tabler--lock] size-4 mr-1"></span> Read Only
                 </div>
               </div>
             </div>
 
-            <div class="border rounded-lg overflow-x-auto">
+            <div class="flex justify-end">
+              <button class="btn btn-outline btn-primary btn-sm" @click="viewReceiptHistory(selectedLoan.id)">
+                <span class="icon-[tabler--receipt] size-4 mr-1"></span> ເບິ່ງປະຫວັດການຊຳລະທັງໝົດ
+              </button>
+            </div>
+
+            <div class="border rounded-xl overflow-hidden shadow-sm bg-white dark:bg-gray-800">
               <table class="table table-sm table-zebra w-full">
-                <thead class="bg-base-200">
+                <thead class="bg-gray-50 dark:bg-gray-900 text-gray-600">
                   <tr>
-                    <th class="text-center">ງວດທີ</th>
+                    <th class="text-center py-3">ງວດທີ</th>
                     <th>ກຳນົດຈ່າຍ</th>
-                    <th>ຕົ້ນທຶນ</th>
-                    <th>ດອກເບ້ຍ</th>
-                    <th>ຍອດຕ້ອງຈ່າຍລວມ</th>
-                    <th>ສະຖານະ</th>
-                    <th class="text-right">ຈັດການ</th>
+                    <th class="text-right">ຕົ້ນທຶນ</th>
+                    <th class="text-right">ດອກເບ້ຍ</th>
+                    <th class="text-right">ຍອດຕ້ອງຈ່າຍລວມ</th>
+                    <th class="text-center">ສະຖານະ</th>
+                    <th class="text-center">ຈັດການ</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(sch, index) in currentSchedules" :key="sch.id"
-                    :class="{ 'bg-green-50/50 dark:bg-green-900/20': sch.payment_status === 'paid' }">
-                    <td class="font-medium text-center">{{ sch.installment_no }}</td>
-                    <td>{{ formatDate(sch.due_date) }}</td>
-                    <td class="text-gray-500">{{ formatPrice(sch.principal_amount) }}</td>
-                    <td class="text-gray-500">{{ formatPrice(sch.interest_amount) }}</td>
-                    <td class="font-bold">{{ formatPrice(sch.total_due) }}</td>
-                    <td>
-                      <span class="badge badge-sm" :class="statusConfig[sch.payment_status]?.class || 'badge-ghost'">
+                    :class="{ 'bg-emerald-50/50 dark:bg-emerald-900/10': sch.payment_status === 'paid' }">
+                    <td class="font-bold text-center">{{ sch.installment_no }}</td>
+                    <td class="font-medium text-gray-700">{{ formatDate(sch.due_date) }}</td>
+                    <td class="text-gray-500 text-right">{{ formatPrice(sch.principal_amount) }}</td>
+                    <td class="text-gray-500 text-right">{{ formatPrice(sch.interest_amount) }}</td>
+                    <td class="font-bold text-right text-primary">{{ formatPrice(sch.total_due) }}</td>
+                    <td class="text-center">
+                      <span class="badge badge-sm border-0 font-medium"
+                        :class="statusConfig[sch.payment_status]?.class || 'badge-ghost'">
                         {{ statusConfig[sch.payment_status]?.text || sch.payment_status }}
                       </span>
                     </td>
-                    <td class="text-right">
-                      <!-- <button v-if="sch.payment_status !== 'paid'" class="btn btn-xs btn-success text-white"
-                        @click="openPaymentModal(sch, false)">
-                        ຊຳລະງວດນີ້
-                      </button> -->
-
-                      <button v-if="sch.payment_status !== 'paid'" class="btn btn-xs btn-success text-white"
+                    <td class="text-center">
+                      <button v-if="sch.payment_status !== 'paid' && canManagePayment"
+                        class="btn btn-xs btn-success text-white"
                         :class="{ 'opacity-50 cursor-not-allowed': !canPaySchedule(index) }"
                         :disabled="!canPaySchedule(index)" @click="openPaymentModal(sch, false)">
                         ຊຳລະງວດນີ້
                       </button>
-                      <!-- ປ່ຽນຈາກອັນເກົ່າ ມາເປັນອັນນີ້ ເພີ່ມ @click="viewReceipt(sch)" -->
-                      <button v-else class="btn btn-xs btn-ghost text-primary" @click="viewReceipt(sch)">
-                        <span class="icon-[tabler--receipt] size-4"></span> ເບິ່ງໃບບິນ
+
+                      <button v-else-if="sch.payment_status === 'paid'"
+                        class="btn btn-xs btn-ghost text-primary hover:bg-primary/10" @click="viewReceipt(sch)">
+                        <span class="icon-[tabler--receipt] size-4"></span> ໃບບິນ
                       </button>
+
+                      <span v-else-if="!canManagePayment" class="text-gray-400 text-xs">-</span>
                     </td>
                   </tr>
                 </tbody>
@@ -339,7 +391,7 @@
             </div>
           </div>
 
-          <div class="modal-action mt-6">
+          <div class="modal-action mt-6 border-t pt-4">
             <button class="btn btn-ghost" @click="showPaymentModal = false" :disabled="isProcessing">ຍົກເລີກ</button>
             <button class="btn btn-success text-white w-32" @click="submitPayment"
               :disabled="isProcessing || paymentForm.amount_received <= 0">
@@ -351,18 +403,16 @@
       </div>
     </teleport>
 
-    <!-- ============================================== -->
-    <!-- 🟢 Receipt / Transaction History Modal -->
-    <!-- ============================================== -->
     <teleport to="body">
       <div v-if="showReceiptModal"
-        class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
+        class="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div
           class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-lg mx-auto relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
-            @click="showReceiptModal = false">✕</button>
+          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" @click="showReceiptModal = false">
+            <span class="icon-[tabler--x] size-5"></span>
+          </button>
 
-          <h3 class="font-bold text-xl mb-4 border-b pb-2 flex items-center gap-2 text-primary">
+          <h3 class="font-bold text-xl mb-4 border-b pb-4 flex items-center gap-2 text-primary">
             <span class="icon-[tabler--receipt] size-6"></span> ປະຫວັດການຊຳລະເງິນ
           </h3>
 
@@ -372,10 +422,10 @@
 
           <div v-else-if="receiptTransactions.length > 0" class="space-y-4">
             <div v-for="(tx, index) in receiptTransactions" :key="index"
-              class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border">
-              <div class="flex justify-between items-center mb-3 border-b pb-2">
-                <span class="text-xs text-gray-500 font-medium">ໃບບິນອ້າງອີງ: {{ tx.id }}</span>
-                <span class="badge badge-success text-white badge-sm">ສຳເລັດ</span>
+              class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
+              <div class="flex justify-between items-center mb-3 border-b pb-3">
+                <span class="text-xs text-gray-500 font-medium">ໃບບິນ: {{ tx.id }}</span>
+                <span class="badge badge-success border-0 text-white badge-sm shadow-sm">ສຳເລັດ</span>
               </div>
 
               <div class="grid grid-cols-2 gap-y-2 text-sm">
@@ -391,11 +441,11 @@
                 <div class="font-medium text-right">{{ formatDate(tx.paid_at || tx.createdAt) }}</div>
 
                 <div class="text-gray-500 mt-1">ຍອດເງິນທີ່ຈ່າຍລວມ:</div>
-                <div class="font-bold text-right text-primary text-base">{{ formatPrice(tx.amount_paid) }} ກີບ</div>
+                <div class="font-bold text-right text-primary text-lg">{{ formatPrice(tx.amount_paid) }} ກີບ</div>
 
                 <template v-if="parseAllocation(tx.remarks) as any">
                   <div
-                    class="col-span-2 bg-white dark:bg-gray-800 rounded p-3 mt-1 mb-2 border border-dashed border-gray-300">
+                    class="col-span-2 bg-white dark:bg-gray-800 rounded-lg p-3 mt-2 mb-2 border border-dashed border-gray-300 shadow-sm">
                     <div class="text-[11px] font-bold text-gray-400 mb-2 border-b pb-1 uppercase tracking-wider">
                       ລາຍລະອຽດການແບ່ງຕັດຍອດ:</div>
                     <div class="flex justify-between mb-1">
@@ -434,18 +484,21 @@
               </div>
 
               <div v-if="tx.proof_url" class="mt-4 pt-3 border-t text-center">
-                <a :href="tx.proof_url" target="_blank" class="btn btn-sm btn-outline btn-info w-full">
+                <a :href="tx.proof_url" target="_blank" class="btn btn-sm btn-outline btn-info w-full shadow-sm">
                   <span class="icon-[tabler--photo] size-4 mr-1"></span> ເບິ່ງຮູບສະລິບໂອນເງິນ
                 </a>
               </div>
             </div>
           </div>
 
-          <div v-else class="text-center py-8 text-gray-500">
-            ບໍ່ພົບຂໍ້ມູນປະຫວັດການຊຳລະເງິນສຳລັບສັນຍານີ້.
+          <div v-else class="text-center py-12 text-gray-400">
+            <div class="flex flex-col items-center">
+              <span class="icon-[tabler--file-off] size-12 mb-2 opacity-50"></span>
+              <span>ບໍ່ພົບຂໍ້ມູນປະຫວັດການຊຳລະເງິນສຳລັບສັນຍານີ້.</span>
+            </div>
           </div>
 
-          <div class="modal-action mt-6">
+          <div class="mt-6 border-t pt-4">
             <button class="btn btn-secondary w-full" @click="showReceiptModal = false">ປິດໜ້າຈໍ</button>
           </div>
         </div>
@@ -455,19 +508,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, toRaw, watch } from 'vue' // 🌟 Import watch
+import { ref, reactive, computed, onMounted, toRaw, watch } from 'vue'
 import { formatPrice } from '@/utils/formatters'
 import { alert } from '@/utils/alert'
 import apiClient from '@/api/apiclient'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
+import { usePermissionStore } from '@/stores/permission' // 🌟 1. Import Permission Store
 import type { LoanApplication } from '@/types/loanApplication'
 import { LoanApplicationStatus } from '@/types/loanApplication';
 
 const loanAppStore = useLoanApplicationStore()
+const permissionStore = usePermissionStore() // 🌟 2. ປະກາດໃຊ້ Store
 
-// State Management
 const isLoading = computed(() => loanAppStore.isLoading)
 const isScheduleLoading = ref(false)
 const isProcessing = ref(false)
@@ -475,13 +529,11 @@ const searchQuery = ref('')
 const statusFilter = ref('active')
 const currentSchedules = ref<any[]>([])
 
-// 🌟 Pagination State
 const currentPage = ref(1)
 const pageSize = ref(10)
 const debouncedSearch = ref('')
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-// Modals
 const showRepaymentHub = ref(false)
 const showPaymentModal = ref(false)
 const selectedLoan = ref<LoanApplication | null>(null)
@@ -489,12 +541,15 @@ const selectedSchedule = ref<any | null>(null)
 const isEarlyPayoff = ref(false)
 const slipInput = ref<HTMLInputElement | null>(null);
 
-// --- 🌟 State ສຳລັບ Modal ເບິ່ງໃບບິນ ---
 const showReceiptModal = ref(false);
 const isReceiptLoading = ref(false);
 const receiptTransactions = ref<any[]>([]);
 
-// Payment Form
+// 🌟 3. Computed Property ສຳລັບກວດສອບສິດການຊຳລະເງິນ (RBAC)
+const canManagePayment = computed(() => {
+  return permissionStore.hasPermission('payment_create') || permissionStore.hasPermission('loan_edit');
+});
+
 const paymentForm = reactive({
   expected_principal: 0,
   expected_interest: 0,
@@ -512,12 +567,11 @@ const paymentForm = reactive({
   slip_preview: '' as string
 })
 
-// Formatters & Helper Functions
 const statusConfig: Record<string, { class: string, text: string }> = {
-  paid: { class: 'badge-success text-white', text: 'ຊຳລະແລ້ວ' },
-  unpaid: { class: 'badge-warning', text: 'ລໍຖ້າຊຳລະ' },
-  partial: { class: 'badge-info', text: 'ຈ່າຍບາງສ່ວນ' },
-  overdue: { class: 'badge-error text-white', text: 'ກາຍກຳນົດ' }
+  paid: { class: 'bg-emerald-500 text-white', text: 'ຊຳລະແລ້ວ' },
+  unpaid: { class: 'bg-warning text-white', text: 'ລໍຖ້າຊຳລະ' },
+  partial: { class: 'bg-info text-white', text: 'ຈ່າຍບາງສ່ວນ' },
+  overdue: { class: 'bg-error text-white', text: 'ກາຍກຳນົດ' }
 }
 
 const formatDate = (dateStr: string | null) => {
@@ -543,12 +597,10 @@ const getContractNumber = (loan: any): string => {
   return '-';
 };
 
-// 🌟 Helper Function ສຳລັບແປງ JSON ຈາກ remarks ຂອງໃບບິນ
 const parseAllocation = (remarks: string | null) => {
   if (!remarks) return null;
   try {
     const parsed = JSON.parse(remarks);
-    // ກວດສອບວ່າມີ Field ການຕັດເງິນຫຼືບໍ່ (ເພາະບາງໃບບິນເກົ່າອາດຈະມີແຕ່ Text ທຳມະດາ)
     if (parsed && typeof parsed === 'object' && ('principal_paid' in parsed || 'interest_paid' in parsed)) {
       return {
         principal_paid: Number(parsed.principal_paid) || 0,
@@ -558,7 +610,6 @@ const parseAllocation = (remarks: string | null) => {
       };
     }
   } catch (e) {
-    // ຖ້າມັນບໍ່ແມ່ນ JSON ກໍປ່ອຍຜ່ານໄປ (return null)
   }
   return null;
 }
@@ -638,7 +689,6 @@ const hasApprovedDelivery = (loan: any): boolean => {
   return false;
 }
 
-// 🌟 ເພີ່ມ debounce logic
 const debounceSearch = () => {
   if (debounceTimer) {
     clearTimeout(debounceTimer)
@@ -663,12 +713,9 @@ const filteredLoans = computed(() => {
     );
   }
 
-  // 🌟 (Optional) ສາມາດເພີ່ມ Logic statusFilter ຢູ່ບ່ອນນີ້ໄດ້ຖ້າ Backend ບໍ່ໄດ້ສົ່ງມາສະເພາະ
-
   return loans;
 });
 
-// 🌟 Computed ສຳລັບ Pagination
 const displayedLoans = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
@@ -706,30 +753,19 @@ const summary = computed(() => {
   return { totalPayable, totalPaid, remainingBalance: Math.max(0, totalPayable - totalPaid) };
 });
 
-// --- 🌟 ຟັງຊັນສຳລັບດຶງຂໍ້ມູນປະຫວັດການຈ່າຍຂອງງວດນັ້ນ ---
 const viewReceipt = async (schedule: any) => {
   showReceiptModal.value = true;
   isReceiptLoading.value = true;
   receiptTransactions.value = [];
 
   try {
-    // ຍິງ API ໄປດຶງປະຫວັດການຊຳລະເງິນ (Transactions) ຂອງ schedule_id ນີ້
-    // ໝາຍເຫດ: ໃຫ້ປ່ຽນ URL ນີ້ຕາມ Endpoint ຈິງຂອງ Backend ທ່ານ
     const response = await apiClient.get(`/repayments/transactions/application/${schedule.application_id}`);
 
-    // ຖ້າ Backend ສົ່ງມາເປັນ Array
     if (response.data && response.data.data) {
       receiptTransactions.value = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
     }
   } catch (error) {
     console.error('Failed to fetch receipt:', error);
-    // ຖ້າ API Error ຫຼື ຍັງບໍ່ມີ Endpoint, ເຮົາຈະໃຊ້ Mock Data ສະແດງແກ້ຂັດໄປກ່ອນ
-    // receiptTransactions.value = [{
-    //   id: 'TX-Mock',
-    //   paid_at: schedule.paid_at || new Date(),
-    //   amount_paid: schedule.paid_principal + schedule.paid_interest + schedule.paid_penalty,
-    //   payment_channel: 'cash',
-    // }];
     alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບບິນໄດ້ (API ອາດຍັງບໍ່ຮອງຮັບ)');
   } finally {
     isReceiptLoading.value = false;
@@ -744,21 +780,25 @@ const fetchLoans = async () => {
   }
 }
 
+// 🌟 ແກ້ໄຂບັກການ Export (CSV) ໃຊ້ filteredLoans ແລະ ຄຳນວນຍອດເງິນໃຫ້ກົງກັບໜ້າຈໍ
 const exportToCSV = () => {
   if (!filteredLoans.value.length) {
     alert.warning('ບໍ່ມີຂໍ້ມູນ', 'ບໍ່ມີຂໍ້ມູນສຳລັບ Export');
     return;
   }
-  const csvData = filteredLoans.value.map(loan => ({
-    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || loan.id || '-',
-    'ເລກທີ່ສັນຍາ': getContractNumber(loan),
-    'ຊື່ລູກຄ້າ': getCustomerName(loan),
-    'ເບີໂທ': getCustomerPhone(loan),
-    'ຍອດຈັດສິນເຊື່ອ': formatPrice((Number(loan.total_amount) || 0) - (Number(loan.down_payment) || 0)),
-    'ຄ່າຜ່ອນ/ງວດ': formatPrice(Number(loan.monthly_pay) || 0),
-    'ສະຖານະ': loan.status === 'disbursed' ? 'ອະນຸມັດແລ້ວ' : loan.status,
-    'ມອບຮັບສິນຄ້າແລ້ວ': hasApprovedDelivery(loan) ? 'ແມ່ນ' : 'ຍັງບໍ່ມອບຮັບ'
-  }));
+  const csvData = filteredLoans.value.map(loan => {
+    const netAmount = (Number(loan.total_amount) || 0) - (Number(loan.down_payment) || 0);
+    return {
+      'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || loan.id || '-',
+      'ເລກທີ່ສັນຍາ': getContractNumber(loan),
+      'ຊື່ລູກຄ້າ': getCustomerName(loan),
+      'ເບີໂທ': getCustomerPhone(loan),
+      'ຍອດຈັດສິນເຊື່ອ': formatPrice(netAmount),
+      'ຄ່າຜ່ອນ/ງວດ': formatPrice(Number(loan.monthly_pay) || 0),
+      'ສະຖານະ': loan.status === 'disbursed' ? 'ອະນຸມັດແລ້ວ' : loan.status,
+      'ມອບຮັບສິນຄ້າແລ້ວ': hasApprovedDelivery(loan) ? 'ແມ່ນ' : 'ຍັງບໍ່ມອບຮັບ'
+    };
+  });
   const csv = Papa.unparse(csvData);
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -767,21 +807,25 @@ const exportToCSV = () => {
   link.click();
 }
 
+// 🌟 ແກ້ໄຂບັກການ Export (Excel) ສົ່ງເປັນ Number ໃຫ້ Excel ໄປບວກລົບກັນໄດ້
 const exportToExcel = () => {
   if (!filteredLoans.value.length) {
     alert.warning('ບໍ່ມີຂໍ້ມູນ', 'ບໍ່ມີຂໍ້ມູນສຳລັບ Export');
     return;
   }
-  const excelData = filteredLoans.value.map(loan => ({
-    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || loan.id || '-',
-    'ເລກທີ່ສັນຍາ': getContractNumber(loan),
-    'ຊື່ລູກຄ້າ': getCustomerName(loan),
-    'ເບີໂທ': getCustomerPhone(loan),
-    'ຍອດຈັດສິນເຊື່ອ': formatPrice((Number(loan.total_amount) || 0) - (Number(loan.down_payment) || 0)),
-    'ຄ່າຜ່ອນ/ງວດ': formatPrice(Number(loan.monthly_pay) || 0),
-    'ສະຖານະ': loan.status === 'disbursed' ? 'ອະນຸມັດແລ້ວ' : loan.status,
-    'ມອບຮັບສິນຄ້າແລ້ວ': hasApprovedDelivery(loan) ? 'ແມ່ນ' : 'ຍັງບໍ່ມອບຮັບ'
-  }));
+  const excelData = filteredLoans.value.map(loan => {
+    const netAmount = (Number(loan.total_amount) || 0) - (Number(loan.down_payment) || 0);
+    return {
+      'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || loan.id || '-',
+      'ເລກທີ່ສັນຍາ': getContractNumber(loan),
+      'ຊື່ລູກຄ້າ': getCustomerName(loan),
+      'ເບີໂທ': getCustomerPhone(loan),
+      'ຍອດຈັດສິນເຊື່ອ (ກີບ)': netAmount, // ສົ່ງເປັນ Number ລ້າໆ
+      'ຄ່າຜ່ອນ/ງວດ (ກີບ)': Number(loan.monthly_pay) || 0, // ສົ່ງເປັນ Number ລ້າໆ
+      'ສະຖານະ': loan.status === 'disbursed' ? 'ອະນຸມັດແລ້ວ' : loan.status,
+      'ມອບຮັບສິນຄ້າແລ້ວ': hasApprovedDelivery(loan) ? 'ແມ່ນ' : 'ຍັງບໍ່ມອບຮັບ'
+    };
+  });
   const worksheet = XLSX.utils.json_to_sheet(excelData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Repayments');
@@ -815,6 +859,8 @@ const closeRepaymentHub = () => {
 }
 
 const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
+  if (!canManagePayment.value) return; // 🌟 ປ້ອງກັນໄວ້ອີກຊັ້ນ
+
   isEarlyPayoff.value = earlyPayoff;
   selectedSchedule.value = schedule;
 
@@ -874,6 +920,8 @@ const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
 }
 
 const submitPayment = async () => {
+  if (!canManagePayment.value) return; // 🌟 ປ້ອງກັນໄວ້ອີກຊັ້ນ
+
   if (paymentForm.payment_method === 'transfer' && !paymentForm.slip_file) {
     alert.error('ກະລຸນາແນບຮູບຫຼັກຖານການໂອນເງິນ (Slip)');
     return;
@@ -932,14 +980,28 @@ onMounted(() => {
   fetchLoans();
 });
 
-// --- 🌟 Helper Function ສຳລັບກວດສອບວ່າສາມາດຈ່າຍງວດນີ້ໄດ້ບໍ່ ---
 const canPaySchedule = (scheduleIndex: number) => {
-  // ຖ້າເປັນງວດທຳອິດ (Index 0) ອະນຸຍາດໃຫ້ຈ່າຍໄດ້ສະເໝີ
   if (scheduleIndex === 0) return true;
-
-  // ຖ້າບໍ່ແມ່ນງວດທຳອິດ ຕ້ອງໄປກວດເບິ່ງວ່າ "ງວດກ່ອນໜ້າ" (Index - 1) ຈ່າຍຄົບແລ້ວຫຼືຍັງ
-  // ຖ້າງວດກ່ອນໜ້າເປັນ 'paid' ແລ້ວ ຈຶ່ງຈະອະນຸຍາດໃຫ້ຈ່າຍງວດນີ້ໄດ້
   const previousSchedule = currentSchedules.value[scheduleIndex - 1];
   return previousSchedule && previousSchedule.payment_status === 'paid';
 }
+
+const viewReceiptHistory = async (applicationId: number) => {
+  showReceiptModal.value = true;
+  isReceiptLoading.value = true;
+  receiptTransactions.value = [];
+
+  try {
+    const response = await apiClient.get(`/repayments/transactions/application/${applicationId}`);
+
+    if (response.data && response.data.data) {
+      receiptTransactions.value = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
+    }
+  } catch (error) {
+    console.error('Failed to fetch receipts:', error);
+    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບບິນໄດ້');
+  } finally {
+    isReceiptLoading.value = false;
+  }
+};
 </script>

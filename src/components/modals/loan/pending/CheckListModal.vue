@@ -1,14 +1,18 @@
 <template>
   <teleport to="body">
-    <div v-if="isOpen && loan" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div v-if="isOpen && loan"
+      class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
 
-        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+        <div
+          class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-white">
             <span class="icon-[tabler--clipboard-check] text-info size-6"></span>
             ຟອມກວດສອບ ແລະ ປະເມີນສິນເຊື່ອ (Checklist)
           </h3>
-          <button @click="close" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10">
+          <button @click="close"
+            class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10">
             <span class="icon-[tabler--x] size-5"></span>
           </button>
         </div>
@@ -20,30 +24,32 @@
 
           <a class="tab tab-lg whitespace-nowrap" :class="{
             'tab-active font-bold text-primary border-b-2 border-primary': checklistTab === 'call',
-            'opacity-40 grayscale cursor-not-allowed pointer-events-none': !unlockedTabs.call
+            'opacity-40 grayscale cursor-not-allowed pointer-events-none': !unlockedTabs.call && canEditChecklist
           }" @click="changeTab('call')">
-            <span v-if="!unlockedTabs.call" class="icon-[tabler--lock] mr-1"></span> 2. ໂທຢືນຢັນ
+            <span v-if="!unlockedTabs.call && canEditChecklist" class="icon-[tabler--lock] mr-1"></span> 2. ໂທຢືນຢັນ
           </a>
 
           <a class="tab tab-lg whitespace-nowrap" :class="{
             'tab-active font-bold text-primary border-b-2 border-primary': checklistTab === 'cib',
-            'opacity-40 grayscale cursor-not-allowed pointer-events-none': !unlockedTabs.cib
+            'opacity-40 grayscale cursor-not-allowed pointer-events-none': !unlockedTabs.cib && canEditChecklist
           }" @click="changeTab('cib')">
-            <span v-if="!unlockedTabs.cib" class="icon-[tabler--lock] mr-1"></span> 3. ກວດ CIB
+            <span v-if="!unlockedTabs.cib && canEditChecklist" class="icon-[tabler--lock] mr-1"></span> 3. ກວດ CIB
           </a>
 
           <a class="tab tab-lg whitespace-nowrap" :class="{
             'tab-active font-bold text-primary border-b-2 border-primary': checklistTab === 'field',
-            'opacity-40 grayscale cursor-not-allowed pointer-events-none': !unlockedTabs.field
+            'opacity-40 grayscale cursor-not-allowed pointer-events-none': !unlockedTabs.field && canEditChecklist
           }" @click="changeTab('field')">
-            <span v-if="!unlockedTabs.field" class="icon-[tabler--lock] mr-1"></span> 4. ລົງພື້ນທີ່ຈິງ
+            <span v-if="!unlockedTabs.field && canEditChecklist" class="icon-[tabler--lock] mr-1"></span> 4.
+            ລົງພື້ນທີ່ຈິງ
           </a>
 
           <a class="tab tab-lg whitespace-nowrap" :class="{
             'tab-active font-bold text-primary border-b-2 border-primary': checklistTab === 'income',
-            'opacity-40 grayscale cursor-not-allowed pointer-events-none': !unlockedTabs.income
+            'opacity-40 grayscale cursor-not-allowed pointer-events-none': !unlockedTabs.income && canEditChecklist
           }" @click="changeTab('income')">
-            <span v-if="!unlockedTabs.income" class="icon-[tabler--lock] mr-1"></span> 5. ປະເມີນລາຍຮັບ (DSR)
+            <span v-if="!unlockedTabs.income && canEditChecklist" class="icon-[tabler--lock] mr-1"></span> 5.
+            ປະເມີນລາຍຮັບ (DSR)
           </a>
         </div>
 
@@ -56,7 +62,8 @@
                 <div class="space-y-3">
                   <div class="form-control">
                     <label class="label"><span class="label-text">ວິທີການຕິດຕໍ່ລູກຄ້າ</span></label>
-                    <select v-model="formBasic.cus_contact_method" class="select select-bordered select-sm">
+                    <select v-model="formBasic.cus_contact_method" class="select select-bordered select-sm"
+                      :disabled="!canEditChecklist">
                       <option value="face_to_face">ພົບຕໍ່ໜ້າ (Face to Face)</option>
                       <option value="phone">ທາງໂທລະສັບ (Phone)</option>
                     </select>
@@ -64,49 +71,54 @@
                   <div class="grid grid-cols-2 gap-3">
                     <div class="form-control">
                       <label class="label"><span class="label-text">ຊື່ (ຢືນຢັນແລ້ວ)</span></label>
-                      <input v-model="formBasic.verified_first_name" type="text"
-                        class="input input-bordered input-sm" />
+                      <input v-model="formBasic.verified_first_name" type="text" class="input input-bordered input-sm"
+                        :disabled="!canEditChecklist" />
                     </div>
                     <div class="form-control">
                       <label class="label"><span class="label-text">ນາມສະກຸນ (ຢືນຢັນແລ້ວ)</span></label>
-                      <input v-model="formBasic.verified_last_name" type="text" class="input input-bordered input-sm" />
+                      <input v-model="formBasic.verified_last_name" type="text" class="input input-bordered input-sm"
+                        :disabled="!canEditChecklist" />
                     </div>
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text">ວັນເດືອນປີເກີດ</span></label>
-                    <input v-model="formBasic.verified_dob" type="date" class="input input-bordered input-sm" />
+                    <input v-model="formBasic.verified_dob" type="date" class="input input-bordered input-sm"
+                      :disabled="!canEditChecklist" />
                   </div>
 
                   <div class="border p-3 rounded-lg bg-gray-50 dark:bg-base-200">
-                    <label class="label p-0 mb-2"><span class="label-text font-bold">ທີ່ຢູ່ປັດຈຸບັນ (ຢືນຢັນແລ້ວ)</span></label>
+                    <label class="label p-0 mb-2"><span class="label-text font-bold">ທີ່ຢູ່ປັດຈຸບັນ
+                        (ຢືນຢັນແລ້ວ)</span></label>
 
                     <div class="form-control mb-2">
-                        <label class="label pt-0"><span class="label-text text-xs">ບ້ານ / ລາຍລະອຽດເຮືອນ</span></label>
-                        <input v-model="formBasic.verified_village" type="text" placeholder="ປ້ອນຊື່ບ້ານ, ໜ່ວຍ, ເຮືອນເລກທີ..." class="input input-bordered input-sm w-full" />
+                      <label class="label pt-0"><span class="label-text text-xs">ບ້ານ / ລາຍລະອຽດເຮືອນ</span></label>
+                      <input v-model="formBasic.verified_village" type="text"
+                        placeholder="ປ້ອນຊື່ບ້ານ, ໜ່ວຍ, ເຮືອນເລກທີ..." class="input input-bordered input-sm w-full"
+                        :disabled="!canEditChecklist" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
-                        <div class="form-control">
-                            <label class="label pt-0"><span class="label-text text-xs">ແຂວງ</span></label>
-                            <select v-model="formBasic.verified_province_id"
-                                    class="select select-bordered select-sm w-full">
-                                <option value="">-- ເລືອກແຂວງ --</option>
-                                <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
-                                    {{ p.province_name }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="form-control">
-                            <label class="label pt-0"><span class="label-text text-xs">ເມືອງ</span></label>
-                            <select v-model="formBasic.verified_district_id"
-                                    :disabled="!formBasic.verified_province_id"
-                                    class="select select-bordered select-sm w-full">
-                                <option value="">-- ເລືອກເມືອງ --</option>
-                                <option v-for="d in localDistricts" :key="d.district_id" :value="d.district_id">
-                                    {{ d.district_name }}
-                                </option>
-                            </select>
-                        </div>
+                      <div class="form-control">
+                        <label class="label pt-0"><span class="label-text text-xs">ແຂວງ</span></label>
+                        <select v-model="formBasic.verified_province_id" class="select select-bordered select-sm w-full"
+                          :disabled="!canEditChecklist">
+                          <option value="">-- ເລືອກແຂວງ --</option>
+                          <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">
+                            {{ p.province_name }}
+                          </option>
+                        </select>
+                      </div>
+                      <div class="form-control">
+                        <label class="label pt-0"><span class="label-text text-xs">ເມືອງ</span></label>
+                        <select v-model="formBasic.verified_district_id"
+                          :disabled="!formBasic.verified_province_id || !canEditChecklist"
+                          class="select select-bordered select-sm w-full">
+                          <option value="">-- ເລືອກເມືອງ --</option>
+                          <option v-for="d in localDistricts" :key="d.district_id" :value="d.district_id">
+                            {{ d.district_name }}
+                          </option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div class="divider my-1"></div>
@@ -114,25 +126,27 @@
                     <label class="label"><span class="label-text text-primary font-bold">ປະເພດສິນຄ້າ
                         (ຢືນຢັນແລ້ວ)</span></label>
                     <input v-model="formBasic.verified_product_type" type="text"
-                      class="input input-bordered input-sm border-primary" placeholder="ເຊັ່ນ: ລົດຈັກ, ໂທລະສັບ..." />
+                      class="input input-bordered input-sm border-primary" placeholder="ເຊັ່ນ: ລົດຈັກ, ໂທລະສັບ..."
+                      :disabled="!canEditChecklist" />
                   </div>
                   <div class="grid grid-cols-2 gap-3">
                     <div class="form-control">
                       <label class="label"><span class="label-text">ລາຄາສິນຄ້າຈິງ (ກີບ)</span></label>
                       <input v-model.number="formBasic.verified_price" type="number"
-                        class="input input-bordered input-sm text-right" />
+                        class="input input-bordered input-sm text-right" :disabled="!canEditChecklist" />
                     </div>
                     <div class="form-control">
                       <label class="label"><span class="label-text">ເງິນວາງດາວ (ກີບ)</span></label>
                       <input v-model.number="formBasic.verified_down_payment" type="number"
-                        class="input input-bordered input-sm text-right" />
+                        class="input input-bordered input-sm text-right" :disabled="!canEditChecklist" />
                     </div>
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text text-success font-bold">ຄ່າງວດທີ່ແຈ້ງລູກຄ້າ
                         (ກີບ)</span></label>
                     <input v-model.number="formBasic.verified_monthly_pay" type="number"
-                      class="input input-bordered input-sm text-right text-success font-bold" />
+                      class="input input-bordered input-sm text-right text-success font-bold"
+                      :disabled="!canEditChecklist" />
                   </div>
                 </div>
               </div>
@@ -143,30 +157,32 @@
                   <div class="flex flex-col gap-2">
                     <label class="cursor-pointer label justify-start gap-3">
                       <input type="checkbox" v-model="formBasic.has_id_card"
-                        class="checkbox checkbox-primary checkbox-sm" />
+                        class="checkbox checkbox-primary checkbox-sm" :disabled="!canEditChecklist" />
                       <span>ບັດປະຈຳຕົວ / Passport</span>
                     </label>
                     <label class="cursor-pointer label justify-start gap-3">
                       <input type="checkbox" v-model="formBasic.has_census_book"
-                        class="checkbox checkbox-primary checkbox-sm" />
+                        class="checkbox checkbox-primary checkbox-sm" :disabled="!canEditChecklist" />
                       <span>ປຶ້ມສຳມະໂນຄົວ</span>
                     </label>
                     <label class="cursor-pointer label justify-start gap-3">
                       <input type="checkbox" v-model="formBasic.has_income_doc"
-                        class="checkbox checkbox-primary checkbox-sm" />
+                        class="checkbox checkbox-primary checkbox-sm" :disabled="!canEditChecklist" />
                       <span>ເອກະສານຢືນຢັນລາຍຮັບ (Statement/ໃບເງິນເດືອນ)</span>
                     </label>
                     <label class="cursor-pointer label justify-start gap-3">
                       <input type="checkbox" v-model="formBasic.has_other_doc"
-                        class="checkbox checkbox-primary checkbox-sm" />
+                        class="checkbox checkbox-primary checkbox-sm" :disabled="!canEditChecklist" />
                       <span>ເອກະສານອື່ນໆ</span>
                     </label>
                     <input v-if="formBasic.has_other_doc" v-model="formBasic.other_doc_detail" type="text"
-                      placeholder="ລະບຸເອກະສານອື່ນໆ..." class="input input-bordered input-sm mt-1" />
+                      placeholder="ລະບຸເອກະສານອື່ນໆ..." class="input input-bordered input-sm mt-1"
+                      :disabled="!canEditChecklist" />
                   </div>
                   <div class="form-control mt-4">
                     <label class="label"><span class="label-text font-bold">ປະເມີນຄວາມໜ້າເຊື່ອຖືຂອງລູກຄ້າ</span></label>
-                    <select v-model="formBasic.cus_credibility_assessment" class="select select-bordered select-sm">
+                    <select v-model="formBasic.cus_credibility_assessment" class="select select-bordered select-sm"
+                      :disabled="!canEditChecklist">
                       <option value="reliable">ໜ້າເຊື່ອຖື (Reliable)</option>
                       <option value="unreliable">ບໍ່ໜ້າເຊື່ອຖື (Unreliable)</option>
                     </select>
@@ -174,47 +190,50 @@
                 </div>
 
                 <div class="border rounded-lg p-4 bg-white dark:bg-base-100 shadow-sm">
-  <h4 class="font-bold border-b pb-2 mb-4">ສ່ວນທີ 3: ຂໍ້ມູນທີ່ເຮັດວຽກ (ຈາກການສຳພາດ)</h4>
-  <div class="space-y-3">
-    <div class="form-control">
-      <label class="label"><span class="label-text">ຊື່ບໍລິສັດ/ບ່ອນເຮັດວຽກ</span></label>
-      <input v-model="formBasic.work_company_name" type="text" class="input input-bordered input-sm" />
-    </div>
+                  <h4 class="font-bold border-b pb-2 mb-4">ສ່ວນທີ 3: ຂໍ້ມູນທີ່ເຮັດວຽກ (ຈາກການສຳພາດ)</h4>
+                  <div class="space-y-3">
+                    <div class="form-control">
+                      <label class="label"><span class="label-text">ຊື່ບໍລິສັດ/ບ່ອນເຮັດວຽກ</span></label>
+                      <input v-model="formBasic.work_company_name" type="text" class="input input-bordered input-sm"
+                        :disabled="!canEditChecklist" />
+                    </div>
 
-    <div class="form-control">
-      <label class="label"><span class="label-text">ຕຳແໜ່ງ</span></label>
-      <input v-model="formBasic.work_position" type="text" class="input input-bordered input-sm" />
-    </div>
+                    <div class="form-control">
+                      <label class="label"><span class="label-text">ຕຳແໜ່ງ</span></label>
+                      <input v-model="formBasic.work_position" type="text" class="input input-bordered input-sm"
+                        :disabled="!canEditChecklist" />
+                    </div>
 
-    <div class="grid grid-cols-2 gap-3">
-      <div class="form-control">
-        <label class="label"><span class="label-text">ອາຍຸການ (ປີ)</span></label>
-        <input v-model.number="formBasic.work_years" type="number"
-          class="input input-bordered input-sm" />
-      </div>
-      <div class="form-control">
-        <label class="label"><span class="label-text">ອາຍຸການ (ເດືອນ)</span></label>
-        <input v-model.number="formBasic.work_months" type="number"
-          class="input input-bordered input-sm" />
-      </div>
-    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div class="form-control">
+                        <label class="label"><span class="label-text">ອາຍຸການ (ປີ)</span></label>
+                        <input v-model.number="formBasic.work_years" type="number" class="input input-bordered input-sm"
+                          :disabled="!canEditChecklist" />
+                      </div>
+                      <div class="form-control">
+                        <label class="label"><span class="label-text">ອາຍຸການ (ເດືອນ)</span></label>
+                        <input v-model.number="formBasic.work_months" type="number"
+                          class="input input-bordered input-sm" :disabled="!canEditChecklist" />
+                      </div>
+                    </div>
 
-    <div class="form-control">
-      <label class="label"><span class="label-text">ເງິນເດືອນທີ່ແຈ້ງ (ກີບ)</span></label>
-      <input v-model.number="formBasic.work_salary" type="number"
-        class="input input-bordered input-sm text-right font-bold" />
-    </div>
-    <div class="form-control">
-      <label class="label"><span
-          class="label-text font-bold">ປະເມີນຄວາມໜ້າເຊື່ອຖືຂອງບ່ອນເຮັດວຽກ</span></label>
-      <select v-model="formBasic.workplace_assessment" class="select select-bordered select-sm">
-        <option value="good">ດີ (Good)</option>
-        <option value="moderate">ປານກາງ (Moderate)</option>
-        <option value="bad">ບໍ່ດີ / ບໍ່ຊັດເຈນ (Bad)</option>
-      </select>
-    </div>
-  </div>
-</div>
+                    <div class="form-control">
+                      <label class="label"><span class="label-text">ເງິນເດືອນທີ່ແຈ້ງ (ກີບ)</span></label>
+                      <input v-model.number="formBasic.work_salary" type="number"
+                        class="input input-bordered input-sm text-right font-bold" :disabled="!canEditChecklist" />
+                    </div>
+                    <div class="form-control">
+                      <label class="label"><span
+                          class="label-text font-bold">ປະເມີນຄວາມໜ້າເຊື່ອຖືຂອງບ່ອນເຮັດວຽກ</span></label>
+                      <select v-model="formBasic.workplace_assessment" class="select select-bordered select-sm"
+                        :disabled="!canEditChecklist">
+                        <option value="good">ດີ (Good)</option>
+                        <option value="moderate">ປານກາງ (Moderate)</option>
+                        <option value="bad">ບໍ່ດີ / ບໍ່ຊັດເຈນ (Bad)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -223,7 +242,7 @@
                   Status)</span></label>
               <div class="flex items-center gap-4">
                 <select v-model="formBasic.status"
-                  class="select select-bordered select-primary w-full max-w-xs font-bold">
+                  class="select select-bordered select-primary w-full max-w-xs font-bold" :disabled="!canEditChecklist">
                   <option value="draft">ບັນທຶກຮ່າງ (Draft)</option>
                   <option value="completed">ກວດສອບສຳເລັດ (Completed)</option>
                 </select>
@@ -240,21 +259,22 @@
                 <h4 class="font-bold text-blue-800 dark:text-blue-300">ບັນທຶກການໂທຢືນຢັນ</h4>
                 <p class="text-sm text-blue-600">ບັນທຶກການໂທຫາບຸກຄົນອ້າງອີງ, ບ່ອນເຮັດວຽກ ຫຼື ຜູ້ຄ້ຳປະກັນ</p>
               </div>
-              <button class="btn btn-primary btn-sm" @click="addCallRecord">
+              <button v-if="canEditChecklist" class="btn btn-primary btn-sm" @click="addCallRecord">
                 <span class="icon-[tabler--plus] size-4"></span> ເພີ່ມປະຫວັດການໂທ
               </button>
             </div>
 
             <div v-for="(call, index) in formCalls" :key="index"
               class="border rounded-lg p-4 relative bg-white dark:bg-base-100 shadow-sm">
-              <button class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error"
+              <button v-if="canEditChecklist" class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error"
                 @click="removeCallRecord(index)">
                 <span class="icon-[tabler--trash] size-4"></span>
               </button>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                 <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ເປົ້າໝາຍການໂທ</span></label>
-                  <select v-model="call.call_target" class="select select-bordered select-sm">
+                  <select v-model="call.call_target" class="select select-bordered select-sm"
+                    :disabled="!canEditChecklist">
                     <option value="workplace">ບ່ອນເຮັດວຽກ (HR/ໝູ່ຮ່ວມງານ)</option>
                     <option value="home">ທາງບ້ານ / ຍາດພີ່ນ້ອງ</option>
                     <option value="guarantor">ຜູ້ຄ້ຳປະກັນ</option>
@@ -262,27 +282,31 @@
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ຊື່ຜູ້ຮັບສາຍ</span></label>
-                  <input v-model="call.contact_name" type="text" class="input input-bordered input-sm" />
+                  <input v-model="call.contact_name" type="text" class="input input-bordered input-sm"
+                    :disabled="!canEditChecklist" />
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ເບີໂທຕິດຕໍ່</span></label>
-                  <input v-model="call.contact_phone" type="text" class="input input-bordered input-sm" />
+                  <input v-model="call.contact_phone" type="text" class="input input-bordered input-sm"
+                    :disabled="!canEditChecklist" />
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ຄວາມສຳພັນ / ຕຳແໜ່ງ</span></label>
                   <input v-model="call.relationship" type="text" placeholder="ເຊັ່ນ: ພໍ່, ຫົວໜ້າງານ"
-                    class="input input-bordered input-sm" />
+                    class="input input-bordered input-sm" :disabled="!canEditChecklist" />
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ຂໍ້ມູນຕົງກັບທີ່ລູກຄ້າແຈ້ງບໍ?</span></label>
-                  <select v-model="call.is_info_matching" class="select select-bordered select-sm">
+                  <select v-model="call.is_info_matching" class="select select-bordered select-sm"
+                    :disabled="!canEditChecklist">
                     <option :value="true">ຕົງກັນ (Yes)</option>
                     <option :value="false">ບໍ່ຕົງກັນ (No)</option>
                   </select>
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ສະຖານະການໂທ</span></label>
-                  <select v-model="call.call_status" class="select select-bordered select-sm">
+                  <select v-model="call.call_status" class="select select-bordered select-sm"
+                    :disabled="!canEditChecklist">
                     <option value="completed">ສຳເລັດ (ໂທຕິດ ແລະ ຄຸຍແລ້ວ)</option>
                     <option value="no_answer">ບໍ່ຮັບສາຍ (No Answer)</option>
                     <option value="pending_callback">ລໍຖ້າໂທກັບ (Pending Callback)</option>
@@ -290,26 +314,27 @@
                 </div>
                 <div class="form-control md:col-span-3">
                   <label class="label"><span class="label-text font-medium">ໝາຍເຫດ / ບົດສົນທະນາຫຍໍ້</span></label>
-                  <input v-model="call.remark" type="text" class="input input-bordered input-sm w-full" />
+                  <input v-model="call.remark" type="text" class="input input-bordered input-sm w-full"
+                    :disabled="!canEditChecklist" />
                 </div>
               </div>
             </div>
           </div>
 
           <div v-else-if="checklistTab === 'cib'" class="space-y-6 animate-in fade-in">
-             <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg flex justify-between items-center shadow-sm">
+            <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg flex justify-between items-center shadow-sm">
               <div>
                 <h4 class="font-bold text-indigo-800 dark:text-indigo-300">ປະຫວັດສິນເຊື່ອ (CIB History)</h4>
                 <p class="text-sm text-indigo-600">ບັນທຶກປະຫວັດການກູ້ຢືມແຕ່ລະບັນຊີຈາກໃບລາຍງານ CIB</p>
               </div>
-              <button class="btn btn-primary btn-sm" @click="addCIBDetail">
+              <button v-if="canEditChecklist" class="btn btn-primary btn-sm" @click="addCIBDetail">
                 <span class="icon-[tabler--plus] size-4"></span> ເພີ່ມບັນຊີ
               </button>
             </div>
 
             <div v-for="(detail, index) in formCIBDetails" :key="index"
               class="border rounded-lg p-6 relative bg-white dark:bg-base-100 shadow-sm">
-              <button class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error"
+              <button v-if="canEditChecklist" class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error"
                 @click="removeCIBDetail(index)">
                 <span class="icon-[tabler--trash] size-5"></span>
               </button>
@@ -318,19 +343,19 @@
                 <div class="form-control">
                   <label class="label"><span class="label-text font-bold">ສະຖາບັນການເງິນ *</span></label>
                   <input v-model="detail.institution_name" type="text" placeholder="ເຊັ່ນ: BCEL, JDB, AEON..."
-                    class="input input-bordered w-full" />
+                    class="input input-bordered w-full" :disabled="!canEditChecklist" />
                 </div>
 
                 <div class="form-control">
                   <label class="label"><span class="label-text font-bold">ປະເພດສິນເຊື່ອ</span></label>
                   <input v-model="detail.account_type" type="text" placeholder="ເຊັ່ນ: ບັດເຄຣດິດ, ສິນເຊື່ອລົດຈັກ"
-                    class="input input-bordered w-full" />
+                    class="input input-bordered w-full" :disabled="!canEditChecklist" />
                 </div>
 
                 <div class="form-control">
                   <label class="label"><span class="label-text font-bold text-primary">ສະຖານະການຊຳລະ *</span></label>
                   <select v-model="detail.history_status" class="select select-bordered font-medium"
-                    :class="getCibStatusColor(detail.history_status)">
+                    :class="getCibStatusColor(detail.history_status)" :disabled="!canEditChecklist">
                     <option value="no_delay">ດີຫຼາຍ: ບໍ່ມີຊັກຊ້າ (20 ຄະແນນ)</option>
                     <option value="delay_30_days">ດີ: ຊັກຊ້າບໍ່ເກີນ 30 ວັນ (15 ຄະແນນ)</option>
                     <option value="delay_60_days">ປານກາງ: ຊັກຊ້າ 30-60 ວັນ (10 ຄະແນນ)</option>
@@ -342,14 +367,15 @@
                 <div class="form-control">
                   <label class="label"><span class="label-text font-bold">ຍອດໜີ້ຄົງເຫຼືອ (ກີບ)</span></label>
                   <input v-model.number="detail.outstanding_balance" type="number"
-                    class="input input-bordered w-full text-right" />
+                    class="input input-bordered w-full text-right" :disabled="!canEditChecklist" />
                 </div>
               </div>
             </div>
 
             <div v-if="formCIBDetails.length === 0" class="alert alert-warning shadow-sm">
               <span class="icon-[tabler--alert-circle] size-6"></span>
-              <span>ຍັງບໍ່ມີຂໍ້ມູນປະຫວັດ CIB. ກະລຸນາກົດປຸ່ມ "ເພີ່ມບັນຊີ" ເພື່ອບັນທຶກຂໍ້ມູນ, ຫຼືລະບຸວ່າບໍ່ເຄີຍມີປະຫວັດ.</span>
+              <span>ຍັງບໍ່ມີຂໍ້ມູນປະຫວັດ CIB. ກະລຸນາກົດປຸ່ມ "ເພີ່ມບັນຊີ" ເພື່ອບັນທຶກຂໍ້ມູນ,
+                ຫຼືລະບຸວ່າບໍ່ເຄີຍມີປະຫວັດ.</span>
             </div>
 
             <div class="divider"></div>
@@ -358,14 +384,16 @@
               <h4 class="font-bold text-lg mb-4">ຂໍ້ມູນອື່ນໆ</h4>
               <div class="form-control">
                 <label class="cursor-pointer label justify-start gap-4">
-                  <input type="checkbox" v-model="formCIB.is_existing_customer" class="toggle toggle-primary" />
+                  <input type="checkbox" v-model="formCIB.is_existing_customer" class="toggle toggle-primary"
+                    :disabled="!canEditChecklist" />
                   <span class="font-bold">ເຄີຍເປັນລູກຄ້າເກົ່າຂອງ INSEE ມາກ່ອນບໍ?</span>
                 </label>
               </div>
 
               <div v-if="formCIB.is_existing_customer" class="form-control mt-4">
                 <label class="label"><span class="label-text">ສະຖານະໜີ້ເກົ່າຂອງ INSEE</span></label>
-                <select v-model="formCIB.existing_customer_status" class="select select-bordered">
+                <select v-model="formCIB.existing_customer_status" class="select select-bordered"
+                  :disabled="!canEditChecklist">
                   <option value="normal">ປົກກະຕິ (ຈ່າຍດີ)</option>
                   <option value="late_payment">ຊັກຊ້າບາງງວດ</option>
                   <option value="bad_debt">ໜີ້ເສຍ (NPL)</option>
@@ -375,25 +403,25 @@
               <div class="form-control mt-4">
                 <label class="label"><span class="label-text">ໝາຍເຫດເພີ່ມເຕີມ</span></label>
                 <textarea v-model="formCIB.remark" class="textarea textarea-bordered h-24"
-                  placeholder="ລາຍລະອຽດເພີ່ມເຕີມຈາກໃບລາຍງານ CIB..."></textarea>
+                  placeholder="ລາຍລະອຽດເພີ່ມເຕີມຈາກໃບລາຍງານ CIB..." :disabled="!canEditChecklist"></textarea>
               </div>
             </div>
           </div>
 
           <div v-else-if="checklistTab === 'field'" class="space-y-6 animate-in fade-in">
-             <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg flex justify-between items-center shadow-sm">
+            <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg flex justify-between items-center shadow-sm">
               <div>
                 <h4 class="font-bold text-amber-800 dark:text-amber-300">ບົດບັນທຶກການລົງພື້ນທີ່ຈິງ (Site Visits)</h4>
                 <p class="text-sm text-amber-600">ສາມາດເພີ່ມໄດ້ຫຼາຍສະຖານທີ່ ເຊັ່ນ: ເຮືອນ, ບ່ອນເຮັດວຽກ</p>
               </div>
-              <button class="btn btn-primary btn-sm" @click="addFieldVisit">
+              <button v-if="canEditChecklist" class="btn btn-primary btn-sm" @click="addFieldVisit">
                 <span class="icon-[tabler--plus] size-4"></span> ເພີ່ມສະຖານທີ່
               </button>
             </div>
 
             <div v-for="(visit, index) in formFieldVisits" :key="index"
               class="border rounded-lg p-6 relative bg-white dark:bg-base-100 shadow-sm">
-              <button class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error"
+              <button v-if="canEditChecklist" class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error"
                 @click="removeFieldVisit(index)">
                 <span class="icon-[tabler--trash] size-5"></span>
               </button>
@@ -401,7 +429,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                 <div class="form-control">
                   <label class="label"><span class="label-text font-bold">ປະເພດສະຖານທີ່</span></label>
-                  <select v-model="visit.visit_type" class="select select-bordered">
+                  <select v-model="visit.visit_type" class="select select-bordered" :disabled="!canEditChecklist">
                     <option value="home">ເຮືອນພັກອາໄສ</option>
                     <option value="workplace">ບ່ອນເຮັດວຽກ</option>
                     <option value="other">ສະຖານທີ່ອື່ນໆ (ລະບຸໃນໝາຍເຫດ)</option>
@@ -409,17 +437,19 @@
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-bold">ວັນທີລົງພື້ນທີ່</span></label>
-                  <input v-model="visit.visit_date" type="datetime-local" class="input input-bordered" />
+                  <input v-model="visit.visit_date" type="datetime-local" class="input input-bordered"
+                    :disabled="!canEditChecklist" />
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-bold">ສະພາບຄວາມເປັນຢູ່ / ລັກສະນະອາຄານ</span></label>
                   <input v-model="visit.living_condition" type="text" placeholder="ເຊັ່ນ: ເຮືອນປູນ 2 ຊັ້ນ, ຫ້ອງແຖວ..."
-                    class="input input-bordered" />
+                    class="input input-bordered" :disabled="!canEditChecklist" />
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-bold">ທີ່ຢູ່ຕົງກັບເອກະສານແຈ້ງ ຫຼື
                       ບໍ່?</span></label>
-                  <select v-model="visit.is_address_correct" class="select select-bordered">
+                  <select v-model="visit.is_address_correct" class="select select-bordered"
+                    :disabled="!canEditChecklist">
                     <option :value="true">ຕົງກັນ (Yes)</option>
                     <option :value="false">ບໍ່ຕົງກັນ / ຫາບໍ່ພົບ (No)</option>
                   </select>
@@ -432,16 +462,16 @@
                       <div class="w-full">
                         <label class="label text-xs"><span class="label-text">Latitude</span></label>
                         <input v-model.number="visit.latitude" type="number" step="any" placeholder="17.XXXXXX"
-                          class="input input-bordered input-sm w-full" />
+                          class="input input-bordered input-sm w-full" :disabled="!canEditChecklist" />
                       </div>
                       <div class="w-full">
                         <label class="label text-xs"><span class="label-text">Longitude</span></label>
                         <input v-model.number="visit.longitude" type="number" step="any" placeholder="102.XXXXXX"
-                          class="input input-bordered input-sm w-full" />
+                          class="input input-bordered input-sm w-full" :disabled="!canEditChecklist" />
                       </div>
                     </div>
                     <div class="flex items-end">
-                      <button type="button" class="btn btn-outline btn-info btn-sm w-full gap-2"
+                      <button v-if="canEditChecklist" type="button" class="btn btn-outline btn-info btn-sm w-full gap-2"
                         @click="getCurrentLocation(index)">
                         <span class="icon-[tabler--current-location] size-4"></span> ດຶງທີ່ຕັ້ງປັດຈຸບັນ
                       </button>
@@ -450,27 +480,33 @@
                 </div>
 
                 <div class="form-control md:col-span-2 mt-2">
-                  <label class="label"><span class="label-text font-bold">ຮູບພາບສະຖານທີ່ຈິງ (ສູງສຸດ 2 ຮູບ)</span></label>
+                  <label class="label"><span class="label-text font-bold">ຮູບພາບສະຖານທີ່ຈິງ (ສູງສຸດ 2
+                      ຮູບ)</span></label>
                   <div class="grid grid-cols-2 gap-4 mt-2">
                     <div class="border rounded-lg overflow-hidden relative bg-base-200" style="height: 150px;">
                       <div v-if="visit.photo_url_1 || visit.photo_1_preview"
                         class="w-full h-full relative group bg-base-300 flex items-center justify-center">
                         <img :src="visit.photo_1_preview || getFullImageUrl(visit.photo_url_1)"
                           class="max-w-full max-h-full object-contain" />
-                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <div v-if="canEditChecklist"
+                          class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                           <button type="button" class="btn btn-error btn-sm btn-circle"
                             @click="removeVisitImage(index, 1)">
                             <span class="icon-[tabler--trash] size-4"></span>
                           </button>
                         </div>
                       </div>
-                      <label v-else
+                      <label v-else-if="canEditChecklist"
                         class="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-base-300 transition-colors">
                         <span class="icon-[tabler--photo-plus] size-8 text-gray-400 mb-2"></span>
                         <span class="text-xs text-gray-500">ຮູບທີ 1 (ປ້າຍບ້ານ/ໜ້າບ້ານ)</span>
                         <input type="file" class="hidden" accept="image/*"
                           @change="(e) => handleVisitImageUpload(index, 1, e)" />
                       </label>
+                      <div v-else class="w-full h-full flex flex-col items-center justify-center">
+                        <span class="icon-[tabler--photo-off] size-8 text-gray-300 mb-2"></span>
+                        <span class="text-xs text-gray-400">ບໍ່ມີຮູບພາບ</span>
+                      </div>
                     </div>
 
                     <div class="border rounded-lg overflow-hidden relative bg-base-200" style="height: 150px;">
@@ -478,35 +514,41 @@
                         class="w-full h-full relative group bg-base-300 flex items-center justify-center">
                         <img :src="visit.photo_2_preview || getFullImageUrl(visit.photo_url_2)"
                           class="max-w-full max-h-full object-contain" />
-                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <div v-if="canEditChecklist"
+                          class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                           <button type="button" class="btn btn-error btn-sm btn-circle"
                             @click="removeVisitImage(index, 2)">
                             <span class="icon-[tabler--trash] size-4"></span>
                           </button>
                         </div>
                       </div>
-                      <label v-else
+                      <label v-else-if="canEditChecklist"
                         class="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-base-300 transition-colors">
                         <span class="icon-[tabler--photo-plus] size-8 text-gray-400 mb-2"></span>
                         <span class="text-xs text-gray-500">ຮູບທີ 2 (ສະພາບລວມ)</span>
                         <input type="file" class="hidden" accept="image/*"
                           @change="(e) => handleVisitImageUpload(index, 2, e)" />
                       </label>
+                      <div v-else class="w-full h-full flex flex-col items-center justify-center">
+                        <span class="icon-[tabler--photo-off] size-8 text-gray-300 mb-2"></span>
+                        <span class="text-xs text-gray-400">ບໍ່ມີຮູບພາບ</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div class="form-control md:col-span-2">
-                  <label class="label"><span class="label-text font-bold">ໝາຍເຫດ (ສິ່ງທີ່ພົບເຫັນເພີ່ມເຕີມ)</span></label>
+                  <label class="label"><span class="label-text font-bold">ໝາຍເຫດ
+                      (ສິ່ງທີ່ພົບເຫັນເພີ່ມເຕີມ)</span></label>
                   <textarea v-model="visit.remarks" class="textarea textarea-bordered"
-                    placeholder="ລາຍລະອຽດເພີ່ມເຕີມທີ່ພົບເຫັນ..."></textarea>
+                    placeholder="ລາຍລະອຽດເພີ່ມເຕີມທີ່ພົບເຫັນ..." :disabled="!canEditChecklist"></textarea>
                 </div>
               </div>
             </div>
           </div>
 
           <div v-else-if="checklistTab === 'income'" class="space-y-6 animate-in fade-in">
-             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="border rounded-lg p-4 bg-green-50/50 dark:bg-green-900/10 shadow-sm">
                 <h4 class="font-bold text-green-700 mb-4">1. ການປະເມີນລາຍຮັບ (ລາຍຮັບທີ່ພິສູດໄດ້)</h4>
                 <div class="space-y-3">
@@ -518,7 +560,7 @@
                   <div class="form-control">
                     <label class="label"><span class="label-text">ລາຍຮັບອື່ນໆທີ່ຢືນຢັນໄດ້ (ກີບ)</span></label>
                     <input v-model.number="formIncome.other_verified_income" type="number"
-                      class="input input-bordered text-right font-bold text-green-600"  readonly />
+                      class="input input-bordered text-right font-bold text-green-600" readonly />
                   </div>
                   <div class="divider my-1"></div>
                   <div class="flex justify-between items-center font-bold text-lg">
@@ -534,18 +576,19 @@
                   <div class="form-control">
                     <label class="label"><span class="label-text">ຄ່າໃຊ້ຈ່າຍດຳລົງຊີວິດປະເມີນ (ກີບ)</span></label>
                     <input v-model.number="formIncome.estimated_living_expenses" type="number"
-                      class="input input-bordered text-right" />
+                      class="input input-bordered text-right" :disabled="!canEditChecklist" />
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text">ພາລະໜີ້ສິນເດີມ (ຈາກ CIB) (ກີບ)</span></label>
                     <input v-model.number="formIncome.existing_debt_payments" type="number"
-                      class="input input-bordered text-right text-red-500" />
+                      class="input input-bordered text-right text-red-500" :disabled="!canEditChecklist" />
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text font-bold text-primary">ຄ່າງວດໃໝ່ທີ່ສະເໜີຂໍ
                         (ກີບ)</span></label>
                     <input v-model.number="formIncome.proposed_installment" type="number"
-                      class="input input-bordered text-right font-bold text-primary border-primary" />
+                      class="input input-bordered text-right font-bold text-primary border-primary"
+                      :disabled="!canEditChecklist" />
                   </div>
                   <div class="divider my-1"></div>
                   <div class="flex justify-between items-center font-bold text-lg">
@@ -565,9 +608,11 @@
               <p class="text-gray-500">ສູດຄິດໄລ່: (ລວມພາລະໜີ້ B ÷ ລວມລາຍຮັບ A) × 100</p>
               <div class="mt-4 pt-4 border-t">
                 <div class="form-control max-w-md mx-auto">
-                  <label class="label"><span class="label-text font-bold">ວົງເງິນອະນຸມັດສູງສຸດທີ່ເປັນໄປໄດ້ (ກີບ)</span></label>
+                  <label class="label"><span class="label-text font-bold">ວົງເງິນອະນຸມັດສູງສຸດທີ່ເປັນໄປໄດ້
+                      (ກີບ)</span></label>
                   <input v-model.number="formIncome.max_approved_amount" type="number"
-                    class="input input-bordered text-center text-xl font-bold text-primary" />
+                    class="input input-bordered text-center text-xl font-bold text-primary"
+                    :disabled="!canEditChecklist" />
                 </div>
               </div>
             </div>
@@ -575,9 +620,10 @@
 
         </div>
 
-        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-end gap-3">
+        <div
+          class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-end gap-3">
           <button class="btn btn-ghost" @click="close">ປິດ</button>
-          <button class="btn btn-primary" @click="saveChecklist" :disabled="isSavingChecklist">
+          <button v-if="canEditChecklist" class="btn btn-primary" @click="saveChecklist" :disabled="isSavingChecklist">
             <span v-if="isSavingChecklist" class="loading loading-spinner loading-xs"></span>
             <span v-else class="icon-[tabler--device-floppy] size-4"></span>
             ບັນທຶກຂໍ້ມູນ {{ checklistTabTitle }}
@@ -598,22 +644,26 @@ import { formatPrice } from '@/utils/formatters';
 import { getFullImageUrl } from '@/utils/url';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { useChecklistStore } from '@/stores/checklist';
-
-// 🟢 1. ດຶງ Store ສຳລັບທີ່ຢູ່ມາໃຊ້
 import { useAddressStore } from '@/stores/address';
+import { usePermissionStore } from '@/stores/permission'; // 🌟 Import Permission Store
 
 const props = defineProps<{ isOpen: boolean; loan: any }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
 
 const loanAppStore = useLoanApplicationStore();
 const checklistStore = useChecklistStore();
-const addressStore = useAddressStore(); // 🟢 2. ເອີ້ນໃຊ້ Store
+const addressStore = useAddressStore();
+const permissionStore = usePermissionStore(); // 🌟 ປະກາດໃຊ້ Store
 
 const checklistTab = ref<'basic' | 'call' | 'cib' | 'field' | 'income'>('basic');
 const isSavingChecklist = ref(false);
 
-// 🟢 3. ກຽມຕົວແປເກັບລາຍຊື່ເມືອງທີ່ດຶງມາຈາກ ແຂວງທີ່ເລືອກ
 const localDistricts = ref<any[]>([]);
+
+// 🌟 ກວດສອບສິດ: ມີສິດແກ້ໄຂ ຫຼື ອະນຸມັດ ຈຶ່ງສາມາດແກ້ໄຂ Checklist ໄດ້
+const canEditChecklist = computed(() => {
+  return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve');
+});
 
 const checklistTabTitle = computed(() => {
   const titles = { basic: 'ຂໍ້ມູນທົ່ວໄປ', call: 'ການໂທຢືນຢັນ', cib: 'ປະຫວັດ CIB', field: 'ການລົງພື້ນທີ່', income: 'ການປະເມີນລາຍຮັບ' };
@@ -632,6 +682,16 @@ const unlockedTabs = computed(() => {
 
 const changeTab = (tab: 'basic' | 'call' | 'cib' | 'field' | 'income') => {
   if (tab === 'basic') { checklistTab.value = tab; return; }
+
+  // ຖ້າເປັນ View-only (Auditor) ສາມາດກົດເຂົ້າທຸກແທັບທີ່ເປີດແລ້ວໄດ້ ແຕ່ຖ້າຍັງບໍ່ເປີດຈະເຂົ້າບໍ່ໄດ້ຄືເກົ່າ
+  if (!canEditChecklist.value) {
+    if (tab === 'call' && unlockedTabs.value.call) { checklistTab.value = tab; return; }
+    if (tab === 'cib' && unlockedTabs.value.cib) { checklistTab.value = tab; return; }
+    if (tab === 'field' && unlockedTabs.value.field) { checklistTab.value = tab; return; }
+    if (tab === 'income' && unlockedTabs.value.income) { checklistTab.value = tab; return; }
+  }
+
+  // ສຳລັບຄົນທີ່ມີສິດແກ້ໄຂ (ຈະມີແຈ້ງເຕືອນ)
   if (tab === 'call' && !unlockedTabs.value.call) return alert.error('ກະລຸນາບັນທຶກຂໍ້ມູນທົ່ວໄປໃຫ້ສຳເລັດກ່ອນ');
   if (tab === 'cib' && !unlockedTabs.value.cib) return alert.error('ກະລຸນາບັນທຶກການໂທຢືນຢັນກ່ອນ');
   if (tab === 'field' && !unlockedTabs.value.field) return alert.error('ກະລຸນາບັນທຶກຂໍ້ມູນ CIB ກ່ອນ');
@@ -639,16 +699,15 @@ const changeTab = (tab: 'basic' | 'call' | 'cib' | 'field' | 'income') => {
   checklistTab.value = tab;
 };
 
-// 4. ເພີ່ມ province_id, district_id ແລະ ບ້ານ ເຂົ້າໃນ formBasic
 const formBasic = reactive({
   cus_contact_method: 'phone',
   verified_first_name: '',
   verified_last_name: '',
   verified_dob: '',
-  verified_village: '', // 🟢 ຮັບຊື່ບ້ານ
-  verified_province_id: '', // 🟢 ຮັບ ID ແຂວງ
-  verified_district_id: '', // 🟢 ຮັບ ID ເມືອງ
-  verified_address: '', // ອັນນີ້ຈະຖືກ Generate ອັດຕະໂນມັດກ່ອນ Save
+  verified_village: '',
+  verified_province_id: '',
+  verified_district_id: '',
+  verified_address: '',
   verified_product_type: '',
   verified_price: 0,
   verified_down_payment: 0,
@@ -668,13 +727,11 @@ const formBasic = reactive({
   status: 'draft'
 });
 
-// 🟢 5. Load ເມືອງອັດຕະໂນມັດເມື່ອແຂວງມີການປ່ຽນແປງ
 watch(() => formBasic.verified_province_id, async (newVal) => {
   if (newVal) {
     await addressStore.fetchDistricts(newVal);
     localDistricts.value = [...addressStore.districts];
 
-    // ຖ້າເມືອງທີ່ເລືອກໄວ້ບໍ່ຢູ່ໃນແຂວງໃໝ່, ໃຫ້ເຄລຍຄ່າຖິ້ມ
     const isValidDistrict = localDistricts.value.some(d => d.district_id === formBasic.verified_district_id);
     if (!isValidDistrict) {
       formBasic.verified_district_id = '';
@@ -773,11 +830,9 @@ const fetchChecklistData = async (loanId: number) => {
         formBasic.has_income_doc = !!summaryData.basic_verification.has_income_doc;
         formBasic.has_other_doc = !!summaryData.basic_verification.has_other_doc;
 
-        // 🟢 ແຍກ Address String ອອກມາເພື່ອໃສ່ໃນ Dropdown (ຖ້າມີການເຊບໄວ້ກ່ອນ)
         if (formBasic.verified_address && !formBasic.verified_village) {
-            const parts = formBasic.verified_address.split(',').map(p => p.trim());
-            if (parts.length >= 1) formBasic.verified_village = parts[0] || '';
-            // ໝາຍເຫດ: ລະບົບບໍ່ສາມາດເດົາ ID ແຂວງ/ເມືອງຈາກຊື່ໄດ້ຊັດເຈນ, ດັ່ງນັ້ນ User ອາດຕ້ອງເລືອກໃໝ່ຖ້າເປັນຂໍ້ມູນເກົ່າ
+          const parts = formBasic.verified_address.split(',').map(p => p.trim());
+          if (parts.length >= 1) formBasic.verified_village = parts[0] || '';
         }
       }
 
@@ -813,7 +868,7 @@ const fetchChecklistData = async (loanId: number) => {
 watch(() => props.isOpen, async (newVal) => {
   if (newVal && props.loan) {
     checklistTab.value = 'basic';
-    await addressStore.fetchProvinces(); // 🟢 ໂຫຼດແຂວງທັນທີທີ່ເປີດ Modal
+    await addressStore.fetchProvinces();
     await fetchChecklistData(props.loan.id);
 
     let fullDetails: any = props.loan;
@@ -823,23 +878,20 @@ watch(() => props.isOpen, async (newVal) => {
     } catch (error) { }
 
     const workInfo = fullDetails.customer?.customer_work_infos?.[0] || fullDetails.customer?.work_info?.[0];
-
     const loanContract = fullDetails.loan_contracts?.[0];
 
-    // 🟢 ດຶງຂໍ້ມູນ Default ຖ້າບໍ່ເຄີຍເຊບ
     formBasic.verified_first_name = formBasic.verified_first_name || fullDetails.customer?.first_name || '';
     formBasic.verified_last_name = formBasic.verified_last_name || fullDetails.customer?.last_name || '';
     formBasic.verified_dob = formBasic.verified_dob || (fullDetails.customer?.date_of_birth ? new Date(fullDetails.customer.date_of_birth).toISOString().slice(0, 10) : '');
 
-    // 🟢 ດຶງຂໍ້ມູນທີ່ຢູ່ຈາກ Customer ເຂົ້າໄປໃນ Dropdown ອັດຕະໂນມັດ
     if (!formBasic.verified_village && fullDetails.customer?.address) {
-        formBasic.verified_village = fullDetails.customer.address;
+      formBasic.verified_village = fullDetails.customer.address;
     }
     if (!formBasic.verified_province_id && fullDetails.customer?.province_id) {
-        formBasic.verified_province_id = fullDetails.customer.province_id;
+      formBasic.verified_province_id = fullDetails.customer.province_id;
     }
     if (!formBasic.verified_district_id && fullDetails.customer?.district_id) {
-        formBasic.verified_district_id = fullDetails.customer.district_id;
+      formBasic.verified_district_id = fullDetails.customer.district_id;
     }
 
     formBasic.verified_product_type = formBasic.verified_product_type || fullDetails.product?.product_name || '';
@@ -851,54 +903,41 @@ watch(() => props.isOpen, async (newVal) => {
     formBasic.work_years = formBasic.work_years || workInfo?.duration_years || 0;
     formBasic.work_salary = formBasic.work_salary || Number(workInfo?.salary || 0);
 
-    // ==========================================
-    // 🟢 ດຶງຂໍ້ມູນຈາກສັນຍາແລະລູກຄ້າມາເກັບໄວ້ກ່ອນ
     const contractOtherIncome = Number(fullDetails.loan_contracts?.[0]?.cus_income_other || loanContract?.cus_income_other || 0);
     const customerIncome = Number(workInfo?.salary || 0);
     const customerDebts = Number(fullDetails.customer?.other_debts || 0);
     const proposedPay = Number(fullDetails.monthly_pay || 0);
     const maxAmount = Number(fullDetails.total_amount || 0) - Number(fullDetails.down_payment || 0);
 
-    // 🟢 ບັງຄັບກວດສອບດ້ວຍ Number() ສະເໝີ ເພື່ອປ້ອງກັນບັນຫາ String "0.00"
-    // ຖ້າຊ່ອງໃດຍັງເປັນ 0 (ຫຼື "0.00") ໃຫ້ດຶງຂໍ້ມູນໃໝ່ມາໃສ່ທັບທັນທີ
-
-    // 🌟 🟢 ບັງຄັບອັບເດດຄ່າໃຫ້ກົງກັບຖານຂໍ້ມູນຫຼັກສະເໝີ (Always Sync)
-    // ເພາະຊ່ອງພວກນີ້ເປັນ readonly ຈຶ່ງຕ້ອງດຶງຄ່າຫຼ້າສຸດມາສະແດງສະເໝີ ໂດຍບໍ່ຕ້ອງເຊັກ === 0
     formIncome.average_monthly_income = customerIncome;
     formIncome.other_verified_income = contractOtherIncome;
     formIncome.existing_debt_payments = customerDebts;
     formIncome.proposed_installment = proposedPay;
-
-
-      formIncome.max_approved_amount = maxAmount;
-
-    // ==========================================
+    formIncome.max_approved_amount = maxAmount;
   }
 });
 
 const saveChecklist = async () => {
-  if (!props.loan) return;
+  if (!props.loan || !canEditChecklist.value) return; // 🌟 ເຊັກສິດກ່ອນບັນທຶກ
   const loanId = props.loan.id;
   isSavingChecklist.value = true;
 
   try {
     if (checklistTab.value === 'basic') {
-
-      // 🟢 ປະກອບທີ່ຢູ່ໃຫ້ເປັນ String ດຽວກ່ອນເຊບລົງ DB
       let fullAddressStr = formBasic.verified_village;
       if (formBasic.verified_district_id) {
-          const districtName = localDistricts.value.find(d => d.district_id === formBasic.verified_district_id)?.district_name;
-          if (districtName) fullAddressStr += `, ${districtName}`;
+        const districtName = localDistricts.value.find(d => d.district_id === formBasic.verified_district_id)?.district_name;
+        if (districtName) fullAddressStr += `, ${districtName}`;
       }
       if (formBasic.verified_province_id) {
-          const provinceName = addressStore.provinces.find(p => p.province_id === formBasic.verified_province_id)?.province_name;
-          if (provinceName) fullAddressStr += `, ${provinceName}`;
+        const provinceName = addressStore.provinces.find(p => p.province_id === formBasic.verified_province_id)?.province_name;
+        if (provinceName) fullAddressStr += `, ${provinceName}`;
       }
-      formBasic.verified_address = fullAddressStr; // ອັບເດດຄ່າ
+      formBasic.verified_address = fullAddressStr;
 
       await checklistApi.saveBasic(loanId, {
-          ...formBasic,
-          full_name: `${formBasic.verified_first_name} ${formBasic.verified_last_name}`.trim()
+        ...formBasic,
+        full_name: `${formBasic.verified_first_name} ${formBasic.verified_last_name}`.trim()
       });
 
     } else if (checklistTab.value === 'call') {

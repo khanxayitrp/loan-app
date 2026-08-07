@@ -7,29 +7,35 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap">
+        <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap"
+          :disabled="isLoading || filteredLoans.length === 0">
           <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
         </button>
-        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success">
+        <button @click="exportToExcel" class="btn btn-outline btn-sm whitespace-nowrap btn-success"
+          :disabled="isLoading || filteredLoans.length === 0">
           <span class="icon-[tabler--file-spreadsheet] size-4 mr-1"></span> Export Excel
         </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div
+      class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
       <div>
-        <label class="label">
-          <span class="label-text text-sm font-medium">ຄົ້ນຫາ</span>
+        <label class="label pb-1">
+          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ</span>
         </label>
-        <input v-model="searchQuery" type="text" placeholder="ຊື່ລູກຄ້າ, ເບີໂທ, ເລກທີ່..."
-          class="input input-bordered w-full" @input="debounceSearch" />
+        <div class="relative">
+          <input v-model="searchQuery" type="text" placeholder="ຊື່ລູກຄ້າ, ເບີໂທ, ເລກທີ່..."
+            class="input input-sm input-bordered w-full pl-9" @input="debounceSearch" />
+          <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></span>
+        </div>
       </div>
 
       <div>
-        <label class="label">
-          <span class="label-text text-sm font-medium">ສະຖານະການຈ່າຍເງິນ</span>
+        <label class="label pb-1">
+          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ສະຖານະການຈ່າຍເງິນ</span>
         </label>
-        <select v-model="disbursementFilter" class="select select-bordered w-full">
+        <select v-model="disbursementFilter" class="select select-sm select-bordered w-full">
           <option value="">ທັງໝົດສະຖານະ</option>
           <option value="pending_disbursement">ຍັງບໍ່ໄດ້ຈ່າຍເງິນ (Approved)</option>
           <option value="disbursed">ຈ່າຍເງິນແລ້ວ (Disbursed)</option>
@@ -37,23 +43,25 @@
       </div>
 
       <div>
-        <label class="label">
-          <span class="label-text text-sm font-medium">ວັນທີ່ອະນຸມັດ</span>
+        <label class="label pb-1">
+          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ວັນທີ່ອະນຸມັດ</span>
         </label>
         <div class="flex gap-2">
-          <input v-model="dateFrom" type="date" class="input input-bordered w-full" @change="applyDateFilter" />
-          <input v-model="dateTo" type="date" class="input input-bordered w-full" @change="applyDateFilter" />
+          <input v-model="dateFrom" type="date" class="input input-sm input-bordered w-full"
+            @change="applyDateFilter" />
+          <input v-model="dateTo" type="date" class="input input-sm input-bordered w-full" @change="applyDateFilter" />
         </div>
       </div>
     </div>
 
-    <div v-if="isLoading" class="text-center py-8">
-      <div class="loading loading-spinner"></div>
+    <div v-if="isLoading" class="text-center py-12">
+      <div class="loading loading-spinner text-primary"></div>
     </div>
 
-    <div v-else class="w-full overflow-x-auto rounded-lg border border-base-content/10">
+    <div v-else
+      class="w-full overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
       <table class="table table-zebra w-full min-w-max">
-        <thead>
+        <thead class="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 text-sm">
           <tr>
             <th>ເລກທີ່ສິນເຊື່ອ</th>
             <th>ເລກທີ່ສັນຍາ</th>
@@ -65,105 +73,103 @@
             <th>ສະຖານະການຈ່າຍ</th>
             <th>ຜູ້ອະນຸມັດ</th>
             <th>ວັນທີ່ອະນຸມັດ</th>
-            <th class="w-40 text-center">ຈັດການ</th>
+            <th class="w-40 text-center">ACTIONS</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="loan in displayedLoans" :key="loan.id">
-            <td class="font-mono text-gray-600 dark:text-gray-400">{{ loan.loan_id }}</td>
-            <td class="font-mono text-gray-600 dark:text-gray-400">{{ getContractNumber(loan) }}</td>
-            <td class="font-medium">{{ getCustomerName(loan) }}</td>
-
-            <td>{{ getCustomerPhone(loan) }}</td>
-
-            <td class="font-medium text-primary">{{ formatPrice(Number(loan.total_amount || 0) - Number(loan.down_payment || 0)) }}</td>
-
-            <td>{{ loan.interest_rate_at_apply }}%</td>
-
-            <td>{{ loan.loan_period }} ເດືອນ</td>
+          <tr v-for="loan in displayedLoans" :key="loan.id"
+            class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <td class="font-mono text-gray-600 dark:text-gray-400 text-sm">{{ loan.loan_id }}</td>
+            <td class="font-mono text-gray-600 dark:text-gray-400 text-sm">{{ getContractNumber(loan) }}</td>
+            <td>
+              <div class="font-bold text-indigo-600 dark:text-indigo-400">{{ getCustomerName(loan) }}</div>
+            </td>
+            <td>
+              <div class="text-sm text-gray-500 flex items-center gap-1">
+                <span class="icon-[tabler--phone] size-3"></span> {{ getCustomerPhone(loan) }}
+              </div>
+            </td>
+            <td>
+              <div class="font-bold text-emerald-600">
+                {{ formatPrice(Number(loan.total_amount || 0) - Number(loan.down_payment || 0)) }} ₭
+              </div>
+            </td>
+            <td class="text-sm">{{ loan.interest_rate_at_apply }}%</td>
+            <td class="text-sm">{{ loan.loan_period }} ເດືອນ</td>
 
             <td>
-              <span class="badge badge-soft" :class="getDisbursementBadgeClass(loan)">
+              <span class="badge badge-sm border-0 font-medium shadow-sm" :class="getDisbursementBadgeClass(loan)">
                 {{ getDisbursementStatusText(loan) }}
               </span>
             </td>
 
-            <td>{{ loan.approver?.username || '-' }}</td>
-
-            <td>{{ formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '') }}</td>
+            <td class="text-sm text-gray-600">{{ loan.approver?.username || '-' }}</td>
+            <td class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(loan.approved_at || (loan as
+              any).updatedAt || (loan as any).createdAt || '') }}</td>
 
             <td>
               <div class="flex justify-center gap-1">
-                <!-- ປຸ່ມເບິ່ງລາຍລະອຽດ -->
-                <button class="btn btn-circle btn-text btn-sm" @click="viewLoanDetails(loan)" aria-label="View details">
-                  <span class="icon-[tabler--eye] size-4"></span>
-                </button>
+                <div class="tooltip tooltip-top" data-tip="ເບິ່ງລາຍລະອຽດ">
+                  <button class="btn btn-square btn-ghost btn-sm text-slate-600 hover:bg-slate-200"
+                    @click="viewLoanDetails(loan)">
+                    <span class="icon-[tabler--eye] size-5"></span>
+                  </button>
+                </div>
 
-                <!-- ປຸ່ມຈັດການລາຍເຊັນ -->
-                <button v-if="hasContract(loan)" class="btn btn-circle btn-text btn-sm text-indigo-500 hover:bg-indigo-50"
-                  @click="openSignatureModal(loan)" aria-label="Manage signatures">
-                  <span class="icon-[tabler--signature] size-4"></span>
-                </button>
+                <div v-if="hasContract(loan)" class="tooltip tooltip-top" data-tip="ເບິ່ງ/ຈັດການລາຍເຊັນ">
+                  <button class="btn btn-square btn-ghost btn-sm text-indigo-500 hover:bg-indigo-100"
+                    @click="openSignatureModal(loan)">
+                    <span class="icon-[tabler--signature] size-5"></span>
+                  </button>
+                </div>
 
-                <!-- ປຸ່ມຈັດການໃບມອບຮັບ -->
-                <button class="btn btn-circle btn-text btn-sm text-fuchsia-600 hover:bg-fuchsia-50"
-                  @click="openDeliveryNoteModal(loan)" aria-label="View delivery note">
-                  <span class="icon-[tabler--file-invoice] size-4"></span>
-                </button>
+                <div class="tooltip tooltip-top" data-tip="ເບິ່ງ/ຈັດການໃບມອບຮັບ">
+                  <button class="btn btn-square btn-ghost btn-sm text-fuchsia-600 hover:bg-fuchsia-100"
+                    @click="openDeliveryNoteModal(loan)">
+                    <span class="icon-[tabler--file-invoice] size-5"></span>
+                  </button>
+                </div>
 
-                <!-- ປຸ່ມເບິ່ງຕາຕະລາງຜ່ອນ (ຖ້າຈ່າຍເງິນແລ້ວ) -->
-                <!-- <button v-if="loan.status === 'disbursed' || loan.status === 'completed'" 
-                  class="btn btn-circle btn-text btn-sm text-warning hover:bg-warning/10"
-                  @click="openRepaymentHub(loan)" aria-label="View Repayment">
-                  <span class="icon-[tabler--calendar-stats] size-4"></span>
-                </button> -->
               </div>
             </td>
           </tr>
 
           <tr v-if="displayedLoans.length === 0">
-            <td colspan="11" class="text-center py-8 text-base-content/60">
-              ບໍ່ພົບຂໍ້ມູນສິນເຊື່ອທີ່ອະນຸມັດແລ້ວ
+            <td colspan="11" class="text-center py-12 text-gray-400">
+              <div class="flex flex-col items-center">
+                <span class="icon-[tabler--file-search] size-12 mb-2 opacity-50"></span>
+                <span>ບໍ່ພົບຂໍ້ມູນສິນເຊື່ອທີ່ອະນຸມັດແລ້ວ</span>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div v-if="!isLoading" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div>
-        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalLoans }} ລາຍການ
-      </div>
-
+    <div v-if="!isLoading && totalLoans > 0"
+      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
+      <div class="text-gray-500">ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalLoans }} ລາຍການ</div>
       <div class="flex items-center gap-2">
         <select v-model.number="pageSize" class="select select-sm select-bordered">
           <option :value="10">10 ຕໍ່ໜ້າ</option>
           <option :value="25">25 ຕໍ່ໜ້າ</option>
           <option :value="50">50 ຕໍ່ໜ້າ</option>
         </select>
-
-        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">
-          ກ່ອນໜ້າ
-        </button>
-
-        <span class="px-2">
-          ໜ້າ {{ currentPage }} / {{ totalPages }}
-        </span>
-
-        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">
-          ຖັດໄປ
-        </button>
+        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
+        <span class="px-2">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
+        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
       </div>
     </div>
 
-    <!-- Details Modal -->
     <teleport to="body">
       <div v-if="showDetailsModal && selectedLoan"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div
           class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-auto max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold">ລາຍລະອຽດສິນເຊື່ອທີ່ອະນຸມັດແລ້ວ</h3>
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <span class="icon-[tabler--list-details] text-primary size-6"></span> ລາຍລະອຽດສິນເຊື່ອທີ່ອະນຸມັດແລ້ວ
+            </h3>
             <button @click="closeDetailsModal" class="text-gray-400 hover:text-gray-600">
               <span class="icon-[tabler--x] size-5"></span>
             </button>
@@ -177,9 +183,10 @@
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ສະຖານະ</label><br>
-                <span class="badge badge-soft mt-1"
-                  :class="selectedLoan.status === 'disbursed' || selectedLoan.status === 'completed' ? 'badge-success' : 'badge-info'">
-                  {{ (selectedLoan.status === 'disbursed' || selectedLoan.status === 'completed') ? 'ຈ່າຍເງິນແລ້ວ' : 'ອະນຸມັດແລ້ວ' }}
+                <span class="badge badge-sm border-0 mt-1 text-white shadow-sm"
+                  :class="selectedLoan.status === 'disbursed' || selectedLoan.status === 'completed' ? 'bg-indigo-600' : 'bg-emerald-500'">
+                  {{ (selectedLoan.status === 'disbursed' || selectedLoan.status === 'completed') ? 'ຈ່າຍເງິນແລ້ວ' :
+                  'ອະນຸມັດແລ້ວ' }}
                 </span>
               </div>
               <div>
@@ -242,10 +249,10 @@
                 <div>
                   <label class="text-gray-500 block mb-1">ສະຖານະ</label>
                   <br>
-                  <span class="badge badge-soft mt-1"
-                    :class="(selectedLoan as any).delivery_receipt.status === 'approved' ? 'badge-success' : 'badge-warning'">
-                    {{ (selectedLoan as any).delivery_receipt.status === 'approved' ? 'ອະນຸມັດແລ້ວ' :
-                      'ລໍຖ້າການອະນຸມັດ' }}
+                  <span class="badge badge-sm border-0 text-white mt-1"
+                    :class="(selectedLoan as any).delivery_receipt.status === 'approved' ? 'bg-emerald-500' : 'bg-warning'">
+                    {{ (selectedLoan as any).delivery_receipt.status === 'approved' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າການອະນຸມັດ'
+                    }}
                   </span>
                 </div>
               </div>
@@ -267,29 +274,30 @@
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 mt-6 border-t pt-4">
-            <button class="btn btn-outline btn-warning" @click="openScheduleModal(selectedLoan)">
+          <div class="flex flex-wrap justify-end gap-3 mt-6 border-t pt-4">
+            <button class="btn btn-outline btn-warning text-warning hover:bg-warning/10"
+              @click="openScheduleModal(selectedLoan)">
               <span class="icon-[tabler--calendar-stats] size-4 mr-1"></span> ຕາຕະລາງຜ່ອນ
             </button>
 
-            <button class="btn btn-outline btn-info" @click="openDraftContractModal">
+            <button class="btn btn-outline btn-info text-info hover:bg-info/10" @click="openDraftContractModal">
               <span class="icon-[tabler--file-certificate] size-4 mr-1"></span> ເບິ່ງຮ່າງສັນຍາ
             </button>
 
-            <!-- 🌟 ເພີ່ມປຸ່ມເບິ່ງໃບມອບຮັບ ໄວ້ໃນໜ້າລາຍລະອຽດ (ປ້ອງກັນບັກຈາກການຮຽກໃຊ້ຜິດໂຕ) -->
-            <button class="btn btn-outline btn-fuchsia" @click="openDeliveryNoteModal(selectedLoan)">
+            <button
+              class="btn btn-outline text-fuchsia-600 border-fuchsia-200 hover:bg-fuchsia-50 hover:border-fuchsia-300"
+              @click="openDeliveryNoteModal(selectedLoan)">
               <span class="icon-[tabler--file-invoice] size-4 mr-1"></span> ໃບມອບຮັບ
             </button>
 
-            <button class="btn btn-soft btn-secondary w-full sm:w-auto" @click="closeDetailsModal">
-              ປິດ
+            <button class="btn btn-primary w-full sm:w-auto ml-auto md:ml-0" @click="closeDetailsModal">
+              ປິດໜ້າຈໍ
             </button>
           </div>
         </div>
       </div>
     </teleport>
 
-    <!-- Modal ສຳລັບສະແດງຮ່າງສັນຍາ (Read-Only) -->
     <teleport to="body">
       <div v-if="showContractModal"
         class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -305,15 +313,9 @@
             </button>
           </div>
 
-          <LoanContractForm
-            v-if="selectedContract"
-            :loan-contract-id="selectedLoan?.id"
-            :loan-application="selectedLoan || undefined"
-            :loan-contract="selectedContract"
-            :is-editing="false"
-            :view-only="true"
-            @cancel-edit="showContractModal = false"
-          />
+          <LoanContractForm v-if="selectedContract" :loan-contract-id="selectedLoan?.id"
+            :loan-application="selectedLoan || undefined" :loan-contract="selectedContract" :is-editing="false"
+            :view-only="true" @cancel-edit="showContractModal = false" />
           <div v-else class="text-center py-8 text-gray-500">
             <div class="loading loading-spinner loading-md"></div>
             <p class="mt-2">ກຳລັງໂຫຼດຂໍ້ມູນສັນຍາ...</p>
@@ -322,31 +324,15 @@
       </div>
     </teleport>
 
-    <!-- 🌟 ເອີ້ນໃຊ້ Modal ໃບມອບຮັບ ແບບ Read-Only (ຕື່ມ || undefined ແກ້ບັກ null type) -->
-    <DeliveryNoteModal
-      :is-open="showDeliveryNoteModal"
-      :loan="loanForDeliveryNote || undefined"
-      :is-read-only="true"
-      @close="showDeliveryNoteModal = false; loanForDeliveryNote = null"
-    />
+    <DeliveryNoteModal :is-open="showDeliveryNoteModal" :loan="loanForDeliveryNote || undefined" :is-read-only="true"
+      @close="showDeliveryNoteModal = false; loanForDeliveryNote = null" />
 
-    <!-- Modal ສຳລັບສະແດງຕາຕະລາງຜ່ອນຊຳລະ -->
-    <LoanScheduleModal
-      :show="showScheduleModal"
-      :loan="loanForSchedule || undefined"
-      :view-only="true"
-      @close="showScheduleModal = false; loanForSchedule = null"
-    />
+    <LoanScheduleModal :show="showScheduleModal" :loan="loanForSchedule || undefined" :view-only="true"
+      @close="showScheduleModal = false; loanForSchedule = null" />
 
-    <!-- Modal ສຳລັບຈັດການລາຍເຊັນ (External Signature) -->
-    <ExternalSignatureModal
-      :is-open="showSignatureModal"
-      :loan-id="loanForSignature?.id ?? null"
-      @close="showSignatureModal = false; loanForSignature = null"
-      @updated="fetchLoans"
-    />
+    <ExternalSignatureModal :is-open="showSignatureModal" :loan-id="loanForSignature?.id ?? null"
+      @close="showSignatureModal = false; loanForSignature = null" @updated="fetchLoans" />
 
-    <!-- 🟢 Repayment Hub Modal -->
     <teleport to="body">
       <div v-if="showRepaymentHub"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
@@ -376,9 +362,10 @@
                 <p class="text-sm text-red-600">ຍອດໜີ້ຍັງເຫຼືອ</p>
                 <p class="text-xl font-bold text-red-600">{{ formatPrice(summary.remainingBalance) }}</p>
               </div>
-              
-              <!-- ປຸ່ມ ເບິ່ງປະຫວັດການຊຳລະທັງໝົດ -->
-              <div class="flex items-center justify-center bg-gray-50 border rounded-lg p-3 hover:bg-gray-100 transition-colors cursor-pointer" @click="viewReceiptHistory(selectedLoan.id)">
+
+              <div
+                class="flex items-center justify-center bg-gray-50 border rounded-lg p-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                @click="viewReceiptHistory(selectedLoan.id)">
                 <button class="btn btn-outline btn-primary w-full h-full shadow-sm flex flex-col gap-1">
                   <span class="icon-[tabler--receipt] size-6"></span>
                   <span class="text-xs font-bold whitespace-normal leading-tight">ເບິ່ງປະຫວັດການຊຳລະທັງໝົດ</span>
@@ -423,7 +410,6 @@
       </div>
     </teleport>
 
-    <!-- 🟢 Receipt / Transaction History Modal -->
     <teleport to="body">
       <div v-if="showReceiptModal"
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
@@ -441,16 +427,14 @@
           </div>
 
           <div v-else-if="receiptTransactions.length > 0" class="space-y-4">
-            <!-- ວົນ Loop ສະແດງປະຫວັດການຈ່າຍ -->
             <div v-for="(tx, index) in receiptTransactions" :key="index"
               class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border">
               <div class="flex justify-between items-center mb-3 border-b pb-2">
                 <span class="text-xs text-gray-500 font-medium">ໃບບິນອ້າງອີງ: {{ tx.id }}</span>
-                <span class="badge badge-success text-white badge-sm">ສຳເລັດ</span>
+                <span class="badge badge-success border-0 text-white badge-sm">ສຳເລັດ</span>
               </div>
 
               <div class="grid grid-cols-2 gap-y-2 text-sm">
-                <!-- ປະເພດ / ງວດທີ -->
                 <div class="text-gray-500">ປະເພດ / ງວດທີ:</div>
                 <div class="font-bold text-right text-indigo-600">
                   <span v-if="tx.transaction_type === 'closing'" class="text-error">ປິດບັນຊີ (Payoff)</span>
@@ -462,9 +446,9 @@
                 <div class="font-medium text-right">{{ formatDate(tx.paid_at || tx.createdAt) }}</div>
 
                 <div class="text-gray-500 mt-1">ຍອດເງິນທີ່ຈ່າຍ:</div>
-                <div class="font-bold text-right text-primary text-base mt-1">{{ formatPrice(tx.amount_paid) }} ກີບ</div>
+                <div class="font-bold text-right text-primary text-base mt-1">{{ formatPrice(tx.amount_paid) }} ກີບ
+                </div>
 
-                <!-- ແຍກລາຍລະອຽດ ຕົ້ນທຶນ, ດອກເບ້ຍ, ຄ່າປັບໃໝ -->
                 <div class="col-span-2 bg-white dark:bg-gray-800 rounded-md border p-3 my-1 shadow-sm">
                   <div class="grid grid-cols-2 gap-y-1.5 text-xs">
                     <div class="text-gray-500 flex items-center gap-1">
@@ -480,7 +464,8 @@
                     <div class="text-gray-500 flex items-center gap-1">
                       <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> ຄ່າປັບໃໝ:
                     </div>
-                    <div class="font-medium text-right text-error">{{ formatPrice(tx.schedule?.paid_penalty || 0) }} ກີບ</div>
+                    <div class="font-medium text-right text-error">{{ formatPrice(tx.schedule?.paid_penalty || 0) }} ກີບ
+                    </div>
                   </div>
                 </div>
 
@@ -490,7 +475,8 @@
                 </div>
 
                 <div class="text-gray-500">ຜູ້ຮັບເງິນ:</div>
-                <div class="font-medium text-right">{{ tx.recorded_by_user?.full_name || tx.recorded_by_user?.username || 'ລະບົບ' }}</div>
+                <div class="font-medium text-right">{{ tx.recorded_by_user?.full_name || tx.recorded_by_user?.username
+                  || 'ລະບົບ' }}</div>
               </div>
 
               <div v-if="tx.proof_url" class="mt-4 pt-3 border-t text-center">
@@ -521,6 +507,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import * as XLSX from 'xlsx'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useLoanContractStore } from '@/stores/loanContract'
+import { usePermissionStore } from '@/stores/permission' // 🌟 1. Import Permission Store
 import type { LoanApplication } from '@/types/loanApplication'
 import { LoanApplicationStatus } from '@/types/loanApplication'
 import Papa from 'papaparse'
@@ -528,17 +515,16 @@ import { alert } from '@/utils/alert'
 import apiClient from '@/api/apiclient'
 import { storeToRefs } from 'pinia'
 
-// 🟢 ດຶງ Component ທີ່ໃຊ້ສະແດງ Modal ມາໃຊ້ງານ
 import LoanContractForm from '@/components/loans/form/LoanContractForm.vue'
 import LoanScheduleModal from '@/components/modals/loan/detail/LoanScheduleModal.vue'
 import ExternalSignatureModal from '@/components/modals/loan/pending/ExternalSignatureModal.vue'
-import DeliveryNoteModal from '@/components/modals/loan/pending/DeliveryNoteModal.vue' // 🌟 ນຳເຂົ້າ DeliveryNoteModal
+import DeliveryNoteModal from '@/components/modals/loan/pending/DeliveryNoteModal.vue'
 
 const loanApplicationStore = useLoanApplicationStore()
 const loanContractStore = useLoanContractStore()
+const permissionStore = usePermissionStore() // 🌟 2. ປະກາດໃຊ້ Store
 const { loanApplications, isLoading } = storeToRefs(loanApplicationStore)
 
-// Reactive state
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchQuery = ref('')
@@ -546,13 +532,11 @@ const disbursementFilter = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
 
-// Modal states
 const showDetailsModal = ref(false)
 const showDeliveryNoteModal = ref(false)
 const selectedLoan = ref<LoanApplication | null>(null)
 const loanForDeliveryNote = ref<LoanApplication | null>(null)
 
-// 🟢 ເພີ່ມ State ສຳລັບຕາຕະລາງຜ່ອນ, ຮ່າງສັນຍາ ແລະ ຈັດການລາຍເຊັນ
 const showScheduleModal = ref(false);
 const loanForSchedule = ref<any>(null);
 const showContractModal = ref(false);
@@ -560,7 +544,6 @@ const selectedContract = ref<any>(null);
 const showSignatureModal = ref(false);
 const loanForSignature = ref<LoanApplication | null>(null);
 
-// 🟢 State ສຳລັບ Repayment Hub ແລະ Receipt Modal
 const showRepaymentHub = ref(false)
 const isScheduleLoading = ref(false)
 const currentSchedules = ref<any[]>([])
@@ -568,12 +551,11 @@ const showReceiptModal = ref(false)
 const isReceiptLoading = ref(false)
 const receiptTransactions = ref<any[]>([])
 
-// Status Config ສຳລັບການຈ່າຍເງິນ
 const statusConfig: Record<string, { class: string, text: string }> = {
-  paid: { class: 'badge-success text-white', text: 'ຊຳລະແລ້ວ' },
-  unpaid: { class: 'badge-warning', text: 'ລໍຖ້າຊຳລະ' },
-  partial: { class: 'badge-info', text: 'ຈ່າຍບາງສ່ວນ' },
-  overdue: { class: 'badge-error text-white', text: 'ກາຍກຳນົດ' }
+  paid: { class: 'bg-emerald-500 text-white', text: 'ຊຳລະແລ້ວ' },
+  unpaid: { class: 'bg-warning text-white', text: 'ລໍຖ້າຊຳລະ' },
+  partial: { class: 'bg-info text-white', text: 'ຈ່າຍບາງສ່ວນ' },
+  overdue: { class: 'bg-error text-white', text: 'ກາຍກຳນົດ' }
 }
 
 const getContractNumber = (loan: any): string => {
@@ -595,13 +577,11 @@ const hasContract = (loan: any): boolean => {
   return !!(loan.loan_contracts && loan.loan_contracts.length > 0);
 };
 
-// ຟັງຊັນສຳລັບເປີດ Modal ຕ່າງໆ
 const openSignatureModal = (loan: LoanApplication) => {
   loanForSignature.value = loan;
   showSignatureModal.value = true;
 };
 
-// 🌟 ຟັງຊັນເປີດ Modal ໃບມອບຮັບແບບສັ້ນໆ (ໃຊ້ Component ແທນ)
 const openDeliveryNoteModal = (loan: LoanApplication) => {
   loanForDeliveryNote.value = loan;
   showDeliveryNoteModal.value = true;
@@ -679,13 +659,13 @@ const formatDate = (dateString: string): string => {
 }
 
 const getDisbursementBadgeClass = (loan: any): string => {
-  if (['disbursed', 'completed', 'closed'].includes(loan.status)) return 'badge-success'
-  return 'badge-warning'
+  if (['disbursed', 'completed', 'closed'].includes(loan.status)) return 'bg-indigo-600 text-white'
+  return 'bg-emerald-500 text-white'
 }
 
 const getDisbursementStatusText = (loan: any): string => {
   if (['disbursed', 'completed', 'closed'].includes(loan.status)) return 'ຈ່າຍເງິນແລ້ວ (Disbursed)'
-  return 'ຍັງບໍ່ຈ່າຍເງິນ (Approved)'
+  return 'ອະນຸມັດແລ້ວ (Approved)'
 }
 
 const summary = computed(() => {
@@ -727,7 +707,7 @@ const openDraftContractModal = async () => {
     const contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
 
     if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
-       throw new Error("No Contract");
+      throw new Error("No Contract");
     }
     selectedContract.value = contractData;
 
@@ -792,7 +772,7 @@ const viewReceiptHistory = async (applicationId: number) => {
 
   try {
     const response = await apiClient.get(`/repayments/transactions/application/${applicationId}`);
-    
+
     if (response.data && response.data.data) {
       receiptTransactions.value = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
     }
@@ -810,18 +790,23 @@ const exportToCSV = () => {
     return;
   }
 
-  const csvData = filteredLoans.value.map(loan => ({
-    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
-    'ເລກທີ່ສັນຍາ': getContractNumber(loan),
-    'ຊື່ລູກຄ້າ': getCustomerName(loan),
-    'ເບີໂທ': getCustomerPhone(loan),
-    'ຈຳນວນເງິນ': formatPrice(Number(loan.total_amount) || 0),
-    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply || '0',
-    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '0',
-    'ສະຖານະການຈ່າຍ': getDisbursementStatusText(loan),
-    'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
-    'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '')
-  }))
+  const csvData = filteredLoans.value.map(loan => {
+    // 🟢 ແກ້ໄຂບັກທີ 1: ຄຳນວນຍອດເງິນໃຫ້ກົງກັບໜ້າຈໍ (ລາຄາ - ເງິນດາວ)
+    const netAmount = Number(loan.total_amount || 0) - Number(loan.down_payment || 0);
+
+    return {
+      'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
+      'ເລກທີ່ສັນຍາ': getContractNumber(loan),
+      'ຊື່ລູກຄ້າ': getCustomerName(loan),
+      'ເບີໂທ': getCustomerPhone(loan),
+      'ຈຳນວນເງິນ': formatPrice(netAmount), // CSV ໃຊ້ String ໄດ້
+      'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply || '0',
+      'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '0',
+      'ສະຖານະການຈ່າຍ': getDisbursementStatusText(loan),
+      'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
+      'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '')
+    };
+  })
 
   const csv = Papa.unparse(csvData)
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -837,18 +822,24 @@ const exportToExcel = () => {
     return;
   }
 
-  const excelData = filteredLoans.value.map(loan => ({
-    'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
-    'ເລກທີ່ສັນຍາ': getContractNumber(loan),
-    'ຊື່ລູກຄ້າ': getCustomerName(loan),
-    'ເບີໂທ': getCustomerPhone(loan),
-    'ຈຳນວນເງິນ': formatPrice(Number(loan.total_amount) || 0),
-    'ດອກເບ້ຍ (%)': loan.interest_rate_at_apply || '0',
-    'ໄລຍະເວລາ (ເດືອນ)': loan.loan_period || '0',
-    'ສະຖານະການຈ່າຍ': getDisbursementStatusText(loan),
-    'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
-    'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '')
-  }))
+  const excelData = filteredLoans.value.map(loan => {
+    // 🟢 ແກ້ໄຂບັກທີ 1: ຄຳນວນຍອດເງິນໃຫ້ກົງກັບໜ້າຈໍ (ລາຄາ - ເງິນດາວ)
+    const netAmount = Number(loan.total_amount || 0) - Number(loan.down_payment || 0);
+
+    return {
+      'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || '-',
+      'ເລກທີ່ສັນຍາ': getContractNumber(loan),
+      'ຊື່ລູກຄ້າ': getCustomerName(loan),
+      'ເບີໂທ': getCustomerPhone(loan),
+      'ຈຳນວນເງິນ (ກີບ)': netAmount, // 🟢 ແກ້ໄຂບັກທີ 2: ສົ່ງເປັນຕົວເລກ (Number) ລ້າໆ ໃຫ້ Excel ເອົາໄປບວກລົບກັນຕໍ່ໄດ້
+      'ດອກເບ້ຍ (%)': Number(loan.interest_rate_at_apply || 0), // ສົ່ງເປັນຕົວເລກ
+      'ໄລຍະເວລາ (ເດືອນ)': Number(loan.loan_period || 0), // ສົ່ງເປັນຕົວເລກ
+      'ສະຖານະການຈ່າຍ': getDisbursementStatusText(loan),
+      'ຜູ້ອະນຸມັດ': loan.approver?.username || '-',
+      'ວັນທີ່ອະນຸມັດ': formatDate(loan.approved_at || (loan as any).updatedAt || (loan as any).createdAt || '')
+    };
+  })
+
   const worksheet = XLSX.utils.json_to_sheet(excelData)
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Loans')

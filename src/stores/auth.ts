@@ -30,7 +30,9 @@ export const useAuthStore = defineStore('auth', {
     isAdmin: (state) => state.user?.role === 'admin',
     isStaff: (state) => state.user?.role === 'staff',
     isTokenExpired: (state) => {
-      if (!state.expiresAt) return true
+      // 🌟 ປ່ຽນເປັນ return false ໄວ້ກ່ອນຖ້າບໍ່ມີ expiresAt
+      // ເພື່ອປ້ອງກັນບໍ່ໃຫ້ Router Guard ໄປ Loop ຍິງ API checkAuth ຕະຫຼອດເວລາ
+      if (!state.expiresAt) return false
       return Date.now() >= state.expiresAt * 1000
     },
     token: (state) => {
