@@ -7,7 +7,7 @@ import {
   getProductVariants, // 🟢 ເພີ່ມ Import ໃໝ່
   createProduct,
   updateProduct,
-  toggleProductStatus,
+  toggleProductStatus as toggleProductStatusApi,
   toggleMultipleProductStatus,
   getProductTypes,
   uploadProductImage,
@@ -45,7 +45,7 @@ export const useProductStore = defineStore('product', {
           : []
       }))
     },
-    
+
     productTypeMap: (state) => {
       return state.productTypes.reduce((map, type) => {
         map[type.id] = type.type_name;
@@ -203,7 +203,7 @@ export const useProductStore = defineStore('product', {
 
     async toggleProductStatus(id: number, isActive: boolean) {
       try {
-        const updatedProduct = await toggleProductStatus(id, isActive)
+        const updatedProduct = await toggleProductStatusApi(id, isActive)
         const index = this.products.findIndex(p => p.id === id)
         if (index !== -1) {
           this.products[index] = { ...this.products[index], ...updatedProduct.product }

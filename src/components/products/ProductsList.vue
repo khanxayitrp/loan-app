@@ -227,7 +227,7 @@
                   <input v-model="form.product_name" type="text" placeholder="ປ້ອນຊື່ສິນຄ້າ"
                     class="input input-bordered w-full" :class="{ 'input-error': errors.product_name }" required />
                   <label v-if="errors.product_name" class="label text-error"><span class="label-text-alt">{{
-                      errors.product_name }}</span></label>
+                    errors.product_name }}</span></label>
                 </div>
                 <!-- <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ປະເພດສິນຄ້າ *</span></label>
@@ -810,7 +810,7 @@ const previousPage = async () => {
   if (hasPreviousPage.value) {
     selectedRows.value = []
     productStore.changePage(currentPage.value - 1)
-    
+
     // 🟢 ເພີ່ມໂຄ້ດສ່ວນນີ້: ສັ່ງໃຫ້ດຶງຂໍ້ມູນໜ້າໃໝ່ຈາກ API
     const currentShopId = shopStore.currentShop?.id;
     if (currentShopId) {
@@ -987,20 +987,27 @@ const toggleProductStatus = (product: Product) => {
 
 const confirmToggleStatus = async () => {
   if (productToToggle.value) {
-    const isDeactivating = productToToggle.value.is_active === 1;
+    const currentStatusNum = Number(productToToggle.value.is_active);
+    const isCurrentlyActive = currentStatusNum === 1;
+
     try {
-      const newStatus = isDeactivating ? 0 : 1;
-      const newStatusBool = !isDeactivating;
-      await productStore.toggleProductStatus(productToToggle.value.id, newStatusBool)
-      alert.success('ປ່ຽນສະຖານະສຳເລັດ!')
-      productToToggle.value.is_active = newStatus as any
-      await applyFilters()
+      const targetStatusInt = isCurrentlyActive ? 0 : 1;
+
+      // 🟢 แก้บรรทัดนี้: เติม === 1 เข้าไป เพื่อให้มันส่งเป็น Boolean (true/false) เข้า Store
+      await productStore.toggleProductStatus(productToToggle.value.id, targetStatusInt === 1);
+
+      alert.success('ປ່ຽນສະຖານະສຳເລັດ!');
+
+      // อัปเดต UI ทันที
+      productToToggle.value.is_active = targetStatusInt as any;
+      await applyFilters();
+
     } catch (error: any) {
-      alert.error('ເກີດຂໍ້ຜິດພາດການປ່ຽນສະຖານະ')
+      alert.error('ເກີດຂໍ້ຜິດພາດການປ່ຽນສະຖານະ');
     }
   }
-  showStatusModal.value = false
-  productToToggle.value = null
+  showStatusModal.value = false;
+  productToToggle.value = null;
 }
 
 const confirmBulkToggle = async (isActive: boolean) => {
@@ -1247,7 +1254,7 @@ const processGalleryFiles = async (files: File[]) => {
       invalidTypeCount++;
       continue;
     }
-    
+
     try {
       const reader = new FileReader()
       const base64 = await new Promise<string>((resolve, reject) => {

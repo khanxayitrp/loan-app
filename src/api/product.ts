@@ -192,20 +192,22 @@ export const getProductGallery = async (productId: number) => {
 };
 
 /**
- * เปลี่ยนสถานะสินค้า (อิงตาม Controller ที่ไม่พ่น Data กลับมา)
+ * เปลี่ยนสถานะสินค้า
  */
-export const toggleProductStatus = async (id: number, isActive: boolean) => {
+export const toggleProductStatus = async (id: number, targetStatus: boolean | number) => {
   try {
+    // 🟢 เช็คแค่ true กับ 1 ก็พอครับ
+    const finalStatus = (targetStatus === true || targetStatus === 1) ? 1 : 0;
+
     const response = await apiClient.patch(`/products/${id}`, {
-      is_active: isActive ? 1 : 0
+      is_active: finalStatus
     });
 
     const resData = response.data;
     return {
       success: resData.success ?? true,
-      message: resData.message ?? (isActive ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
-      // Controller deActivatedOneProduct ไม่ได้ส่ง data กลับมา เราจำลอง Object ให้ Store ทำงานต่อได้
-      product: resData.data || { id, is_active: isActive ? 1 : 0 }
+      message: resData.message ?? (finalStatus === 1 ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
+      product: resData.data || { id, is_active: finalStatus }
     };
   } catch (error: any) {
     const errMsg = error.response?.data?.message || 'ປ່ຽນສະຖານະມີບັນຫາ';
