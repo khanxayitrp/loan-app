@@ -341,7 +341,7 @@
                     <span class="label-text font-medium">ຈຳນວນເງິນດາວ
                       <span v-if="modalLoanForm.total_amount > 0" class="text-xs text-gray-500">
                         ຍອດຈັດ: {{ formatPrice(Math.max(0, modalLoanForm.total_amount - (modalLoanForm.down_payment ||
-                        0))) }}
+                          0))) }}
                       </span>
                     </span>
                   </label>
@@ -519,7 +519,7 @@
         </div>
 
         <div v-else-if="activeTab === 'map'" class="space-y-6">
-          <CustomerLocationMap v-if="selectedLoan?.customer_id" :customer-id="selectedLoan.customer_id"
+          <!-- <CustomerLocationMap v-if="selectedLoan?.customer_id" :customer-id="selectedLoan.customer_id"
             :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
             :can-add-location="isEditingInModal" :can-edit-location="isEditingInModal"
             :can-delete-location="isEditingInModal" :can-set-primary="isEditingInModal"
@@ -529,7 +529,22 @@
           <div v-if="!isEditingInModal && customerLocations.length === 0" class="text-center py-8 text-gray-500">
             <span class="icon-[tabler--map-pin-off] size-8 mb-2"></span>
             <p>ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງ</p>
+          </div> -->
+          <!-- 🌟 ແຈ້ງເຕືອນແບບ Non-blocking ໃຫ້ແຜນທີ່ສະແດງສະເໝີ -->
+          <div v-if="customerLocations.length === 0" class="alert alert-warning shadow-sm py-2">
+            <span class="icon-[tabler--map-pin-off] size-5"></span>
+            <span class="text-sm">ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງ.
+              <span v-if="canManageLocation">ກະລຸນາປັກໝຸດທີ່ຕັ້ງລູກຄ້າເພື່ອງ່າຍຕໍ່ການຕິດຕາມ.</span>
+            </span>
           </div>
+
+          <!-- 🌟 ແຜນທີ່ຈະຖືກສະແດງຕະຫຼອດ, ການແກ້ໄຂຂຶ້ນກັບ canManageLocation -->
+          <CustomerLocationMap v-if="selectedLoan?.customer_id" :customer-id="selectedLoan.customer_id"
+            :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
+            :can-add-location="canManageLocation" :can-edit-location="canManageLocation"
+            :can-delete-location="canManageLocation" :can-set-primary="canManageLocation"
+            @add-location="handleAddLocation" @update-location="handleUpdateLocation"
+            @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
         </div>
 
         <div class="flex justify-end gap-3 mt-6 border-t pt-6">
@@ -559,10 +574,10 @@
             <span v-if="!(isSaving || isUploadingDocuments)">ອັບໂຫຼດເອກະສານ</span>
           </button>
 
-          <button v-else-if="isEditingInModal && activeTab === 'map'" class="btn btn-success text-white"
+          <!-- <button v-else-if="isEditingInModal && activeTab === 'map'" class="btn btn-success text-white"
             @click="isEditingInModal = false">
             <span class="icon-[tabler--check] size-4 mr-1"></span> ສຳເລັດ
-          </button>
+          </button> -->
         </div>
 
       </div>
@@ -734,6 +749,11 @@ const closeModal = () => { isEditingInModal.value = false; activeTab.value = 'de
 
 const canPrintProposal = computed(() => !!selectedLoan.value?.id && !!selectedLoan.value?.customer?.first_name)
 const canPrintContract = computed(() => !!selectedContract.value && !!selectedContract.value.id)
+// 🌟 Computed Property ສຳລັບກວດສອບສິດການປັກໝຸດແຜນທີ່
+const canManageLocation = computed(() => {
+  return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create');
+});
+
 const openPrintTab = (tabName: 'loanContract') => { activeTab.value = tabName; }
 
 const sortedCurrentDocuments = computed(() => {

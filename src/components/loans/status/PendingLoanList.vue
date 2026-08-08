@@ -498,12 +498,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router'; // 🌟 1. Import ສຳລັບດຶງຄ່າຈາກ URL
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { useLoanContractStore } from '@/stores/loanContract';
 import { useAuthStore } from '@/stores/auth';
-import { usePermissionStore } from '@/stores/permission'; // 🌟 Import Permission Store
+import { usePermissionStore } from '@/stores/permission';
 import apiClient from '@/api/apiclient';
 import { alert } from '@/utils/alert';
 import { formatPrice } from '@/utils/formatters';
@@ -523,10 +524,14 @@ import LoanContractForm from '@/components/loans/form/LoanContractForm.vue';
 import DocumentModalForm from '@/components/modals/loan/pending/CheckDocumentModal.vue';
 import ApprovalTimeline from '@/components/loans/form/ApprovalTimeline.vue';
 
+// 🌟 2. ປະກາດໃຊ້ Route & Router
+const route = useRoute();
+const router = useRouter();
+
 const loanApplicationStore = useLoanApplicationStore();
 const loanContractStore = useLoanContractStore();
 const authStore = useAuthStore();
-const permissionStore = usePermissionStore(); // 🌟 ປະກາດໃຊ້ Store
+const permissionStore = usePermissionStore();
 
 const isLoading = computed(() => loanApplicationStore.isLoading);
 const currentPage = ref(1);
@@ -537,7 +542,6 @@ const dateTo = ref('');
 
 const approvalLogs = ref<any[]>([]);
 
-// (Optional) ຍັງຮັກສາ Role Check ແບບເກົ່າໄວ້ເພື່ອໃຊ້ຮ່ວມກັນກັບ Permission ໄດ້
 const currentUserLevel = computed(() => authStore.user?.staff_level || '');
 const isSalesOrOfficer = computed(() => ['sales', 'credit_officer'].includes(currentUserLevel.value));
 const isManager = computed(() => currentUserLevel.value === 'credit_manager');
@@ -571,7 +575,6 @@ const summaryDataForScore = ref<any>(null);
 const printData = ref<any>(null);
 const actionRemark = ref('');
 
-// 5. ຟັງຊັນສຳລັບຈັດການລາຍເຊັນອະນຸມັດ
 const targetApproverRoles = ['credit_head', 'approver_1', 'approver_2', 'approver_3'];
 
 const getSignedApprovers = (loan: any) => {
@@ -780,7 +783,25 @@ const viewLoanDetails = async (loan: any) => {
     alert.error("ກະລຸນາກວດສອບຂໍ້ມູນ", "ເນື່ອງຈາກ: " + (error.response?.data?.message || error.message));
   }
 }
-const closeDetailsModal = () => { showDetailsModal.value = false; selectedLoan.value = null; }
+
+// 🌟 3. ລຶບ Query ອອກຈາກ URL ເມື່ອປິດ Modal
+// const closeDetailsModal = () => {
+//   showDetailsModal.value = false;
+//   selectedLoan.value = null;
+
+//   if (route.query.openModal || route.query.search) {
+//     const query = { ...route.query };
+//     delete query.openModal;
+//     delete query.search;
+//     router.replace({ query });
+//   }
+// }
+
+// 🌟 1. นำ closeDetailsModal กลับมาเป็นแบบปกติ (ไม่ต้องยุ่งกับ URL แล้ว)
+const closeDetailsModal = () => {
+  showDetailsModal.value = false;
+  selectedLoan.value = null;
+}
 
 const openSignatureModal = (loan: any) => { loanForSignature.value = loan; showSignatureModal.value = true; };
 const verifyLoan = (loan: any) => { loanToAction.value = loan; showVerifyModal.value = true; };
@@ -952,5 +973,64 @@ const fetchData = async () => {
   } catch (e) { console.error("Failed to load pending loans", e); }
 }
 
-onMounted(() => { fetchData(); });
+// onMounted(() => {
+//   fetchData();
+
+//   // 🌟 4. ກວດສອບ URL ເພື່ອເປີດ Modal (ຮອງຮັບທັງ openModal ແລະ search)
+//   const targetId = route.query.openModal || route.query.search;
+//   if (targetId) {
+//     viewLoanDetails({ id: Number(targetId) });
+//   }
+// });
+
+// // 🌟 5. ດັກຈັບກໍລະນີຜູ້ໃຊ້ເປີດໜ້ານີ້ຢູ່ແລ້ວ ແຕ່ກົດແຈ້ງເຕືອນໃໝ່ໃນ Navbar
+// watch(() => route.query.openModal, (newId) => {
+//   if (newId) viewLoanDetails({ id: Number(newId) });
+// });
+
+// ຮອງຮັບການໃຊ້ງານເກົ່າ (ຖ້າ Navbar ຍັງສົ່ງເປັນ search)
+// watch(() => route.query.search, (newId) => {
+//   if (newId) viewLoanDetails({ id: Number(newId) });
+// });
+
+// ==========================================
+// 🌟 2. เพิ่มระบบกั้นกรอง (Filter) อัตโนมัติจาก Notification
+// ==========================================
+
+const applyNotificationFilter = (id: any) => {
+  if (!id) return;
+
+  // ค้นหาข้อมูลสินเชื่อจาก ID
+  const targetLoan = loanApplicationStore.loanApplications.find((l: any) => l.id === Number(id));
+
+  if (targetLoan && targetLoan.loan_id) {
+    // นำเลขที่สินเชื่อไปใส่ในช่องค้นหา และสั่งให้ระบบ Filter ทันที
+    searchQuery.value = targetLoan.loan_id;
+    debouncedSearch.value = targetLoan.loan_id;
+  }
+
+  // ล้าง Query ออกจาก URL เพื่อให้ URL สะอาด
+  if (route.query.filterId) {
+    const query = { ...route.query };
+    delete query.filterId;
+    router.replace({ query });
+  }
+};
+
+// 🌟 3. อัปเดต onMounted ให้รอโหลดข้อมูลเสร็จก่อน ค่อยทำงาน
+onMounted(async () => {
+  await fetchData(); // รอโหลดข้อมูลตารางให้เสร็จ 100%
+
+  // ถ้ามี URL Query ชื่อ filterId ส่งมา ให้ทำการกรองข้อมูล
+  if (route.query.filterId) {
+    applyNotificationFilter(route.query.filterId);
+  }
+});
+
+// 🌟 4. ดักจับกรณีผู้ใช้อยู่หน้านี้อยู่แล้ว แต่คลิก Notification อันใหม่
+watch(() => route.query.filterId, (newId) => {
+  if (newId) {
+    applyNotificationFilter(newId);
+  }
+});
 </script>

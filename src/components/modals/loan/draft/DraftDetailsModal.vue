@@ -342,7 +342,7 @@
                     <span class="label-text font-medium">ຈຳນວນເງິນດາວ
                       <span v-if="modalDraftForm.total_amount > 0" class="text-xs text-gray-500">
                         ຍອດຈັດ: {{ formatPrice(Math.max(0, modalDraftForm.total_amount - (modalDraftForm.down_payment ||
-                        0))) }}
+                          0))) }}
                       </span>
                     </span>
                   </label>
@@ -521,7 +521,7 @@
           </div>
         </div>
 
-        <div v-else-if="activeTab === 'map'" class="space-y-6">
+        <!-- <div v-else-if="activeTab === 'map'" class="space-y-6">
           <CustomerLocationMap v-if="selectedDraft?.customer_id" :customer-id="selectedDraft.customer_id"
             :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
             :can-add-location="isEditingInModal" :can-edit-location="isEditingInModal"
@@ -533,6 +533,23 @@
             <span class="icon-[tabler--map-pin-off] size-8 mb-2"></span>
             <p>ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງ</p>
           </div>
+        </div> -->
+        <div v-else-if="activeTab === 'map'" class="space-y-4">
+          <!-- 🌟 Non-blocking Alert Banner -->
+          <div v-if="customerLocations.length === 0" class="alert alert-warning shadow-sm py-2">
+            <span class="icon-[tabler--map-pin-off] size-5"></span>
+            <span class="text-sm">ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງເທື່ອ.
+              <span v-if="canManageLocation">ກະລຸນາປັກໝຸດທີ່ຕັ້ງລູກຄ້າເພື່ອງ່າຍຕໍ່ການຕິດຕາມ.</span>
+            </span>
+          </div>
+
+          <!-- 🌟 Map always visible, permissions handled by canManageLocation -->
+          <CustomerLocationMap v-if="selectedDraft?.customer_id" :customer-id="selectedDraft.customer_id"
+            :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
+            :can-add-location="canManageLocation" :can-edit-location="canManageLocation"
+            :can-delete-location="canManageLocation" :can-set-primary="canManageLocation"
+            @add-location="handleAddLocation" @update-location="handleUpdateLocation"
+            @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
         </div>
 
         <div class="flex justify-end gap-3 mt-6 border-t pt-6">
@@ -540,7 +557,7 @@
             {{ isEditingInModal ? 'ຍົກເລີກ' : 'ປິດ' }}
           </button>
 
-          <button
+          <!-- <button
             v-if="!isEditingInModal && (activeTab === 'details' || activeTab === 'documents' || activeTab === 'map')"
             v-show="permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create')"
             class="btn btn-primary" @click="startEditInModal">
@@ -565,7 +582,30 @@
           <button v-else-if="isEditingInModal && activeTab === 'map'" class="btn btn-success text-white"
             @click="isEditingInModal = false">
             <span class="icon-[tabler--check] size-4 mr-1"></span> ສຳເລັດ
+          </button> -->
+
+          <!-- 🌟 Removed 'map' from the activeTab condition here -->
+          <button v-if="!isEditingInModal && (activeTab === 'details' || activeTab === 'documents')"
+            v-show="permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create')"
+            class="btn btn-primary" @click="startEditInModal">
+            <span class="icon-[tabler--edit] size-4 mr-1"></span> ແກ້ໄຂ
           </button>
+
+          <button v-else-if="isEditingInModal && activeTab === 'details'" class="btn btn-success text-white"
+            @click="saveDraftFromModal"
+            :disabled="isSaving || (modalProductVariants.length > 0 && !modalSelectedVariant)">
+            <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
+            <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span>
+            <span v-if="!isSaving">ບັນທຶກການປ່ຽນແປງ</span>
+          </button>
+
+          <button v-else-if="isEditingInModal && activeTab === 'documents'" class="btn btn-success text-white"
+            @click="saveDocumentsOnly" :disabled="isUploadingDocuments">
+            <span v-if="isUploadingDocuments" class="loading loading-spinner loading-xs"></span>
+            <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span>
+            <span v-if="!isUploadingDocuments">ບັນທຶກເອກະສານ</span>
+          </button>
+
         </div>
 
       </div>
@@ -736,6 +776,12 @@ const closeModal = () => {
 
 const canPrintProposal = computed(() => !!selectedDraft.value?.id && !!selectedDraft.value?.customer?.first_name)
 const canPrintContract = computed(() => !!selectedContract.value && !!selectedContract.value.id)
+
+// 🌟 Added directly to script setup to handle Map Permissions
+const canManageLocation = computed(() => {
+  return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create');
+});
+
 const openPrintTab = (tabName: 'loanContract') => { activeTab.value = tabName; }
 
 const handleProvinceChange = async () => {
