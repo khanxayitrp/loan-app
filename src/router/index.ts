@@ -211,6 +211,19 @@ const routes: RouteRecordRaw[] = [
       pageType: 'types'
     }
   },
+  // ==========================================
+  // Protected routes (ຈັດການລະບົບ / Super Admin)
+  // ==========================================
+  {
+    path: '/admin/loan-override',
+    name: 'AdminLoanOverride',
+    component: () => import('@/views/admin/LoanOverrideView.vue'),
+    meta: {
+      requiresAuth: true,
+      // 🌟 ใช้สิทธิ์ใหม่ที่เพิ่มลงใน DB
+      permissions: ['loan_override']
+    }
+  },
 
   // ==========================================
   // Redirect Root ('/')

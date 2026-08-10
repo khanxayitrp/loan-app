@@ -82,6 +82,17 @@ export const alert = {
     });
     return result.isConfirmed;
   },
+  async prompt(title: string, htmlText: string, inputPlaceholder: string = ''): Promise<string | null> {
+    const result = await BaseSwal.fire({
+      icon: 'warning', title, html: htmlText, input: 'text', inputPlaceholder,
+      showCancelButton: true, confirmButtonText: 'ຢືນຢັນ', cancelButtonText: 'ຍົກເລີກ',
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (!value) return 'ກະລຸນາປ້ອນຂໍ້ມູນກ່ອນຢືນຢັນ!';
+      }
+    });
+    return result.isConfirmed ? result.value : null;
+  },
 
   /**
    * แสดงหน้าจอ Loading บล็อกไม่ให้ผู้ใช้กดอย่างอื่น

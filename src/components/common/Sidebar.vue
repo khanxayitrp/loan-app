@@ -125,7 +125,7 @@ const canAny = (permissions: string | string[]) => {
 const isMinified = ref(false)
 const isMobileOpen = ref(false)
 
-// 🟢 ອັບເດດ Menu Items ໃຫ້ໃຊ້ `permissions` (ເຕີມ s) ເປັນ Array
+// 🟢 ອັບເດດ Menu Items
 const menuItems = [
   {
     label: 'Dashboard',
@@ -142,7 +142,7 @@ const menuItems = [
   {
     label: 'ຈັດການຜູ້ໃຊ້ (Account)',
     icon: 'icon-[tabler--user]',
-    permissions: ['user_manage', 'user_view'], // 👈 ແມ່ຕ້ອງອະນຸຍາດໃຫ້ຄົນທີ່ view ເຂົ້າໄດ້ນຳ
+    permissions: ['user_manage', 'user_view'],
     children: [
       {
         label: 'ການຈັດການຜູ້ໃຊ້ (Manage User)',
@@ -167,7 +167,7 @@ const menuItems = [
   {
     label: 'ຄຳຂໍສິນເຊື່ອ (Loans)',
     icon: 'icon-[tabler--report-money]',
-    permissions: ['loan_view_all', 'loan_view_assigned'], // 👈 ແກ້ໃຫ້ທັງ 2 ສິດເຂົ້າກຸ່ມນີ້ໄດ້
+    permissions: ['loan_view_all', 'loan_view_assigned'],
     children: [
       {
         label: 'ຄຳຂໍສິນເຊື່ອທັງໝົດ (All Loans)',
@@ -204,7 +204,7 @@ const menuItems = [
   {
     label: 'ຮ່າງສິນເຊື່ອ (Draft Loans)',
     icon: 'icon-[tabler--apps-filled]',
-    permissions: ['loan_view_all', 'loan_view_assigned', 'loan_create'], // 👈 ແກ້ໃຫ້ທັງ 3 ສິດເຂົ້າກຸ່ມນີ້ໄດ້
+    permissions: ['loan_view_all', 'loan_view_assigned', 'loan_create'],
     children: [
       {
         label: 'ສ້າງຮ່າງຂໍສິນເຊື່ອ (Create Draft)',
@@ -250,6 +250,13 @@ const menuItems = [
     icon: 'icon-[tabler--building-store]',
     to: '/stores',
     permissions: ['partner_manage']
+  },
+  // 🌟 ເພີ່ມເມນູໃໝ່ສຳລັບ Super Admin (Override) 🌟
+  {
+    label: 'ແກ້ໄຂສິນເຊື່ອສຸກເສີນ (Override)',
+    icon: 'icon-[tabler--adjustments-alt]', // ສາມາດປ່ຽນ Icon ໄດ້ຕາມຄວາມເໝາະສົມ
+    to: '/admin/loan-override',
+    permissions: ['loan_override']
   }
 ]
 

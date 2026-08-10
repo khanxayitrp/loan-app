@@ -407,9 +407,9 @@ const userPermissionsData = computed(() => {
         full_name: user.full_name,
         username: user.username,
         role: user.role
-    },
-    permissions: rawPermissions.map((item: any) => {
-      // 🟢 กรณีดึงจาก user.features (จาก Log มี dataValues ซ้อนอยู่)
+      },
+      permissions: rawPermissions.map((item: any) => {
+        // 🟢 กรณีดึงจาก user.features (จาก Log มี dataValues ซ้อนอยู่)
         if (item.feature_name || item.dataValues?.feature_name) {
           const fData = item.dataValues || item; // ถ้ามี dataValues ให้ใช้ก้อนนั้น
           return {
@@ -554,6 +554,7 @@ const getFeatureDisplayName = (featureName: string): string => {
     'user_changepass': 'ປ່ຽນລະຫັດຜ່ານ',
     'view_admin_dashboard': 'ເບີ່ງແຜງຄວບຄຸມ Admin',
     'view_partner_dashboard': 'ເບີ່ງແຜງຄວບຄຸມ Partner',
+    'loan_override': 'ສິດທິພິເສດ (IT Support) ໃນການແກ້ໄຂຂໍ້ມູນສິນເຊື່ອສຸກເສີນຫຼັງອະນຸມັດ',
   }
 
   return displayNames[featureName] || featureName

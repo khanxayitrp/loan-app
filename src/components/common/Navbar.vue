@@ -198,7 +198,7 @@ onMounted(() => {
   // ອັບເດດຈຳນວນແຈ້ງເຕືອນທຸກໆ 1 ນາທີ
   intervalId = setInterval(() => {
     notificationStore.fetchUnreadCount()
-  }, 60000)
+  }, 900000)
 })
 
 onUnmounted(() => {
