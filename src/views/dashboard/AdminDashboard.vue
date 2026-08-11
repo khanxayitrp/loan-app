@@ -3,7 +3,6 @@
     <DashboardHeader />
 
     <main class="max-w-7xl mx-auto p-6 w-full space-y-8 relative">
-      <!-- Loading Overlay -->
       <div v-if="store.isLoading"
         class="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-3xl">
         <span class="loading loading-spinner loading-lg text-sky-500"></span>
@@ -40,6 +39,20 @@
           <TopCustomersTable />
         </div>
       </section>
+
+      <!-- 🌟 เพิ่มตารางวิเคราะห์รายเดือนใหม่ตรงนี้ 🌟 -->
+      <section class="bg-white p-8 rounded-[2rem] shadow-xl border-t-8 border-emerald-500">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-slate-800 flex items-center">
+            <span class="mr-3 p-2 bg-emerald-100 rounded-lg text-emerald-600 text-sm">📈</span>
+            ອັດຕາຄວາມສຳເລັດການປ່ອຍສິນເຊື່ອ (Monthly Conversion Rate)
+          </h3>
+        </div>
+        <MonthlyLoanComparisonTable />
+        <p class="mt-4 text-sm text-slate-500 italic">
+          * ຕາຕະລາງປຽບທຽບຍອດການຂໍສິນເຊື່ອທັງໝົດ ກັບ ຍອດທີ່ສາມາດປ່ອຍສິນເຊື່ອໄດ້ສຳເລັດ (Disbursed) ໃນແຕ່ລະເດືອນ (ຍ້ອນຫຼັງ 6 ເດືອນ).
+        </p>
+      </section>
     </main>
     <DashboardFooter />
   </div>
@@ -55,19 +68,17 @@ import TopProductsChart from '@/components/dashboard/admin/TopProductsChart.vue'
 import RepeatRateChart from '@/components/dashboard/admin/RepeatRateChart.vue'
 import MonthlyTopChart from '@/components/dashboard/admin/MonthlyTopChart.vue'
 import TopCustomersTable from '@/components/dashboard/admin/TopCustomersTable.vue'
+import MonthlyLoanComparisonTable from '@/components/dashboard/admin/MonthlyLoanComparisonTable.vue' // 🌟 นำเข้า Component
 import DashboardFooter from '@/components/dashboard/admin/DashboardFooter.vue'
 
 const store = useAdminDashboardStore()
 
 onMounted(() => {
-  store.fetchSummary() // ดึงข้อมูลเมื่อเปิดหน้าจอ
+  store.fetchSummary() 
 })
 </script>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;600;700&display=swap');
-
-.font-lao {
-  font-family: 'Noto Sans Lao', sans-serif;
-}
+.font-lao { font-family: 'Noto Sans Lao', sans-serif; }
 </style>

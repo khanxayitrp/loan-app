@@ -22,10 +22,18 @@ export interface TopCustomer {
   total: string; // e.g., "120M LAK"
 }
 
+// 🌟 เพิ่ม Interface สำหรับตารางเปรียบเทียบรายเดือน
+export interface MonthlyComparison {
+  month: string;       // e.g., "2026-08"
+  requests: number;    // จำนวนคำขอทั้งหมด
+  disbursed: number;   // จำนวนที่ปล่อยสำเร็จ
+}
+
 export interface AdminDashboardData {
   metrics: AdminMetrics;
   charts: AdminCharts;
   topCustomers: TopCustomer[];
+  monthlyComparison: MonthlyComparison[]; // 🌟 เพิ่มตัวแปรนี้เข้าไปใน Payload หลัก
 }
 
 export interface AdminDashboardResponse {

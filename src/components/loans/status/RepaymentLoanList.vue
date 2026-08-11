@@ -296,11 +296,14 @@
               </p>
             </div>
 
-            <div v-if="isEarlyPayoff" class="form-control bg-green-50 p-3 rounded-lg border border-green-200">
-              <label class="label pb-1"><span class="label-text font-medium text-green-700">ມອບສ່ວນຫຼຸດ
-                  (ກີບ)</span></label>
+            <!-- 🌟 ปลดล็อก v-if="isEarlyPayoff" ออก เพื่อให้กรอกส่วนลดได้ทั้งงวดปกติและปิดบัญชี 🌟 -->
+            <div class="form-control bg-green-50 p-3 rounded-lg border border-green-200 mt-2">
+              <label class="label pb-1"><span class="label-text font-medium text-green-700">ມອບສ່ວນຫຼຸດ (ກີບ)</span></label>
               <input type="text" :value="formatCurrencyInput(paymentForm.discount_given)" @input="handleDiscountInput"
                 class="input input-sm input-bordered w-full font-bold text-success" />
+              <p class="text-[10px] text-green-600 mt-1 leading-tight">
+                * ລະບົບຈະນຳສ່ວນຫຼຸດໄປຫັກລ້າງກັບຄ່າປັບໃໝກ່ອນ, ຖ້າເຫຼືອຈຶ່ງນຳໄປຫັກລ້າງດອກເບ້ຍ
+              </p>
             </div>
 
             <div class="form-control mt-4">

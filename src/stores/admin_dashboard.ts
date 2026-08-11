@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
 import { dashboardApi } from '@/api/dashboard';
-import type { AdminMetrics, AdminCharts, TopCustomer } from '@/types/dashboard';
+// 🌟 1. ອັບເດດ Import ໂດຍເພີ່ມ MonthlyComparison ເຂົ້າມາຈາກໄຟລ໌ types
+import type { AdminMetrics, AdminCharts, TopCustomer, MonthlyComparison } from '@/types/dashboard';
+
+// ❌ 2. ລຶບ export interface MonthlyComparison ທີ່ເຄີຍຂຽນໄວ້ຕົ້ນໄຟລ໌ອອກໄປເລີຍ
 
 export const useAdminDashboardStore = defineStore('dashboardAdmin', {
   state: () => ({
@@ -14,18 +17,31 @@ export const useAdminDashboardStore = defineStore('dashboardAdmin', {
     } as AdminCharts,
 
     topCustomers: [] as TopCustomer[],
+    
+    // 🌟 3. ໃຊ້ Type ທີ່ Import ມາໄດ້ເລີຍ
+    monthlyComparison: [] as MonthlyComparison[], 
 
     isLoading: false,
     error: null as string | null,
     lastFetched: 0 // Cache timestamp
   }),
 
+  getters: {
+    summary(state) {
+      return {
+        metrics: state.metrics,
+        charts: state.charts,
+        topCustomers: state.topCustomers,
+        monthlyComparison: state.monthlyComparison
+      };
+    }
+  },
+
   actions: {
     async fetchSummary(forceRefresh = false) {
-      const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 นาที
+      const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 ນາທີ
       const now = Date.now();
 
-      // ✅ Frontend Cache Logic
       if (!forceRefresh && this.lastFetched > 0 && (now - this.lastFetched < CACHE_DURATION_MS)) {
         return;
       }
@@ -34,7 +50,7 @@ export const useAdminDashboardStore = defineStore('dashboardAdmin', {
       this.error = null;
 
       try {
-        if (forceRefresh) await dashboardApi.refreshCache(); // ล้าง Backend Cache ก่อนถ้าโดนบังคับ
+        if (forceRefresh) await dashboardApi.refreshCache();
 
         const response = await dashboardApi.fetchAdminSummary();
         const data = response.data;
@@ -42,6 +58,7 @@ export const useAdminDashboardStore = defineStore('dashboardAdmin', {
         this.metrics = data.metrics;
         this.charts = data.charts;
         this.topCustomers = data.topCustomers;
+        this.monthlyComparison = data.monthlyComparison || [];
 
         this.lastFetched = Date.now();
       } catch (err: any) {
@@ -53,6 +70,7 @@ export const useAdminDashboardStore = defineStore('dashboardAdmin', {
 
     clearData() {
       this.lastFetched = 0;
+      this.monthlyComparison = []; 
     }
   }
 });
