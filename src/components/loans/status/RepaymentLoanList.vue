@@ -3,7 +3,12 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ລາຍການຊຳລະສິນເຊື່ອ</h1>
-        <p class="text-sm text-gray-500">ລາຍການສິນເຊື່ອທີ່ອະນຸມັດ ແລະ ມອບຮັບສິນຄ້າສຳເລັດແລ້ວ</p>
+        <p class="text-sm text-gray-500">
+          ລາຍການສິນເຊື່ອທີ່ອະນຸມັດ ແລະ ມອບຮັບສິນຄ້າສຳເລັດແລ້ວ
+          <span class="ml-1 text-primary font-medium">
+            (ທັງໝົດ {{ totalFiltered }} ລາຍການ)
+          </span>
+        </p>
       </div>
 
       <div class="flex items-center gap-2">
@@ -25,7 +30,8 @@
       class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-w-2xl bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
       <div>
         <label class="label pb-1">
-          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ</span>
+          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ
+            (ໃນລາຍການທີ່ໂຫຼດມາ)</span>
         </label>
         <div class="relative">
           <input v-model="searchQuery" type="text" placeholder="ຄົ້ນຫາເລກທີສັນຍາ, ຊື່, ເບີໂທ..."
@@ -41,12 +47,11 @@
         <select v-model="statusFilter" class="select select-sm select-bordered w-full">
           <option value="active">ກຳລັງຜ່ອນຊຳລະ (Active)</option>
           <option value="completed">ປິດບັນຊີແລ້ວ (Completed)</option>
-          <option value="late">ຊັກຊ້າ (Late)</option>
         </select>
       </div>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-12">
+    <div v-if="isLoading && filteredLoans.length === 0" class="flex justify-center py-12">
       <span class="loading loading-spinner text-primary"></span>
     </div>
 
@@ -65,6 +70,7 @@
           </tr>
         </thead>
         <tbody>
+          <!-- 🟢 ນຳໃຊ້ displayedLoans ສຳລັບການແບ່ງໜ້າ Local -->
           <tr v-for="loan in displayedLoans" :key="loan.id"
             class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             <td class="font-mono text-gray-600 dark:text-gray-400 text-sm">#{{ loan.loan_id || loan.id }}</td>
@@ -87,15 +93,19 @@
               </div>
             </td>
             <td>
-              <span class="badge badge-sm border-0 font-medium shadow-sm bg-indigo-600 text-white">
-                ອະນຸມັດແລ້ວ
+              <span class="badge badge-sm border-0 font-medium shadow-sm"
+                :class="loan.status === 'completed' || loan.status === 'closed_early' ? 'bg-gray-600 text-white' : 'bg-indigo-600 text-white'">
+                {{ loan.status === 'completed' || loan.status === 'closed_early' ? 'ປິດບັນຊີແລ້ວ' : 'ກຳລັງຜ່ອນ' }}
               </span>
             </td>
 
             <td>
               <div class="flex flex-col items-center justify-center gap-1.5">
-                <button class="btn btn-sm btn-primary w-full" @click="openRepaymentHub(loan)">
-                  <span class="icon-[tabler--wallet] size-4 mr-1"></span> ຈັດການຊຳລະ
+                <button class="btn btn-sm w-full"
+                  :class="loan.status === 'completed' || loan.status === 'closed_early' ? 'btn-neutral' : 'btn-primary'"
+                  @click="openRepaymentHub(loan)">
+                  <span class="icon-[tabler--wallet] size-4 mr-1"></span>
+                  {{ loan.status === 'completed' || loan.status === 'closed_early' ? 'ເບິ່ງປະຫວັດ' : 'ຈັດການຊຳລະ' }}
                 </button>
                 <div v-if="!hasApprovedDelivery(loan)"
                   class="text-[10px] font-medium text-warning flex items-center gap-1 bg-warning/10 px-2 py-0.5 rounded w-full justify-center">
@@ -104,7 +114,7 @@
               </div>
             </td>
           </tr>
-          <tr v-if="!displayedLoans.length">
+          <tr v-if="!filteredLoans.length">
             <td colspan="7" class="text-center py-12 text-gray-400">
               <div class="flex flex-col items-center">
                 <span class="icon-[tabler--file-search] size-12 mb-2 opacity-50"></span>
@@ -116,31 +126,39 @@
       </table>
     </div>
 
-    <div v-if="!isLoading && totalLoans > 0"
+    <!-- 🟢 ລະບົບແບ່ງໜ້າ Local -->
+    <div v-if="!isLoading && totalFiltered > 0"
       class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
       <div class="text-gray-500">
-        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalLoans }} ລາຍການ
+        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
       </div>
 
       <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered">
+        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
           <option :value="10">10 ຕໍ່ໜ້າ</option>
           <option :value="25">25 ຕໍ່ໜ້າ</option>
           <option :value="50">50 ຕໍ່ໜ້າ</option>
         </select>
 
-        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">
-          ກ່ອນໜ້າ
-        </button>
-
-        <span class="px-2">
-          ໜ້າ {{ currentPage }} / {{ totalPages }}
-        </span>
-
-        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">
-          ຖັດໄປ
-        </button>
+        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
+        <span class="px-2 font-medium">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
+        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
       </div>
+    </div>
+
+    <!-- 🟢 ປຸ່ມ Load More -->
+    <div v-if="!isLoading"
+      class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed dark:border-gray-700">
+      <button v-if="loanAppStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs" @click="loadMore"
+        :disabled="loanAppStore.isLoadingMore">
+        <span v-if="loanAppStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
+        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
+        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
+      </button>
+
+      <p v-else class="text-sm text-gray-400 italic">
+        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດແລ້ວ)
+      </p>
     </div>
 
     <teleport to="body">
@@ -296,9 +314,9 @@
               </p>
             </div>
 
-            <!-- 🌟 ปลดล็อก v-if="isEarlyPayoff" ออก เพื่อให้กรอกส่วนลดได้ทั้งงวดปกติและปิดบัญชี 🌟 -->
             <div class="form-control bg-green-50 p-3 rounded-lg border border-green-200 mt-2">
-              <label class="label pb-1"><span class="label-text font-medium text-green-700">ມອບສ່ວນຫຼຸດ (ກີບ)</span></label>
+              <label class="label pb-1"><span class="label-text font-medium text-green-700">ມອບສ່ວນຫຼຸດ
+                  (ກີບ)</span></label>
               <input type="text" :value="formatCurrencyInput(paymentForm.discount_given)" @input="handleDiscountInput"
                 class="input input-sm input-bordered w-full font-bold text-success" />
               <p class="text-[10px] text-green-600 mt-1 leading-tight">
@@ -411,11 +429,10 @@
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div
           class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-lg mx-auto relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" @click="showReceiptModal = false">
-            <span class="icon-[tabler--x] size-5"></span>
-          </button>
+          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
+            @click="showReceiptModal = false">✕</button>
 
-          <h3 class="font-bold text-xl mb-4 border-b pb-4 flex items-center gap-2 text-primary">
+          <h3 class="font-bold text-xl mb-4 border-b pb-2 flex items-center gap-2 text-primary">
             <span class="icon-[tabler--receipt] size-6"></span> ປະຫວັດການຊຳລະເງິນ
           </h3>
 
@@ -425,55 +442,46 @@
 
           <div v-else-if="receiptTransactions.length > 0" class="space-y-4">
             <div v-for="(tx, index) in receiptTransactions" :key="index"
-              class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
-              <div class="flex justify-between items-center mb-3 border-b pb-3">
-                <span class="text-xs text-gray-500 font-medium">ໃບບິນ: {{ tx.id }}</span>
-                <span class="badge badge-success border-0 text-white badge-sm shadow-sm">ສຳເລັດ</span>
+              class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border">
+              <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <span class="text-xs text-gray-500 font-medium">ໃບບິນອ້າງອີງ: {{ tx.id }}</span>
+                <span class="badge badge-success text-white badge-sm border-0">ສຳເລັດ</span>
               </div>
 
               <div class="grid grid-cols-2 gap-y-2 text-sm">
-
-                <div class="text-gray-500">ປະເພດການຊຳລະ:</div>
+                <div class="text-gray-500">ປະເພດ / ງວດທີ:</div>
                 <div class="font-bold text-right text-indigo-600">
                   <span v-if="tx.transaction_type === 'closing'" class="text-error">ປິດບັນຊີ (Payoff)</span>
                   <span v-else-if="tx.schedule?.installment_no">ງວດທີ {{ tx.schedule.installment_no }}</span>
-                  <span v-else>ຊຳລະຄ່າງວດ</span>
+                  <span v-else>ຊຳລະທົ່ວໄປ</span>
                 </div>
 
                 <div class="text-gray-500">ວັນທີຊຳລະ:</div>
                 <div class="font-medium text-right">{{ formatDate(tx.paid_at || tx.createdAt) }}</div>
 
-                <div class="text-gray-500 mt-1">ຍອດເງິນທີ່ຈ່າຍລວມ:</div>
-                <div class="font-bold text-right text-primary text-lg">{{ formatPrice(tx.amount_paid) }} ກີບ</div>
+                <div class="text-gray-500 mt-1">ຍອດເງິນທີ່ຈ່າຍ:</div>
+                <div class="font-bold text-right text-primary text-base mt-1">{{ formatPrice(tx.amount_paid) }} ກີບ
+                </div>
 
-                <template v-if="parseAllocation(tx.remarks) as any">
-                  <div
-                    class="col-span-2 bg-white dark:bg-gray-800 rounded-lg p-3 mt-2 mb-2 border border-dashed border-gray-300 shadow-sm">
-                    <div class="text-[11px] font-bold text-gray-400 mb-2 border-b pb-1 uppercase tracking-wider">
-                      ລາຍລະອຽດການແບ່ງຕັດຍອດ:</div>
-                    <div class="flex justify-between mb-1">
-                      <span class="text-xs text-gray-600 dark:text-gray-400">ຕັດຕົ້ນທຶນ:</span>
-                      <span class="text-xs font-medium text-blue-600">
-                        {{ formatPrice(parseAllocation(tx.remarks)?.principal_paid || 0) }} ₭
-                      </span>
+                <div class="col-span-2 bg-white dark:bg-gray-800 rounded-md border p-3 my-1 shadow-sm">
+                  <div class="grid grid-cols-2 gap-y-1.5 text-xs">
+                    <div class="text-gray-500 flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> ຕົ້ນທຶນ:
                     </div>
-                    <div class="flex justify-between mb-1">
-                      <span class="text-xs text-gray-600 dark:text-gray-400">ຕັດດອກເບ້ຍ:</span>
-                      <span class="text-xs font-medium text-orange-500">
-                        {{ formatPrice(parseAllocation(tx.remarks)?.interest_paid || 0) }} ₭
-                      </span>
+                    <div class="font-medium text-right">{{ formatPrice(tx.schedule?.paid_principal || 0) }} ກີບ</div>
+
+                    <div class="text-gray-500 flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span> ດອກເບ້ຍ:
                     </div>
-                    <div v-if="(parseAllocation(tx.remarks)?.penalty_paid || 0) > 0" class="flex justify-between mb-1">
-                      <span class="text-xs text-error">ຕັດຄ່າປັບໃໝ:</span>
-                      <span class="text-xs font-bold text-error">
-                        {{ formatPrice(parseAllocation(tx.remarks)?.penalty_paid || 0) }} ₭
-                      </span>
+                    <div class="font-medium text-right">{{ formatPrice(tx.schedule?.paid_interest || 0) }} ກີບ</div>
+
+                    <div class="text-gray-500 flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> ຄ່າປັບໃໝ:
                     </div>
-                    <div v-if="parseAllocation(tx.remarks)?.note" class="mt-2 pt-2 border-t text-[11px] text-gray-500">
-                      <span class="font-semibold">ໝາຍເຫດ:</span> {{ parseAllocation(tx.remarks)?.note }}
+                    <div class="font-medium text-right text-error">{{ formatPrice(tx.schedule?.paid_penalty || 0) }} ກີບ
                     </div>
                   </div>
-                </template>
+                </div>
 
                 <div class="text-gray-500">ຊ່ອງທາງ:</div>
                 <div class="font-medium text-right">
@@ -482,55 +490,52 @@
 
                 <div class="text-gray-500">ຜູ້ຮັບເງິນ:</div>
                 <div class="font-medium text-right">{{ tx.recorded_by_user?.full_name || tx.recorded_by_user?.username
-                  || 'ລະບົບ' }}
-                </div>
+                  || 'ລະບົບ' }}</div>
               </div>
 
               <div v-if="tx.proof_url" class="mt-4 pt-3 border-t text-center">
-                <a :href="tx.proof_url" target="_blank" class="btn btn-sm btn-outline btn-info w-full shadow-sm">
+                <a :href="tx.proof_url" target="_blank" class="btn btn-sm btn-outline btn-info w-full">
                   <span class="icon-[tabler--photo] size-4 mr-1"></span> ເບິ່ງຮູບສະລິບໂອນເງິນ
                 </a>
               </div>
             </div>
           </div>
 
-          <div v-else class="text-center py-12 text-gray-400">
-            <div class="flex flex-col items-center">
-              <span class="icon-[tabler--file-off] size-12 mb-2 opacity-50"></span>
-              <span>ບໍ່ພົບຂໍ້ມູນປະຫວັດການຊຳລະເງິນສຳລັບສັນຍານີ້.</span>
-            </div>
+          <div v-else class="text-center py-8 text-gray-500">
+            ບໍ່ພົບຂໍ້ມູນປະຫວັດການຊຳລະເງິນສຳລັບສັນຍານີ້.
           </div>
 
-          <div class="mt-6 border-t pt-4">
+          <div class="modal-action mt-6">
             <button class="btn btn-secondary w-full" @click="showReceiptModal = false">ປິດໜ້າຈໍ</button>
           </div>
         </div>
       </div>
     </teleport>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, toRaw, watch } from 'vue'
+import { ref, reactive, computed, onMounted, toRaw, watch, onUnmounted } from 'vue'
 import { formatPrice } from '@/utils/formatters'
 import { alert } from '@/utils/alert'
 import apiClient from '@/api/apiclient'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
-import { usePermissionStore } from '@/stores/permission' // 🌟 1. Import Permission Store
+import { usePermissionStore } from '@/stores/permission'
 import type { LoanApplication } from '@/types/loanApplication'
-import { LoanApplicationStatus } from '@/types/loanApplication';
+import { storeToRefs } from 'pinia'
 
 const loanAppStore = useLoanApplicationStore()
-const permissionStore = usePermissionStore() // 🌟 2. ປະກາດໃຊ້ Store
+const permissionStore = usePermissionStore()
+const { loanApplications, isLoading } = storeToRefs(loanAppStore)
 
-const isLoading = computed(() => loanAppStore.isLoading)
 const isScheduleLoading = ref(false)
 const isProcessing = ref(false)
+
 const searchQuery = ref('')
-const statusFilter = ref('active')
-const currentSchedules = ref<any[]>([])
+const statusFilter = ref('active') // Default to active (disbursed)
 
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -543,12 +548,12 @@ const selectedLoan = ref<LoanApplication | null>(null)
 const selectedSchedule = ref<any | null>(null)
 const isEarlyPayoff = ref(false)
 const slipInput = ref<HTMLInputElement | null>(null);
+const currentSchedules = ref<any[]>([])
 
 const showReceiptModal = ref(false);
 const isReceiptLoading = ref(false);
 const receiptTransactions = ref<any[]>([]);
 
-// 🌟 3. Computed Property ສຳລັບກວດສອບສິດການຊຳລະເງິນ (RBAC)
 const canManagePayment = computed(() => {
   return permissionStore.hasPermission('payment_create') || permissionStore.hasPermission('loan_edit');
 });
@@ -589,10 +594,6 @@ const getCustomerName = (loan: LoanApplication) => {
   return `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.trim() || 'ບໍ່ມີຊື່';
 }
 
-const getCustomerPhone = (loan: LoanApplication) => {
-  return loan.customer?.phone || '-';
-}
-
 const getContractNumber = (loan: any): string => {
   if (loan && loan.loan_contracts && loan.loan_contracts.length > 0) {
     return loan.loan_contracts[0].loan_contract_number || '-';
@@ -612,8 +613,7 @@ const parseAllocation = (remarks: string | null) => {
         note: parsed.note || ''
       };
     }
-  } catch (e) {
-  }
+  } catch (e) { }
   return null;
 }
 
@@ -697,17 +697,30 @@ const debounceSearch = () => {
     clearTimeout(debounceTimer)
   }
   debounceTimer = setTimeout(() => {
-    debouncedSearch.value = searchQuery.value
-    currentPage.value = 1
+    debouncedSearch.value = searchQuery.value;
+    resetPage();
   }, 300)
 }
 
-const filteredLoans = computed(() => {
-  let loans = loanAppStore.loanApplications || [];
-  loans = loans.filter((loan: any) => loan.status === 'disbursed' || loan.status === 'active');
+const resetPage = () => {
+  currentPage.value = 1;
+};
 
+// 🌟 Local Filtering
+const filteredLoans = computed(() => {
+  let loans = loanApplications.value || [];
+
+  // 1. กรองตามสถานะ
+  if (statusFilter.value === 'completed') {
+    loans = loans.filter((loan: any) => loan.status === 'completed' || loan.status === 'closed_early');
+  } else {
+    // Default to active (disbursed)
+    loans = loans.filter((loan: any) => loan.status === 'disbursed' || loan.status === 'active');
+  }
+
+  // 2. ค้นหาแบบ Text
   if (debouncedSearch.value) {
-    const q = debouncedSearch.value.toLowerCase();
+    const q = debouncedSearch.value.toLowerCase().trim();
     loans = loans.filter((loan: any) =>
       getCustomerName(loan).toLowerCase().includes(q) ||
       (loan.customer?.phone || '').includes(q) ||
@@ -719,30 +732,21 @@ const filteredLoans = computed(() => {
   return loans;
 });
 
+// 🌟 Local Pagination Computed Properties
 const displayedLoans = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return filteredLoans.value.slice(start, end);
+  return filteredLoans.value.slice(start, start + pageSize.value);
 });
 
-const totalLoans = computed(() => filteredLoans.value.length);
-const totalPages = computed(() => Math.ceil(totalLoans.value / pageSize.value) || 1);
-const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1);
-const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalLoans.value));
+const totalFiltered = computed(() => filteredLoans.value.length);
+const totalPages = computed(() => Math.ceil(totalFiltered.value / pageSize.value) || 1);
+const startIndex = computed(() => totalFiltered.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1);
+const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalFiltered.value));
 const hasPreviousPage = computed(() => currentPage.value > 1);
 const hasNextPage = computed(() => currentPage.value < totalPages.value);
 
-const previousPage = () => {
-  if (hasPreviousPage.value) currentPage.value--;
-};
-
-const nextPage = () => {
-  if (hasNextPage.value) currentPage.value++;
-};
-
-watch(pageSize, () => {
-  currentPage.value = 1;
-});
+const previousPage = () => { if (hasPreviousPage.value) currentPage.value--; };
+const nextPage = () => { if (hasNextPage.value) currentPage.value++; };
 
 const summary = computed(() => {
   let totalPayable = 0;
@@ -765,7 +769,8 @@ const viewReceipt = async (schedule: any) => {
     const response = await apiClient.get(`/repayments/transactions/application/${schedule.application_id}`);
 
     if (response.data && response.data.data) {
-      receiptTransactions.value = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
+      const txData = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
+      receiptTransactions.value = [...txData];
     }
   } catch (error) {
     console.error('Failed to fetch receipt:', error);
@@ -775,15 +780,54 @@ const viewReceipt = async (schedule: any) => {
   }
 };
 
+const viewReceiptHistory = async (applicationId: number) => {
+  showReceiptModal.value = true;
+  isReceiptLoading.value = true;
+  receiptTransactions.value = [];
+
+  try {
+    const response = await apiClient.get(`/repayments/transactions/application/${applicationId}`);
+    if (response.data && response.data.data) {
+      const txData = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
+      receiptTransactions.value = [...txData];
+    }
+  } catch (error) {
+    console.error('Failed to fetch receipts:', error);
+    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບບິນໄດ້');
+  } finally {
+    isReceiptLoading.value = false;
+  }
+};
+
+// 🌟 Fetch Loans based on status Filter
 const fetchLoans = async () => {
   try {
-    await loanAppStore.fetchLoanApplications({ is_confirmed: 1, status: LoanApplicationStatus.DISBURSED, limit: 1000 });
+    let apiStatuses = ['disbursed'];
+    if (statusFilter.value === 'completed') {
+      apiStatuses = ['completed', 'closed_early'];
+    }
+
+    await loanAppStore.fetchLoanApplications({
+      is_confirmed: 1,
+      status: apiStatuses as any,
+      limit: 100, // 🟢 ดึงข้อมูลก้อนใหญ่เพื่อทำ Local Pagination
+      cursor: undefined
+    });
   } catch (error: any) {
     alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້', error.message);
   }
 }
 
-// 🌟 ແກ້ໄຂບັກການ Export (CSV) ໃຊ້ filteredLoans ແລະ ຄຳນວນຍອດເງິນໃຫ້ກົງກັບໜ້າຈໍ
+// Watch statusFilter to re-fetch relevant data
+watch(statusFilter, () => {
+  resetPage();
+  fetchLoans();
+});
+
+const loadMore = async () => {
+  await loanAppStore.loadMoreLoanApplications();
+}
+
 const exportToCSV = () => {
   if (!filteredLoans.value.length) {
     alert.warning('ບໍ່ມີຂໍ້ມູນ', 'ບໍ່ມີຂໍ້ມູນສຳລັບ Export');
@@ -795,10 +839,10 @@ const exportToCSV = () => {
       'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || loan.id || '-',
       'ເລກທີ່ສັນຍາ': getContractNumber(loan),
       'ຊື່ລູກຄ້າ': getCustomerName(loan),
-      'ເບີໂທ': getCustomerPhone(loan),
+      'ເບີໂທ': loan.customer?.phone || '-',
       'ຍອດຈັດສິນເຊື່ອ': formatPrice(netAmount),
       'ຄ່າຜ່ອນ/ງວດ': formatPrice(Number(loan.monthly_pay) || 0),
-      'ສະຖານະ': loan.status === 'disbursed' ? 'ອະນຸມັດແລ້ວ' : loan.status,
+      'ສະຖານະ': loan.status === 'completed' || loan.status === 'closed_early' ? 'ປິດບັນຊີແລ້ວ' : 'ກຳລັງຜ່ອນ',
       'ມອບຮັບສິນຄ້າແລ້ວ': hasApprovedDelivery(loan) ? 'ແມ່ນ' : 'ຍັງບໍ່ມອບຮັບ'
     };
   });
@@ -810,7 +854,6 @@ const exportToCSV = () => {
   link.click();
 }
 
-// 🌟 ແກ້ໄຂບັກການ Export (Excel) ສົ່ງເປັນ Number ໃຫ້ Excel ໄປບວກລົບກັນໄດ້
 const exportToExcel = () => {
   if (!filteredLoans.value.length) {
     alert.warning('ບໍ່ມີຂໍ້ມູນ', 'ບໍ່ມີຂໍ້ມູນສຳລັບ Export');
@@ -822,10 +865,10 @@ const exportToExcel = () => {
       'ເລກທີ່ສິນເຊື່ອ': loan.loan_id || loan.id || '-',
       'ເລກທີ່ສັນຍາ': getContractNumber(loan),
       'ຊື່ລູກຄ້າ': getCustomerName(loan),
-      'ເບີໂທ': getCustomerPhone(loan),
-      'ຍອດຈັດສິນເຊື່ອ (ກີບ)': netAmount, // ສົ່ງເປັນ Number ລ້າໆ
-      'ຄ່າຜ່ອນ/ງວດ (ກີບ)': Number(loan.monthly_pay) || 0, // ສົ່ງເປັນ Number ລ້າໆ
-      'ສະຖານະ': loan.status === 'disbursed' ? 'ອະນຸມັດແລ້ວ' : loan.status,
+      'ເບີໂທ': loan.customer?.phone || '-',
+      'ຍອດຈັດສິນເຊື່ອ (ກີບ)': netAmount,
+      'ຄ່າຜ່ອນ/ງວດ (ກີບ)': Number(loan.monthly_pay) || 0,
+      'ສະຖານະ': loan.status === 'completed' || loan.status === 'closed_early' ? 'ປິດບັນຊີແລ້ວ' : 'ກຳລັງຜ່ອນ',
       'ມອບຮັບສິນຄ້າແລ້ວ': hasApprovedDelivery(loan) ? 'ແມ່ນ' : 'ຍັງບໍ່ມອບຮັບ'
     };
   });
@@ -845,8 +888,24 @@ const openRepaymentHub = async (loan: LoanApplication) => {
 
   try {
     const res = await loanAppStore.fetchRepaymentSchedule(loan.id);
-    const data = res?.data || res || [];
-    currentSchedules.value = Array.isArray(data) ? data : [];
+
+    // 🌟 ดักจับทุกกรณีที่ API อาจจะส่งมา
+    let rawData = [];
+    if (Array.isArray(res)) {
+      rawData = res;
+    } else if (res?.data && Array.isArray(res.data)) {
+      rawData = res.data;
+    } else if (res?.data?.data && Array.isArray(res.data.data)) {
+      rawData = res.data.data;
+    } else if (typeof res === 'string') {
+      try {
+        const parsed = JSON.parse(res);
+        rawData = Array.isArray(parsed) ? parsed : (parsed.data || []);
+      } catch (e) { }
+    }
+
+    // 🌟 บังคับ Clone ข้อมูลใหม่เพื่อให้ Vue กระตุ้นการ Render
+    currentSchedules.value = [...rawData];
   } catch (error: any) {
     alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຕາຕະລາງການຜ່ອນຊຳລະໄດ້');
     currentSchedules.value = [];
@@ -862,7 +921,7 @@ const closeRepaymentHub = () => {
 }
 
 const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
-  if (!canManagePayment.value) return; // 🌟 ປ້ອງກັນໄວ້ອີກຊັ້ນ
+  if (!canManagePayment.value) return;
 
   isEarlyPayoff.value = earlyPayoff;
   selectedSchedule.value = schedule;
@@ -923,7 +982,7 @@ const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
 }
 
 const submitPayment = async () => {
-  if (!canManagePayment.value) return; // 🌟 ປ້ອງກັນໄວ້ອີກຊັ້ນ
+  if (!canManagePayment.value) return;
 
   if (paymentForm.payment_method === 'transfer' && !paymentForm.slip_file) {
     alert.error('ກະລຸນາແນບຮູບຫຼັກຖານການໂອນເງິນ (Slip)');
@@ -989,22 +1048,7 @@ const canPaySchedule = (scheduleIndex: number) => {
   return previousSchedule && previousSchedule.payment_status === 'paid';
 }
 
-const viewReceiptHistory = async (applicationId: number) => {
-  showReceiptModal.value = true;
-  isReceiptLoading.value = true;
-  receiptTransactions.value = [];
-
-  try {
-    const response = await apiClient.get(`/repayments/transactions/application/${applicationId}`);
-
-    if (response.data && response.data.data) {
-      receiptTransactions.value = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
-    }
-  } catch (error) {
-    console.error('Failed to fetch receipts:', error);
-    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບບິນໄດ້');
-  } finally {
-    isReceiptLoading.value = false;
-  }
-};
+onUnmounted(() => {
+  loanAppStore.resetFilters();
+});
 </script>

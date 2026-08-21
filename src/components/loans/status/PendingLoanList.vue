@@ -3,7 +3,12 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ສິນເຊື່ອລໍຖ້າການອະນຸມັດ</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການຄຳຂໍສິນເຊື່ອທີ່ລໍຖ້າການອະນຸມັດ</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          ຈັດການຄຳຂໍສິນເຊື່ອທີ່ລໍຖ້າການອະນຸມັດ
+          <span class="ml-1 text-primary font-medium">
+            (ທັງໝົດ {{ totalFiltered }} ລາຍການ)
+          </span>
+        </p>
       </div>
 
       <div class="flex gap-2">
@@ -13,6 +18,9 @@
         </button>
 
         <div class="flex items-center gap-2">
+          <button @click="fetchData" class="btn btn-outline btn-sm">
+            <span class="icon-[tabler--refresh] size-4 mr-1"></span> ໂຫຼດຂໍ້ມູນໃໝ່
+          </button>
           <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap"
             :disabled="isLoading || filteredLoans.length === 0">
             <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
@@ -28,18 +36,21 @@
     <div
       class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
       <div>
-        <label class="label pb-1"><span
-            class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ</span></label>
+        <label class="label pb-1">
+          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ (ຊື່, ເບີໂທ,
+            ເລກທີ່...)</span>
+        </label>
         <div class="relative">
-          <input v-model="searchQuery" type="text" placeholder="ຊື່ລູກຄ້າ, ເບີໂທ, ເລກທີ່..."
+          <input v-model="searchQuery" type="text" placeholder="ຄົ້ນຫາຂໍ້ມູນໃນໜ້າຈໍ..."
             class="input input-sm input-bordered w-full pl-9" @input="debounceSearch" />
           <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></span>
         </div>
       </div>
 
       <div>
-        <label class="label pb-1"><span
-            class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ວັນທີ່ສ້າງ</span></label>
+        <label class="label pb-1">
+          <span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ວັນທີ່ສ້າງ</span>
+        </label>
         <div class="flex gap-2">
           <input v-model="dateFrom" type="date" class="input input-sm input-bordered w-full"
             @change="applyDateFilter" />
@@ -48,8 +59,9 @@
       </div>
     </div>
 
-    <div v-if="isLoading" class="text-center py-12">
+    <div v-if="isLoading && loanApplicationStore.loanApplications.length === 0" class="text-center py-12">
       <div class="loading loading-spinner text-primary"></div>
+      <p class="text-gray-500 mt-2">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
     </div>
 
     <div v-else
@@ -70,6 +82,7 @@
           </tr>
         </thead>
         <tbody>
+          <!-- 🟢 ປ່ຽນມານຳໃຊ້ displayedLoans ສຳລັບ Client-Side Pagination -->
           <tr v-for="loan in displayedLoans" :key="loan.id"
             class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             <td class="font-mono text-gray-600 dark:text-gray-400 text-sm">{{ loan.loan_id }}</td>
@@ -155,21 +168,6 @@
                 <template
                   v-if="permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve')">
 
-                  <!-- <div v-if="hasContract(loan)" class="tooltip tooltip-top" data-tip="ຈັດການລາຍເຊັນເອກະສານ"
-                    title="ຈັດການລາຍເຊັນເອກະສານ (ລູກຄ້າ/ນາຍບ້ານ)">
-                    <button class="btn btn-square btn-ghost btn-sm text-indigo-500 hover:bg-indigo-100"
-                      @click="openSignatureModal(loan)">
-                      <span class="icon-[tabler--signature] size-5"></span>
-                    </button>
-                  </div>
-
-                  <div class="tooltip tooltip-top" data-tip="ພິມໃບມອບຮັບສິນຄ້າ" title="ພິມໃບມອບຮັບສິນຄ້າ">
-                    <button class="btn btn-square btn-ghost btn-sm text-fuchsia-600 hover:bg-fuchsia-100"
-                      @click="openDeliveryNoteModal(loan)">
-                      <span class="icon-[tabler--box-seam] size-5"></span>
-                    </button>
-                  </div> -->
-
                   <template v-if="permissionStore.hasPermission('loan_approve') && loan.credit_score">
                     <div v-if="loan.status === 'pending' || loan.status === 'verifying'" class="tooltip tooltip-top"
                       data-tip="ກວດກາ ແລະ ຢືນຢັນ" title="ກວດກາ ແລະ ຢືນຢັນ">
@@ -223,20 +221,6 @@
                     </button>
                   </div>
 
-                  <!-- <div class="tooltip tooltip-top" data-tip="ແບບຟອມ Checklist" title="ແບບຟອມ Checklist">
-                    <button class="btn btn-square btn-ghost btn-sm text-primary hover:bg-primary/10"
-                      @click="openChecklistModal(loan)">
-                      <span class="icon-[tabler--clipboard-check] size-5"></span>
-                    </button>
-                  </div>
-
-                  <div v-if="loan.credit_score" class="tooltip tooltip-top" data-tip="ພິມໃບສະຫຼຸບ" title="ພິມໃບສະຫຼຸບ">
-                    <button class="btn btn-square btn-ghost btn-sm text-gray-500 hover:text-primary hover:bg-gray-100"
-                      @click="openPrintSummary(loan)">
-                      <span class="icon-[tabler--printer] size-5"></span>
-                    </button>
-                  </div> -->
-
                 </template>
               </div>
             </td>
@@ -246,7 +230,7 @@
             <td colspan="10" class="text-center py-12 text-gray-400">
               <div class="flex flex-col items-center">
                 <span class="icon-[tabler--file-search] size-12 mb-2 opacity-50"></span>
-                <span>ບໍ່ພົບຂໍ້ມູນການຂໍສິນເຊື່ອທີ່ລໍຖ້າການອະນຸມັດ</span>
+                <span>ບໍ່ພົບຂໍ້ມູນທີ່ກົງກັບການຄົ້ນຫາ</span>
               </div>
             </td>
           </tr>
@@ -254,19 +238,39 @@
       </table>
     </div>
 
-    <div v-if="!isLoading && totalLoans > 0"
+    <!-- 🟢 ລະບົບແບ່ງໜ້າແບບ Local Pagination -->
+    <div v-if="!isLoading && totalFiltered > 0"
       class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div class="text-gray-500">ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalLoans }} ລາຍການ</div>
+      <div class="text-gray-500">
+        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
+      </div>
+
       <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered">
+        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
           <option :value="10">10 ຕໍ່ໜ້າ</option>
           <option :value="25">25 ຕໍ່ໜ້າ</option>
           <option :value="50">50 ຕໍ່ໜ້າ</option>
+          <option :value="100">100 ຕໍ່ໜ້າ</option>
         </select>
-        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
-        <span class="px-2">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
+
+        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
+        <span class="px-3 font-medium">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
+        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
       </div>
+    </div>
+
+    <!-- 🟢 ປຸ່ມ Load More ດຶງຂໍ້ມູນຈາກ Server ຖ້າຄົ້ນຫາບໍ່ເຈີ -->
+    <div v-if="!isLoading" class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed">
+      <button v-if="loanApplicationStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs"
+        @click="loadMore" :disabled="loanApplicationStore.isLoadingMore">
+        <span v-if="loanApplicationStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
+        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
+        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
+      </button>
+
+      <p v-else class="text-sm text-gray-400 italic">
+        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດແລ້ວ)
+      </p>
     </div>
 
     <ScoringGuideModal :is-open="showScoringGuideModal" @close="showScoringGuideModal = false" />
@@ -287,8 +291,8 @@
       <div v-if="showDetailsModal && selectedLoan"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div
-          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-3xl mx-auto max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
-          <div class="flex justify-between items-center mb-6 border-b pb-4">
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-3xl mx-auto max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200 flex flex-col">
+          <div class="flex justify-between items-center mb-6 border-b pb-4 shrink-0">
             <h3 class="text-lg font-bold flex items-center gap-2">
               <span class="icon-[tabler--list-details] text-primary size-6"></span> ລາຍລະອຽດສິນເຊື່ອ
             </h3>
@@ -297,7 +301,8 @@
             </button>
           </div>
 
-          <div class="space-y-4">
+          <!-- Main Content Area with Scroll -->
+          <div class="space-y-4 flex-1 overflow-y-auto pb-6 pr-2">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div><label class="text-sm font-medium text-gray-500">ເລກທີ່ສິນເຊື່ອ</label>
                 <p class="font-mono font-bold">{{ selectedLoan.loan_id }}</p>
@@ -348,14 +353,62 @@
               </div>
             </div>
 
-            <ApprovalTimeline v-if="approvalLogs.length > 0" :logs="approvalLogs" />
+            <ApprovalTimeline v-if="approvalLogs.length > 0" :logs="approvalLogs" @reply="handleReply" />
 
-            <div class="border-t pt-4"><label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
+            <div class="mt-6 border-t pt-4">
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-3">
+                <span class="icon-[tabler--message-circle] size-5 text-indigo-500"></span>
+                ເພີ່ມຄວາມຄິດເຫັນ (Comments)
+              </label>
+
+              <div v-if="replyingTo"
+                class="mb-3 p-3 bg-indigo-50 dark:bg-indigo-900/30 border-l-4 border-indigo-500 rounded-r-md flex justify-between items-start animate-in fade-in zoom-in duration-200">
+                <div>
+                  <div class="text-xs font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
+                    <span class="icon-[tabler--corner-down-right] size-3"></span>
+                    ຕອບກັບ: {{ replyingTo.user?.first_name || replyingTo.user?.full_name || 'ພະນັກງານ' }}
+                  </div>
+                  <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2 italic">
+                    "{{ replyingTo.remarks }}"
+                  </p>
+                </div>
+                <button @click="cancelReply" class="btn btn-xs btn-circle btn-ghost text-gray-500 hover:bg-indigo-100">
+                  <span class="icon-[tabler--x] size-4"></span>
+                </button>
+              </div>
+
+              <div class="flex gap-3 items-start">
+                <div class="avatar placeholder hidden sm:flex mt-1">
+                  <div class="bg-indigo-100 text-indigo-700 rounded-full w-10 border border-indigo-200">
+                    <span class="uppercase text-xs font-bold">{{ getInitials(authStore.user?.full_name ||
+                      authStore.user?.username || 'U') }}</span>
+                  </div>
+                </div>
+                <div class="flex-1 space-y-2 relative">
+                  <textarea id="comment-textarea" v-model="newComment"
+                    class="textarea textarea-bordered w-full text-base focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-800"
+                    :placeholder="replyingTo ? 'ພິມຂໍ້ຄວາມຕອບກັບ...' : 'ພິມຄວາມຄິດເຫັນຂອງທ່ານຢູ່ທີ່ນີ້ (ສາມາດພິມໄດ້ເລີຍໂດຍບໍ່ຕ້ອງປ່ຽນສະຖານະ)...'"
+                    rows="2" @keydown.enter.ctrl="submitComment"></textarea>
+
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400">Ctrl + Enter ເພື່ອສົ່ງ</span>
+                    <button class="btn btn-primary btn-sm bg-indigo-600 hover:bg-indigo-700 border-none text-white"
+                      :disabled="!newComment.trim() || isSubmittingComment" @click="submitComment">
+                      <span v-if="isSubmittingComment" class="loading loading-spinner loading-xs"></span>
+                      <span v-else class="icon-[tabler--send] size-4 mr-1"></span>
+                      ສົ່ງຄວາມຄິດເຫັນ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t mt-4 pt-4"><label class="text-sm font-medium text-gray-500">ສ້າງເມື່ອ</label>
               <p>{{ formatDate(selectedLoan.createdAt) }}</p>
             </div>
           </div>
 
-          <div class="flex flex-wrap justify-end gap-3 mt-8 border-t pt-4">
+          <div class="flex flex-wrap justify-end gap-3 mt-4 border-t pt-4 shrink-0 bg-white dark:bg-gray-800">
             <button class="btn btn-outline border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
               @click="openDocumentModal(selectedLoan)">
               <span class="icon-[tabler--files] size-4 mr-1"></span> ເອກະສານແນບ
@@ -371,7 +424,7 @@
               <span class="icon-[tabler--file-certificate] size-4 mr-1"></span> ເບິ່ງຮ່າງສັນຍາ
             </button>
 
-            <button class="btn btn-primary ml-auto md:ml-0" @click="closeDetailsModal">ປິດໜ້າຈໍ</button>
+            <button class="btn btn-neutral ml-auto md:ml-0" @click="closeDetailsModal">ປິດໜ້າຈໍ</button>
           </div>
         </div>
       </div>
@@ -497,8 +550,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router'; // 🌟 1. Import ສຳລັບດຶງຄ່າຈາກ URL
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
@@ -524,7 +577,6 @@ import LoanContractForm from '@/components/loans/form/LoanContractForm.vue';
 import DocumentModalForm from '@/components/modals/loan/pending/CheckDocumentModal.vue';
 import ApprovalTimeline from '@/components/loans/form/ApprovalTimeline.vue';
 
-// 🌟 2. ປະກາດໃຊ້ Route & Router
 const route = useRoute();
 const router = useRouter();
 
@@ -534,18 +586,23 @@ const authStore = useAuthStore();
 const permissionStore = usePermissionStore();
 
 const isLoading = computed(() => loanApplicationStore.isLoading);
-const currentPage = ref(1);
-const pageSize = ref(10);
 const searchQuery = ref('');
 const dateFrom = ref('');
 const dateTo = ref('');
 
+// 🟢 Pagination States
+const currentPage = ref(1);
+const pageSize = ref(10);
+
 const approvalLogs = ref<any[]>([]);
+const newComment = ref('');
+const replyingTo = ref<any>(null);
+const isSubmittingComment = ref(false);
 
 const currentUserLevel = computed(() => authStore.user?.staff_level || '');
 const isSalesOrOfficer = computed(() => ['sales', 'credit_officer'].includes(currentUserLevel.value));
 const isManager = computed(() => currentUserLevel.value === 'credit_manager');
-const isApproverGroup = computed(() => ['credit_manager', 'deputy_director', 'director'].includes(currentUserLevel.value));
+const isApproverGroup = computed(() => ['credit_manager', 'deputy_director', 'director', 'assistant_director'].includes(currentUserLevel.value));
 
 const showDetailsModal = ref(false);
 const showApproveModal = ref(false);
@@ -575,128 +632,204 @@ const summaryDataForScore = ref<any>(null);
 const printData = ref<any>(null);
 const actionRemark = ref('');
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+const debouncedSearch = ref('');
+
+const debounceSearch = () => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    debouncedSearch.value = searchQuery.value;
+    resetPage();
+  }, 300);
+};
+
+const resetPage = () => {
+  currentPage.value = 1;
+};
+
+const applyDateFilter = () => {
+  resetPage();
+};
+
+const filteredLoans = computed(() => {
+  let filtered = loanApplicationStore.loanApplications;
+
+  if (debouncedSearch.value) {
+    const query = debouncedSearch.value.toLowerCase().trim();
+    filtered = filtered.filter(loan =>
+      getCustomerName(loan).toLowerCase().includes(query) ||
+      getCustomerPhone(loan).includes(query) ||
+      (loan.loan_id || '').toLowerCase().includes(query)
+    );
+  }
+
+  if (dateFrom.value || dateTo.value) {
+    filtered = filtered.filter(loan => {
+      const loanDate = loan.createdAt ? new Date(loan.createdAt).toISOString().split('T')[0] : '';
+      const fromDate = dateFrom.value || '1970-01-01';
+      const toDate = dateTo.value || '9999-12-31';
+      if (!loanDate) return false;
+      return loanDate >= fromDate && loanDate <= toDate;
+    });
+  }
+
+  return filtered;
+});
+
+const displayedLoans = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredLoans.value.slice(start, start + pageSize.value);
+});
+
+const totalFiltered = computed(() => filteredLoans.value.length);
+const totalPages = computed(() => Math.ceil(totalFiltered.value / pageSize.value) || 1);
+const startIndex = computed(() => totalFiltered.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1);
+const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalFiltered.value));
+const hasPreviousPage = computed(() => currentPage.value > 1);
+const hasNextPage = computed(() => currentPage.value < totalPages.value);
+
+const previousPage = () => { if (hasPreviousPage.value) currentPage.value--; };
+const nextPage = () => { if (hasNextPage.value) currentPage.value++; };
+
+const fetchData = async () => {
+  try {
+    await loanApplicationStore.fetchLoanApplications({
+      status: [
+        LoanApplicationStatus.PENDING,
+        LoanApplicationStatus.VERIFYING,
+        LoanApplicationStatus.VERIFIED
+      ] as any,
+      is_confirmed: 1,
+      limit: 100, // 🟢 ດຶງຂໍ້ມູນມາເທື່ອລະຊຸດ
+      cursor: undefined
+    });
+  } catch (e) {
+    console.error("Failed to load pending loans", e);
+  }
+};
+
+const loadMore = async () => {
+  await loanApplicationStore.loadMoreLoanApplications();
+};
+
+const applyNotificationFilter = (id: any) => {
+  if (!id) return;
+  const targetLoan = loanApplicationStore.loanApplications.find((l: any) => l.id === Number(id));
+
+  if (targetLoan && targetLoan.loan_id) {
+    searchQuery.value = targetLoan.loan_id;
+    debouncedSearch.value = targetLoan.loan_id;
+    resetPage();
+  }
+
+  if (route.query.filterId) {
+    const query = { ...route.query };
+    delete query.filterId;
+    router.replace({ query });
+  }
+};
+
+onMounted(async () => {
+  await fetchData();
+
+  if (route.query.filterId) {
+    applyNotificationFilter(route.query.filterId);
+  }
+});
+
+watch(() => route.query.filterId, (newId) => {
+  if (newId) {
+    applyNotificationFilter(newId);
+  }
+});
+
+onUnmounted(() => {
+  loanApplicationStore.resetFilters();
+});
+
+const handleReply = (log: any) => {
+  replyingTo.value = log;
+  setTimeout(() => {
+    const commentBox = document.getElementById('comment-textarea');
+    if (commentBox) commentBox.focus();
+  }, 100);
+};
+
+const cancelReply = () => { replyingTo.value = null; };
+
+const submitComment = async () => {
+  if (!newComment.value.trim() || !selectedLoan.value) return;
+  isSubmittingComment.value = true;
+  try {
+    await apiClient.post(`/loan-application/${selectedLoan.value.id}/comments`, {
+      remarks: newComment.value.trim(),
+      reply_to_id: replyingTo.value ? replyingTo.value.id : null
+    });
+    approvalLogs.value = await loanApplicationStore.fetchApprovalLogs(selectedLoan.value.id);
+    newComment.value = ''; replyingTo.value = null; alert.success('ບັນທຶກຄວາມຄິດເຫັນສຳເລັດ');
+  } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.response?.data?.message || 'ບໍ່ສາມາດບັນທຶກຄວາມຄິດເຫັນໄດ້'); }
+  finally { isSubmittingComment.value = false; }
+};
+
+const closeDetailsModal = () => {
+  showDetailsModal.value = false; selectedLoan.value = null; newComment.value = ''; replyingTo.value = null;
+}
+
 const targetApproverRoles = ['credit_head', 'approver_1', 'approver_2', 'approver_3'];
 
 const getSignedApprovers = (loan: any) => {
   if (!loan.document_signatures || !Array.isArray(loan.document_signatures)) return [];
-  return loan.document_signatures
-    .filter((sig: any) => sig.document_type === 'contract' && sig.status === 'signed' && targetApproverRoles.includes(sig.role_type))
-    .map((sig: any) => ({
-      role: sig.role_type,
-      name: sig.user?.first_name || sig.user?.full_name || sig.user?.username || sig.signer_name || 'ຜູ້ອະນຸມັດ'
-    }));
+  return loan.document_signatures.filter((sig: any) => sig.document_type === 'contract' && sig.status === 'signed' && targetApproverRoles.includes(sig.role_type)).map((sig: any) => ({
+    role: sig.role_type, name: sig.user?.first_name || sig.user?.full_name || sig.user?.username || sig.signer_name || 'ຜູ້ອະນຸມັດ'
+  }));
 };
 
 const hasCurrentUserSigned = (loan: any) => {
   if (!loan.document_signatures || !Array.isArray(loan.document_signatures) || !authStore.user) return false;
-  return loan.document_signatures.some((sig: any) =>
-    sig.document_type === 'contract' && sig.status === 'signed' && sig.user_id === authStore.user?.id
-  );
+  return loan.document_signatures.some((sig: any) => sig.document_type === 'contract' && sig.status === 'signed' && sig.user_id === authStore.user?.id);
 };
 
-const getInitials = (name: string) => {
-  if (!name) return '?';
-  return name.substring(0, 2);
-};
+const getInitials = (name: string) => name ? name.substring(0, 2) : '?';
 
 const openDocumentModal = async (loan: any) => {
-  try {
-    loanForDocument.value = loan;
-    showDocumentModal.value = true;
-    await loanApplicationStore.fetchDocuments(loan.customer_id);
-  } catch (error: any) {
-    alert.error('ບໍ່ສາມາດໂຫຼດເອກະສານໄດ້', 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ');
-    showDocumentModal.value = false;
-  }
+  try { loanForDocument.value = loan; showDocumentModal.value = true; await loanApplicationStore.fetchDocuments(loan.customer_id); }
+  catch (error: any) { alert.error('ບໍ່ສາມາດໂຫຼດເອກະສານໄດ້', 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'); showDocumentModal.value = false; }
 };
 
 const openDeliveryNoteModal = async (loan: any) => {
   try {
     const contractRes = await loanContractStore.fetchContract(loan.id);
     const contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
-
-    if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
-      return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຮ່າງສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
-    }
+    if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຮ່າງສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
 
     const repaymentRes = await loanApplicationStore.fetchRepaymentSchedule(loan.id);
     const hasRepayments = Array.isArray(repaymentRes) ? repaymentRes.length > 0 : (repaymentRes?.data ? true : false);
-
-    if (!hasRepayments) {
-      return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຕາຕະລາງຜ່ອນຊຳລະ" ໃຫ້ສຳເລັດກ່ອນ!');
-    }
+    if (!hasRepayments) return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຕາຕະລາງຜ່ອນຊຳລະ" ໃຫ້ສຳເລັດກ່ອນ!');
 
     let summaryData = null;
-    try {
-      const res = await apiClient.get(`/checklist/summary/${loan.id}`);
-      summaryData = res.data?.data;
-    } catch (e) { }
-
+    try { const res = await apiClient.get(`/checklist/summary/${loan.id}`); summaryData = res.data?.data; } catch (e) { }
     if (!summaryData) return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ທ່ານຍັງບໍ່ໄດ້ບັນທຶກຂໍ້ມູນໃນ "ຟອມກວດສອບສິນເຊື່ອ (Checklist)" ເລີຍ!');
 
-    const errorMsg = [];
-    if (!summaryData.basic_verification || summaryData.basic_verification.status !== 'completed') errorMsg.push("- ຍັງບໍ່ໄດ້ບັນທຶກ 'ຂໍ້ມູນທົ່ວໄປ' ຫຼື ຍັງເປັນຮ່າງ");
-    if (!summaryData.call_verifications || summaryData.call_verifications.length === 0) errorMsg.push("- ຍັງບໍ່ມີປະຫວັດ 'ການໂທຢືນຢັນ'");
-    if (!summaryData.cib_check) errorMsg.push("- ຍັງບໍ່ໄດ້ບັນທຶກຜົນ 'ກວດ CIB'");
-    if (!summaryData.field_visits || summaryData.field_visits.length === 0) errorMsg.push("- ຍັງບໍ່ມີປະຫວັດ 'ລົງພື້ນທີ່ຈິງ'");
-    if (!summaryData.income_assessment) errorMsg.push("- ຍັງບໍ່ໄດ້ 'ປະເມີນລາຍຮັບ (DSR)'");
-
-    if (errorMsg.length > 0) return alert.error("ຂໍ້ມູນ Checklist ບໍ່ຄົບຖ້ວນ!", "ກະລຸນາກວດສອບ:\n" + errorMsg.join('\n'));
-
-    loanForDeliveryNote.value = loan;
-    showDeliveryNoteModal.value = true;
-  } catch (error) {
-    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດກວດສອບຂໍ້ມູນສັນຍາ ແລະ ຕາຕະລາງຜ່ອນໄດ້. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.');
-  }
+    loanForDeliveryNote.value = loan; showDeliveryNoteModal.value = true;
+  } catch (error) { alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດກວດສອບຂໍ້ມູນສັນຍາ ແລະ ຕາຕະລາງຜ່ອນໄດ້.'); }
 };
 
 const openDraftContractModal = async () => {
   if (!selectedLoan.value) return;
   try {
-    showContractModal.value = true;
-    selectedContract.value = null;
+    showContractModal.value = true; selectedContract.value = null;
     const contractRes = await loanContractStore.fetchContract(selectedLoan.value.id);
     const contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
-
-    if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) {
-      throw new Error("No Contract");
-    }
+    if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) throw new Error("No Contract");
     selectedContract.value = contractData;
-  } catch (error) {
-    showContractModal.value = false;
-    alert.error('ບໍ່ພົບຂໍ້ມູນ', 'ຍັງບໍ່ມີການສ້າງຮ່າງສັນຍາສຳລັບສິນເຊື່ອນີ້');
-  }
+  } catch (error) { showContractModal.value = false; alert.error('ບໍ່ພົບຂໍ້ມູນ', 'ຍັງບໍ່ມີການສ້າງຮ່າງສັນຍາສຳລັບສິນເຊື່ອນີ້'); }
 };
 
 const openScheduleModal = async (loan: any) => {
   try {
-    let contractData = null;
-    try {
-      const contractRes = await loanContractStore.fetchContract(loan.id);
-      contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
-      if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) throw new Error("Contract is empty");
-    } catch (e) {
-      return alert.error('ບໍ່ສາມາດເປີດຕາຕະລາງໄດ້', 'ກະລຸນາສ້າງ "ສັນຍາກູ້ຢືມ" ໃຫ້ລູກຄ້າຮັບຮູ້ເງື່ອນໄຂກ່ອນ!');
-    }
-
     const fullLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id);
-    const appPrincipal = Number(fullLoan.total_amount || 0) - Number(fullLoan.down_payment || 0);
-    const appMonthlyPay = Number(fullLoan.monthly_pay || 0);
-    const appTerm = Number(fullLoan.loan_period || 0);
-    const contractPrincipal = Number(contractData.totalAmount || contractData.total_amount || 0);
-    const contractMonthlyPay = Number(contractData.monthlyPay || contractData.monthly_pay || 0);
-    const contractTerm = Number(contractData.loanPeriod || contractData.loan_period || 0);
-
-    const isConflict = Math.abs(appPrincipal - contractPrincipal) > 10 || Math.abs(appMonthlyPay - contractMonthlyPay) > 10 || appTerm !== contractTerm;
-
-    if (isConflict) {
-      return alert.error('ຂໍ້ມູນສັນຍາບໍ່ອັບເດດ! ⚠️', 'ຂໍ້ມູນສິນເຊື່ອມີການປ່ຽນແປງຫຼັງຈາກສ້າງສັນຍາໄປແລ້ວ.\n\n👉 ກະລຸນາກົດເຂົ້າ "ລາຍລະອຽດສິນເຊື່ອ" > ແຖບ "ສັນຍາກູ້ຢືມ" > ກົດແກ້ໄຂ ແລະ ກົດ "ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍ" ກ່ອນ.');
-    }
-    loanForSchedule.value = fullLoan;
-    showScheduleModal.value = true;
-  } catch (error) {
-    alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້');
-  }
+    loanForSchedule.value = fullLoan; showScheduleModal.value = true;
+  } catch (error) { alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້'); }
 };
 
 const getStatusBadge = (status: string) => {
@@ -712,61 +845,9 @@ const getStatusBadge = (status: string) => {
   }
 }
 
-const hasContract = (loan: any): boolean => {
-  return !!(loan.loan_contracts && loan.loan_contracts.length > 0);
-};
-
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-const debouncedSearch = ref('');
-const debounceSearch = () => {
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => { debouncedSearch.value = searchQuery.value; currentPage.value = 1; }, 300);
-}
-const applyDateFilter = () => { currentPage.value = 1; }
-
-const filteredLoans = computed(() => {
-  let filtered = loanApplicationStore.loanApplications;
-  if (debouncedSearch.value) {
-    const query = debouncedSearch.value.toLowerCase();
-    filtered = filtered.filter(loan => getCustomerName(loan).toLowerCase().includes(query) || getCustomerPhone(loan).includes(query) || loan.loan_id?.toLowerCase().includes(query));
-  }
-  if (dateFrom.value || dateTo.value) {
-    filtered = filtered.filter(loan => {
-      const loanDate = loan.createdAt ? new Date(loan.createdAt).toISOString().split('T')[0] : '';
-      const fromDate = dateFrom.value || '1970-01-01';
-      const toDate = dateTo.value || '9999-12-31';
-      if (!loanDate) return false;
-      return loanDate >= fromDate && loanDate <= toDate;
-    });
-  }
-  return filtered;
-});
-
-const displayedLoans = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredLoans.value.slice(start, start + pageSize.value);
-});
-
-const totalLoans = computed(() => filteredLoans.value.length);
-const totalPages = computed(() => Math.ceil(totalLoans.value / pageSize.value) || 1);
-const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1);
-const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalLoans.value));
-const hasPreviousPage = computed(() => currentPage.value > 1);
-const hasNextPage = computed(() => currentPage.value < totalPages.value);
-const previousPage = () => { if (hasPreviousPage.value) currentPage.value--; }
-const nextPage = () => { if (hasNextPage.value) currentPage.value++; }
-watch(pageSize, () => { currentPage.value = 1; });
-
-const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return '-';
-  return new Date(dateString).toLocaleDateString('lo-LA');
-}
-
-const getCustomerName = (loan: any): string => {
-  if (!loan.customer) return '-';
-  return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim();
-}
-
+const hasContract = (loan: any): boolean => !!(loan.loan_contracts && loan.loan_contracts.length > 0);
+const formatDate = (dateString: string | undefined): string => { if (!dateString) return '-'; return new Date(dateString).toLocaleDateString('lo-LA'); }
+const getCustomerName = (loan: any): string => { if (!loan.customer) return '-'; return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim(); }
 const getCustomerPhone = (loan: any): string => loan.customer?.phone || '-';
 
 const viewLoanDetails = async (loan: any) => {
@@ -774,33 +855,10 @@ const viewLoanDetails = async (loan: any) => {
     if (loan.id) {
       const fullDetails = await loanApplicationStore.fetchLoanApplicationById(loan.id);
       selectedLoan.value = fullDetails || loan;
-    } else {
-      selectedLoan.value = loan;
-    }
+    } else { selectedLoan.value = loan; }
     approvalLogs.value = await loanApplicationStore.fetchApprovalLogs(selectedLoan.value.id);
     showDetailsModal.value = true;
-  } catch (error: any) {
-    alert.error("ກະລຸນາກວດສອບຂໍ້ມູນ", "ເນື່ອງຈາກ: " + (error.response?.data?.message || error.message));
-  }
-}
-
-// 🌟 3. ລຶບ Query ອອກຈາກ URL ເມື່ອປິດ Modal
-// const closeDetailsModal = () => {
-//   showDetailsModal.value = false;
-//   selectedLoan.value = null;
-
-//   if (route.query.openModal || route.query.search) {
-//     const query = { ...route.query };
-//     delete query.openModal;
-//     delete query.search;
-//     router.replace({ query });
-//   }
-// }
-
-// 🌟 1. นำ closeDetailsModal กลับมาเป็นแบบปกติ (ไม่ต้องยุ่งกับ URL แล้ว)
-const closeDetailsModal = () => {
-  showDetailsModal.value = false;
-  selectedLoan.value = null;
+  } catch (error: any) { alert.error("ກະລຸນາກວດສອບຂໍ້ມູນ", "ເນື່ອງຈາກ: " + (error.response?.data?.message || error.message)); }
 }
 
 const openSignatureModal = (loan: any) => { loanForSignature.value = loan; showSignatureModal.value = true; };
@@ -826,6 +884,21 @@ const openPrintSummary = async (loan: any) => {
       age = Math.abs(new Date(Date.now() - new Date(basic.verified_dob).getTime()).getUTCFullYear() - 1970);
     }
 
+    const workInfo = loan.customer?.customer_work_infos?.[0] || loan.customer?.work_info?.[0] || {};
+    const workYears = Number(basic.work_years) || Number(workInfo.duration_years) || 0;
+    const workMonths = Number(basic.work_months) || Number(workInfo.duration_months) || 0;
+
+    let formattedTenure = '';
+    if (workYears > 0 && workMonths > 0) {
+      formattedTenure = `${workYears} ປີ ${workMonths} ເດືອນ`;
+    } else if (workYears > 0) {
+      formattedTenure = `${workYears} ປີ`;
+    } else if (workMonths > 0) {
+      formattedTenure = `${workMonths} ເດືອນ`;
+    } else {
+      formattedTenure = `ບໍ່ລະບຸ`;
+    }
+
     const totalIncome = (Number(income.average_monthly_income) || 0) + (Number(income.other_verified_income) || 0);
     const totalDebt = (Number(income.existing_debt_payments) || 0) + (Number(income.proposed_installment) || 0);
     const dsrPercent = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 100;
@@ -833,19 +906,33 @@ const openPrintSummary = async (loan: any) => {
     const dp = Number(basic.verified_down_payment) || Number(loan.down_payment) || 0;
 
     printData.value = {
-      loan: loan, customerName: getCustomerName(loan), age: age, phone: getCustomerPhone(loan),
-      companyName: basic.work_company_name || loan.customer?.work_info?.[0]?.company_name || 'ບໍ່ລະບຸ',
-      jobTenure: Number(basic.work_years) || 0, totalIncome: totalIncome, totalDebt: totalDebt,
-      productName: basic.verified_product_type || loan.product?.product_name || '-', productPrice: price,
-      downPayment: dp, downPaymentPercent: (dp / price) * 100, approvedAmount: price - dp,
-      interestRate: loan.interest_rate_at_apply, interestType: loan.interest_rate_type === 'yearly' ? 'ຕໍ່ປີ' : 'ຕໍ່ເດືອນ',
-      loanPeriod: loan.loan_period, monthlyPay: Number(basic.verified_monthly_pay) || Number(loan.monthly_pay),
-      cibStatus: cib.cib_status || cib.overall_cib_status || 'no_delay', dsrPercent: dsrPercent,
-      callStatus: summaryData.call_verifications?.[0]?.call_status || 'completed', remarks: loan.remarks || cib.remark || '',
+      loan: loan,
+      customerName: getCustomerName(loan),
+      age: age,
+      phone: getCustomerPhone(loan),
+      companyName: basic.work_company_name || workInfo.company_name || 'ບໍ່ລະບຸ',
+      jobTenure: formattedTenure,
+      totalIncome: totalIncome,
+      totalDebt: totalDebt,
+      productName: basic.verified_product_type || loan.product?.product_name || '-',
+      productPrice: price,
+      downPayment: dp,
+      downPaymentPercent: (dp / price) * 100,
+      approvedAmount: price - dp,
+      interestRate: loan.interest_rate_at_apply,
+      interestType: loan.interest_rate_type === 'yearly' ? 'ຕໍ່ປີ' : 'ຕໍ່ເດືອນ',
+      loanPeriod: loan.loan_period,
+      monthlyPay: Number(basic.verified_monthly_pay) || Number(loan.monthly_pay),
+      cibStatus: cib.cib_status || cib.overall_cib_status || 'no_delay',
+      dsrPercent: dsrPercent,
+      callStatus: summaryData.call_verifications?.[0]?.call_status || 'completed',
+      remarks: loan.remarks || cib.remark || '',
       creditScore: loan.credit_score || 0
     };
     showPrintModal.value = true;
-  } catch (error) { alert.error('ເກີດຂໍ້ຜິດພາດໃນການກຽມຂໍ້ມູນພິມ'); }
+  } catch (error) {
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການກຽມຂໍ້ມູນພິມ');
+  }
 }
 
 const openCreditScoreModal = async (loan: any) => {
@@ -959,78 +1046,4 @@ const exportToExcel = () => {
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Pending Loans');
   XLSX.writeFile(workbook, `pending_loans_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
-
-const fetchData = async () => {
-  try {
-    await loanApplicationStore.fetchLoanApplications({
-      status: [
-        LoanApplicationStatus.PENDING,
-        LoanApplicationStatus.VERIFYING,
-        LoanApplicationStatus.VERIFIED
-      ] as any,
-      is_confirmed: 1, limit: 1000
-    });
-  } catch (e) { console.error("Failed to load pending loans", e); }
-}
-
-// onMounted(() => {
-//   fetchData();
-
-//   // 🌟 4. ກວດສອບ URL ເພື່ອເປີດ Modal (ຮອງຮັບທັງ openModal ແລະ search)
-//   const targetId = route.query.openModal || route.query.search;
-//   if (targetId) {
-//     viewLoanDetails({ id: Number(targetId) });
-//   }
-// });
-
-// // 🌟 5. ດັກຈັບກໍລະນີຜູ້ໃຊ້ເປີດໜ້ານີ້ຢູ່ແລ້ວ ແຕ່ກົດແຈ້ງເຕືອນໃໝ່ໃນ Navbar
-// watch(() => route.query.openModal, (newId) => {
-//   if (newId) viewLoanDetails({ id: Number(newId) });
-// });
-
-// ຮອງຮັບການໃຊ້ງານເກົ່າ (ຖ້າ Navbar ຍັງສົ່ງເປັນ search)
-// watch(() => route.query.search, (newId) => {
-//   if (newId) viewLoanDetails({ id: Number(newId) });
-// });
-
-// ==========================================
-// 🌟 2. เพิ่มระบบกั้นกรอง (Filter) อัตโนมัติจาก Notification
-// ==========================================
-
-const applyNotificationFilter = (id: any) => {
-  if (!id) return;
-
-  // ค้นหาข้อมูลสินเชื่อจาก ID
-  const targetLoan = loanApplicationStore.loanApplications.find((l: any) => l.id === Number(id));
-
-  if (targetLoan && targetLoan.loan_id) {
-    // นำเลขที่สินเชื่อไปใส่ในช่องค้นหา และสั่งให้ระบบ Filter ทันที
-    searchQuery.value = targetLoan.loan_id;
-    debouncedSearch.value = targetLoan.loan_id;
-  }
-
-  // ล้าง Query ออกจาก URL เพื่อให้ URL สะอาด
-  if (route.query.filterId) {
-    const query = { ...route.query };
-    delete query.filterId;
-    router.replace({ query });
-  }
-};
-
-// 🌟 3. อัปเดต onMounted ให้รอโหลดข้อมูลเสร็จก่อน ค่อยทำงาน
-onMounted(async () => {
-  await fetchData(); // รอโหลดข้อมูลตารางให้เสร็จ 100%
-
-  // ถ้ามี URL Query ชื่อ filterId ส่งมา ให้ทำการกรองข้อมูล
-  if (route.query.filterId) {
-    applyNotificationFilter(route.query.filterId);
-  }
-});
-
-// 🌟 4. ดักจับกรณีผู้ใช้อยู่หน้านี้อยู่แล้ว แต่คลิก Notification อันใหม่
-watch(() => route.query.filterId, (newId) => {
-  if (newId) {
-    applyNotificationFilter(newId);
-  }
-});
 </script>

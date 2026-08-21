@@ -16,19 +16,13 @@ import type {
 } from '@/types/loanApplication'
 
 /**
- * ดึงรายการ Loan Applications (ใช้ POST แทน GET เพราะ backend ใช้ body)
+ * ดึงรายการ Loan Applications (รองรับทั้ง Cursor และ Page Pagination)
  */
-
 export const fetchLoanApplications = async (
   filters: LoanApplicationFilters = {}
-): Promise<{ loans: LoanApplication[]; pagination?: PaginationMeta }> => {
+): Promise<{ loans: LoanApplication[]; pagination?: any; nextCursor?: number | null }> => {
   try {
-    console.log('[LoanApplication API] Fetching with filters:', filters)
-
-    // เรียก GET และบอก TypeScript ว่า Response จะออกมาเป็นโครงสร้าง GetAllLoanResponse
     const response = await apiClient.get<GetAllLoanResponse>('/loan-application', { params: filters })
-
-    console.log('[LoanApplication API] Fetch response:', response.data)
 
     if (response.data.success && response.data.data) {
       let loans = response.data.data
@@ -36,17 +30,31 @@ export const fetchLoanApplications = async (
         loans = Object.values(loans) as LoanApplication[]
       }
 
-      // ส่งกลับคืนไปทั้ง array ข้อมูล และ pagination
+      const paginationData = response.data.pagination || (response.data as any).data?.pagination || {};
+
+      let nextValue = null;
+
+      // 🟢 1. ຖ້າ Backend ສົ່ງ next_cursor ມາ (ລະບົບໃໝ່)
+      if (paginationData.next_cursor !== undefined && paginationData.next_cursor !== null) {
+        nextValue = paginationData.next_cursor;
+      }
+      // 🟢 2. ຖ້າ Backend ສົ່ງ page ແລະ totalPages ມາ (ລະບົບເກົ່າ ແຕ່ໃຊ້ Load More ໄດ້)
+      else if (paginationData.page !== undefined && paginationData.totalPages !== undefined) {
+        if (paginationData.page < paginationData.totalPages) {
+          nextValue = paginationData.page + 1; // ໜ້າຖັດໄປຄື page ປັດຈຸບັນ + 1
+        }
+      }
+
       return {
         loans: Array.isArray(loans) ? loans : [],
-        pagination: response.data.pagination
+        pagination: paginationData,
+        nextCursor: nextValue // ສົ່ງຄ່າໄປໃຫ້ Store
       }
     }
 
-    return { loans: [] }
+    return { loans: [], nextCursor: null, pagination: null }
 
   } catch (error: any) {
-    console.error('[LoanApplication API] Fetch failed:', error)
     throw new Error(error.response?.data?.message || 'Failed to fetch loan applications')
   }
 }

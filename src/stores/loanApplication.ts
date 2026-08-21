@@ -11,11 +11,11 @@ import {
   changeApplicationStatus,
   sentDraftApply,
   updateDraftLoanApplication,
-  createRepaymentSchedule, // 🟢 Import API ໃໝ່ທີ່ຫາກໍ່ສ້າງ
+  createRepaymentSchedule,
   fetchRepaymentSchedule,
-  fetchApprovalLogs as fetchApprovalLogsApi // 🟢 ເພີ່ມໂຕນີ້ເຂົ້າໄປ
+  fetchApprovalLogs as fetchApprovalLogsApi
 } from '@/api/loanApplication';
-import { searchCustomerByFullname, searchCustomerByPhone } from '@/api/customer';
+import { searchCustomerByPhone } from '@/api/customer';
 import {
   uploadApplicationDocument,
   uploadMultipleApplicationDocuments,
@@ -37,25 +37,18 @@ import type {
 
 export const useLoanApplicationStore = defineStore('loanApplication', {
   state: () => ({
-    // รายการ Loan Applications
     loanApplications: [] as LoanApplication[],
 
-    // ✅ เพิ่ม State สำหรับจัดการ Pagination
-    pagination: {
-      total: 0,
-      page: 1,
-      limit: 10,
-      totalPages: 1
-    },
+    // 🟢 Cursor Pagination State
+    nextCursor: null as number | null,
+    totalRecords: 0,
+    hasMoreData: true, // เอาไว้บอก UI ว่าปุ่ม Load More ควรกดได้ไหม
 
-    // Loan Application ปัจจุบัน
     currentLoanApplication: null as LoanApplication | null,
-
-    // Loading states
     isLoading: false,
     isSaving: false,
+    isLoadingMore: false, // เอาไว้แสดง Spinner ตรงปุ่ม Load More
 
-    // Filters (สำหรับใช้กับ backend)
     filters: {
       CustomerId: undefined as number | undefined,
       requesterId: undefined as number | undefined,
@@ -63,114 +56,113 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       status: undefined as LoanApplicationStatus | undefined,
       min: undefined as number | undefined,
       max: undefined as number | undefined,
-      minScore: undefined as number | undefined, // 🟢 เพิ่มตัวรับค่าคะแนน
-      maxScore: undefined as number | undefined, // 🟢 เพิ่มตัวรับค่าคะแนน
-      page: 1, // เพิ่ม page ไว้ใน filters
-      limit: 10 // เพิ่ม limit ไว้ใน filters
-    } as LoanApplicationFilters & { page?: number; limit?: number }, // อัปเดต Type ชั่วคราวถ้ายอม
+      minScore: undefined as number | undefined,
+      maxScore: undefined as number | undefined,
+      limit: 10,
+      cursor: undefined as number | undefined, // 👈 เพิ่ม cursor
+      page: 1 as number | undefined
+    } as LoanApplicationFilters,
 
-    // สถานะสำหรับเอกสาร
-    currentDocuments: [] as any[], // เอกสารของ Loan Application ปัจจุบัน
+    currentDocuments: [] as any[],
     isUploadingDocuments: false,
     documentError: null as string | null,
     customer: null as LoanCustomer | null,
-
-    // Error
     error: null as string | null
   }),
 
   getters: {
-    /**
-     * รายการที่แสดงผล
-     */
     displayedLoanApplications: (state) => state.loanApplications,
-
-    /**
-     * จำนวนทั้งหมดที่โหลดมาได้ในหน้านี้ (ไม่ใช่ทั้งหมดใน DB)
-     */
     totalApplications: (state) => state.loanApplications.length,
-
-    /**
-     * มีข้อมูลหรือไม่
-     */
     hasData: (state) => state.loanApplications.length > 0,
+    canLoadMore: (state) => state.hasMoreData && state.nextCursor !== null, // 👈 Getter เช็คว่าโหลดเพิ่มได้ไหม
 
-    /**
-     * Loan Applications แยกตามสถานะ
-     */
-    pendingApplications: (state) =>
-      state.loanApplications.filter(app => app.status === 'pending'),
-
-    verifyingApplications: (state) =>
-      state.loanApplications.filter(app => app.status === 'verifying'),
-
-    approvedApplications: (state) =>
-      state.loanApplications.filter(app => app.status === 'approved'),
-
-    rejectedApplications: (state) =>
-      state.loanApplications.filter(app => app.status === 'rejected'),
-
-    completedApplications: (state) =>
-      state.loanApplications.filter(app => app.status === 'completed')
+    pendingApplications: (state) => state.loanApplications.filter(app => app.status === 'pending'),
+    verifyingApplications: (state) => state.loanApplications.filter(app => app.status === 'verifying'),
+    approvedApplications: (state) => state.loanApplications.filter(app => app.status === 'approved'),
+    rejectedApplications: (state) => state.loanApplications.filter(app => app.status === 'rejected'),
+    completedApplications: (state) => state.loanApplications.filter(app => app.status === 'completed')
   },
 
   actions: {
     /**
-     * ดึงรายการ Loan Applications (รองรับ Pagination)
+     * 🟢 ดึงข้อมูลครั้งแรก (หรือหลังจากเปลี่ยน Filter)
+     * ข้อมูลที่ได้จะเขียนทับ (Replace) ของเดิม
      */
-    async fetchLoanApplications(customFilters: Partial<LoanApplicationFilters & { page?: number; limit?: number }> = {}) {
+    async fetchLoanApplications(customFilters: Partial<LoanApplicationFilters> = {}) {
       this.isLoading = true;
       this.error = null;
 
       try {
-        // ✅ ใช้ filters ปัจจุบัน ผสมกับที่ส่งมาใหม่
+        // 🟢 ຖ້າມີການຄົ້ນຫາໃໝ່ ໃຫ້ Reset ກັບໄປໜ້າ 1
+        if (!customFilters.page && !customFilters.cursor) {
+          this.filters.page = 1;
+          this.filters.cursor = undefined;
+        }
+
         const params = {
           ...this.filters,
           ...customFilters
         };
-
-        // อัปเดต state filters ด้วย
         this.filters = params;
 
-        console.log('[LoanApplicationStore] Fetching with params:', params);
-
-        // เรียก API ที่อัปเดตแล้ว (คืนค่าเป็น Object { loans, pagination })
         const result = await fetchLoanApplications(params);
 
-        console.log('[LoanApplicationStore] Fetched:', result.loans.length, 'records');
-
-        // ✅ เก็บข้อมูลลง State แยกระหว่าง ข้อมูล (Array) กับ Pagination
         this.loanApplications = result.loans;
 
-        if (result.pagination) {
-          this.pagination = result.pagination;
-        }
+        // ຮັບຄ່າໜ້າຖັດໄປ (ຫຼື Cursor ຖັດໄປ)
+        this.nextCursor = result.nextCursor ?? null;
+        this.totalRecords = result.pagination?.total || 0;
+
+        // ເປີດປຸ່ມ Load More ຖ້າຍັງມີໜ້າຖັດໄປ
+        this.hasMoreData = this.nextCursor !== null;
 
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Fetch failed:', error);
         this.error = error.message || 'Failed to fetch loan applications';
         this.loanApplications = [];
+        this.hasMoreData = false;
         throw error;
-
       } finally {
         this.isLoading = false;
       }
     },
 
     /**
-     * เปลี่ยนหน้า (Pagination)
+     * 🟢 โหลดข้อมูลหน้าถัดไป (Load More)
+     * ข้อมูลที่ได้จะนำไปต่อท้าย (Append) Array เดิม
      */
-    async changePage(page: number) {
-      if (page >= 1 && page <= this.pagination.totalPages) {
-        await this.fetchLoanApplications({ page });
+    async loadMoreLoanApplications() {
+      if (!this.canLoadMore || this.isLoadingMore) return;
+
+      this.isLoadingMore = true;
+      try {
+        const params: LoanApplicationFilters = {
+          ...this.filters,
+          page: this.nextCursor ?? undefined,   // 🟢 ປ່ຽນ null ໃຫ້ເປັນ undefined
+          cursor: this.nextCursor ?? undefined  // 🟢 ປ່ຽນ null ໃຫ້ເປັນ undefined
+        };
+
+        const result = await fetchLoanApplications(params);
+
+        if (result.loans.length > 0) {
+          this.loanApplications = [...this.loanApplications, ...result.loans];
+        }
+
+        this.nextCursor = result.nextCursor ?? null;
+        this.hasMoreData = this.nextCursor !== null;
+
+      } catch (error: any) {
+        this.error = error.message || 'Failed to load more loan applications';
+        throw error;
+      } finally {
+        this.isLoadingMore = false;
       }
     },
 
     /**
-     * เปลี่ยนจำนวนรายการต่อหน้า
+     * เปลี่ยนจำนวนรายการต่อหน้า (Limit)
      */
     async changeLimit(limit: number) {
-      await this.fetchLoanApplications({ limit, page: 1 }); // รีเซ็ตไปหน้า 1 เสมอเมื่อเปลี่ยนลิมิต
+      await this.fetchLoanApplications({ limit, cursor: undefined }); // รีเซ็ต cursor กลับเป็น undefined
     },
 
     /**
@@ -179,21 +171,14 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async fetchLoanApplicationById(id: number) {
       this.isLoading = true
       this.error = null
-
       try {
         const loanApplication = await fetchLoanApplicationById(id)
-
-        console.log('[LoanApplicationStore] Fetched by ID:', loanApplication)
-
         this.currentLoanApplication = loanApplication
         return loanApplication
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Fetch by ID failed:', error)
         this.error = error.message || 'Failed to fetch loan application'
         this.currentLoanApplication = null
         throw error
-
       } finally {
         this.isLoading = false
       }
@@ -205,21 +190,14 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async fetchLoanApplicationByLoanId(loanId: string) {
       this.isLoading = true
       this.error = null
-
       try {
         const loanApplication = await fetchLoanApplicationByLoanId(loanId)
-
-        console.log('[LoanApplicationStore] Fetched by Loan ID:', loanApplication)
-
         this.currentLoanApplication = loanApplication
         return loanApplication
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Fetch by Loan ID failed:', error)
         this.error = error.message || 'Failed to fetch loan application'
         this.currentLoanApplication = null
         throw error
-
       } finally {
         this.isLoading = false
       }
@@ -231,22 +209,13 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async createLoanApplication(data: CreateLoanApplicationDto) {
       this.isSaving = true
       this.error = null
-
       try {
         const newApplication = await createLoanApplication(data)
-
-        console.log('[LoanApplicationStore] Created:', newApplication)
-
-        // เพิ่มเข้าไปใน list
         this.loanApplications.unshift(newApplication)
-
         return newApplication
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Create failed:', error)
         this.error = error.message || 'Failed to create loan application'
         throw error
-
       } finally {
         this.isSaving = false
       }
@@ -261,18 +230,10 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
 
       try {
         const result = await createLoanApplicationWithCustomer(data)
-
-        console.log('[LoanApplicationStore] Created with customer:', result)
-
-        // ✅ ตรวจสอบว่ามีข้อมูลหรือไม่
         if (!result.data || !result.data.application_id) {
-          console.error('❌ Invalid response structure:', result)
           throw new Error('ไม่พบข้อมูล application ในการตอบกลับจาก server')
         }
 
-        // ... (imports)
-
-        // ✅ Map ข้อมูลจาก response ให้ตรงกับ LoanApplication Type
         const mappedApplication: LoanApplication = {
           id: result.data.application_id,
           customer_id: result.data.customer_id,
@@ -292,39 +253,22 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
           remarks: result.data.remarks || undefined,
           created_at: result.data.created_at || undefined,
           updated_at: result.data.updated_at || undefined,
-
-          // ✅ Relations
           customer: result.data.customer,
           product: result.data.product,
           requester: result.data.requester,
           approver: result.data.approver
         }
 
-        console.log('✅ [LoanApplicationStore] Mapped application:', mappedApplication)
-        // ... (rest of the file)
-
-        // ✅ ตั้งค่า currentLoanApplication
         this.currentLoanApplication = mappedApplication
-
-        // ✅ เพิ่มเข้า list
         this.loanApplications.unshift(mappedApplication)
-
-        console.log('✅ [LoanApplicationStore] Current loan application set:', {
-          id: this.currentLoanApplication.id,
-          loan_id: this.currentLoanApplication.loan_id,
-          customer_id: this.currentLoanApplication.customer_id
-        })
 
         return {
           ...result,
-          application: mappedApplication // ✅ ส่ง mapped application กลับไปด้วย
+          application: mappedApplication
         }
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Create with customer failed:', error)
         this.error = error.message || 'Failed to create loan application with customer'
         throw error
-
       } finally {
         this.isSaving = false
       }
@@ -336,30 +280,19 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async updateLoanApplication(id: number, data: UpdateLoanApplicationDto) {
       this.isSaving = true
       this.error = null
-
       try {
         const updated = await updateLoanApplication(id, data)
-
-        console.log('[LoanApplicationStore] Updated:', updated)
-
-        // อัปเดตใน list
         const index = this.loanApplications.findIndex(app => app.id === id)
         if (index !== -1) {
           this.loanApplications[index] = updated
         }
-
-        // อัปเดต current ถ้าเป็นตัวเดียวกัน
         if (this.currentLoanApplication?.id === id) {
           this.currentLoanApplication = updated
         }
-
         return updated
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Update failed:', error)
         this.error = error.message || 'Failed to update loan application'
         throw error
-
       } finally {
         this.isSaving = false
       }
@@ -371,30 +304,19 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async updateDraftLoanApplication(id: number, data: UpdateLoanApplicationDto) {
       this.isSaving = true
       this.error = null
-
       try {
         const updated = await updateDraftLoanApplication(id, data)
-
-        console.log('[LoanApplicationStore] Draft Updated:', updated)
-
-        // อัปเดตใน list
         const index = this.loanApplications.findIndex(app => app.id === id)
         if (index !== -1) {
           this.loanApplications[index] = updated
         }
-
-        // อัปเดต current ถ้าเป็นตัวเดียวกัน
         if (this.currentLoanApplication?.id === id) {
           this.currentLoanApplication = updated
         }
-
         return updated
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Draft Update failed:', error)
         this.error = error.message || 'Failed to update Draft loan application'
         throw error
-
       } finally {
         this.isSaving = false
       }
@@ -406,64 +328,40 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async changeStatus(id: number, data: ChangeStatusDto) {
       this.isSaving = true
       this.error = null
-
       try {
         const updated = await changeApplicationStatus(id, data)
-
-        console.log('[LoanApplicationStore] Status changed:', updated)
-
-        // อัปเดตใน list
         const index = this.loanApplications.findIndex(app => app.id === id)
         if (index !== -1) {
           this.loanApplications[index] = updated
         }
-
-        // อัปเดต current ถ้าเป็นตัวเดียวกัน
         if (this.currentLoanApplication?.id === id) {
           this.currentLoanApplication = updated
         }
-
         return updated
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Change status failed:', error)
         this.error = error.message || 'Failed to change status'
         throw error
-
       } finally {
         this.isSaving = false
       }
     },
-    /**
-     * เปลี่ยนสถานะ Loan Application
-     */
+
     async ApplyDraft(id: number, data: ConfirmDraftDto) {
       this.isSaving = true
       this.error = null
-
       try {
         const updated = await sentDraftApply(id, data)
-
-        console.log('[LoanApplicationStore] Apply Draft:', updated)
-
-        // อัปเดตใน list
         const index = this.loanApplications.findIndex(app => app.id === id)
         if (index !== -1) {
           this.loanApplications[index] = updated
         }
-
-        // อัปเดต current ถ้าเป็นตัวเดียวกัน
         if (this.currentLoanApplication?.id === id) {
           this.currentLoanApplication = updated
         }
-
         return updated
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Apply failed:', error)
         this.error = error.message || 'Failed to Apply Draft'
         throw error
-
       } finally {
         this.isSaving = false
       }
@@ -475,15 +373,10 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async saveRepaymentSchedule(applicationId: number, scheduleData: any[]) {
       this.isSaving = true;
       this.error = null;
-
       try {
-        console.log('[LoanApplicationStore] Saving Repayment Schedule:', applicationId);
         const result = await createRepaymentSchedule(applicationId, scheduleData);
-
-        console.log('[LoanApplicationStore] Repayment Schedule Saved successfully');
         return result;
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Save Repayment Schedule failed:', error);
         this.error = error.message || 'Failed to save repayment schedule';
         throw error;
       } finally {
@@ -497,15 +390,10 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async fetchRepaymentSchedule(applicationId: number) {
       this.isSaving = true;
       this.error = null;
-
       try {
-        console.log('[LoanApplicationStore] Fetching Repayment Schedule:', applicationId);
         const result = await fetchRepaymentSchedule(applicationId as number);
-
-        console.log('[LoanApplicationStore] Repayment Schedule Fetch successfully');
         return result;
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Fetch Repayment Schedule failed:', error);
         this.error = error.message || 'Failed to fetch repayment schedule';
         throw error;
       } finally {
@@ -513,37 +401,25 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       }
     },
 
-    /**
-     * กรองตามสถานะ
-     */
+    // ===============================================
+    // 🟢 Filter Methods (แก้ไขลบ page ออก ใช้ cursor แทน)
+    // ===============================================
     async filterByStatus(status: LoanApplicationStatus | undefined) {
-      await this.fetchLoanApplications({ status, page: 1 })
+      await this.fetchLoanApplications({ status, cursor: undefined })
     },
 
-    /**
-     * กรองตาม Customer ID
-     */
     async filterByCustomer(customerId: number | undefined) {
-      await this.fetchLoanApplications({ CustomerId: customerId, page: 1 })
+      await this.fetchLoanApplications({ CustomerId: customerId, cursor: undefined })
     },
 
-    /**
-     * กรองตาม Product ID
-     */
     async filterByProduct(productId: number | undefined) {
-      await this.fetchLoanApplications({ productId, page: 1 })
+      await this.fetchLoanApplications({ productId, cursor: undefined })
     },
 
-    /**
-     * กรองตาม Amount Range
-     */
     async filterByAmountRange(min: number | undefined, max: number | undefined) {
-      await this.fetchLoanApplications({ min, max, page: 1 })
+      await this.fetchLoanApplications({ min, max, cursor: undefined })
     },
 
-    /**
-     * ล้าง Filters
-     */
     async resetFilters() {
       this.filters = {
         CustomerId: undefined,
@@ -554,32 +430,24 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
         max: undefined,
         minScore: undefined,
         maxScore: undefined,
-        page: 1,
-        limit: 10
+        limit: 10,
+        cursor: undefined
       }
-      // 🟢 Comment ອອກແລ້ວ: ໃຫ້ໜ້າແຕ່ລະໜ້າເປັນຜູ້ຕັດສິນໃຈເອງວ່າຈະດຶງຂໍ້ມູນຕອນໃດ
-      // await this.fetchLoanApplications();
     },
 
-    /**
-    * อัปโหลดเอกสารเดี่ยวสำหรับ Loan Application
-    */
+    // ===============================================
+    // Document Upload Methods
+    // ===============================================
     async uploadDocument(customerId: number, file: File, docType: string) {
       this.isUploadingDocuments = true
       this.documentError = null
-
       try {
         const result = await uploadApplicationDocument(customerId, file, docType)
-
-        // อัปเดตเอกสารใน currentDocuments
         if (this.currentLoanApplication?.customer_id === customerId) {
           this.currentDocuments.push(result.document)
         }
-
-        console.log('[Store] Document uploaded:', result)
         return result
       } catch (error: any) {
-        console.error('[Store] Upload document failed:', error)
         this.documentError = error.message
         throw error
       } finally {
@@ -587,9 +455,6 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       }
     },
 
-    /**
-     * อัปโหลดเอกสารหลายไฟล์พร้อมกัน
-     */
     async uploadMultipleDocuments(
       customerId: number,
       applicationId: number,
@@ -598,25 +463,17 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     ) {
       this.isUploadingDocuments = true;
       this.documentError = null;
-
       try {
-        // 🟢 ส่งข้อมูลเข้า API
         const result = await uploadMultipleApplicationDocuments(
           customerId,
           files,
           docTypes
         );
-
-        console.log('[Store] Multiple documents uploaded:', result);
-        // 🟢 โหลดข้อมูลเอกสารใหม่จาก Server เพื่ออัปเดตหน้าจอ
         if (this.currentLoanApplication?.id === applicationId) {
-          // แจ้งหลังบ้านให้ดึงรูปของลูกค้ารหัสนี้กลับมาโชว์
           await this.fetchDocuments(customerId);
         }
-
         return result;
       } catch (error: any) {
-        console.error('[Store] Upload multiple documents failed:', error);
         this.documentError = error.message;
         throw error;
       } finally {
@@ -624,31 +481,20 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       }
     },
 
-    /**
-     * ดึงรายการเอกสารทั้งหมดของ Loan Application
-     */
     async fetchDocuments(customerId: number) {
       this.isLoading = true
       this.documentError = null
-
       try {
         const documents = await getApplicationDocuments(customerId)
-
-        // ตั้งค่าเอกสารปัจจุบัน (รองรับทั้งกรณี response มี .data หรือเป็น array โดยตรง)
         this.currentDocuments = documents.data || documents
-
-        // 🟢 แก้ไขตรงนี้: เปลี่ยนจากเช็ค applicationId เป็นเช็ค customer_id แทน
         if (this.currentLoanApplication && this.currentLoanApplication.customer_id === customerId) {
           this.currentLoanApplication = {
             ...this.currentLoanApplication,
             documents: this.currentDocuments
           }
         }
-
-        console.log('[Store] Documents fetched:', this.currentDocuments.length)
         return this.currentDocuments
       } catch (error: any) {
-        console.error('[Store] Fetch documents failed:', error)
         this.documentError = error.message
         this.currentDocuments = []
         throw error
@@ -657,32 +503,21 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       }
     },
 
-    /**
-     * ลบเอกสาร
-     */
     async removeDocument(documentId: number) {
       this.isSaving = true
       this.documentError = null
-
       try {
         await deleteDocument(documentId)
-
-        // ลบเอกสารออกจาก currentDocuments
         this.currentDocuments = this.currentDocuments.filter(
           doc => doc.id !== documentId
         )
-
-        // อัปเดต currentLoanApplication
         if (this.currentLoanApplication) {
           this.currentLoanApplication = {
             ...this.currentLoanApplication,
             documents: this.currentDocuments
           }
         }
-
-        console.log('[Store] Document deleted:', documentId)
       } catch (error: any) {
-        console.error('[Store] Delete document failed:', error)
         this.documentError = error.message
         throw error
       } finally {
@@ -690,69 +525,45 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
       }
     },
 
-    /**
-     * แทนที่เอกสาร
-     */
     async replaceDocument(documentId: number, file: File) {
       this.isUploadingDocuments = true
       this.documentError = null
-
       try {
         const result = await replaceDocument(documentId, file)
-
-        // อัปเดตเอกสารใน currentDocuments
         const index = this.currentDocuments.findIndex(doc => doc.id === documentId)
         if (index !== -1) {
           this.currentDocuments[index] = result.document
         }
-
-        console.log('[Store] Document replaced:', documentId)
         return result
       } catch (error: any) {
-        console.error('[Store] Replace document failed:', error)
         this.documentError = error.message
         throw error
       } finally {
         this.isUploadingDocuments = false
       }
     },
-    /**
-     * ดึง Loan Application ตาม ID
-     */
+
     async fetchCustomerByPhone(phone: string) {
       this.isLoading = true
       this.error = null
-
       try {
         const customer = await searchCustomerByPhone(phone)
-
-        console.log('[LoanApplicationStore] Fetched customer by Phone:', customer)
-
         this.customer = customer
         return customer
-
       } catch (error: any) {
-        console.error('[LoanApplicationStore] Fetch by ID failed:', error)
         this.error = error.message || 'Failed to fetch loan application'
         this.currentLoanApplication = null
         throw error
-
       } finally {
         this.isLoading = false
       }
     },
 
-    /**
-     * Refresh ข้อมูล
-     */
     async refresh() {
-      // เรียกใช้โดยคง filter ไว้ แต่หน้าจะอยู่ที่เดิม
-      await this.fetchLoanApplications()
+      // เรียกใช้โดยรีเซ็ต cursor ไว้โหลดใหม่
+      await this.fetchLoanApplications({ cursor: undefined })
     },
-    // ໃນ Pinia Store (loanApplication.ts)
-    // ==========================================
-    // 🟢 ດຶງປະຫວັດການກວດກາ ແລະ ອະນຸມັດ (Approval Logs)
-    // ==========================================
+
     async fetchApprovalLogs(loanId: number) {
       this.isLoading = true
       this.error = null
@@ -761,8 +572,7 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
         return logs
       } catch (error: any) {
         this.error = error.message || 'ບໍ່ສາມາດດຶງປະຫວັດການອະນຸມັດໄດ້'
-        console.error('Error in store fetchApprovalLogs:', error)
-        return [] // ສົ່ງ Array ວ່າງກັບຄືນຖ້າມີ Error ເພື່ອບໍ່ໃຫ້ໜ້າບ້ານພັງ
+        return []
       } finally {
         this.isLoading = false
       }

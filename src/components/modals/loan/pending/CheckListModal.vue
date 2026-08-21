@@ -547,19 +547,23 @@
             </div>
           </div>
 
+          <!-- 🟢 ປັບແກ້ໄຂໜ້າການປະເມີນລາຍຮັບໃໝ່ທີ່ນີ້ -->
           <div v-else-if="checklistTab === 'income'" class="space-y-6 animate-in fade-in">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <!-- 🟢 ກ່ອງສີຂຽວ: ລາຍຮັບ -->
               <div class="border rounded-lg p-4 bg-green-50/50 dark:bg-green-900/10 shadow-sm">
                 <h4 class="font-bold text-green-700 mb-4">1. ການປະເມີນລາຍຮັບ (ລາຍຮັບທີ່ພິສູດໄດ້)</h4>
                 <div class="space-y-3">
                   <div class="form-control">
                     <label class="label"><span class="label-text">ລາຍຮັບສະເລ່ຍຈາກ Statement (ກີບ)</span></label>
-                    <input v-model.number="formIncome.average_monthly_income" type="number"
+                    <!-- 🟢 ใช้ formatPrice สำหรับแสดงผล (readonly) -->
+                    <input :value="formatPrice(formIncome.average_monthly_income)" type="text"
                       class="input input-bordered text-right font-bold text-green-600" readonly />
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text">ລາຍຮັບອື່ນໆທີ່ຢືນຢັນໄດ້ (ກີບ)</span></label>
-                    <input v-model.number="formIncome.other_verified_income" type="number"
+                    <input :value="formatPrice(formIncome.other_verified_income)" type="text"
                       class="input input-bordered text-right font-bold text-green-600" readonly />
                   </div>
                   <div class="divider my-1"></div>
@@ -570,29 +574,53 @@
                 </div>
               </div>
 
+              <!-- 🟢 ກ່ອງສີແດງ: ພາລະໜີ້ສິນ (ລວມໜີ້ພາຍໃນ INSEE) -->
               <div class="border rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10 shadow-sm">
                 <h4 class="font-bold text-red-700 mb-4">2. ພາລະໜີ້ສິນ ແລະ ລາຍຈ່າຍ</h4>
                 <div class="space-y-3">
+
                   <div class="form-control">
                     <label class="label"><span class="label-text">ຄ່າໃຊ້ຈ່າຍດຳລົງຊີວິດປະເມີນ (ກີບ)</span></label>
-                    <input v-model.number="formIncome.estimated_living_expenses" type="number"
+                    <!-- 🟢 เปลี่ยนเป็น type="text" พร้อมจัดการ formatting -->
+                    <input :value="formatPrice(formIncome.estimated_living_expenses)" type="text"
+                      @focus="handleNumberFocus($event, formIncome.estimated_living_expenses)"
+                      @input="updateNumberField('estimated_living_expenses', $event)"
+                      @blur="handleNumberBlur($event, formIncome.estimated_living_expenses)"
                       class="input input-bordered text-right" :disabled="!canEditChecklist" />
                   </div>
+
                   <div class="form-control">
                     <label class="label"><span class="label-text">ພາລະໜີ້ສິນເດີມ (ຈາກ CIB) (ກີບ)</span></label>
-                    <input v-model.number="formIncome.existing_debt_payments" type="number"
+                    <input :value="formatPrice(formIncome.existing_debt_payments)" type="text"
+                      @focus="handleNumberFocus($event, formIncome.existing_debt_payments)"
+                      @input="updateNumberField('existing_debt_payments', $event)"
+                      @blur="handleNumberBlur($event, formIncome.existing_debt_payments)"
                       class="input input-bordered text-right text-red-500" :disabled="!canEditChecklist" />
                   </div>
+
+                  <!-- 🟢 ພາລະໜີ້ສິນພາຍໃນ INSEE (readonly) -->
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text">ພາລະໜີ້ສິນພາຍໃນ (INSEE) ທີ່ກຳລັງຜ່ອນ (ກີບ)</span>
+                    </label>
+                    <input :value="formatPrice(formIncome.internal_active_installments)" type="text"
+                      class="input input-bordered text-right text-orange-500 font-bold" readonly />
+                  </div>
+
                   <div class="form-control">
                     <label class="label"><span class="label-text font-bold text-primary">ຄ່າງວດໃໝ່ທີ່ສະເໜີຂໍ
                         (ກີບ)</span></label>
-                    <input v-model.number="formIncome.proposed_installment" type="number"
+                    <input :value="formatPrice(formIncome.proposed_installment)" type="text"
+                      @focus="handleNumberFocus($event, formIncome.proposed_installment)"
+                      @input="updateNumberField('proposed_installment', $event)"
+                      @blur="handleNumberBlur($event, formIncome.proposed_installment)"
                       class="input input-bordered text-right font-bold text-primary border-primary"
                       :disabled="!canEditChecklist" />
                   </div>
+
                   <div class="divider my-1"></div>
                   <div class="flex justify-between items-center font-bold text-lg">
-                    <span>ລວມພາລະໜີ້ໃໝ່+ເກົ່າ (B)</span>
+                    <span>ລວມພາລະໜີ້ໃໝ່+ເກົ່າ+ພາຍໃນ (B)</span>
                     <span class="text-red-500">{{ formatPrice(totalDebtBurden) }}</span>
                   </div>
                 </div>
@@ -610,7 +638,10 @@
                 <div class="form-control max-w-md mx-auto">
                   <label class="label"><span class="label-text font-bold">ວົງເງິນອະນຸມັດສູງສຸດທີ່ເປັນໄປໄດ້
                       (ກີບ)</span></label>
-                  <input v-model.number="formIncome.max_approved_amount" type="number"
+                  <input :value="formatPrice(formIncome.max_approved_amount)" type="text"
+                    @focus="handleNumberFocus($event, formIncome.max_approved_amount)"
+                    @input="updateNumberField('max_approved_amount', $event)"
+                    @blur="handleNumberBlur($event, formIncome.max_approved_amount)"
                     class="input input-bordered text-center text-xl font-bold text-primary"
                     :disabled="!canEditChecklist" />
                 </div>
@@ -645,7 +676,7 @@ import { getFullImageUrl } from '@/utils/url';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { useChecklistStore } from '@/stores/checklist';
 import { useAddressStore } from '@/stores/address';
-import { usePermissionStore } from '@/stores/permission'; // 🌟 Import Permission Store
+import { usePermissionStore } from '@/stores/permission';
 
 const props = defineProps<{ isOpen: boolean; loan: any }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
@@ -653,14 +684,13 @@ const emit = defineEmits<{ (e: 'close'): void }>();
 const loanAppStore = useLoanApplicationStore();
 const checklistStore = useChecklistStore();
 const addressStore = useAddressStore();
-const permissionStore = usePermissionStore(); // 🌟 ປະກາດໃຊ້ Store
+const permissionStore = usePermissionStore();
 
 const checklistTab = ref<'basic' | 'call' | 'cib' | 'field' | 'income'>('basic');
 const isSavingChecklist = ref(false);
 
 const localDistricts = ref<any[]>([]);
 
-// 🌟 ກວດສອບສິດ: ມີສິດແກ້ໄຂ ຫຼື ອະນຸມັດ ຈຶ່ງສາມາດແກ້ໄຂ Checklist ໄດ້
 const canEditChecklist = computed(() => {
   return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve');
 });
@@ -683,7 +713,6 @@ const unlockedTabs = computed(() => {
 const changeTab = (tab: 'basic' | 'call' | 'cib' | 'field' | 'income') => {
   if (tab === 'basic') { checklistTab.value = tab; return; }
 
-  // ຖ້າເປັນ View-only (Auditor) ສາມາດກົດເຂົ້າທຸກແທັບທີ່ເປີດແລ້ວໄດ້ ແຕ່ຖ້າຍັງບໍ່ເປີດຈະເຂົ້າບໍ່ໄດ້ຄືເກົ່າ
   if (!canEditChecklist.value) {
     if (tab === 'call' && unlockedTabs.value.call) { checklistTab.value = tab; return; }
     if (tab === 'cib' && unlockedTabs.value.cib) { checklistTab.value = tab; return; }
@@ -691,13 +720,40 @@ const changeTab = (tab: 'basic' | 'call' | 'cib' | 'field' | 'income') => {
     if (tab === 'income' && unlockedTabs.value.income) { checklistTab.value = tab; return; }
   }
 
-  // ສຳລັບຄົນທີ່ມີສິດແກ້ໄຂ (ຈະມີແຈ້ງເຕືອນ)
   if (tab === 'call' && !unlockedTabs.value.call) return alert.error('ກະລຸນາບັນທຶກຂໍ້ມູນທົ່ວໄປໃຫ້ສຳເລັດກ່ອນ');
   if (tab === 'cib' && !unlockedTabs.value.cib) return alert.error('ກະລຸນາບັນທຶກການໂທຢືນຢັນກ່ອນ');
   if (tab === 'field' && !unlockedTabs.value.field) return alert.error('ກະລຸນາບັນທຶກຂໍ້ມູນ CIB ກ່ອນ');
   if (tab === 'income' && !unlockedTabs.value.income) return alert.error('ກະລຸນາບັນທຶກການລົງພື້ນທີ່ກ່ອນ');
   checklistTab.value = tab;
 };
+
+// 🟢 ຟັງຊັນສຳລັບການປ່ຽນແປງຄ່າຕົວເລກຈາກ Input String ເປັນ Number ທີ່ຖືກຕ້ອງ
+const parseNumberStr = (val: string) => {
+  if (!val) return 0;
+  // ເອົາທຸກຕົວອັກສອນອອກຍົກເວັ້ນຕົວເລກ, ຈຸດ ແລະ ເຄື່ອງໝາຍລົບ
+  const parsed = parseFloat(val.replace(/[^0-9.-]/g, ''));
+  return isNaN(parsed) ? 0 : parsed;
+};
+// ========================================================
+// 🌟 ເພີ່ມ 3 ຟັງຊັນໃໝ່ນີ້ ເພື່ອແກ້ໄຂບັນຫາ TypeScript Error
+// ========================================================
+const handleNumberFocus = (e: Event, val: number) => {
+  const target = e.target as HTMLInputElement;
+  if (target) target.value = val ? String(val) : '';
+};
+
+const handleNumberBlur = (e: Event, val: number) => {
+  const target = e.target as HTMLInputElement;
+  if (target) target.value = formatPrice(val);
+};
+
+const updateNumberField = (field: keyof typeof formIncome, e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (target) {
+    (formIncome as any)[field] = parseNumberStr(target.value);
+  }
+};
+// ========================================================
 
 const formBasic = reactive({
   cus_contact_method: 'phone',
@@ -770,11 +826,13 @@ const formIncome = reactive({
   other_verified_income: 0,
   estimated_living_expenses: 0,
   existing_debt_payments: 0,
+  internal_active_installments: 0,
   proposed_installment: 0,
   max_approved_amount: 0
 });
+
 const totalVerifiedIncome = computed(() => Number(formIncome.average_monthly_income) + Number(formIncome.other_verified_income));
-const totalDebtBurden = computed(() => Number(formIncome.existing_debt_payments) + Number(formIncome.proposed_installment));
+const totalDebtBurden = computed(() => Number(formIncome.existing_debt_payments) + Number(formIncome.internal_active_installments) + Number(formIncome.proposed_installment));
 const dsrPercentage = computed(() => totalVerifiedIncome.value <= 0 ? 0 : (totalDebtBurden.value / totalVerifiedIncome.value) * 100);
 
 const getCurrentLocation = (index: number) => {
@@ -856,7 +914,10 @@ const fetchChecklistData = async (loanId: number) => {
         }));
       } else { formFieldVisits.value = []; addFieldVisit(); }
 
-      if (summaryData.income_assessment) Object.assign(formIncome, summaryData.income_assessment);
+      if (summaryData.income_assessment) {
+        Object.assign(formIncome, summaryData.income_assessment);
+        formIncome.internal_active_installments = Number(summaryData.income_assessment.internal_active_installments || 0);
+      }
     } else {
       formCalls.value = []; addCallRecord();
       formFieldVisits.value = []; addFieldVisit();
@@ -909,16 +970,19 @@ watch(() => props.isOpen, async (newVal) => {
     const proposedPay = Number(fullDetails.monthly_pay || 0);
     const maxAmount = Number(fullDetails.total_amount || 0) - Number(fullDetails.down_payment || 0);
 
-    formIncome.average_monthly_income = customerIncome;
-    formIncome.other_verified_income = contractOtherIncome;
-    formIncome.existing_debt_payments = customerDebts;
-    formIncome.proposed_installment = proposedPay;
-    formIncome.max_approved_amount = maxAmount;
+    const activeInternalDebts = Number(fullDetails.customer?.total_active_internal_installments || 0);
+
+    formIncome.average_monthly_income = formIncome.average_monthly_income || customerIncome;
+    formIncome.other_verified_income = formIncome.other_verified_income || contractOtherIncome;
+    formIncome.existing_debt_payments = formIncome.existing_debt_payments || customerDebts;
+    formIncome.internal_active_installments = formIncome.internal_active_installments || activeInternalDebts;
+    formIncome.proposed_installment = formIncome.proposed_installment || proposedPay;
+    formIncome.max_approved_amount = formIncome.max_approved_amount || maxAmount;
   }
 });
 
 const saveChecklist = async () => {
-  if (!props.loan || !canEditChecklist.value) return; // 🌟 ເຊັກສິດກ່ອນບັນທຶກ
+  if (!props.loan || !canEditChecklist.value) return;
   const loanId = props.loan.id;
   isSavingChecklist.value = true;
 

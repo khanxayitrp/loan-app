@@ -3,9 +3,17 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ລາຍການຮ່າງສິນເຊື່ອ</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">ຈັດການຮ່າງຄຳຂໍສິນເຊື່ອທີ່ຍັງບໍ່ໄດ້ສົ່ງ</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          ຈັດການຮ່າງຄຳຂໍສິນເຊື່ອທີ່ຍັງບໍ່ໄດ້ສົ່ງ
+          <span class="ml-1 text-primary font-medium">
+            (ທັງໝົດ {{ totalFiltered }} ລາຍການ)
+          </span>
+        </p>
       </div>
       <div class="flex items-center gap-2">
+        <button @click="fetchData" class="btn btn-outline btn-sm">
+          <span class="icon-[tabler--refresh] size-4 mr-1"></span> ໂຫຼດຂໍ້ມູນໃໝ່
+        </button>
         <button @click="exportToCSV" class="btn btn-outline btn-sm whitespace-nowrap"
           :disabled="isLoading || filteredDrafts.length === 0">
           <span class="icon-[tabler--file-export] size-4 mr-1"></span> Export CSV
@@ -20,18 +28,18 @@
     <div
       class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
       <div>
-        <label class="label pb-1"><span
-            class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ</span></label>
+        <label class="label pb-1"><span class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ຄົ້ນຫາ
+            (ໃນລາຍການທີ່ໂຫຼດມາ)</span></label>
         <div class="relative">
           <input v-model="searchQuery" type="text" placeholder="ຊື່ລູກຄ້າ, ເບີໂທ, ລະຫັດສິນເຊື່ອ..."
-            class="input input-sm input-bordered w-full pl-9" />
+            class="input input-sm input-bordered w-full pl-9" @input="debounceSearch" />
           <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></span>
         </div>
       </div>
       <div>
         <label class="label pb-1"><span
             class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ເຈົ້າໜ້າທີ່</span></label>
-        <select v-model="staffFilter" class="select select-sm select-bordered w-full">
+        <select v-model="staffFilter" class="select select-sm select-bordered w-full" @change="resetPage">
           <option value="">ທັງໝົດເຈົ້າໜ້າທີ່</option>
           <option v-for="staff in staffList" :key="staff.id" :value="staff.id">{{ staff.name }}</option>
         </select>
@@ -40,13 +48,14 @@
         <label class="label pb-1"><span
             class="label-text text-sm font-medium text-gray-700 dark:text-gray-300">ວັນທີ່ສ້າງ</span></label>
         <div class="flex gap-2">
-          <input v-model="dateFrom" type="date" class="input input-sm input-bordered w-full" />
-          <input v-model="dateTo" type="date" class="input input-sm input-bordered w-full" />
+          <input v-model="dateFrom" type="date" class="input input-sm input-bordered w-full"
+            @change="applyDateFilter" />
+          <input v-model="dateTo" type="date" class="input input-sm input-bordered w-full" @change="applyDateFilter" />
         </div>
       </div>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-12">
+    <div v-if="isLoading && loanApplicationStore.loanApplications.length === 0" class="flex justify-center py-12">
       <div class="loading loading-spinner text-primary"></div>
     </div>
 
@@ -65,6 +74,7 @@
           </tr>
         </thead>
         <tbody>
+          <!-- 🟢 Use displayedDrafts for Client-Side Pagination -->
           <tr v-for="draft in displayedDrafts" :key="draft.id"
             class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             <td>
@@ -96,11 +106,12 @@
               </div>
             </td>
             <td>
-              <span class="badge badge-sm" :class="getStatusBadgeClass(draft.status)">{{ getStatusText(draft.status)
-                }}</span>
+              <span class="badge badge-sm border-0 text-white" :class="getStatusBadgeClass(draft.status)">{{
+                getStatusText(draft.status)
+              }}</span>
             </td>
             <td class="text-sm text-gray-600 dark:text-gray-400">{{ draft.createdAt ? formatDate(draft.createdAt) : '-'
-              }}</td>
+            }}</td>
             <td>
               <div class="flex justify-center gap-1">
                 <button
@@ -136,19 +147,36 @@
       </table>
     </div>
 
-    <div v-if="!isLoading && totalDrafts > 0"
+    <!-- 🟢 Local Pagination Controls -->
+    <div v-if="!isLoading && totalFiltered > 0"
       class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div class="text-gray-500">ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກ {{ totalDrafts }} ລາຍການ</div>
+      <div class="text-gray-500">ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
+      </div>
       <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered">
+        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
           <option :value="10">10 ຕໍ່ໜ້າ</option>
           <option :value="25">25 ຕໍ່ໜ້າ</option>
           <option :value="50">50 ຕໍ່ໜ້າ</option>
         </select>
-        <button class="btn btn-sm" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
-        <span class="px-2"> ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn btn-sm" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
+        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
+        <span class="px-2 font-medium"> ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
+        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
       </div>
+    </div>
+
+    <!-- 🟢 Load More Button -->
+    <div v-if="!isLoading"
+      class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed dark:border-gray-700">
+      <button v-if="loanApplicationStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs"
+        @click="loadMore" :disabled="loanApplicationStore.isLoadingMore">
+        <span v-if="loanApplicationStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
+        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
+        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
+      </button>
+
+      <p v-else class="text-sm text-gray-400 italic">
+        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດແລ້ວ)
+      </p>
     </div>
 
     <DraftDetailsModal :show="showDetailsModal" :draft-id="selectedDraftId" @close="showDetailsModal = false"
@@ -183,7 +211,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
@@ -210,6 +238,7 @@ const dateFrom = ref('')
 const dateTo = ref('')
 const staffFilter = ref('')
 
+// 🟢 Pagination States
 const currentPage = ref(1)
 const pageSize = ref(10)
 
@@ -225,6 +254,25 @@ const getRequesterName = (draft: any) => (draft.requester as any)?.full_name || 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('lo-LA')
 const isDraft = (draft: any) => draft.is_confirmed === 0 || !draft.is_confirmed
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+const debouncedSearch = ref('');
+
+const debounceSearch = () => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    debouncedSearch.value = searchQuery.value;
+    resetPage();
+  }, 300);
+};
+
+const resetPage = () => {
+  currentPage.value = 1;
+};
+
+const applyDateFilter = () => {
+  resetPage();
+};
+
 const staffList = computed(() => {
   const map = new Map();
   (loanApplicationStore.loanApplications || []).forEach(d => {
@@ -233,15 +281,16 @@ const staffList = computed(() => {
   return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
 })
 
+// 🌟 Local Filtering
 const filteredDrafts = computed(() => {
   let list = loanApplicationStore.loanApplications || []
 
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase().trim()
+  if (debouncedSearch.value) {
+    const q = debouncedSearch.value.toLowerCase().trim()
     list = list.filter(d =>
       d.customer?.first_name?.toLowerCase().includes(q) ||
       d.customer?.phone?.includes(q) ||
-      d.loan_id?.toLowerCase().includes(q)
+      (d.loan_id || '').toLowerCase().includes(q)
     )
   }
 
@@ -251,8 +300,9 @@ const filteredDrafts = computed(() => {
 
   if (dateFrom.value || dateTo.value) {
     list = list.filter(d => {
-      if (!d.createdAt) return false
-      const dateString = String(d.createdAt).split('T')[0]
+      const targetDate = d.createdAt || d.updatedAt;
+      if (!targetDate) return false
+      const dateString = new Date(targetDate).toISOString().split('T')[0]
       const fromDate = dateFrom.value || '1970-01-01'
       const toDate = dateTo.value || '9999-12-31'
       return !!dateString && dateString >= fromDate && dateString <= toDate;
@@ -262,23 +312,35 @@ const filteredDrafts = computed(() => {
   return list
 })
 
-watch([searchQuery, staffFilter, dateFrom, dateTo, pageSize], () => {
-  currentPage.value = 1
-})
+// 🌟 Computed properties for Local Pagination
+const displayedDrafts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredDrafts.value.slice(start, start + pageSize.value);
+});
 
-const displayedDrafts = computed(() => filteredDrafts.value.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value))
-const totalDrafts = computed(() => filteredDrafts.value.length)
-const totalPages = computed(() => Math.ceil(totalDrafts.value / pageSize.value) || 1)
-const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
-const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalDrafts.value))
-const hasPreviousPage = computed(() => currentPage.value > 1)
-const hasNextPage = computed(() => currentPage.value < totalPages.value)
+const totalFiltered = computed(() => filteredDrafts.value.length);
+const totalPages = computed(() => Math.ceil(totalFiltered.value / pageSize.value) || 1);
+const startIndex = computed(() => totalFiltered.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1);
+const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalFiltered.value));
+const hasPreviousPage = computed(() => currentPage.value > 1);
+const hasNextPage = computed(() => currentPage.value < totalPages.value);
 
-const previousPage = () => { if (hasPreviousPage.value) currentPage.value-- }
-const nextPage = () => { if (hasNextPage.value) currentPage.value++ }
+const previousPage = () => { if (hasPreviousPage.value) currentPage.value--; };
+const nextPage = () => { if (hasNextPage.value) currentPage.value++; };
 
+// 🌟 Fetch Initial Data from API
 const fetchData = async () => {
-  await loanApplicationStore.fetchLoanApplications({ status: LoanApplicationStatus.PENDING, is_confirmed: 0 })
+  await loanApplicationStore.fetchLoanApplications({
+    status: LoanApplicationStatus.PENDING,
+    is_confirmed: 0,
+    limit: 250, // 🟢 ดึงข้อมูลก้อนใหญ่เพื่อใช้กับ Local Filter
+    cursor: undefined
+  } as any)
+}
+
+// 🌟 Load More Data from API
+const loadMore = async () => {
+  await loanApplicationStore.loadMoreLoanApplications();
 }
 
 const viewDraftDetails = (id: number) => {
@@ -321,7 +383,7 @@ const submitDraft = async () => {
 
 const exportToCSV = () => {
   const csvData = filteredDrafts.value.map(d => ({
-    'Loan ID': d.loan_id,
+    'Loan ID': d.loan_id || '-',
     'ລູກຄ້າ': getDraftDisplayName(d),
     'ເບີໂທ': getDraftPhone(d),
     'ສິນຄ້າ': getProductName(d),
@@ -338,15 +400,18 @@ const exportToCSV = () => {
 }
 
 const exportToExcel = () => {
-  const excelData = filteredDrafts.value.map(d => ({
-    'Loan ID': d.loan_id,
-    'ລູກຄ້າ': getDraftDisplayName(d),
-    'ເບີໂທ': getDraftPhone(d),
-    'ສິນຄ້າ': getProductName(d),
-    'ຈຳນວນເງິນ': formatPrice(Number(d.total_amount || 0) - Number(d.down_payment || 0)),
-    'ສະຖານະ': getStatusText(d.status),
-    'ວັນທີ່ສ້າງ': d.createdAt ? formatDate(d.createdAt) : '-'
-  }))
+  const excelData = filteredDrafts.value.map(d => {
+    const netAmount = Number(d.total_amount || 0) - Number(d.down_payment || 0);
+    return {
+      'Loan ID': d.loan_id || '-',
+      'ລູກຄ້າ': getDraftDisplayName(d),
+      'ເບີໂທ': getDraftPhone(d),
+      'ສິນຄ້າ': getProductName(d),
+      'ຈຳນວນເງິນ (ກີບ)': netAmount, // 🟢 ส่งเป็น Number ให้ Excel
+      'ສະຖານະ': getStatusText(d.status),
+      'ວັນທີ່ສ້າງ': d.createdAt ? formatDate(d.createdAt) : '-'
+    }
+  })
   const worksheet = XLSX.utils.json_to_sheet(excelData)
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Draft Loans')
@@ -361,4 +426,8 @@ onMounted(async () => {
     addressStore.fetchProvinces()
   ])
 })
+
+onUnmounted(() => {
+  loanApplicationStore.resetFilters();
+});
 </script>

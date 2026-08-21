@@ -310,7 +310,7 @@ export interface ConfirmDraftDto {
 }
 
 /**
- * Filters สำหรับดึงรายการ (รองรับ Pagination)
+ * Filters สำหรับดึงรายการ (รองรับ Cursor Pagination)
  */
 export interface LoanApplicationFilters {
   CustomerId?: number
@@ -320,10 +320,16 @@ export interface LoanApplicationFilters {
   min?: number
   max?: number
   is_confirmed?: number
-  page?: number  // ✅ เพิ่ม
-  limit?: number // ✅ เพิ่ม
-  minScore?: number // 🌟 ເພີ່ມໃໝ່ ສຳລັບກັ່ນຕອງຄະແນນຕ່ຳສຸດ
-  maxScore?: number // 🌟 ເພີ່ມໃໝ່ ສຳລັບກັ່ນຕອງຄະແນນສູງສຸດ
+  limit?: number     // ✅ คงไว้
+  cursor?: number    // 🌟 เปลี่ยนจาก page เป็น cursor
+  page?: number
+  minScore?: number
+  maxScore?: number
+
+  // 🌟 ເພີ່ມ 3 Field ນີ້ເຂົ້າໄປເພື່ອຮອງຮັບ Server-Side Filtering
+  search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 
@@ -337,13 +343,12 @@ export interface CreateWithCustomerResponse {
 }
 
 /**
- * Pagination Meta Data
+ * 🌟 Cursor Pagination Meta Data
  */
 export interface PaginationMeta {
   total: number;
-  page: number;
   limit: number;
-  totalPages: number;
+  next_cursor: number | null; // 🌟 เปลี่ยนจาก page, totalPages มาใช้ next_cursor
 }
 
 /**

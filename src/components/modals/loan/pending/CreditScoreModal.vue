@@ -22,8 +22,15 @@
             form.job_tenure_years }} ປີ {{ form.job_tenure_months }} ເດືອນ</span></div>
           <div><span class="text-gray-500 block mb-1">ສະຖານະ CIB</span><span
               class="font-bold text-base text-indigo-600">{{ getCibLabel(form.cib_status) }}</span></div>
-          <div><span class="text-gray-500 block mb-1">ອັດຕາສ່ວນໜີ້ສິນ (DSR)</span><span
-              class="font-bold text-base text-red-500">{{ form.dsr_percent.toFixed(2) }}%</span></div>
+
+          <!-- 🟢 ປັບ Label ໃຫ້ເຫັນຊັດເຈນວ່າລວມໜີ້ພາຍໃນແລ້ວ -->
+          <div title="ຄ່າ DSR ທີ່ລວມທັງໜີ້ພາຍນອກ ແລະ ໜີ້ພາຍໃນ (INSEE)">
+            <span class="text-gray-500 block mb-1 flex items-center gap-1">
+              ອັດຕາສ່ວນໜີ້ສິນ (DSR)
+              <span class="icon-[tabler--info-circle] size-3 opacity-60"></span>
+            </span>
+            <span class="font-bold text-base text-red-500">{{ form.dsr_percent.toFixed(2) }}%</span>
+          </div>
 
           <div v-if="form.is_gold">
             <span class="text-gray-500 block mb-1">ອັດຕາສ່ວນເງິນກູ້ (LTV)</span>
@@ -63,7 +70,7 @@
                   <tr>
                     <td>2. ອາຍຸການເຮັດວຽກ (Job Tenure)</td>
                     <td class="text-right font-medium">{{ result.details.tenureScore }} / {{ result.details.factor2Max
-                      }}</td>
+                    }}</td>
                   </tr>
                   <tr>
                     <td>3. ລາຍຮັບ ແລະ ໜີ້ສິນ (Income & DSR)</td>
@@ -106,19 +113,18 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
-import { usePermissionStore } from '@/stores/permission'; // 🌟 1. Import Permission Store
+import { usePermissionStore } from '@/stores/permission';
 import { alert } from '@/utils/alert';
 
 const props = defineProps<{ isOpen: boolean; loan: any; summaryData: any }>();
 const emit = defineEmits<{ (e: 'close'): void; (e: 'success'): void }>();
 
 const loanApplicationStore = useLoanApplicationStore();
-const permissionStore = usePermissionStore(); // 🌟 2. ປະກາດໃຊ້ Store
+const permissionStore = usePermissionStore();
 
 const isSaving = ref(false);
 const result = ref<any>(null);
 
-// 🌟 3. Computed Property ສຳລັບກວດສອບສິດການບັນທຶກຄະແນນ
 const canSaveScore = computed(() => {
   return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve');
 });
@@ -159,20 +165,29 @@ watch(() => props.isOpen, (newVal) => {
 
     form.cib_status = cib.cib_status || cib.overall_cib_status || 'no_delay';
 
-    const contractIncome = Number(props.loan.loan_contracts?.[0]?.cus_income_other) || 0;
-    const cusIncome = Number(props.loan.customer?.income_per_month) || 0;
-    const cusDebt = Number(props.loan.customer?.other_debts) || 0;
-    const monthlyPay = Number(props.loan.monthly_pay) || 0;
+    // ========================================================
+    // 🌟 ການດຶງຄ່າ DSR ທີ່ຖືກຕ້ອງຕາມ Best Practice
+    // ========================================================
+    if (income.dsr_percentage !== undefined && income.dsr_percentage !== null) {
+      // ✅ ຖ້າມີການປະເມີນລາຍຮັບແລ້ວ: ໃຫ້ເຊື່ອຄ່າ DSR ຈາກ Backend ໂດຍກົງ
+      // ເພາະ Backend ໄດ້ຄຳນວນລວມທັງ ໜີ້ CIB + ໜີ້ພາຍໃນ INSEE (Active/Pending) + ຄ່າງວດໃໝ່ ໃຫ້ແລ້ວ
+      form.dsr_percent = Number(income.dsr_percentage);
+    } else {
+      // ⚠️ ຖ້າຍັງບໍ່ເຄີຍກົດປະເມີນລາຍຮັບເລີຍ (Fallback Logic ສຳລັບການຄຳນວນຄັ້ງທຳອິດ):
+      const contractIncome = Number(props.loan.loan_contracts?.[0]?.cus_income_other) || 0;
+      const cusIncome = Number(props.loan.customer?.income_per_month) || 0;
+      const cusDebt = Number(props.loan.customer?.other_debts) || 0;
+      const monthlyPay = Number(props.loan.monthly_pay) || 0;
 
-    const finalAvgIncome = Number(income.average_monthly_income || 0) === 0 ? cusIncome : Number(income.average_monthly_income);
-    const finalOtherIncome = Number(income.other_verified_income || 0) === 0 ? contractIncome : Number(income.other_verified_income);
-    const finalDebt = Number(income.existing_debt_payments || 0) === 0 ? cusDebt : Number(income.existing_debt_payments);
-    const finalInstallment = Number(income.proposed_installment || 0) === 0 ? monthlyPay : Number(income.proposed_installment);
+      // ດຶງໜີ້ພາຍໃນ INSEE ທີ່ Backend ຫາກໍ່ສົ່ງມາໃຫ້ໃນ Object ຂອງ Income Assessment (ຖ້າມີ)
+      const internalDebt = Number(income.internal_active_installments || 0);
 
-    const totalIncome = finalAvgIncome + finalOtherIncome;
-    const totalDebt = finalDebt + finalInstallment;
+      const totalIncome = cusIncome + contractIncome;
+      const totalDebt = cusDebt + internalDebt + monthlyPay; // 👈 ບວກໜີ້ພາຍໃນນຳ
 
-    form.dsr_percent = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 100;
+      form.dsr_percent = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 100;
+    }
+    // ========================================================
 
     const price = Number(basic.verified_price) || Number(props.loan.product?.price) || Number(props.loan.total_amount) || 1;
     const dp = Number(basic.verified_down_payment) || Number(props.loan.down_payment) || 0;
@@ -285,7 +300,7 @@ const calculateCreditScore = () => {
 };
 
 const saveScore = async () => {
-  if (!props.loan || !result.value || !canSaveScore.value) return; // 🌟 ເຊັກສິດກ່ອນບັນທຶກ
+  if (!props.loan || !result.value || !canSaveScore.value) return;
 
   isSaving.value = true;
   try {

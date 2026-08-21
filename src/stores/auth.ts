@@ -110,7 +110,7 @@ export const useAuthStore = defineStore('auth', {
       password: string
       role: 'admin' | 'staff' | 'partner' | 'customer'
       full_name: string
-      staff_level?: 'requester' | 'approver' | 'none'
+      staff_level?: 'assistant_director' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none'
       is_active?: number
     }): Promise<void> {
       try {
@@ -132,7 +132,7 @@ export const useAuthStore = defineStore('auth', {
       username?: string
       role?: 'admin' | 'staff' | 'partner' | 'customer'
       full_name?: string
-      staff_level?: 'requester' | 'approver' | 'none'
+      staff_level?: 'assistant_director' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none'
       is_active?: number
       password?: string
     }): Promise<void> {

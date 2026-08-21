@@ -74,7 +74,6 @@
               <option value="admin">Admin</option>
               <option value="staff">Staff</option>
               <option value="partner">Partner</option>
-              <!-- <option value="customer">Customer</option> -->
               <option value="auditor">Auditor (ຜູ້ກວດສອບ)</option>
             </select>
             <span
@@ -96,9 +95,10 @@
               <option value="sales">ພະນັກງານຂາຍ (Sales)</option>
               <option value="credit_officer">ພະນັກງານສິນເຊື່ອ (Credit Officer)</option>
               <option value="credit_manager">ຫົວໜ້າພະແນກສິນເຊື່ອ (Credit Manager)</option>
+              <!-- 🌟 ປ່ຽນຈາກ approver ເປັນ assistant_director -->
+              <option value="assistant_director">ຜູ້ຊ່ວຍຜູ້ອຳນວຍການ (Assistant Director)</option>
               <option value="deputy_director">ຮອງຜູ້ອຳນວຍການ (Deputy Director)</option>
               <option value="director">ຜູ້ອຳນວຍການ (Director)</option>
-              <option value="approver">ຜູ້ອະນຸມັດ (Approver)</option>
               <option value="auditor">ຜູ້ກວດສອບພາຍໃນ (Auditor)</option>
             </select>
             <span class="icon-[tabler--hierarchy] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-5"></span>
@@ -161,9 +161,9 @@ const form = reactive({
   full_name: '',
   username: '',
   password: '',
-  // 🌟 ອັບເດດ Type ໃຫ້ກົງກັບ Database
   role: '' as 'admin' | 'staff' | 'partner' | 'customer' | 'auditor',
-  staff_level: 'none' as 'approver' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none',
+  // 🌟 ແກ້ໄຂ Type Definition ໃຫ້ຕັດ approver ອອກ ເພື່ອຄວາມປອດໄພຂອງ TypeScript
+  staff_level: 'none' as 'assistant_director' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none',
   is_active: false,
   created_at: ''
 })
@@ -235,7 +235,6 @@ const handleCancel = () => {
 
 const handleSubmit = async () => {
   if (loading.value) {
-    console.log('[CreateUser] Already submitting, ignoring...')
     return
   }
 
@@ -250,13 +249,10 @@ const handleSubmit = async () => {
       full_name: form.full_name.trim(),
       username: form.username.trim(),
       role: form.role,
-      // ຖ້າບໍ່ແມ່ນ staff ໃຫ້ staff_level ເປັນ none
       staff_level: form.role === 'staff' ? form.staff_level : 'none',
       is_active: form.is_active ? 1 : 0,
       ...(form.password && { password: form.password })
     }
-
-    console.log('[CreateUser] Emitting save with data:', userData)
 
     emit('save', {
       ...userData,

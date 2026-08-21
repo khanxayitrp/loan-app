@@ -51,8 +51,9 @@
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ເບີໂທຕິດຕໍ່:</td>
                   <td class="border border-gray-400 px-2 py-1">{{ printData.phone }}</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ບ່ອນເຮັດວຽກ:</td>
-                  <td class="border border-gray-400 px-2 py-1">{{ printData.companyName }} ({{ printData.jobTenure }}
-                    ປີ)</td>
+                  <!-- ✅ ໂຄ້ດໃໝ່ (ເອົາຄຳວ່າ ປີ ອອກຈາກໃນວົງເລັບ) -->
+                  <td class="border border-gray-400 px-2 py-1">{{ printData.companyName }} ({{ printData.jobTenure }})
+                  </td>
                 </tr>
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ລາຍຮັບລວມ/ເດືອນ:</td>
@@ -60,7 +61,7 @@
                     formatPrice(printData.totalIncome) }} ກີບ</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ໜີ້ສິນລວມ/ເດືອນ:</td>
                   <td class="border border-gray-400 px-2 py-1 text-error font-bold">{{ formatPrice(printData.totalDebt)
-                    }} ກີບ</td>
+                  }} ກີບ</td>
                 </tr>
               </tbody>
             </table>
@@ -88,7 +89,7 @@
                 <tr>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ດອກເບ້ຍ:</td>
                   <td class="border border-gray-400 px-2 py-1">{{ printData.interestRate }}% {{ printData.interestType
-                    }}</td>
+                  }}</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ໄລຍະເວລາ:</td>
                   <td class="border border-gray-400 px-2 py-1">{{ printData.loanPeriod }} ເດືອນ</td>
                 </tr>

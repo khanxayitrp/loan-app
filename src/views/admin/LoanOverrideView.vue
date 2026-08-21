@@ -2,17 +2,16 @@
   <div class="min-h-screen bg-slate-50 p-6 font-lao text-slate-800">
     <div class="max-w-6xl mx-auto space-y-6">
 
-      <!-- 📌 HEADER -->
       <header class="bg-red-50 border border-red-200 p-6 rounded-2xl shadow-sm">
         <h1 class="text-2xl font-black text-red-700 flex items-center gap-2">
           <span class="icon-[tabler--settings-exclamation] size-8"></span> IT Support: ລະບົບແກ້ໄຂສິນເຊື່ອສຸກເສີນ
         </h1>
         <p class="text-sm text-red-600 mt-2 font-medium">
-          (God Mode) ແກ້ໄຂສະຖານະ, ຮ້ານຄ້າ, ສິນຄ້າ ແລະ ຂໍ້ມູນການເງິນ. ລະບົບຈະຄືນສະຕັອກ ແລະ ສ້າງຕາຕະລາງຜ່ອນໃໝ່ອັດຕະໂນມັດ ຕາມໂຄງສ້າງ Hybrid System.
+          (God Mode) ແກ້ໄຂສະຖານະ, ຮ້ານຄ້າ, ສິນຄ້າ ແລະ ຂໍ້ມູນການເງິນ. ລະບົບຈະຄືນສະຕັອກ ແລະ ສ້າງຕາຕະລາງຜ່ອນໃໝ່ອັດຕະໂນມັດ
+          ຕາມໂຄງສ້າງ Hybrid System.
         </p>
       </header>
 
-      <!-- 📌 SEARCH -->
       <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <label class="block text-sm font-bold text-slate-700 mb-2">ລະຫັດສິນເຊື່ອ (Loan ID)</label>
         <div class="flex gap-4">
@@ -25,155 +24,283 @@
         </div>
       </section>
 
-      <!-- 📌 MAIN CONTENT -->
-      <div v-if="snapshot" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div v-if="snapshot" class="space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- 🔴 ฝั่งซ้าย: ข้อมูลเก่า (Read Only) -->
-        <section class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit opacity-90">
-          <h3 class="text-lg font-bold text-slate-800 border-b pb-3 mb-4 flex items-center gap-2">
-            <span class="icon-[tabler--database] size-5 text-slate-500"></span> ຂໍ້ມູນປັດຈຸບັນ
-          </h3>
-          <div class="space-y-3 text-sm">
-            <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ສະຖານະ:</span> <b class="uppercase text-slate-700">{{ snapshot.status }}</b></div>
-            <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ລູກຄ້າ:</span> <b>{{ snapshot.customer?.first_name }} {{ snapshot.customer?.last_name }}</b></div>
-            <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ຮ້ານຄ້າ:</span> <b>{{ snapshot.partner_name }}</b></div>
-            <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ສິນຄ້າ:</span> <b>{{ snapshot.product?.product_name }}</b></div>
-            <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ຕົວເລືອກ:</span> <b>{{ snapshot.variant?.color || 'N/A' }}</b></div>
-            <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ຍອດຈັດ:</span> <b class="text-sky-700">{{ formatPrice(snapshot.total_amount) }}</b></div>
-            <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ດອກເບ້ຍ:</span> <b>{{ snapshot.interest_rate_at_apply }}% ({{ snapshot.loan_period }} ງວດ)</b></div>
-            <div class="flex justify-between pb-2"><span class="text-slate-500">ຄ່າຜ່ອນ/ເດືອນ:</span> <b class="text-sky-600 font-black">{{ formatPrice(snapshot.monthly_pay) }}</b></div>
-          </div>
-        </section>
-
-        <!-- 🔴 ฝั่งขวา: ฟอร์มแก้ไข (Draft State) -->
-        <section class="lg:col-span-7 bg-white p-6 rounded-2xl shadow-xl border-2 border-red-200 space-y-4 relative">
-          <h3 class="text-lg font-bold text-red-700 border-b pb-3 mb-4">ກຳນົດຄ່າໃໝ່ (Overrides)</h3>
-
-          <div class="form-control mb-4 p-4 bg-red-50 border border-red-100 rounded-xl">
-            <label class="label"><span class="label-text font-bold text-red-800">ປະເພດການແກ້ໄຂ (Action Type) *</span></label>
-            <select v-model="overrideForm.action_type" class="select select-bordered w-full bg-white font-bold text-red-700">
-              <option value="FULL_OVERRIDE">ແກ້ໄຂທຸກຂໍ້ມູນ (Full Override)</option>
-              <option value="CHANGE_PARTNER">ປ່ຽນຮ້ານຄ້າ ແລະ ສິນຄ້າ (Change Partner & Product)</option>
-              <option value="CHANGE_PRODUCT">ປ່ຽນສະເພາະສິນຄ້າ (Change Product Only)</option>
-              <option value="CANCEL_ONLY">ຍົກເລີກບິນຖາວອນ (Cancel Only)</option>
-              <option value="CANCEL_AND_RECREATE">ຍົກເລີກບິນເກົ່າ ແລະ ເຊື່ອມໂຍງບິນໃໝ່ (Cancel & Recreate)</option>
-            </select>
-          </div>
-
-          <div v-if="overrideForm.action_type === 'CANCEL_AND_RECREATE'" class="form-control mb-4 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-            <label class="label"><span class="label-text font-bold text-orange-800">ລະຫັດບິນໃໝ່ທີ່ພະນັກງານສ້າງໄວ້ແລ້ວ (New Loan ID) *</span></label>
-            <input v-model="overrideForm.replacement_loan_id_str" type="text" placeholder="ຕົວຢ່າງ: LN-2026-0099" class="input input-bordered w-full bg-white font-mono text-orange-900 font-bold" />
-            <p class="text-xs text-orange-600 mt-2">ລະບົບຈະກວດສອບວ່າບິນນີ້ມີຢູ່ຈິງກ່ອນທຳການເຊື່ອມໂຍງຂໍ້ມູນ</p>
-          </div>
-
-          <div class="space-y-4">
-            
-            <!-- 🌟 Status Field: เพิ่ม :disabled="isStatusForward(...)" ในแต่ละตัวเลือก 🌟 -->
-            <fieldset :disabled="isStatusLocked" class="form-control">
-              <label class="label"><span class="label-text font-bold" :class="{'text-slate-400': isStatusLocked}">ປັບສະຖານະ (Status)</span></label>
-              <select v-model="overrideForm.status" class="select select-bordered w-full bg-white font-bold text-slate-700">
-                <option value="pending" :disabled="isStatusForward('pending')">ສົ່ງກັບໄປແກ້ໄຂໃໝ່ (Pending / Return)</option>
-                <option value="verifying" :disabled="isStatusForward('verifying')">ລໍຖ້າຫົວໜ້າກວດກາ (Verifying)</option>
-                <option value="verified" :disabled="isStatusForward('verified')">ລໍຖ້າຜູ້ບໍລິຫານອະນຸມັດ (Verified)</option>
-                <option value="approved" :disabled="isStatusForward('approved')">ອະນຸມັດ (Approved)</option>
-                <option value="disbursed" :disabled="isStatusForward('disbursed')">ປ່ອຍສິນເຊື່ອສຳເລັດ (Disbursed)</option>
-                <option value="rejected">ປະຕິເສດ (Rejected)</option>
-                <option value="cancelled">ຍົກເລີກສິນເຊື່ອ (Cancelled)</option>
-              </select>
-              <p v-if="!isStatusLocked" class="text-xs text-red-500 mt-1">* ລະບົບອະນຸຍາດໃຫ້ປັບສະຖານະຍ້ອນກັບໄດ້ເທົ່ານັ້ນ</p>
-            </fieldset>
-
-            <div class="divider text-sm text-slate-400">ຮ້ານຄ້າ ແລະ ສິນຄ້າ</div>
-
-            <fieldset :disabled="isPartnerLocked" class="form-control relative w-full">
-              <label class="label"><span class="label-text font-bold" :class="{'text-slate-400': isPartnerLocked}">ເລືອກຮ້ານຄ້າໃໝ່ (Partner)</span></label>
-              <input v-model="partnerSearch" @focus="fetchPartnersOnFocus" @input="showPartnerDropdown = true" @blur="hidePartnerDropdown" type="text"
-                placeholder="ພິມຊື່ຮ້ານຄ້າເພື່ອຄົ້ນຫາ..." class="input input-bordered w-full bg-white" />
-
-              <div v-show="showPartnerDropdown && filteredPartners.length > 0 && !isPartnerLocked"
-                class="absolute z-[9999] w-full top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
-                <div v-for="p in filteredPartners" :key="p.id" @mousedown.prevent="selectPartner(p)"
-                  class="p-4 hover:bg-red-50 cursor-pointer border-b last:border-0 transition-colors">
-                  <div class="font-bold text-slate-800">{{ p.shop_name }}</div>
-                  <div class="text-xs text-slate-500">ຮ້ານຄ້າ ID: {{ p.id }}</div>
-                </div>
+          <section class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit opacity-90">
+            <h3 class="text-lg font-bold text-slate-800 border-b pb-3 mb-4 flex items-center gap-2">
+              <span class="icon-[tabler--database] size-5 text-slate-500"></span> ຂໍ້ມູນປັດຈຸບັນ
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ສະຖານະ:</span> <b
+                  class="uppercase text-slate-700">{{ snapshot.status }}</b></div>
+              <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ລູກຄ້າ:</span> <b>{{
+                snapshot.customer?.first_name }} {{ snapshot.customer?.last_name }}</b></div>
+              <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ຮ້ານຄ້າ:</span> <b>{{
+                snapshot.partner_name }}</b></div>
+              <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ສິນຄ້າ:</span> <b>{{
+                snapshot.product?.product_name }}</b></div>
+              <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ຕົວເລືອກ:</span> <b>{{
+                snapshot.variant?.color || 'N/A' }}</b></div>
+              <div class="flex justify-between border-b pb-2"><span class="text-slate-500">ຍອດຈັດ:</span> <b
+                  class="text-sky-700">{{ formatPrice(snapshot.total_amount) }}</b></div>
+              <div class="flex justify-between border-b pb-2">
+                <span class="text-slate-500">ດອກເບ້ຍ:</span>
+                <b>{{ snapshot.interest_rate_at_apply }}% ({{ snapshot.interest_type === 'effective_rate' ?
+                  'ຫຼຸດຕົ້ນຫຼຸດດອກ' : 'ຄົງທີ່' }})</b>
               </div>
-            </fieldset>
+              <div class="flex justify-between pb-2"><span class="text-slate-500">ຄ່າຜ່ອນ/ເດືອນ:</span> <b
+                  class="text-sky-600 font-black">{{ formatPrice(snapshot.monthly_pay) }}</b></div>
+            </div>
+          </section>
 
-            <fieldset :disabled="isProductLocked" class="form-control relative w-full" v-if="overrideForm.partner_id">
-              <label class="label"><span class="label-text font-bold" :class="{'text-slate-400': isProductLocked}">ເລືອກສິນຄ້າໃໝ່ (ສະເພາະລຸ້ນທີ່ມີສະຕັອກ)</span></label>
-              <input v-model="productSearch" @focus="fetchProductsOnFocus" @input="showProductDropdown = true" @blur="hideProductDropdown" type="text"
-                placeholder="ພິມ System SKU ຫຼື ຊື່ສິນຄ້າເພື່ອຄົ້ນຫາ..." class="input input-bordered w-full bg-white" />
+          <section class="lg:col-span-7 bg-white p-6 rounded-2xl shadow-xl border-2 border-red-200 space-y-4 relative">
+            <h3 class="text-lg font-bold text-red-700 border-b pb-3 mb-4">ກຳນົດຄ່າໃໝ່ (Overrides)</h3>
 
-              <div v-show="showProductDropdown && filteredProducts.length > 0 && !isProductLocked"
-                class="absolute z-[9999] w-full top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
-                <div v-for="prod in filteredProducts" :key="prod.variant_id" @mousedown.prevent="selectProduct(prod)"
-                  class="p-4 hover:bg-red-50 cursor-pointer border-b last:border-0 transition-colors flex justify-between items-center">
-                  <div>
-                    <div class="font-bold text-slate-800">{{ prod.product_name }}</div>
-                    <div class="text-sm text-slate-600 mt-1">
-                      <span class="font-mono text-xs bg-slate-200 px-1 py-0.5 rounded text-slate-700 mr-2">{{ prod.system_sku }}</span>
-                      <span class="text-xs">ສີ: {{ prod.color || 'Default' }}</span>
+            <div class="form-control mb-4 p-4 bg-red-50 border border-red-100 rounded-xl">
+              <label class="label"><span class="label-text font-bold text-red-800">ປະເພດການແກ້ໄຂ (Action Type)
+                  *</span></label>
+              <select v-model="overrideForm.action_type"
+                class="select select-bordered w-full bg-white font-bold text-red-700">
+                <option value="FULL_OVERRIDE">ແກ້ໄຂທຸກຂໍ້ມູນ (Full Override)</option>
+                <option value="CHANGE_PAYMENT_DATE">ແກ້ໄຂສະເພາະວັນທີຜ່ອນງວດທຳອິດ (Change 1st Payment Date)</option>
+                <option value="CHANGE_PARTNER">ປ່ຽນຮ້ານຄ້າ ແລະ ສິນຄ້າ (Change Partner & Product)</option>
+                <option value="CHANGE_PRODUCT">ປ່ຽນສະເພາະສິນຄ້າ (Change Product Only)</option>
+                <option value="CANCEL_ONLY">ຍົກເລີກບິນຖາວອນ (Cancel Only)</option>
+                <option value="CANCEL_AND_RECREATE">ຍົກເລີກບິນເກົ່າ ແລະ ເຊື່ອມໂຍງບິນໃໝ່ (Cancel & Recreate)</option>
+              </select>
+            </div>
+
+            <div v-if="overrideForm.action_type === 'CANCEL_AND_RECREATE'"
+              class="form-control mb-4 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+              <label class="label"><span class="label-text font-bold text-orange-800">ລະຫັດບິນໃໝ່ທີ່ພະນັກງານສ້າງໄວ້ແລ້ວ
+                  (New Loan ID) *</span></label>
+              <input v-model="overrideForm.replacement_loan_id_str" type="text" placeholder="ຕົວຢ່າງ: LN-2026-0099"
+                class="input input-bordered w-full bg-white font-mono text-orange-900 font-bold" />
+              <p class="text-xs text-orange-600 mt-2">ລະບົບຈະກວດສອບວ່າບິນນີ້ມີຢູ່ຈິງກ່ອນທຳການເຊື່ອມໂຍງຂໍ້ມູນ</p>
+            </div>
+
+            <div class="space-y-4">
+
+              <fieldset :disabled="isStatusLocked" class="form-control">
+                <label class="label"><span class="label-text font-bold"
+                    :class="{ 'text-slate-400': isStatusLocked }">ປັບສະຖານະ (Status)</span></label>
+                <select v-model="overrideForm.status"
+                  class="select select-bordered w-full bg-white font-bold text-slate-700">
+                  <option value="pending" :disabled="isStatusForward('pending')">ສົ່ງກັບໄປແກ້ໄຂໃໝ່ (Pending / Return)
+                  </option>
+                  <option value="verifying" :disabled="isStatusForward('verifying')">ລໍຖ້າຫົວໜ້າກວດກາ (Verifying)
+                  </option>
+                  <option value="verified" :disabled="isStatusForward('verified')">ລໍຖ້າຜູ້ບໍລິຫານອະນຸມັດ (Verified)
+                  </option>
+                  <option value="approved" :disabled="isStatusForward('approved')">ອະນຸມັດ (Approved)</option>
+                  <option value="disbursed" :disabled="isStatusForward('disbursed')">ປ່ອຍສິນເຊື່ອສຳເລັດ (Disbursed)
+                  </option>
+                  <option value="rejected">ປະຕິເສດ (Rejected)</option>
+                  <option value="cancelled">ຍົກເລີກສິນເຊື່ອ (Cancelled)</option>
+                </select>
+                <p v-if="!isStatusLocked" class="text-xs text-red-500 mt-1">*
+                  ລະບົບອະນຸຍາດໃຫ້ປັບສະຖານະຍ້ອນກັບໄດ້ເທົ່ານັ້ນ</p>
+              </fieldset>
+
+              <div class="divider text-sm text-slate-400">ຮ້ານຄ້າ ແລະ ສິນຄ້າ</div>
+
+              <fieldset :disabled="isPartnerLocked" class="form-control relative w-full">
+                <label class="label"><span class="label-text font-bold"
+                    :class="{ 'text-slate-400': isPartnerLocked }">ເລືອກຮ້ານຄ້າໃໝ່ (Partner)</span></label>
+                <input v-model="partnerSearch" @focus="fetchPartnersOnFocus" @input="showPartnerDropdown = true"
+                  @blur="hidePartnerDropdown" type="text" placeholder="ພິມຊື່ຮ້ານຄ້າເພື່ອຄົ້ນຫາ..."
+                  class="input input-bordered w-full bg-white" />
+
+                <div v-show="showPartnerDropdown && filteredPartners.length > 0 && !isPartnerLocked"
+                  class="absolute z-[9999] w-full top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                  <div v-for="p in filteredPartners" :key="p.id" @mousedown.prevent="selectPartner(p)"
+                    class="p-4 hover:bg-red-50 cursor-pointer border-b last:border-0 transition-colors">
+                    <div class="font-bold text-slate-800">{{ p.shop_name }}</div>
+                    <div class="text-xs text-slate-500">ຮ້ານຄ້າ ID: {{ p.id }}</div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset :disabled="isProductLocked" class="form-control relative w-full" v-if="overrideForm.partner_id">
+                <label class="label"><span class="label-text font-bold"
+                    :class="{ 'text-slate-400': isProductLocked }">ເລືອກສິນຄ້າໃໝ່ (ສະເພາະລຸ້ນທີ່ມີສະຕັອກ)</span></label>
+                <input v-model="productSearch" @focus="fetchProductsOnFocus" @input="showProductDropdown = true"
+                  @blur="hideProductDropdown" type="text" placeholder="ພິມ System SKU ຫຼື ຊື່ສິນຄ້າເພື່ອຄົ້ນຫາ..."
+                  class="input input-bordered w-full bg-white" />
+
+                <div v-show="showProductDropdown && filteredProducts.length > 0 && !isProductLocked"
+                  class="absolute z-[9999] w-full top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                  <div v-for="prod in filteredProducts" :key="prod.variant_id" @mousedown.prevent="selectProduct(prod)"
+                    class="p-4 hover:bg-red-50 cursor-pointer border-b last:border-0 transition-colors flex justify-between items-center">
+                    <div>
+                      <div class="font-bold text-slate-800">{{ prod.product_name }}</div>
+                      <div class="text-sm text-slate-600 mt-1">
+                        <span class="font-mono text-xs bg-slate-200 px-1 py-0.5 rounded text-slate-700 mr-2">{{
+                          prod.system_sku }}</span>
+                        <span class="text-xs">ສີ: {{ prod.color || 'Default' }}</span>
+                      </div>
+                    </div>
+                    <div class="text-sky-600 font-bold text-right">
+                      <div>{{ formatPrice(prod.price) }} LAK</div>
+                      <div class="text-xs text-slate-400 font-normal">ສະຕັອກ: {{ prod.stock_quantity }}</div>
                     </div>
                   </div>
-                  <div class="text-sky-600 font-bold text-right">
-                    <div>{{ formatPrice(prod.price) }} LAK</div>
-                    <div class="text-xs text-slate-400 font-normal">ສະຕັອກ: {{ prod.stock_quantity }}</div>
-                  </div>
                 </div>
-              </div>
-            </fieldset>
+              </fieldset>
 
-            <div class="divider text-sm text-slate-400">ຂໍ້ມູນການເງິນ (Financials)</div>
+              <div class="divider text-sm text-slate-400">ຂໍ້ມູນການເງິນ ແລະ ກຳນົດເວລາ (Financials & Schedule)</div>
 
-            <fieldset :disabled="isFinancialsLocked" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-control">
-                <label class="label"><span class="label-text font-bold" :class="{'text-slate-400': isFinancialsLocked}">ຍອດຈັດ (Total Amount)</span></label>
-                <input v-model.number="overrideForm.total_amount" type="number" class="input input-bordered w-full bg-white font-bold" />
-              </div>
-              <div class="form-control">
-                <label class="label"><span class="label-text font-bold" :class="{'text-slate-400': isFinancialsLocked}">ເງິນດາວ (Down Payment)</span></label>
-                <input v-model.number="overrideForm.down_payment" type="number" class="input input-bordered w-full bg-white" />
-              </div>
-              <div class="form-control">
-                <label class="label"><span class="label-text font-bold" :class="{'text-slate-400': isFinancialsLocked}">ໄລຍະເວລາ (ເດືອນ)</span></label>
-                <input v-model.number="overrideForm.loan_period" type="number" class="input input-bordered w-full bg-white" />
-              </div>
-              <div class="form-control">
-                <label class="label"><span class="label-text font-bold" :class="{'text-slate-400': isFinancialsLocked}">ດອກເບ້ຍ (%)</span></label>
-                <input v-model.number="overrideForm.interest_rate" type="number" step="0.01" class="input input-bordered w-full bg-white" />
-              </div>
-            </fieldset>
+              <fieldset :disabled="isFinancialsLocked" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="form-control">
+                  <label class="label"><span class="label-text font-bold"
+                      :class="{ 'text-slate-400': isFinancialsLocked }">ຍອດຈັດ (Total Amount)</span></label>
+                  <input v-model.number="overrideForm.total_amount" type="number"
+                    class="input input-bordered w-full bg-white font-bold" />
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text font-bold"
+                      :class="{ 'text-slate-400': isFinancialsLocked }">ເງິນດາວ (Down Payment)</span></label>
+                  <input v-model.number="overrideForm.down_payment" type="number"
+                    class="input input-bordered w-full bg-white" />
+                </div>
 
-            <div class="p-4 bg-sky-50 border border-sky-200 rounded-xl mt-4 flex justify-between items-center" :class="{'opacity-50': isFinancialsLocked}">
-              <span class="text-sm font-bold text-sky-800">ຄ່າຜ່ອນປະເມີນໃໝ່ (New Monthly):</span>
-              <span class="text-2xl font-black text-sky-600">{{ formatPrice(calculatedMonthlyPay) }} LAK</span>
+                <div class="form-control">
+                  <label class="label"><span class="label-text font-bold"
+                      :class="{ 'text-slate-400': isFinancialsLocked }">ໄລຍະເວລາ (ເດືອນ)</span></label>
+                  <select v-model.number="overrideForm.loan_period" class="select select-bordered w-full bg-white"
+                    @change="handleTermChange">
+                    <option disabled value="0">ເລືອກຈຳນວນງວດ</option>
+                    <option value="6">6 ເດືອນ</option>
+                    <option value="12">12 ເດືອນ</option>
+                    <option value="18">18 ເດືອນ</option>
+                    <option value="24">24 ເດືອນ</option>
+                    <option value="36">36 ເດືອນ</option>
+                    <option value="48">48 ເດືອນ</option>
+                  </select>
+                </div>
+
+                <div class="form-control md:col-span-2">
+                  <label class="label"><span class="label-text font-bold"
+                      :class="{ 'text-slate-400': isFinancialsLocked }">ປະເພດດອກເບ້ຍ (Interest Type)</span></label>
+                  <select v-model="overrideForm.interest_type" class="select select-bordered w-full bg-white">
+                    <option value="flat_rate">ດອກເບ້ຍຄົງທີ່ (Flat Rate)</option>
+                    <option value="effective_rate">ຫຼຸດຕົ້ນຫຼຸດດອກ (Effective Rate)</option>
+                  </select>
+                </div>
+
+                <div class="form-control">
+                  <label class="label"><span class="label-text font-bold"
+                      :class="{ 'text-slate-400': isFinancialsLocked }">ດອກເບ້ຍ (%)</span></label>
+                  <input v-model.number="overrideForm.interest_rate" type="number" step="0.01"
+                    class="input input-bordered w-full bg-white" />
+                </div>
+              </fieldset>
+
+              <fieldset :disabled="isDateLocked" class="form-control mt-4">
+                <label class="label"><span class="label-text font-bold"
+                    :class="{ 'text-slate-400': isDateLocked }">ວັນທີຜ່ອນງວດທຳອິດ (First Installment Date)
+                    *</span></label>
+                <input v-model="overrideForm.first_installment_date" type="date"
+                  class="input input-bordered w-full bg-white font-bold text-sky-700" />
+                <p class="text-xs text-sky-600 mt-1" v-if="!isDateLocked">*
+                  ລະບົບຈະຄຳນວນວັນທີຂອງງວດຖັດໄປອັດຕະໂນມັດໂດຍອີງຈາກງວດທຳອິດນີ້ ແລະ ສ້າງຕາຕະລາງຜ່ອນໃໝ່ທັງໝົດ</p>
+              </fieldset>
+
+              <div class="p-4 bg-sky-50 border border-sky-200 rounded-xl mt-4 flex justify-between items-center"
+                :class="{ 'opacity-50': isFinancialsLocked }">
+                <span class="text-sm font-bold text-sky-800">ຄ່າຜ່ອນປະເມີນໃໝ່ (New Monthly):</span>
+                <span class="text-2xl font-black text-sky-600">{{ formatPrice(calculatedMonthlyPay) }} LAK</span>
+              </div>
             </div>
+
+            <div class="divider text-sm text-slate-400">AUDIT TRAIL (ບັງຄັບ)</div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-slate-700">Ref. Doc No. *</span></label>
+                <input v-model="auditForm.reference_doc" type="text" placeholder="ເລກທີເອກະສານອ້າງອີງ"
+                  class="input input-bordered bg-white" required />
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-slate-700">Reason *</span></label>
+                <input v-model="auditForm.reason" type="text" placeholder="ເຫດຜົນການແກ້ໄຂ"
+                  class="input input-bordered bg-white" required />
+              </div>
+
+              <div class="form-control md:col-span-2">
+                <label class="label"><span class="label-text font-bold text-red-600">ຮູບເອກະສານອະນຸມັດ (Approval
+                    Document) *</span></label>
+                <input type="file" @change="handleFileUpload" accept="image/*,.pdf"
+                  class="file-input file-input-bordered w-full bg-white" required />
+                <p class="text-xs text-slate-500 mt-1">ກະລຸນາແນບຮູບພາບ ຫຼື ຟາຍ PDF ທີ່ໄດ້ຮັບການອະນຸມັດຈາກຜູ້ບໍລິຫານແລ້ວ
+                </p>
+              </div>
+            </div>
+
+            <button @click="handleExecuteOverride" class="btn bg-red-600 hover:bg-red-700 text-white w-full mt-4"
+              :disabled="!isFormValid || adminStore.isSubmitting">
+              <span v-if="adminStore.isSubmitting" class="loading loading-spinner"></span> ຍືນຍັນການແກ້ໄຂ (EXECUTE
+              OVERRIDE)
+            </button>
+          </section>
+
+        </div>
+
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-center border-b pb-4 mb-4">
+            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <span class="icon-[tabler--calendar-due] size-6 text-sky-600"></span> ຕາຕະລາງຜ່ອນຊຳລະປັດຈຸບັນ (Repayment
+              Schedule)
+            </h3>
+            <span v-if="repaymentsList.length > 0" class="badge badge-sky font-bold text-xs">
+              ທັງໝົດ {{ repaymentsList.length }} ງວດ
+            </span>
           </div>
 
-          <div class="divider text-sm text-slate-400">AUDIT TRAIL (ບັງຄັບ)</div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-slate-700">Ref. Doc No. *</span></label>
-              <input v-model="auditForm.reference_doc" type="text" placeholder="ເລກທີເອກະສານອ້າງອີງ" class="input input-bordered bg-white" required />
-            </div>
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-slate-700">Reason *</span></label>
-              <input v-model="auditForm.reason" type="text" placeholder="ເຫດຜົນການແກ້ໄຂ" class="input input-bordered bg-white" required />
-            </div>
-
-            <div class="form-control md:col-span-2">
-              <label class="label"><span class="label-text font-bold text-red-600">ຮູບເອກະສານອະນຸມັດ (Approval Document) *</span></label>
-              <input type="file" @change="handleFileUpload" accept="image/*,.pdf" class="file-input file-input-bordered w-full bg-white" required />
-              <p class="text-xs text-slate-500 mt-1">ກະລຸນາແນບຮູບພາບ ຫຼື ຟາຍ PDF ທີ່ໄດ້ຮັບການອະນຸມັດຈາກຜູ້ບໍລິຫານແລ້ວ</p>
-            </div>
+          <div v-if="repaymentsList.length > 0" class="overflow-x-auto">
+            <table class="table table-zebra w-full text-sm">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700">
+                  <th class="text-center">ງວດທີ</th>
+                  <th class="text-center font-bold text-sky-700">ວັນທີກຳນົດຜ່ອນ (Due Date)</th>
+                  <th class="text-right">ເງິນຕົ້ນ (Principal)</th>
+                  <th class="text-right">ດອກເບ້ຍ (Interest)</th>
+                  <th class="text-right font-bold">ຄ່າງວດລວມ (Total Due)</th>
+                  <th class="text-center">ສະຖານະ (Status)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in repaymentsList" :key="item.id" class="hover:bg-sky-50/50 transition-colors">
+                  <td class="text-center font-bold text-slate-600">{{ item.installment_no }}</td>
+                  <td class="text-center font-mono font-bold text-sky-800 bg-sky-50/80 rounded-lg px-2 py-1">
+                    {{ formatDate(item.due_date) }}
+                  </td>
+                  <td class="text-right font-mono">{{ formatPrice(item.principal_amount) }}</td>
+                  <td class="text-right font-mono">{{ formatPrice(item.interest_amount) }}</td>
+                  <td class="text-right font-mono font-bold text-slate-900">{{ formatPrice(item.total_due) }}</td>
+                  <td class="text-center">
+                    <span v-if="item.payment_status === 'paid'"
+                      class="badge badge-success badge-sm text-white font-bold">
+                      ຊຳລະແລ້ວ (Paid)
+                    </span>
+                    <span v-else-if="item.payment_status === 'cancelled'"
+                      class="badge badge-ghost badge-sm text-slate-400">
+                      ຍົກເລີກ (Cancelled)
+                    </span>
+                    <span v-else class="badge badge-warning badge-sm font-bold text-slate-800">
+                      ລໍຖ້າຊຳລະ (Unpaid)
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          <!-- 🚀 Execute Button -->
-          <button @click="handleExecuteOverride" class="btn bg-red-600 hover:bg-red-700 text-white w-full mt-4" :disabled="!isFormValid || adminStore.isSubmitting">
-            <span v-if="adminStore.isSubmitting" class="loading loading-spinner"></span> ຍືນຍັນການແກ້ໄຂ (EXECUTE OVERRIDE)
-          </button>
+          <div v-else class="text-center py-8 text-slate-400">
+            <span class="icon-[tabler--calendar-off] size-10 mx-auto mb-2 opacity-50 block"></span>
+            <p>ບໍ່ພົບຂໍ້ມູນຕາຕະລາງຜ່ອນຊຳລະ ຫຼື ຍັງບໍ່ໄດ້ຖືກສ້າງ</p>
+          </div>
         </section>
 
       </div>
@@ -195,6 +322,13 @@ const productStore = useProductStore();
 const searchQuery = ref('');
 const snapshot = computed(() => adminStore.loanSnapshot);
 
+// 🌟 ดึงข้อมูลตาราง repayments จาก snapshot (หรือ array เปล่าถ้าไม่มี)
+const repaymentsList = computed(() => {
+  if (!snapshot.value) return [];
+  // รองรับทั้ง snapshot.repayments หรือ snapshot.repaymentsList
+  return snapshot.value.repayments || snapshot.value.repayment_schedules || [];
+});
+
 const overrideForm = reactive({
   action_type: 'FULL_OVERRIDE',
   status: '',
@@ -205,7 +339,9 @@ const overrideForm = reactive({
   down_payment: 0,
   loan_period: 0,
   interest_rate: 0,
-  replacement_loan_id_str: '' 
+  interest_type: 'flat_rate',
+  first_installment_date: '',
+  replacement_loan_id_str: ''
 });
 const auditForm = reactive({ reference_doc: '', reason: '' });
 const approvalFile = ref<File | null>(null);
@@ -215,27 +351,18 @@ const approvalFile = ref<File | null>(null);
 // ==========================================
 const isFormGloballyLocked = computed(() => ['cancelled', 'rejected'].includes(snapshot.value?.status || ''));
 
-// Status: ล็อคไว้ถ้าไม่ใช่ FULL_OVERRIDE
 const isStatusLocked = computed(() => isFormGloballyLocked.value || overrideForm.action_type !== 'FULL_OVERRIDE');
+const isPartnerLocked = computed(() => isFormGloballyLocked.value || ['CANCEL_ONLY', 'CANCEL_AND_RECREATE', 'CHANGE_PRODUCT', 'CHANGE_PAYMENT_DATE'].includes(overrideForm.action_type));
+const isProductLocked = computed(() => isFormGloballyLocked.value || ['CANCEL_ONLY', 'CANCEL_AND_RECREATE', 'CHANGE_PAYMENT_DATE'].includes(overrideForm.action_type));
+const isFinancialsLocked = computed(() => isFormGloballyLocked.value || ['CANCEL_ONLY', 'CANCEL_AND_RECREATE', 'CHANGE_PAYMENT_DATE'].includes(overrideForm.action_type));
 
-// Partner: ล็อคหากเปลี่ยนแค่สินค้าอย่างเดียว หรือสั่งยกเลิก
-const isPartnerLocked = computed(() => isFormGloballyLocked.value || ['CANCEL_ONLY', 'CANCEL_AND_RECREATE', 'CHANGE_PRODUCT'].includes(overrideForm.action_type));
+const isDateLocked = computed(() => isFormGloballyLocked.value || !['FULL_OVERRIDE', 'CHANGE_PAYMENT_DATE'].includes(overrideForm.action_type));
 
-// Product/Financials: ล็อคเฉพาะตอนยกเลิก
-const isProductLocked = computed(() => isFormGloballyLocked.value || ['CANCEL_ONLY', 'CANCEL_AND_RECREATE'].includes(overrideForm.action_type));
-const isFinancialsLocked = computed(() => isFormGloballyLocked.value || ['CANCEL_ONLY', 'CANCEL_AND_RECREATE'].includes(overrideForm.action_type));
-
-// ==========================================
-// 🌟 [ใหม่] ป้องกันการเปลี่ยนสถานะไปด้านหน้า 🌟
-// ==========================================
 const statusProgression = ['pending', 'verifying', 'verified', 'approved', 'disbursed'];
-
 const isStatusForward = (optionValue: string) => {
   if (!snapshot.value) return false;
   const currentIndex = statusProgression.indexOf(snapshot.value.status);
   const optionIndex = statusProgression.indexOf(optionValue);
-
-  // ถ้าสถานะทั้งคู่รวมอยู่ใน progression ให้เช็คว่า Index ของ Option เกินกว่าสถานะเดิมหรือไม่
   if (currentIndex !== -1 && optionIndex !== -1) {
     return optionIndex > currentIndex;
   }
@@ -248,32 +375,33 @@ const isStatusForward = (optionValue: string) => {
 watch(() => overrideForm.action_type, (newType) => {
   if (!snapshot.value) return;
 
-  // 1. จัดการ Status อัตโนมัติ
   if (['CANCEL_ONLY', 'CANCEL_AND_RECREATE'].includes(newType)) {
     overrideForm.status = 'cancelled';
   } else {
     overrideForm.status = snapshot.value.status;
   }
 
-  // 2. เคลียร์รหัสบิลใหม่ หากเปลี่ยนใจไม่ Recreate แล้ว
   if (newType !== 'CANCEL_AND_RECREATE') {
     overrideForm.replacement_loan_id_str = '';
   }
 
-  // 3. เคลียร์ร้านค้า หากเลือกผิดประเภท
-  if (['CHANGE_PRODUCT', 'CANCEL_ONLY', 'CANCEL_AND_RECREATE'].includes(newType)) {
+  if (!['FULL_OVERRIDE', 'CHANGE_PAYMENT_DATE'].includes(newType)) {
+    overrideForm.first_installment_date = '';
+  }
+
+  if (['CHANGE_PRODUCT', 'CANCEL_ONLY', 'CANCEL_AND_RECREATE', 'CHANGE_PAYMENT_DATE'].includes(newType)) {
     overrideForm.partner_id = snapshot.value.product?.partner_id || null;
     partnerSearch.value = snapshot.value.partner_name || '';
   }
 
-  // 4. เคลียร์สินค้าและการเงิน หากสั่งยกเลิก
-  if (['CANCEL_ONLY', 'CANCEL_AND_RECREATE'].includes(newType)) {
+  if (['CANCEL_ONLY', 'CANCEL_AND_RECREATE', 'CHANGE_PAYMENT_DATE'].includes(newType)) {
     overrideForm.product_id = snapshot.value.product_id;
     overrideForm.variant_id = snapshot.value.variant_id;
     overrideForm.total_amount = snapshot.value.total_amount;
     overrideForm.down_payment = snapshot.value.down_payment;
     overrideForm.loan_period = snapshot.value.loan_period;
     overrideForm.interest_rate = snapshot.value.interest_rate_at_apply;
+    overrideForm.interest_type = snapshot.value.interest_type || 'flat_rate';
     productSearch.value = snapshot.value.variant?.system_sku
       ? `${snapshot.value.variant?.system_sku} - ${snapshot.value.product?.product_name}`
       : (snapshot.value.product?.product_name || '');
@@ -345,31 +473,66 @@ const selectProduct = (prod: any) => {
 };
 
 // ==========================================
-// 🌟 4. ระบบการคำนวน ແລະ ส่งข้อมูล 🌟
+// 🌟 4. ระบบการคำนวน และ ส่งข้อมูล 🌟
 // ==========================================
 const handleFileUpload = (event: Event) => {
   const target = event.target as HTMLInputElement;
-  // 🌟 FIX: Use Optional Chaining and Nullish Coalescing to satisfy strict type rules
   approvalFile.value = target.files?.[0] ?? null;
+};
+
+const getInterestRateByTerm = (months: number): number => {
+  if (!months || months <= 6) return 2.50;
+  if (months <= 12) return 2.00;
+  if (months <= 18) return 1.89;
+  if (months <= 24) return 1.75;
+  return 1.69;
+};
+
+const handleTermChange = () => {
+  if (overrideForm.loan_period > 0) {
+    overrideForm.interest_rate = getInterestRateByTerm(overrideForm.loan_period);
+  }
 };
 
 const calculatedMonthlyPay = computed(() => {
   const principal = Math.max(0, overrideForm.total_amount - overrideForm.down_payment);
   if (!principal || !overrideForm.interest_rate || !overrideForm.loan_period) return 0;
+
   const ratePerMonth = overrideForm.interest_rate / 100;
-  return Math.round((principal / overrideForm.loan_period) + (principal * ratePerMonth));
+
+  if (overrideForm.interest_type === 'effective_rate') {
+    const r = ratePerMonth;
+    const n = overrideForm.loan_period;
+    return Math.round((principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
+  } else {
+    const totalInterest = principal * ratePerMonth * overrideForm.loan_period;
+    return Math.round((principal + totalInterest) / overrideForm.loan_period);
+  }
 });
 
-// ตรวจสอบความถูกต้องของฟอร์ม
 const isFormValid = computed(() => {
   const isAuditValid = auditForm.reference_doc.trim() !== '' && auditForm.reason.trim() !== '' && approvalFile.value !== null;
   if (overrideForm.action_type === 'CANCEL_AND_RECREATE') {
     return isAuditValid && overrideForm.replacement_loan_id_str.trim() !== '';
   }
+  if (['CHANGE_PAYMENT_DATE', 'FULL_OVERRIDE'].includes(overrideForm.action_type)) {
+    return isAuditValid && overrideForm.first_installment_date.trim() !== '';
+  }
   return isAuditValid;
 });
 
 const formatPrice = (price: number | undefined) => Number(price || 0).toLocaleString('en-US');
+
+// 🌟 ตัวจัดฟอร์แมตวันที่แบบ YYYY-MM-DD สำหรับแสดงในตาราง
+const formatDate = (dateStr: string | Date | undefined) => {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return String(dateStr);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const searchLoan = async () => {
   if (!searchQuery.value) return;
@@ -386,7 +549,9 @@ const searchLoan = async () => {
       overrideForm.down_payment = snapshot.value.down_payment;
       overrideForm.loan_period = snapshot.value.loan_period;
       overrideForm.interest_rate = snapshot.value.interest_rate_at_apply;
+      overrideForm.interest_type = snapshot.value.interest_type || 'flat_rate';
       overrideForm.replacement_loan_id_str = '';
+      overrideForm.first_installment_date = '';
 
       auditForm.reference_doc = ''; auditForm.reason = ''; approvalFile.value = null;
       partnerSearch.value = snapshot.value.partner_name || '';
@@ -437,10 +602,15 @@ const handleExecuteOverride = async () => {
 
     await adminStore.executeLoanOverride(snapshot.value.id, formData);
 
+    // 🌟 หลังอัปเดตสำเร็จ ทำการ Re-fetch ข้อมูลเพื่ออัปเดตตาราง Repayment Schedule ทันที
+    await searchLoan();
+
     if (overrideForm.action_type === 'CANCEL_AND_RECREATE') {
       alert.success('ສຳເລັດ!', `ຍົກເລີກບິນເກົ່າ ແລະ ເຊື່ອມໂຍງບິນໃໝ່ (${overrideForm.replacement_loan_id_str}) ສຳເລັດແລ້ວ.`);
     } else if (overrideForm.action_type === 'CANCEL_ONLY') {
       alert.success('ສຳເລັດ!', 'ຍົກເລີກບິນຖາວອນສຳເລັດແລ້ວ.');
+    } else if (overrideForm.action_type === 'CHANGE_PAYMENT_DATE') {
+      alert.success('ສຳເລັດ!', 'ປ່ຽນແປງວັນທີຜ່ອນງວດທຳອິດ ແລະ ສ້າງຕາຕະລາງໃໝ່ສຳເລັດ.');
     } else {
       alert.success('ສຳເລັດ!', 'ອັບເດດຂໍ້ມູນສຳເລັດ ທ່ານສາມາດພິມສັນຍາໃໝ່ໄດ້ເລີຍ.');
     }
@@ -457,5 +627,8 @@ onUnmounted(() => {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;600;700;900&display=swap');
-.font-lao { font-family: 'Noto Sans Lao', sans-serif; }
+
+.font-lao {
+  font-family: 'Noto Sans Lao', sans-serif;
+}
 </style>

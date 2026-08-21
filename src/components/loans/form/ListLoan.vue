@@ -315,12 +315,12 @@ const fetchData = async () => {
         LoanApplicationStatus.VERIFYING,
         LoanApplicationStatus.VERIFIED,
         LoanApplicationStatus.APPROVED,
-        LoanApplicationStatus.REJECTED,
-        LoanApplicationStatus.DISBURSED,
-        LoanApplicationStatus.CLOSED
+        // LoanApplicationStatus.REJECTED,
+        // LoanApplicationStatus.DISBURSED,
+        // LoanApplicationStatus.CLOSED
       ] as any,
       is_confirmed: 1,
-      limit: 1000
+      limit: 250
     })
   } catch (error: any) {
     const errorMsg = error.response?.data?.message || error.message || 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນລາຍການສິນເຊື່ອໄດ້';
