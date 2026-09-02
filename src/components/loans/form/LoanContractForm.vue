@@ -606,6 +606,7 @@ const loadDataFromProps = () => {
     formData.work.companyName = sourceData.cus_company_name || ''
     formData.work.businessType = sourceData.cus_company_businessType || ''
     formData.work.workYears = sourceData.cus_company_workYear || null
+    formData.work.workMonths = sourceData.cus_company_workMonth || null // 🌟 ດຶງເດືອນມາສະແດງໃນຟອມ
     formData.work.position = sourceData.cus_position || ''
     formData.work.salary = sourceData.cus_income || null
     formData.work.salaryDay = sourceData.cus_payroll_date || null

@@ -1,10 +1,19 @@
 export interface CustomerLocation {
-  id: number
-  customer_id: number
-  location_type: 'home' | 'work' | 'other'
-  address: string
-  map_url: string
-  latitude?: number
-  longitude?: number
-  is_primary: number
+  id: number;
+  customer_id: number;
+  location_type: 'home' | 'work' | 'other';
+  address: string;
+  map_url: string;
+  latitude?: number;
+  longitude?: number;
+  is_primary: number;
+}
+
+export interface CustomerQueryParams {
+  search?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  cursor?: number;
+  limit?: number;
 }

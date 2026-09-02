@@ -124,13 +124,20 @@
                   <label class="text-sm font-medium text-gray-500">ເບີໂທ</label>
                   <p>{{ getDraftPhone(selectedDraft) }}</p>
                 </div>
+                <!-- 🟢 ເພີ່ມສະແດງເລກບັນຊີທະນາຄານ -->
+                <div>
+                  <label class="text-sm font-medium text-gray-500">ເລກບັນຊີທະນາຄານ (BCEL)</label>
+                  <p class="font-medium text-indigo-600">{{ selectedDraft.customer?.account_number || '-' }}</p>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-500">ລາຍຮັບ</label>
+                  <p v-if="selectedDraft.customer.income_per_month" class="text-success">{{
+                    formatPrice(selectedDraft.customer.income_per_month) }}</p>
+                  <p v-else>-</p>
+                </div>
                 <div class="md:col-span-2">
                   <label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label>
                   <p>{{ getDraftAddress(selectedDraft) }}</p>
-                </div>
-                <div v-if="selectedDraft.customer.income_per_month">
-                  <label class="text-sm font-medium text-gray-500">ລາຍຮັບ</label>
-                  <p class="text-success">{{ formatPrice(selectedDraft.customer.income_per_month) }}</p>
                 </div>
               </div>
             </div>
@@ -190,6 +197,13 @@
                     <input v-model="modalDraftForm.customer_id_card" type="text"
                       class="input input-sm input-bordered w-full bg-white"
                       :class="{ 'input-error': modalFormErrors.customer_id_card }" required />
+                  </div>
+                  <!-- 🟢 ເພີ່ມຊ່ອງແກ້ໄຂເລກບັນຊີ -->
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ເລກບັນຊີທະນາຄານ (BCEL) *</span></label>
+                    <input v-model="modalDraftForm.account_number" type="text"
+                      class="input input-sm input-bordered w-full bg-white"
+                      :class="{ 'input-error': modalFormErrors.account_number }" required />
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ອາຍຸ *</span></label>
@@ -521,21 +535,7 @@
           </div>
         </div>
 
-        <!-- <div v-else-if="activeTab === 'map'" class="space-y-6">
-          <CustomerLocationMap v-if="selectedDraft?.customer_id" :customer-id="selectedDraft.customer_id"
-            :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
-            :can-add-location="isEditingInModal" :can-edit-location="isEditingInModal"
-            :can-delete-location="isEditingInModal" :can-set-primary="isEditingInModal"
-            @add-location="handleAddLocation" @update-location="handleUpdateLocation"
-            @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
-
-          <div v-if="!isEditingInModal && customerLocations.length === 0" class="text-center py-8 text-gray-500">
-            <span class="icon-[tabler--map-pin-off] size-8 mb-2"></span>
-            <p>ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງ</p>
-          </div>
-        </div> -->
         <div v-else-if="activeTab === 'map'" class="space-y-4">
-          <!-- 🌟 Non-blocking Alert Banner -->
           <div v-if="customerLocations.length === 0" class="alert alert-warning shadow-sm py-2">
             <span class="icon-[tabler--map-pin-off] size-5"></span>
             <span class="text-sm">ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງເທື່ອ.
@@ -543,7 +543,6 @@
             </span>
           </div>
 
-          <!-- 🌟 Map always visible, permissions handled by canManageLocation -->
           <CustomerLocationMap v-if="selectedDraft?.customer_id" :customer-id="selectedDraft.customer_id"
             :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
             :can-add-location="canManageLocation" :can-edit-location="canManageLocation"
@@ -557,34 +556,6 @@
             {{ isEditingInModal ? 'ຍົກເລີກ' : 'ປິດ' }}
           </button>
 
-          <!-- <button
-            v-if="!isEditingInModal && (activeTab === 'details' || activeTab === 'documents' || activeTab === 'map')"
-            v-show="permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create')"
-            class="btn btn-primary" @click="startEditInModal">
-            <span class="icon-[tabler--edit] size-4 mr-1"></span> ແກ້ໄຂ
-          </button>
-
-          <button v-else-if="isEditingInModal && activeTab === 'details'" class="btn btn-success text-white"
-            @click="saveDraftFromModal"
-            :disabled="isSaving || (modalProductVariants.length > 0 && !modalSelectedVariant)">
-            <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
-            <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span>
-            <span v-if="!isSaving">ບັນທຶກການປ່ຽນແປງ</span>
-          </button>
-
-          <button v-else-if="isEditingInModal && activeTab === 'documents'" class="btn btn-success text-white"
-            @click="saveDocumentsOnly" :disabled="isUploadingDocuments">
-            <span v-if="isUploadingDocuments" class="loading loading-spinner loading-xs"></span>
-            <span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span>
-            <span v-if="!isUploadingDocuments">ບັນທຶກເອກະສານ</span>
-          </button>
-
-          <button v-else-if="isEditingInModal && activeTab === 'map'" class="btn btn-success text-white"
-            @click="isEditingInModal = false">
-            <span class="icon-[tabler--check] size-4 mr-1"></span> ສຳເລັດ
-          </button> -->
-
-          <!-- 🌟 Removed 'map' from the activeTab condition here -->
           <button v-if="!isEditingInModal && (activeTab === 'details' || activeTab === 'documents')"
             v-show="permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create')"
             class="btn btn-primary" @click="startEditInModal">
@@ -620,7 +591,7 @@ import { useProductStore } from '@/stores/product'
 import { useLoanContractStore } from '@/stores/loanContract'
 import { useShopStore } from '@/stores/shop'
 import { useAddressStore } from '@/stores/address'
-import { usePermissionStore } from '@/stores/permission' // 🌟 Import Permission Store
+import { usePermissionStore } from '@/stores/permission'
 import { LoanApplicationStatus } from '@/types/loanApplication'
 import type { CustomerLocation } from '@/types/customer'
 import { formatPrice, formatCurrencyInput, getDocumentTypeName } from '@/utils/formatters'
@@ -639,7 +610,7 @@ const productStore = useProductStore()
 const loanContractStore = useLoanContractStore()
 const shopStore = useShopStore()
 const addressStore = useAddressStore()
-const permissionStore = usePermissionStore() // 🌟 ປະກາດໃຊ້ງານ Store
+const permissionStore = usePermissionStore()
 
 const activeTab = ref<'details' | 'documents' | 'map' | 'loanContract'>('details')
 const isEditingInModal = ref(false)
@@ -653,7 +624,6 @@ const openInNewTab = (url: string | null | undefined) => {
   if (url) window.open(url, '_blank');
 };
 
-// 🟢 Product & Variant Selection states
 const modalShopId = ref<number | null>(null)
 const modalProductSearch = ref('')
 const showModalProductDropdown = ref(false)
@@ -664,24 +634,21 @@ const modalProductVariants = ref<any[]>([])
 const modalSelectedVariant = ref<any | null>(null)
 const isModalLoadingVariants = ref(false)
 
-// Map states
 const customerLocations = ref<CustomerLocation[]>([])
 const isLocationLoading = ref(false)
 
-// Form Data
 const modalDraftForm = reactive({
-  customer_name: '', customer_phone: '', customer_id_card: '', customer_address: '', occupation: '', age: 0,
+  customer_name: '', customer_phone: '', customer_id_card: '', account_number: '', customer_address: '', occupation: '', age: 0,
   province_id: '', district_id: '',
   product_name: '', product_type: '', total_amount: 0, down_payment: 0, interest_rate: 0, loan_period: 0,
   monthly_payment: 0, income_per_month: 0, other_debts: 0, interest_type: 'flat_rate', interest_rate_type: 'monthly'
 })
 
 const modalFormErrors = reactive({
-  customer_name: '', customer_phone: '', customer_id_card: '', customer_address: '', occupation: '', age: '',
+  customer_name: '', customer_phone: '', customer_id_card: '', account_number: '', customer_address: '', occupation: '', age: '',
   province_id: '', district_id: '', total_amount: '', down_payment: '', interest_rate: '', loan_period: '', income_per_month: ''
 })
 
-// 🟢 Document State Interfaces
 interface UploadedFile {
   id?: number;
   file: File | Blob | null;
@@ -777,7 +744,6 @@ const closeModal = () => {
 const canPrintProposal = computed(() => !!selectedDraft.value?.id && !!selectedDraft.value?.customer?.first_name)
 const canPrintContract = computed(() => !!selectedContract.value && !!selectedContract.value.id)
 
-// 🌟 Added directly to script setup to handle Map Permissions
 const canManageLocation = computed(() => {
   return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create');
 });
@@ -830,6 +796,7 @@ const startEditInModal = async () => {
   modalDraftForm.customer_name = getDraftDisplayName(draftData)
   modalDraftForm.customer_phone = getDraftPhone(draftData)
   modalDraftForm.customer_id_card = draftData.customer?.identity_number || ''
+  modalDraftForm.account_number = draftData.customer?.account_number || '' // 🟢 ເພີ່ມໂຕນີ້
   modalDraftForm.customer_address = getDraftAddress(draftData)
 
   modalDraftForm.province_id = draftData.customer?.province_id ? String(draftData.customer.province_id) : ''
@@ -869,6 +836,7 @@ const saveDraftFromModal = async () => {
       customer_id: selectedDraft.value?.customer_id,
       first_name: firstName, last_name: lastName,
       phone: modalDraftForm.customer_phone, identity_number: modalDraftForm.customer_id_card,
+      account_number: modalDraftForm.account_number, // 🟢 ເພີ່ມໂຕນີ້
       address: modalDraftForm.customer_address, province_id: modalDraftForm.province_id, district_id: modalDraftForm.district_id,
       age: Number(modalDraftForm.age), occupation: modalDraftForm.occupation,
       income_per_month: modalDraftForm.income_per_month,
@@ -1040,7 +1008,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusLivedWith: cData.liveWith || 'ບໍ່ລະບຸ', cusLivedSituation: cData.residenceStatus || 'ບໍ່ລະບຸ', cusOccupation: cData.occupation || 'ບໍ່ລະບຸ',
 
       cusCompanyName: wData.companyName || 'ບໍ່ລະບຸ', cusCompanyBusinessType: wData.businessType || 'ບໍ່ລະບຸ',
-      cusCompanyLocation: formatAddr(wData.address), cusCompanyWorkYear: Number(wData.workYears) || 0,
+      cusCompanyLocation: formatAddr(wData.address), cusCompanyWorkYear: Number(wData.workYears) || 0, cusCompanyWorkMonth: Number(wData.workMonths) || 0,
       cusPosition: wData.position || 'ບໍ່ລະບຸ', cusIncome: Number(wData.salary) || 0,
       cusPayrollDate: String(wData.salaryDay || '0'), cusCompanyEmpNumber: Number(wData.totalEmployees) || 0,
       cusIncomeOther: Number(wData.otherIncome) || 0, cusIncomeOtherSource: wData.otherIncomeSource || 'ບໍ່ມີ',

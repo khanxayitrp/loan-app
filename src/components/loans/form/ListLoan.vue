@@ -99,7 +99,7 @@
             </td>
             <td>
               <span class="badge badge-sm" :class="getStatusBadgeClass(loan.status)">{{ getStatusText(loan.status)
-                }}</span>
+              }}</span>
             </td>
             <td class="text-sm text-gray-600 dark:text-gray-400">
               {{ (loan.created_at || loan.createdAt) ? formatDate((loan.created_at || loan.createdAt) || '') : '-' }}
@@ -316,7 +316,7 @@ const fetchData = async () => {
         LoanApplicationStatus.VERIFIED,
         LoanApplicationStatus.APPROVED,
         // LoanApplicationStatus.REJECTED,
-        // LoanApplicationStatus.DISBURSED,
+        LoanApplicationStatus.DISBURSED,
         // LoanApplicationStatus.CLOSED
       ] as any,
       is_confirmed: 1,

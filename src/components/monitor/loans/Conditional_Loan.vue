@@ -688,7 +688,13 @@ const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return '-';
   const d = new Date(dateString);
   if (isNaN(d.getTime())) return '-';
-  return d.toLocaleDateString('lo-LA');
+
+  // ດຶງຄ່າ ວັນ, ເດືອນ, ປີ ອອກມາແລ້ວຈັດຮູບແບບເອງໃຫ້ເປັນ DD/MM/YYYY
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+
+  return `${day}/${month}/${year}`;
 };
 
 const summary = computed(() => {

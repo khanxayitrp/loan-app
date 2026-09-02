@@ -555,6 +555,7 @@ const getFeatureDisplayName = (featureName: string): string => {
     'view_admin_dashboard': 'ເບີ່ງແຜງຄວບຄຸມ Admin',
     'view_partner_dashboard': 'ເບີ່ງແຜງຄວບຄຸມ Partner',
     'loan_override': 'ສິດທິພິເສດ (IT Support) ໃນການແກ້ໄຂຂໍ້ມູນສິນເຊື່ອສຸກເສີນຫຼັງອະນຸມັດ',
+    'loan_print': 'ພິມເອກະສານສິນເຊື່ອ'
   }
 
   return displayNames[featureName] || featureName

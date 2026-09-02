@@ -227,7 +227,7 @@ const close = () => emit('close');
 // 🌟 3. Computed Property ສຳລັບກວດສອບສິດການພິມ
 const canPrintSummary = computed(() => {
   // ອະນຸຍາດໃຫ້ພິມສະເພາະຜູ້ທີ່ມີສິດ edit ຫຼື approve (ປ້ອງກັນບໍ່ໃຫ້ Auditor ກົດພິມໄດ້)
-  return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve');
+  return permissionStore.hasPermission('loan_print') && permissionStore.hasPermission('loan_edit');
 });
 
 watch(() => props.isOpen, async (newVal) => {

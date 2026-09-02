@@ -3,13 +3,15 @@
     <h3 class="section-title flex items-center gap-4 flex-wrap">
       V. ຂໍ້ມູນສ່ວນຕົວຂອງ
       <label class="cursor-pointer flex items-center gap-2 text-sm font-normal bg-gray-100 px-2 py-1 rounded">
-        <input type="checkbox" :checked="hasGuarantor" @change="$emit('update:hasGuarantor', !hasGuarantor); errors = {}"
-          :disabled="!isEditing" class="checkbox checkbox-sm" />
+        <input type="checkbox" :checked="hasGuarantor"
+          @change="$emit('update:hasGuarantor', !hasGuarantor); errors = {}" :disabled="!isEditing"
+          class="checkbox checkbox-sm" />
         ຜູ້ຄ້ຳປະກັນ
       </label>
       <label class="cursor-pointer flex items-center gap-2 text-sm font-normal bg-gray-100 px-2 py-1 rounded">
-        <input type="checkbox" :checked="hasReference" @change="$emit('update:hasReference', !hasReference); errors = {}"
-          :disabled="!isEditing" class="checkbox checkbox-sm" />
+        <input type="checkbox" :checked="hasReference"
+          @change="$emit('update:hasReference', !hasReference); errors = {}" :disabled="!isEditing"
+          class="checkbox checkbox-sm" />
         ຜູ້ອ້າງອີງ
       </label>
       <span class="text-sm font-normal text-gray-500">(ຖ້າມີ)</span>
@@ -21,43 +23,31 @@
           <span class="icon-[tabler--user] size-5"></span> ຂໍ້ມູນທົ່ວໄປ
         </h4>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          
+
           <div class="form-control lg:col-span-2">
-            <label class="label"><span class="label-text font-bold">ຊື່ ແລະ ນາມສະກຸນ: <span class="text-error">*</span></span></label>
+            <label class="label"><span class="label-text font-bold">ຊື່ ແລະ ນາມສະກຸນ: <span
+                  class="text-error">*</span></span></label>
             <input v-model="data.fullname" type="text" :readonly="!isEditing"
               class="input input-sm input-bordered w-full"
               :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.fullname ? 'input-error' : '']"
               @input="errors.fullname = ''" />
             <label v-if="errors.fullname" class="label p-0 pt-1">
-              <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.fullname }}</span>
+              <span class="label-text-alt text-error flex items-center gap-1"><span
+                  class="icon-[tabler--alert-circle] size-4"></span> {{ errors.fullname }}</span>
             </label>
           </div>
 
           <div class="form-control relative">
             <label class="label"><span class="label-text font-bold">ວັນເດືອນປີເກີດ:</span></label>
-            <input 
-              type="text" 
-              :value="displayDob" 
-              :readonly="!isEditing"
-              maxlength="10"
-              placeholder="dd/mm/yyyy"
+            <input type="text" :value="displayDob" :readonly="!isEditing" maxlength="10" placeholder="dd/mm/yyyy"
               class="input input-sm input-bordered w-full pr-10"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
-              @input="handleDateTyping($event, 'dob')"
-              @blur="handleDateBlur($event, 'dob')"
-            />
-            <input 
-              ref="hiddenDateInput"
-              v-model="data.dob" 
-              type="date" 
-              class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
-              tabindex="-1"
-            />
-            <span 
-              class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
+              @input="handleDateTyping($event, 'dob')" @blur="handleDateBlur($event, 'dob')" />
+            <input ref="hiddenDateInput" v-model="data.dob" type="date"
+              class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" tabindex="-1" />
+            <span class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
               :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
-              @click="isEditing ? triggerDatePicker() : null"
-            ></span>
+              @click="isEditing ? triggerDatePicker() : null"></span>
           </div>
 
           <div class="form-control">
@@ -69,52 +59,52 @@
               <span class="btn btn-sm btn-disabled join-item">ປີ</span>
             </div>
           </div>
-          
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ເບີໂທລະສັບມືຖື:</span></label>
-            <input v-model="data.phone" type="tel" :readonly="!isEditing"
-              class="input input-sm input-bordered w-full"
+            <input v-model="data.phone" type="tel" :readonly="!isEditing" class="input input-sm input-bordered w-full"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
           </div>
-          
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ເພດ:</span></label>
-            <select v-model="data.gender" :disabled="!isEditing"
-              class="select select-sm select-bordered w-full"
+            <select v-model="data.gender" :disabled="!isEditing" class="select select-sm select-bordered w-full"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'">
               <option value="">ເລືອກ</option>
               <option value="male">ຊາຍ</option>
               <option value="female">ຍິງ</option>
             </select>
           </div>
-          
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ສະຖານະພາບ:</span></label>
-            <select v-model="data.maritalStatus" :disabled="!isEditing"
-              class="select select-sm select-bordered w-full"
+            <select v-model="data.maritalStatus" :disabled="!isEditing" class="select select-sm select-bordered w-full"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'">
               <option value="">ເລືອກ</option>
               <option value="single">ໂສດ</option>
               <option value="married">ແຕ່ງງານແລ້ວ</option>
               <option value="divorced">ຢ່າຮ້າງ</option>
+              <option value="widowed">ໝ້າຍ</option>
             </select>
           </div>
-          
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">ອາຊີບ:</span></label>
             <input v-model="data.occupation" type="text" :readonly="!isEditing"
               class="input input-sm input-bordered w-full"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
           </div>
-          
+
           <div class="form-control">
-            <label class="label"><span class="label-text font-bold">ສາຍພົວພັນ: <span class="text-error">*</span></span></label>
+            <label class="label"><span class="label-text font-bold">ສາຍພົວພັນ: <span
+                  class="text-error">*</span></span></label>
             <input v-model="data.relationship" type="text" :readonly="!isEditing"
               class="input input-sm input-bordered w-full"
               :class="[isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed', errors.relationship ? 'input-error' : '']"
               @input="errors.relationship = ''" />
             <label v-if="errors.relationship" class="label p-0 pt-1">
-              <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.relationship }}</span>
+              <span class="label-text-alt text-error flex items-center gap-1"><span
+                  class="icon-[tabler--alert-circle] size-4"></span> {{ errors.relationship }}</span>
             </label>
           </div>
         </div>
@@ -127,63 +117,35 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="form-control">
             <label class="label"><span class="label-text font-bold">IDCard/Passport:</span></label>
-            <input v-model="data.idCard" type="text" :readonly="!isEditing"
-              class="input input-sm input-bordered w-full"
+            <input v-model="data.idCard" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
           </div>
 
           <div class="form-control relative">
             <label class="label"><span class="label-text font-bold">ວັນເດືອນປີອອກບັດ:</span></label>
-            <input 
-              type="text" 
-              :value="displayIdCardIssueDate" 
-              :readonly="!isEditing"
-              maxlength="10"
-              placeholder="dd/mm/yyyy"
-              class="input input-sm input-bordered w-full pr-10"
+            <input type="text" :value="displayIdCardIssueDate" :readonly="!isEditing" maxlength="10"
+              placeholder="dd/mm/yyyy" class="input input-sm input-bordered w-full pr-10"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
-              @input="handleDateTyping($event, 'idCardIssueDate')"
-              @blur="handleDateBlur($event, 'idCardIssueDate')"
-            />
-            <input 
-              ref="hiddenIdCardIssueDateInput"
-              v-model="data.idCardIssueDate" 
-              type="date" 
-              class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
-              tabindex="-1"
-            />
-            <span 
-              class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
+              @input="handleDateTyping($event, 'idCardIssueDate')" @blur="handleDateBlur($event, 'idCardIssueDate')" />
+            <input ref="hiddenIdCardIssueDateInput" v-model="data.idCardIssueDate" type="date"
+              class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" tabindex="-1" />
+            <span class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
               :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
-              @click="isEditing ? triggerIdCardIssueDatePicker() : null"
-            ></span>
+              @click="isEditing ? triggerIdCardIssueDatePicker() : null"></span>
           </div>
 
           <div class="form-control relative">
             <label class="label"><span class="label-text font-bold">ວັນເດືອນປີໝົດອາຍຸບັດ:</span></label>
-            <input 
-              type="text" 
-              :value="displayIdCardExpiryDate" 
-              :readonly="!isEditing"
-              maxlength="10"
-              placeholder="dd/mm/yyyy"
-              class="input input-sm input-bordered w-full pr-10"
+            <input type="text" :value="displayIdCardExpiryDate" :readonly="!isEditing" maxlength="10"
+              placeholder="dd/mm/yyyy" class="input input-sm input-bordered w-full pr-10"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
               @input="handleDateTyping($event, 'idCardExpiryDate')"
-              @blur="handleDateBlur($event, 'idCardExpiryDate')"
-            />
-            <input 
-              ref="hiddenIdCardExpiryDateInput"
-              v-model="data.idCardExpiryDate" 
-              type="date" 
-              class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
-              tabindex="-1"
-            />
-            <span 
-              class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
+              @blur="handleDateBlur($event, 'idCardExpiryDate')" />
+            <input ref="hiddenIdCardExpiryDateInput" v-model="data.idCardExpiryDate" type="date"
+              class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" tabindex="-1" />
+            <span class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
               :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
-              @click="isEditing ? triggerIdCardExpiryDatePicker() : null"
-            ></span>
+              @click="isEditing ? triggerIdCardExpiryDatePicker() : null"></span>
           </div>
 
           <div class="form-control">
@@ -195,29 +157,16 @@
 
           <div class="form-control relative">
             <label class="label"><span class="label-text font-bold">ວັນເດືອນປີອອກປຶ້ມ:</span></label>
-            <input 
-              type="text" 
-              :value="displayCensusBookIssueDate" 
-              :readonly="!isEditing"
-              maxlength="10"
-              placeholder="dd/mm/yyyy"
-              class="input input-sm input-bordered w-full pr-10"
+            <input type="text" :value="displayCensusBookIssueDate" :readonly="!isEditing" maxlength="10"
+              placeholder="dd/mm/yyyy" class="input input-sm input-bordered w-full pr-10"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
               @input="handleDateTyping($event, 'censusBookIssueDate')"
-              @blur="handleDateBlur($event, 'censusBookIssueDate')"
-            />
-            <input 
-              ref="hiddenCensusBookIssueDateInput"
-              v-model="data.censusBookIssueDate" 
-              type="date" 
-              class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" 
-              tabindex="-1"
-            />
-            <span 
-              class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
+              @blur="handleDateBlur($event, 'censusBookIssueDate')" />
+            <input ref="hiddenCensusBookIssueDateInput" v-model="data.censusBookIssueDate" type="date"
+              class="absolute opacity-0 w-0 h-0 p-0 m-0 border-0 pointer-events-none" tabindex="-1" />
+            <span class="icon-[tabler--calendar] absolute right-3 top-9 text-gray-500 size-4"
               :class="isEditing ? 'cursor-pointer hover:text-primary' : 'pointer-events-none'"
-              @click="isEditing ? triggerCensusBookIssueDatePicker() : null"
-            ></span>
+              @click="isEditing ? triggerCensusBookIssueDatePicker() : null"></span>
           </div>
 
           <div class="form-control md:col-span-2 lg:col-span-3">
@@ -242,8 +191,7 @@
           </div>
           <div>
             <label class="label"><span class="label-text font-bold">ໜ່ວຍ:</span></label>
-            <input v-model="data.unit" type="text" :readonly="!isEditing"
-              class="input input-sm input-bordered w-full"
+            <input v-model="data.unit" type="text" :readonly="!isEditing" class="input input-sm input-bordered w-full"
               :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'" />
           </div>
 
@@ -256,24 +204,27 @@
                   :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
                   @input="errors.village = ''" />
                 <label v-if="errors.village" class="label p-0 pt-1">
-                  <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.village }}</span>
+                  <span class="label-text-alt text-error flex items-center gap-1"><span
+                      class="icon-[tabler--alert-circle] size-4"></span> {{ errors.village }}</span>
                 </label>
               </div>
-              
+
               <div class="input-sub">
                 <span class="font-bold">ເມືອງ: </span>
                 <select v-model="data.address.district_id" :disabled="!isEditing || !data.address.province_id"
-                  @change="handleDistrictChange(); errors.district_id = ''" 
+                  @change="handleDistrictChange(); errors.district_id = ''"
                   class="select-addr select-sm select-bordered w-full"
                   :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'">
                   <option value="">-- ເລືອກເມືອງ --</option>
-                  <option v-for="d in localDistricts" :key="d.district_id" :value="d.district_id">{{ d.district_name }}</option>
+                  <option v-for="d in localDistricts" :key="d.district_id" :value="d.district_id">{{ d.district_name }}
+                  </option>
                 </select>
                 <label v-if="errors.district_id" class="label p-0 pt-1">
-                  <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.district_id }}</span>
+                  <span class="label-text-alt text-error flex items-center gap-1"><span
+                      class="icon-[tabler--alert-circle] size-4"></span> {{ errors.district_id }}</span>
                 </label>
               </div>
-              
+
               <div class="input-sub">
                 <span class="font-bold">ແຂວງ: </span>
                 <select v-model="data.address.province_id" :disabled="!isEditing"
@@ -281,10 +232,12 @@
                   :class="isEditing ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
                   @change="errors.province_id = ''">
                   <option value="">-- ເລືອກແຂວງ --</option>
-                  <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{ p.province_name }}</option>
+                  <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{
+                    p.province_name }}</option>
                 </select>
                 <label v-if="errors.province_id" class="label p-0 pt-1">
-                  <span class="label-text-alt text-error flex items-center gap-1"><span class="icon-[tabler--alert-circle] size-4"></span> {{ errors.province_id }}</span>
+                  <span class="label-text-alt text-error flex items-center gap-1"><span
+                      class="icon-[tabler--alert-circle] size-4"></span> {{ errors.province_id }}</span>
                 </label>
               </div>
             </div>
@@ -314,6 +267,9 @@
               <option value="own">ເຮືອນຕົວເອງ</option>
               <option value="rent">ເຊົ່າ</option>
               <option value="family">ຢູ່ກັບຄອບຄົວ</option>
+              <option value="relatives">ຢູ່ກັບພີ່ນ້ອງ</option>
+              <option value="friends">ຢູ່ກັບຫມູ່ເພື່ອນ</option>
+              <option value="party_state_office">ຢູ່ກັບພັກ,ລັດ/ຫ້ອງການ</option>
               <option value="other">ອື່ນໆ</option>
             </select>
           </div>
@@ -369,7 +325,7 @@ const handleDateTyping = (e: Event, field: string) => {
   if (errors.value[field]) errors.value[field] = '';
 
   const target = e.target as HTMLInputElement;
-  let val = target.value.replace(/\D/g, ''); 
+  let val = target.value.replace(/\D/g, '');
 
   if (val.length > 8) val = val.substring(0, 8);
 
@@ -427,9 +383,9 @@ watch(() => props.data.dob, (newDob: string | undefined | null) => {
   const calculatedAge = calculateAge(newDob);
   if (calculatedAge !== null) {
     if (calculatedAge < 18 || calculatedAge > 100) {
-       props.data.dob = '';
-       props.data.age = null;
-       return;
+      props.data.dob = '';
+      props.data.age = null;
+      return;
     }
   }
   props.data.age = calculatedAge;
@@ -438,7 +394,7 @@ watch(() => props.data.dob, (newDob: string | undefined | null) => {
 watch(() => props.data.idCardIssueDate, (newStartDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newStartDate) return;
-  
+
   if (newStartDate > getTodayDateString()) {
     props.data.idCardIssueDate = '';
     return;

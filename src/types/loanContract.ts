@@ -30,6 +30,7 @@ export interface LoanContract {
   cusCompanyBusinessType: string;
   cusCompanyLocation: string;
   cusCompanyWorkYear: number;
+  cusCompanyWorkMonth: number;
   cusPosition: string;
   cusIncome?: number | null;
   cusPayrollDate?: string | null;
@@ -91,4 +92,4 @@ export interface LoanContract {
   updatedAt?: string;
 }
 
-export type CreateLoanContractRequest = Omit<LoanContract, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt' >;
+export type CreateLoanContractRequest = Omit<LoanContract, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;

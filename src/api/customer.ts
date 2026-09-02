@@ -19,6 +19,61 @@ export interface OtpVerifyResponse {
   // เพิ่มข้อมูลอื่นๆ ถ้า backend ส่งกลับมา เช่น user data, token ฯลฯ
 }
 
+export interface CustomerQueryParams {
+  search?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  cursor?: number;
+  limit?: number;
+}
+
+export type KycStatusUpdate = 'verified' | 'rejected' | 'expired';
+
+
+// 🟢 ดึงข้อมูลลูกค้าทั้งหมด (รองรับ Cursor)
+export const getCustomers = async (params: CustomerQueryParams) => {
+  const response = await apiClient.get('/customer', { params });
+  return response.data;
+};
+
+// 🟢 ดึงรายละเอียดลูกค้า
+export const getCustomerById = async (id: number) => {
+  const response = await apiClient.get(`/customer/${id}`);
+  return response.data;
+};
+
+// 🟢 อัปเดตข้อมูลลูกค้า (รองรับ FormData สำหรับรูปโปรไฟล์)
+export const updateCustomerData = async (id: number, payload: any) => {
+  const response = await apiClient.patch(`/customer/${id}`, payload, {
+    headers: payload instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
+  });
+  return response.data;
+};
+
+// 🟢 เพิ่มฟังก์ชันอัปเดตสถานะแบบ Array (Bulk Update)
+export const updateKycStatus = async (customer_ids: number[], status: KycStatusUpdate) => {
+  const response = await apiClient.patch('/customer/kyc/status', { customer_ids, status });
+  return response.data;
+};
+
+// 🟢 Location APIs
+export const getCustomerLocations = async (customerId: number) => {
+  const response = await apiClient.get(`/customer-locations/${customerId}/locations`);
+  return response.data;
+};
+export const createCustomerLocation = async (customerId: number, data: any) => {
+  const response = await apiClient.post(`/customer-locations/${customerId}/locations`, data);
+  return response.data;
+};
+export const updateCustomerLocation = async (locationId: number, data: any) => {
+  const response = await apiClient.put(`/customer-locations/${locationId}`, data);
+  return response.data;
+};
+export const deleteCustomerLocation = async (locationId: number) => {
+  const response = await apiClient.delete(`/customer-locations/${locationId}`);
+  return response.data;
+};
 /**
  * Request OTP for customer
  * @param data { phone: string }
@@ -116,64 +171,6 @@ export const searchCustomerByFullname = async (first_name: string, last_name: st
   }
 }
 // เพิ่ม functions อื่นๆ ถ้าต้องการ
-
-/**
- * ✅ ดึงรายการ Location ของลูกค้า
- */
-export const getCustomerLocations = async (customerId: number) => {
-  const response = await apiClient.get(`/customer-locations/${customerId}/locations`)
-  return response.data
-}
-
-/**
- * ✅ สร้าง Location ใหม่
- */
-export const createCustomerLocation = async (
-  customerId: number,
-  data: {
-    location_type: 'home' | 'work' | 'other'
-    address: string
-    latitude?: number
-    longitude?: number
-    is_primary: number  // ✅ เป็น number
-    map_url?: string
-  }
-) => {
-  const response = await apiClient.post(
-    `/customer-locations/${customerId}/locations`,
-    data
-  )
-  return response.data
-}
-
-/**
- * ✅ อัปเดต Location
- */
-export const updateCustomerLocation = async (
-  locationId: number,
-  data: {
-    address?: string
-    latitude?: number
-    longitude?: number
-    location_type?: 'home' | 'work' | 'other'
-    is_primary?: number  // ✅ เป็น number
-    map_url?: string
-  }
-) => {
-  const response = await apiClient.put(
-    `/customer-locations/${locationId}`,
-    data
-  )
-  return response.data
-}
-
-/**
- * ✅ ลบ Location
- */
-export const deleteCustomerLocation = async (locationId: number) => {
-  const response = await apiClient.delete(`/customer-locations/${locationId}`)
-  return response.data
-}
 
 
 // 🟢 ເພີ່ມຟັງຊັນນີ້ເຂົ້າໄປໃນ src/api/customer.ts

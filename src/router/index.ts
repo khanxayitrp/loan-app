@@ -89,6 +89,27 @@ const routes: RouteRecordRaw[] = [
       permissions: ['permission_manage']
     }
   },
+  // ==========================================
+  // Protected routes (ຈັດການສະມາຊິກ - Membership)
+  // ==========================================
+  {
+    path: '/membership',
+    name: 'Membership',
+    component: () => import('@/components/membership/MemberShipList.vue'),
+    meta: {
+      requiresAuth: true,
+      permissions: ['user_view', 'user_manage']
+    }
+  },
+  {
+    path: '/membership/create',
+    name: 'CreateMembership',
+    component: () => import('@/components/membership/CreateMemberShip.vue'),
+    meta: {
+      requiresAuth: true,
+      permissions: ['user_manage']
+    }
+  },
 
   // ==========================================
   // Protected routes (ຈັດການສິນເຊື່ອ - Loans)
@@ -211,6 +232,21 @@ const routes: RouteRecordRaw[] = [
       pageType: 'types'
     }
   },
+
+  // ==========================================
+  // Protected routes (ລາຍງານ - Reports)
+  // ==========================================
+  {
+    // 🌟 ເພີ່ມ Route ສຳລັບໜ້າລາຍງານການປ່ອຍສິນເຊື່ອ 🌟
+    path: '/reports/disbursed-loans',
+    name: 'ReportDisbursedLoans',
+    component: () => import('@/components/report/DisbursedLoanDetail.vue'), // ກະລຸນາກວດສອບ Path ໃຫ້ກົງກັບທີ່ທ່ານສ້າງແທ້
+    meta: {
+      requiresAuth: true,
+      permissions: ['loan_view_all']
+    }
+  },
+
   // ==========================================
   // Protected routes (ຈັດການລະບົບ / Super Admin)
   // ==========================================

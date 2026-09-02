@@ -125,13 +125,20 @@
                   <label class="text-sm font-medium text-gray-500">ເບີໂທ</label>
                   <p>{{ getCustomerPhone(selectedLoan) }}</p>
                 </div>
+                <!-- 🟢 ເພີ່ມສະແດງເລກບັນຊີທະນາຄານ -->
+                <div>
+                  <label class="text-sm font-medium text-gray-500">ເລກບັນຊີທະນາຄານ (BCEL)</label>
+                  <p class="font-medium text-indigo-600">{{ selectedLoan?.customer?.account_number || '-' }}</p>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-500">ລາຍຮັບ</label>
+                  <p v-if="selectedLoan.customer.income_per_month" class="text-success">{{
+                    formatPrice(selectedLoan.customer.income_per_month) }}</p>
+                  <p v-else>-</p>
+                </div>
                 <div class="md:col-span-2">
                   <label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label>
                   <p>{{ getCustomerAddress(selectedLoan) }}</p>
-                </div>
-                <div v-if="selectedLoan.customer.income_per_month">
-                  <label class="text-sm font-medium text-gray-500">ລາຍຮັບ</label>
-                  <p class="text-success">{{ formatPrice(selectedLoan.customer.income_per_month) }}</p>
                 </div>
               </div>
             </div>
@@ -192,6 +199,13 @@
                       class="input input-sm input-bordered w-full bg-white"
                       :class="{ 'input-error': modalFormErrors.customer_id_card }" required />
                   </div>
+                  <!-- 🟢 ເພີ່ມຊ່ອງແກ້ໄຂເລກບັນຊີ -->
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">ເລກບັນຊີທະນາຄານ (BCEL) *</span></label>
+                    <input v-model="modalLoanForm.account_number" type="text"
+                      class="input input-sm input-bordered w-full bg-white"
+                      :class="{ 'input-error': modalFormErrors.account_number }" required />
+                  </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ອາຍຸ *</span></label>
                     <input v-model.number="modalLoanForm.age" type="number"
@@ -205,7 +219,7 @@
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ລາຍຮັບຕໍ່ເດືອນ *</span></label>
-                    <input :value="formatCurrencyInput(modalLoanForm.monthly_income)"
+                    <input type="text" :value="formatCurrencyInput(modalLoanForm.monthly_income)"
                       @input="handleModalCurrencyInput('monthly_income', $event)"
                       class="input input-sm input-bordered w-full bg-white text-success font-medium" />
                   </div>
@@ -518,19 +532,7 @@
           </div>
         </div>
 
-        <div v-else-if="activeTab === 'map'" class="space-y-6">
-          <!-- <CustomerLocationMap v-if="selectedLoan?.customer_id" :customer-id="selectedLoan.customer_id"
-            :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
-            :can-add-location="isEditingInModal" :can-edit-location="isEditingInModal"
-            :can-delete-location="isEditingInModal" :can-set-primary="isEditingInModal"
-            @add-location="handleAddLocation" @update-location="handleUpdateLocation"
-            @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
-
-          <div v-if="!isEditingInModal && customerLocations.length === 0" class="text-center py-8 text-gray-500">
-            <span class="icon-[tabler--map-pin-off] size-8 mb-2"></span>
-            <p>ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງ</p>
-          </div> -->
-          <!-- 🌟 ແຈ້ງເຕືອນແບບ Non-blocking ໃຫ້ແຜນທີ່ສະແດງສະເໝີ -->
+        <div v-else-if="activeTab === 'map'" class="space-y-4">
           <div v-if="customerLocations.length === 0" class="alert alert-warning shadow-sm py-2">
             <span class="icon-[tabler--map-pin-off] size-5"></span>
             <span class="text-sm">ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງ.
@@ -538,7 +540,6 @@
             </span>
           </div>
 
-          <!-- 🌟 ແຜນທີ່ຈະຖືກສະແດງຕະຫຼອດ, ການແກ້ໄຂຂຶ້ນກັບ canManageLocation -->
           <CustomerLocationMap v-if="selectedLoan?.customer_id" :customer-id="selectedLoan.customer_id"
             :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
             :can-add-location="canManageLocation" :can-edit-location="canManageLocation"
@@ -574,10 +575,6 @@
             <span v-if="!(isSaving || isUploadingDocuments)">ອັບໂຫຼດເອກະສານ</span>
           </button>
 
-          <!-- <button v-else-if="isEditingInModal && activeTab === 'map'" class="btn btn-success text-white"
-            @click="isEditingInModal = false">
-            <span class="icon-[tabler--check] size-4 mr-1"></span> ສຳເລັດ
-          </button> -->
         </div>
 
       </div>
@@ -644,14 +641,14 @@ const isLocationLoading = ref(false)
 
 // Form Data
 const modalLoanForm = reactive({
-  customer_name: '', customer_phone: '', customer_id_card: '', customer_address: '', occupation: '', age: 0,
+  customer_name: '', customer_phone: '', customer_id_card: '', account_number: '', customer_address: '', occupation: '', age: 0,
   province_id: '', district_id: '', dob: '',
   product_id: 0, product_name: '', product_type: '', total_amount: 0, down_payment: 0, interest_rate: 0, loan_period: 0,
   monthly_payment: 0, monthly_income: 0, interest_type: 'flat_rate', interest_rate_type: 'monthly'
 })
 
 const modalFormErrors = reactive({
-  customer_name: '', customer_phone: '', customer_id_card: '', customer_address: '', occupation: '', age: '',
+  customer_name: '', customer_phone: '', customer_id_card: '', account_number: '', customer_address: '', occupation: '', age: '',
   province_id: '', district_id: '', dob: '', total_amount: '', down_payment: '', interest_rate: '', loan_period: '', monthly_income: ''
 })
 
@@ -817,6 +814,7 @@ const startEditInModal = async () => {
   modalLoanForm.customer_name = getCustomerName(loanData)
   modalLoanForm.customer_phone = getCustomerPhone(loanData)
   modalLoanForm.customer_id_card = loanData.customer?.identity_number || ''
+  modalLoanForm.account_number = loanData.customer?.account_number || ''
   modalLoanForm.customer_address = loanData.customer?.address || ''
 
   modalLoanForm.province_id = loanData.customer?.province_id ? String(loanData.customer.province_id) : ''
@@ -856,6 +854,7 @@ const saveLoanFromModal = async () => {
       customer_id: selectedLoan.value?.customer_id,
       first_name: firstName, last_name: lastName,
       phone: modalLoanForm.customer_phone, identity_number: modalLoanForm.customer_id_card,
+      account_number: modalLoanForm.account_number,
       address: modalLoanForm.customer_address, province_id: modalLoanForm.province_id, district_id: modalLoanForm.district_id,
       age: Number(modalLoanForm.age), occupation: modalLoanForm.occupation,
       income_per_month: modalLoanForm.monthly_income,
@@ -1021,7 +1020,7 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       cusLivedWith: cData.liveWith || 'ບໍ່ລະບຸ', cusLivedSituation: cData.residenceStatus || 'ບໍ່ລະບຸ', cusOccupation: cData.occupation || 'ບໍ່ລະບຸ',
 
       cusCompanyName: wData.companyName || 'ບໍ່ລະບຸ', cusCompanyBusinessType: wData.businessType || 'ບໍ່ລະບຸ',
-      cusCompanyLocation: formatAddr(wData.address), cusCompanyWorkYear: Number(wData.workYears) || 0,
+      cusCompanyLocation: formatAddr(wData.address), cusCompanyWorkYear: Number(wData.workYears) || 0, cusCompanyWorkMonth: Number(wData.workMonths) || 0,
       cusPosition: wData.position || 'ບໍ່ລະບຸ', cusIncome: Number(wData.salary) || 0,
       cusPayrollDate: String(wData.salaryDay || '0'), cusCompanyEmpNumber: Number(wData.totalEmployees) || 0,
       cusIncomeOther: Number(wData.otherIncome) || 0, cusIncomeOtherSource: wData.otherIncomeSource || 'ບໍ່ມີ',
@@ -1199,13 +1198,10 @@ const handleDocumentUpload = async (typeId: string, event: Event) => {
     if (finalFile.type.startsWith('image/')) {
       try {
         const compressedBlob = await imageCompression(currentFile, {
-          maxSizeMB: 3,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true
+          maxSizeMB: 3, maxWidthOrHeight: 1920, useWebWorker: true
         });
         finalFile = new File([compressedBlob], currentFile.name, {
-          type: compressedBlob.type,
-          lastModified: Date.now()
+          type: compressedBlob.type, lastModified: Date.now()
         });
       } catch (error) {
         console.error('Compress error:', error);
@@ -1226,7 +1222,6 @@ const handleDocumentUpload = async (typeId: string, event: Event) => {
     };
     reader.readAsDataURL(finalFile);
   }
-
   target.value = '';
 }
 

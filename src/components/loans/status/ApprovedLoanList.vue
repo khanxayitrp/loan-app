@@ -127,6 +127,12 @@
                     <span class="icon-[tabler--eye] size-5"></span>
                   </button>
                 </div>
+                <div v-if="loan.credit_score" class="tooltip tooltip-top" data-tip="ພິມໃບສະຫຼຸບ">
+                  <button class="btn btn-square btn-ghost btn-sm text-gray-500 hover:text-primary hover:bg-gray-100"
+                    @click="openPrintSummary(loan)">
+                    <span class="icon-[tabler--printer] size-5"></span>
+                  </button>
+                </div>
 
                 <div v-if="hasContract(loan)" class="tooltip tooltip-top" data-tip="ເບິ່ງ/ຈັດການລາຍເຊັນ">
                   <button class="btn btn-square btn-ghost btn-sm text-indigo-500 hover:bg-indigo-100"
@@ -535,6 +541,9 @@
       </div>
     </teleport>
 
+    <PrintSummaryModal :is-open="showPrintModal" :print-data="printData"
+      @close="showPrintModal = false; printData = null" />
+
   </div>
 </template>
 
@@ -557,6 +566,7 @@ import LoanContractForm from '@/components/loans/form/LoanContractForm.vue';
 import LoanScheduleModal from '@/components/modals/loan/detail/LoanScheduleModal.vue';
 import ExternalSignatureModal from '@/components/modals/loan/pending/ExternalSignatureModal.vue';
 import DeliveryNoteModal from '@/components/modals/loan/pending/DeliveryNoteModal.vue';
+import PrintSummaryModal from '@/components/modals/loan/pending/PrintSummaryModal.vue';
 
 const loanApplicationStore = useLoanApplicationStore();
 const loanContractStore = useLoanContractStore();
@@ -593,6 +603,9 @@ const currentSchedules = ref<any[]>([]);
 const showReceiptModal = ref(false);
 const isReceiptLoading = ref(false);
 const receiptTransactions = ref<any[]>([]);
+
+const showPrintModal = ref(false);
+const printData = ref<any>(null);
 
 // ===============================================
 // 🌟 1. Utilities
@@ -890,6 +903,76 @@ const viewReceiptHistory = async (applicationId: number) => {
     isReceiptLoading.value = false;
   }
 };
+
+const openPrintSummary = async (loan: any) => {
+  try {
+    let summaryData = null;
+    try {
+      const res = await apiClient.get(`/checklist/summary/${loan.id}`);
+      summaryData = res.data?.data;
+    } catch (e) { }
+
+    if (!summaryData) return alert.error('ບໍ່ສາມາດພິມໄດ້', 'ກະລຸນາປະເມີນຄະແນນ ແລະ Checklist ໃຫ້ຄົບຖ້ວນກ່ອນພິມ.');
+
+    const basic = summaryData.basic_verification || {};
+    const income = summaryData.income_assessment || {};
+    const cib = summaryData.cib_check || {};
+
+    let age = loan.customer?.age || 0;
+    if (!age && basic.verified_dob) {
+      age = Math.abs(new Date(Date.now() - new Date(basic.verified_dob).getTime()).getUTCFullYear() - 1970);
+    }
+
+    const workInfo = loan.customer?.customer_work_infos?.[0] || loan.customer?.work_info?.[0] || {};
+    const workYears = Number(basic.work_years) || Number(workInfo.duration_years) || 0;
+    const workMonths = Number(basic.work_months) || Number(workInfo.duration_months) || 0;
+
+    let formattedTenure = '';
+    if (workYears > 0 && workMonths > 0) {
+      formattedTenure = `${workYears} ປີ ${workMonths} ເດືອນ`;
+    } else if (workYears > 0) {
+      formattedTenure = `${workYears} ປີ`;
+    } else if (workMonths > 0) {
+      formattedTenure = `${workMonths} ເດືອນ`;
+    } else {
+      formattedTenure = `ບໍ່ລະບຸ`;
+    }
+
+    const totalIncome = (Number(income.average_monthly_income) || 0) + (Number(income.other_verified_income) || 0);
+    const totalDebt = (Number(income.existing_debt_payments) || 0) + (Number(income.proposed_installment) || 0);
+    const dsrPercent = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 100;
+    const price = Number(basic.verified_price) || Number(loan.total_amount) || 1;
+    const dp = Number(basic.verified_down_payment) || Number(loan.down_payment) || 0;
+
+    printData.value = {
+      loan: loan,
+      customerName: getCustomerName(loan),
+      age: age,
+      phone: getCustomerPhone(loan),
+      companyName: basic.work_company_name || workInfo.company_name || 'ບໍ່ລະບຸ',
+      jobTenure: formattedTenure,
+      totalIncome: totalIncome,
+      totalDebt: totalDebt,
+      productName: basic.verified_product_type || loan.product?.product_name || '-',
+      productPrice: price,
+      downPayment: dp,
+      downPaymentPercent: (dp / price) * 100,
+      approvedAmount: price - dp,
+      interestRate: loan.interest_rate_at_apply,
+      interestType: loan.interest_rate_type === 'yearly' ? 'ຕໍ່ປີ' : 'ຕໍ່ເດືອນ',
+      loanPeriod: loan.loan_period,
+      monthlyPay: Number(basic.verified_monthly_pay) || Number(loan.monthly_pay),
+      cibStatus: cib.cib_status || cib.overall_cib_status || 'no_delay',
+      dsrPercent: dsrPercent,
+      callStatus: summaryData.call_verifications?.[0]?.call_status || 'completed',
+      remarks: loan.remarks || cib.remark || '',
+      creditScore: loan.credit_score || 0
+    };
+    showPrintModal.value = true;
+  } catch (error) {
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການກຽມຂໍ້ມູນພິມ');
+  }
+}
 
 // ===============================================
 // 🌟 5. Export

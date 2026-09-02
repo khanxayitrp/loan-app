@@ -327,10 +327,23 @@
                 <h4 class="font-bold text-indigo-800 dark:text-indigo-300">ປະຫວັດສິນເຊື່ອ (CIB History)</h4>
                 <p class="text-sm text-indigo-600">ບັນທຶກປະຫວັດການກູ້ຢືມແຕ່ລະບັນຊີຈາກໃບລາຍງານ CIB</p>
               </div>
-              <button v-if="canEditChecklist" class="btn btn-primary btn-sm" @click="addCIBDetail">
+              <!-- <button v-if="canEditChecklist" class="btn btn-primary btn-sm" @click="addCIBDetail">
                 <span class="icon-[tabler--plus] size-4"></span> ເພີ່ມບັນຊີ
-              </button>
+              </button> -->
+
+              <div class="flex gap-2">
+                <!-- 🟢 ปุ่มนำเข้า PDF ใหม่ -->
+                <button v-if="canEditChecklist" class="btn btn-success btn-sm" @click="triggerFileInput">
+                  <span v-if="isImporting" class="loading loading-spinner loading-xs"></span>
+                  <span v-else class="icon-[tabler--file-upload] size-4"></span> ນຳເຂົ້າ PDF
+                </button>
+                <button v-if="canEditChecklist" class="btn btn-primary btn-sm" @click="addCIBDetail">
+                  <span class="icon-[tabler--plus] size-4"></span> ເພີ່ມບັນຊີ
+                </button>
+              </div>
             </div>
+            <!-- input file ที่ซ่อนไว้ -->
+            <input type="file" ref="fileInput" accept=".pdf" class="hidden" @change="handleFileUpload" />
 
             <div v-for="(detail, index) in formCIBDetails" :key="index"
               class="border rounded-lg p-6 relative bg-white dark:bg-base-100 shadow-sm">
@@ -364,10 +377,30 @@
                   </select>
                 </div>
 
-                <div class="form-control">
+                <!-- <div class="form-control">
                   <label class="label"><span class="label-text font-bold">ຍອດໜີ້ຄົງເຫຼືອ (ກີບ)</span></label>
                   <input v-model.number="detail.outstanding_balance" type="number"
                     class="input input-bordered w-full text-right" :disabled="!canEditChecklist" />
+                </div> -->
+                <!-- 🟢 ເພີ່ມວົງເງິນອະນຸມັດ ແລະ ຍອດໜີ້ເຫຼືອ ໃຫ້ເຫັນຄົບຖ້ວນ -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-bold text-gray-500">ວົງເງິນອະນຸມັດ</span></label>
+                    <input :value="formatPrice(detail.approved_amount)" type="text"
+                      @focus="handleNumberFocus($event, detail.approved_amount)"
+                      @input="updateCibNumberField(index, 'approved_amount', $event)"
+                      @blur="handleNumberBlur($event, detail.approved_amount)"
+                      class="input input-bordered w-full text-right" :disabled="!canEditChecklist" />
+                  </div>
+                  <div class="form-control">
+                    <label class="label"><span class="label-text font-bold text-error">ຍອດໜີ້ເຫຼືອ (ກີບ)</span></label>
+                    <input :value="formatPrice(detail.outstanding_balance)" type="text"
+                      @focus="handleNumberFocus($event, detail.outstanding_balance)"
+                      @input="updateCibNumberField(index, 'outstanding_balance', $event)"
+                      @blur="handleNumberBlur($event, detail.outstanding_balance)"
+                      class="input input-bordered w-full text-right font-bold text-error"
+                      :disabled="!canEditChecklist" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -590,7 +623,14 @@
                   </div>
 
                   <div class="form-control">
-                    <label class="label"><span class="label-text">ພາລະໜີ້ສິນເດີມ (ຈາກ CIB) (ກີບ)</span></label>
+                    <label class="label justify-between pb-1">
+                      <span class="label-text">ພາລະໜີ້ສິນເດີມ (ຈາກ CIB) (ກີບ)</span>
+                      <!-- 🟢 ປຸ່ມສຳລັບດຶງຍອດ CIB ມາຄຳນວນໃໝ່ (5% ຂອງຍອດໜີ້ເຫຼືອ) -->
+                      <button v-if="canEditChecklist" @click="calculateCibDebt" type="button"
+                        class="btn btn-xs btn-outline btn-error text-[10px] h-6 min-h-6">
+                        <span class="icon-[tabler--refresh] size-3"></span> ຄິດໄລ່ຈາກ CIB
+                      </button>
+                    </label>
                     <input :value="formatPrice(formIncome.existing_debt_payments)" type="text"
                       @focus="handleNumberFocus($event, formIncome.existing_debt_payments)"
                       @input="updateNumberField('existing_debt_payments', $event)"
@@ -700,6 +740,73 @@ const checklistTabTitle = computed(() => {
   return titles[checklistTab.value];
 });
 
+const fileInput = ref<HTMLInputElement | null>(null);
+const isImporting = ref(false);
+
+const triggerFileInput = () => {
+  if (fileInput.value) fileInput.value.click();
+};
+
+// ฟังก์ชันจัดการเมื่อเลือกไฟล์แล้ว
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert.error('ຂະໜາດໄຟລ໌ຕ້ອງນ້ອຍກວ່າ 5MB');
+    target.value = '';
+    return;
+  }
+
+  isImporting.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('loan_id', String(props.loan?.id));
+
+    const response = await apiClient.post('/checklist/import-cib-pdf', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    });
+
+    const result = response.data?.data;
+    if (result) {
+      const details = result.cib_details || [];
+      if (details.length > 0) {
+        // 🟢 Map ຂໍ້ມູນຈາກ API ເຂົ້າໜ້າຈໍໃຫ້ຖືກຕ້ອງ
+        formCIBDetails.value = details.map((item: any) => ({
+          institution_name: item.institution_name || '',
+          account_type: item.account_type || null,
+          history_status: item.history_status || 'no_delay',
+          approved_amount: Number(item.outstanding_balance) || 0, // outstanding ຂອງ API ຄືຍອດອະນຸມັດ
+          outstanding_balance: Number(item.actual_outstanding_balance || item.actualOutstandingBalance) || 0, // actual ຄືໜີ້ທີ່ເຫຼືອ
+        }));
+      } else {
+        alert.warning('ບໍ່ພົບຂໍ້ມູນບັນຊີໃນ PDF');
+      }
+
+      if (result.cib_status) {
+        formCIB.is_existing_customer = result.is_existing_customer !== undefined ? result.is_existing_customer : false;
+        formCIB.existing_customer_status = result.existing_customer_status || 'normal';
+        formCIB.remark = result.remark || formCIB.remark || 'ນຳເຂົ້າຈາກ PDF';
+      }
+
+      alert.success(`ນຳເຂົ້າສຳເລັດ ${details.length} ລາຍການ`);
+      // 🟢 ບັງຄັບຄຳນວນໜີ້ CIB ໃສ່ໜ້າ DSR ອັດຕະໂນມັດທັນທີຫຼັງນຳເຂົ້າ PDF
+      calculateCibDebt();
+    } else {
+      alert.error('ບໍ່ສາມາດອ່ານຂໍ້ມູນຈາກ PDF ໄດ້');
+    }
+  } catch (error: any) {
+    alert.error('ນຳເຂົ້າ PDF ຜິດພາດ', error.response?.data?.message || error.message);
+  } finally {
+    isImporting.value = false;
+    target.value = '';
+  }
+};
+
+
 const unlockedTabs = computed(() => {
   return {
     basic: true,
@@ -753,6 +860,14 @@ const updateNumberField = (field: keyof typeof formIncome, e: Event) => {
     (formIncome as any)[field] = parseNumberStr(target.value);
   }
 };
+
+// 🟢 ຟັງຊັນສຳລັບອັບເດດຕົວເລກພາຍໃນ Array ຂອງ CIB Details
+const updateCibNumberField = (index: number, field: string, e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (target && formCIBDetails.value[index]) {
+    formCIBDetails.value[index][field] = parseNumberStr(target.value);
+  }
+};
 // ========================================================
 
 const formBasic = reactive({
@@ -804,7 +919,14 @@ const removeCallRecord = (index: number) => formCalls.value.splice(index, 1);
 
 const formCIBDetails = ref<any[]>([]);
 const formCIB = reactive({ is_existing_customer: false, existing_customer_status: 'normal', remark: '' });
-const addCIBDetail = () => formCIBDetails.value.push({ institution_name: '', account_type: '', history_status: 'no_delay', outstanding_balance: 0 });
+// 🟢 ອັບເດດໃຫ້ມີ approved_amount ຕອນເພີ່ມໃໝ່
+const addCIBDetail = () => formCIBDetails.value.push({
+  institution_name: '',
+  account_type: '',
+  history_status: 'no_delay',
+  approved_amount: 0,
+  outstanding_balance: 0
+});
 const removeCIBDetail = (index: number) => formCIBDetails.value.splice(index, 1);
 const getCibStatusColor = (status: string) => {
   switch (status) {
@@ -815,6 +937,25 @@ const getCibStatusColor = (status: string) => {
     case 'blacklist': return 'text-error border-error bg-error/10';
     default: return '';
   }
+};
+
+// 🟢 ຟັງຊັນຄິດໄລ່ໜີ້ຈາກ CIB ມາເປັນຄ່າງວດລາຍເດືອນ (ປະເມີນ 5% ຂອງຍອດໜີ້ເຫຼືອ)
+const calculateCibDebt = () => {
+  if (formCIBDetails.value.length === 0) {
+    alert.warning('ບໍ່ມີຂໍ້ມູນ CIB ໃຫ້ຄຳນວນ');
+    return;
+  }
+
+  let estimatedMonthlyCibDebt = 0;
+  formCIBDetails.value.forEach(loan => {
+    const outstanding = Number(loan.outstanding_balance) || 0;
+    if (outstanding > 0) {
+      estimatedMonthlyCibDebt += outstanding * 0.05; // ຄິດເປັນ 5% ຂອງຍອດເຫຼືອ
+    }
+  });
+
+  formIncome.existing_debt_payments = Math.round(estimatedMonthlyCibDebt);
+  alert.success(`ດຶງຍອດໜີ້ຈາກ CIB ສຳເລັດ: ${formatPrice(formIncome.existing_debt_payments)} ກີບ`);
 };
 
 const formFieldVisits = ref<any[]>([]);
@@ -900,8 +1041,17 @@ const fetchChecklistData = async (loanId: number) => {
       if (summaryData.cib_check) {
         Object.assign(formCIB, summaryData.cib_check);
         formCIB.is_existing_customer = !!summaryData.cib_check.is_existing_customer;
-        if (summaryData.cib_check.cib_details && summaryData.cib_check.cib_details.length > 0) formCIBDetails.value = [...summaryData.cib_check.cib_details];
-        else formCIBDetails.value = [];
+
+        if (summaryData.cib_check.cib_details && summaryData.cib_check.cib_details.length > 0) {
+          formCIBDetails.value = summaryData.cib_check.cib_details.map((d: any) => ({
+            ...d,
+            // 🟢 ອ່ານຄ່າຈາກ Database ໂດຍກົງ (ຖ້າບໍ່ມີໃຫ້ເປັນ 0)
+            approved_amount: Number(d.approved_amount) || 0,
+            outstanding_balance: Number(d.outstanding_balance) || 0
+          }));
+        } else {
+          formCIBDetails.value = [];
+        }
       } else {
         Object.assign(formCIB, { is_existing_customer: false, existing_customer_status: 'normal', remark: '' });
         formCIBDetails.value = [];
@@ -980,6 +1130,8 @@ watch(() => props.isOpen, async (newVal) => {
     formIncome.max_approved_amount = formIncome.max_approved_amount || maxAmount;
   }
 });
+
+
 
 const saveChecklist = async () => {
   if (!props.loan || !canEditChecklist.value) return;

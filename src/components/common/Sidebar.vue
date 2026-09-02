@@ -115,7 +115,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { can } = usePermission()
 
-// 🌟 ເພີ່ມຟັງຊັນສຳລັບເຊັກ Array ຂອງ Permissions 🌟
 const canAny = (permissions: string | string[]) => {
   if (!permissions) return true;
   if (typeof permissions === 'string') return can(permissions);
@@ -161,6 +160,26 @@ const menuItems = [
         icon: 'icon-[tabler--shield]',
         to: '/PermissionManagement',
         permissions: ['permission_manage']
+      }
+    ]
+  },
+  // 🌟 ແກ້ໄຂ: ເຮັດໃຫ້ Membership ມີເມນູຍ່ອຍ 🌟
+  {
+    label: 'ຈັດການສະມາຊິກ (Members)',
+    icon: 'icon-[tabler--id]',
+    permissions: ['user_view', 'user_manage'],
+    children: [
+      {
+        label: 'ສ້າງສະມາຊິກໃໝ່',
+        icon: 'icon-[tabler--user-plus]',
+        to: '/membership/create',
+        permissions: ['user_manage']
+      },
+      {
+        label: 'ລາຍການສະມາຊິກ',
+        icon: 'icon-[tabler--users]',
+        to: '/membership',
+        permissions: ['user_view', 'user_manage']
       }
     ]
   },
@@ -251,10 +270,22 @@ const menuItems = [
     to: '/stores',
     permissions: ['partner_manage']
   },
-  // 🌟 ເພີ່ມເມນູໃໝ່ສຳລັບ Super Admin (Override) 🌟
+  {
+    label: 'ລາຍງານ (Reports)',
+    icon: 'icon-[tabler--report]',
+    permissions: ['loan_view_all'],
+    children: [
+      {
+        label: 'ລາຍງານການປ່ອຍສິນເຊື່ອ',
+        icon: 'icon-[tabler--report-analytics]',
+        to: '/reports/disbursed-loans',
+        permissions: ['loan_view_all']
+      }
+    ]
+  },
   {
     label: 'ແກ້ໄຂສິນເຊື່ອສຸກເສີນ (Override)',
-    icon: 'icon-[tabler--adjustments-alt]', // ສາມາດປ່ຽນ Icon ໄດ້ຕາມຄວາມເໝາະສົມ
+    icon: 'icon-[tabler--adjustments-alt]',
     to: '/admin/loan-override',
     permissions: ['loan_override']
   }
@@ -262,6 +293,7 @@ const menuItems = [
 
 const isActive = (path?: string) => {
   if (!path) return false
+  if (path === '/membership' && route.path.startsWith('/membership/create')) return false; // ປ້ອງກັນ Highlight ຊ້ອນກັນ
   return route.path.startsWith(path)
 }
 
