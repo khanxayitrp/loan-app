@@ -14,6 +14,15 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/Login.vue'),
     meta: { requiresAuth: false, layout: 'blank' }
   },
+  // 🟢 1. ເພີ່ມ Route ສຳລັບໜ້າກວດສອບບັດສະມາຊິກຜ່ານ QR Code ຢູ່ບ່ອນນີ້
+  {
+    path: '/verify/:code',
+    name: 'VerifyMember',
+    // ໝາຍເຫດ: ປັບ Path ໃຫ້ກົງກັບບ່ອນທີ່ທ່ານ Save ໄຟລ໌ VerifyMember.vue ໄວ້ 
+    // ຕົວຢ່າງ: ຖ້າເອົາໄວ້ໃນ views/public/ ກໍໃຊ້ '@/views/public/VerifyMember.vue'
+    component: () => import('@/views/public/VerifyMember.vue'), 
+    meta: { requiresAuth: false, layout: 'blank' }
+  },
   {
     path: '/unauthorized',
     name: 'Unauthorized',
@@ -108,6 +117,16 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
       permissions: ['user_manage']
+    }
+  },
+  // 🟢 เพิ่ม Route หน้าจอออกบัตรสมาชิกที่นี่
+  {
+    path: '/membership/issue-card',
+    name: 'IssueMembershipCard',
+    component: () => import('@/components/membership/IssueMemberShip.vue'), // 👈 เช็ค Path ให้ตรงกับโฟลเดอร์ที่คุณสร้างไฟล์ไว้
+    meta: {
+      requiresAuth: true,
+      permissions: ['user_view', 'user_manage']
     }
   },
 

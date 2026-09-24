@@ -324,39 +324,72 @@
               </p>
             </div>
 
+            <!-- 🌟 1. ຊ່ອງຮັບເງິນ (ປັບໃຫ້ສວຍງາມ ແລະ ແຈ້ງຂຶ້ນ) -->
             <div class="form-control mt-4">
-              <label class="label pb-1"><span class="label-text font-bold text-lg text-blue-700">ຍອດເງິນທີ່ຮັບຈາກລູກຄ້າ
-                  (ກີບ) *</span></label>
-              <input type="text" :value="formatCurrencyInput(paymentForm.amount_received)" @input="handleAmountInput"
-                class="input input-lg input-bordered w-full font-bold text-2xl text-primary bg-blue-50/50"
-                placeholder="0" required />
+              <label class="label pb-1">
+                <span class="label-text font-bold text-gray-700 dark:text-gray-300">ຍອດເງິນທີ່ຮັບຈາກລູກຄ້າ (ກີບ) *</span>
+              </label>
+              <div class="relative">
+                <input type="text" :value="formatCurrencyInput(paymentForm.amount_received)" @input="handleAmountInput"
+                  class="input input-lg input-bordered w-full font-bold text-2xl text-primary bg-blue-50/50 dark:bg-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  placeholder="0" required />
+              </div>
             </div>
 
-            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 border">
-              <p class="text-xs text-gray-500 mb-2 font-medium">ລະບົບຈະຈັດສັນເງິນອັດຕະໂນມັດ (Auto-Waterfall):</p>
-              <div class="grid grid-cols-3 gap-2 text-sm text-center">
-                <div class="flex flex-col p-1 bg-white rounded border">
-                  <span class="text-xs text-gray-500">ຄ່າປັບໃໝ</span>
-                  <span class="font-bold text-error">{{ formatPrice(waterfallPreview.penalty) }}</span>
+            <!-- 🌟 2. ກ່ອງ Waterfall & Overpayment (ປັບ Layout ໃໝ່ທັງໝົດ) -->
+            <div class="bg-gray-50 dark:bg-gray-800/80 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mt-4 shadow-sm">
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 font-medium flex items-center gap-1.5">
+                <span class="icon-[tabler--calculator] size-4"></span> ລະບົບຈະຈັດສັນເງິນອັດຕະໂນມັດ (Auto-Waterfall):
+              </p>
+
+              <!-- Waterfall breakdown grid (ຈັດກາງ ແລະ ໃສ່ກອບແຍກໃຫ້ເບິ່ງງ່າຍ) -->
+              <div class="grid grid-cols-3 gap-3 text-sm">
+                <div class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+                  <span class="text-[11px] text-gray-400 mb-0.5">ຄ່າປັບໃໝ</span>
+                  <span class="font-bold text-error text-base">{{ formatPrice(waterfallPreview.penalty) }}</span>
                 </div>
-                <div class="flex flex-col p-1 bg-white rounded border">
-                  <span class="text-xs text-gray-500">ດອກເບ້ຍ</span>
-                  <span class="font-bold text-orange-500">{{ formatPrice(waterfallPreview.interest) }}</span>
+                <div class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+                  <span class="text-[11px] text-gray-400 mb-0.5">ດອກເບ້ຍ</span>
+                  <span class="font-bold text-orange-500 text-base">{{ formatPrice(waterfallPreview.interest) }}</span>
                 </div>
-                <div class="flex flex-col p-1 bg-white rounded border">
-                  <span class="text-xs text-gray-500">ຕົ້ນທຶນ</span>
-                  <span class="font-bold text-blue-600">{{ formatPrice(waterfallPreview.principal) }}</span>
+                <div class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+                  <span class="text-[11px] text-gray-400 mb-0.5">ຕົ້ນທຶນ</span>
+                  <span class="font-bold text-blue-600 dark:text-blue-400 text-base">{{ formatPrice(waterfallPreview.principal) }}</span>
                 </div>
               </div>
 
-              <div v-if="waterfallPreview.overpay > 0" class="mt-2 pt-2 border-t flex justify-between text-success">
-                <span class="font-medium">ເງິນທອນ / ຈ່າຍເກີນໄປງວດໜ້າ:</span>
-                <span class="font-bold">+{{ formatPrice(waterfallPreview.overpay) }}</span>
+              <!-- ສ່ວນສະແດງເງິນທອນ ຫຼື ເງິນໂປະ (Overpayment) -->
+              <div v-if="waterfallPreview.overpay > 0" class="mt-4 pt-4 border-t border-dashed border-gray-300 dark:border-gray-600">
+                <div class="flex justify-between items-center text-success mb-3">
+                  <span class="font-medium text-sm" v-if="!isOverpayment">ເງິນທອນ / ຈ່າຍລ່ວງໜ້າງວດຕໍ່ໄປ:</span>
+                  <span class="font-medium text-sm" v-else>ຍອດໂປະເງິນຕົ້ນ (Principal Reduction):</span>
+                  <span class="font-bold text-lg bg-success/10 px-2 py-0.5 rounded-md">+{{ formatPrice(waterfallPreview.overpay) }}</span>
+                </div>
+
+                <!-- 🌟 ກ່ອງ Checkbox ໂປະເງິນ (Clickable Card Design) 🌟 -->
+                <label class="flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200"
+                  :class="isOverpayment ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-primary/40'">
+                  <div class="pt-0.5">
+                    <input type="checkbox" v-model="isOverpayment" class="checkbox checkbox-primary checkbox-sm rounded" />
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-sm font-bold leading-tight" :class="isOverpayment ? 'text-primary' : 'text-gray-700 dark:text-gray-300'">
+                      ນຳເງິນສ່ວນເກີນໄປໂປະເງິນຕົ້ນ
+                    </span>
+                    <span class="text-xs mt-1 leading-snug" :class="isOverpayment ? 'text-primary/80' : 'text-gray-500 dark:text-gray-400'">
+                      ລະບົບຈະນຳເງິນໄປຕັດຕົ້ນທຶນຄົງເຫຼືອ ແລະ ສ້າງຕາຕະລາງຜ່ອນຊຳລະໃໝ່.
+                    </span>
+                  </div>
+                </label>
               </div>
+              
+              <!-- ສ່ວນສະແດງຍອດຍັງຄ້າງ (Underpayment) -->
               <div v-else-if="paymentForm.amount_received > 0 && paymentForm.amount_received < calculatedTotalExpected"
-                class="mt-2 pt-2 border-t flex justify-between text-warning">
-                <span class="font-medium">ຍອດຍັງຄ້າງ (ໜີ້ຍົກໄປ):</span>
-                <span class="font-bold">{{ formatPrice(calculatedTotalExpected - paymentForm.amount_received) }}</span>
+                class="mt-4 pt-3 border-t border-dashed border-gray-300 dark:border-gray-600 flex justify-between items-center text-warning">
+                <span class="font-medium text-sm flex items-center gap-1.5">
+                   <span class="icon-[tabler--alert-triangle] size-4"></span> ຍອດຍັງຄ້າງ (ໜີ້ຍົກໄປ):
+                </span>
+                <span class="font-bold text-lg bg-warning/10 px-2 py-0.5 rounded-md">{{ formatPrice(calculatedTotalExpected - paymentForm.amount_received) }}</span>
               </div>
             </div>
 
@@ -547,6 +580,7 @@ const showPaymentModal = ref(false)
 const selectedLoan = ref<LoanApplication | null>(null)
 const selectedSchedule = ref<any | null>(null)
 const isEarlyPayoff = ref(false)
+const isOverpayment = ref(false) // 🟢 ເພີ່ມແຖວນີ້
 const slipInput = ref<HTMLInputElement | null>(null);
 const currentSchedules = ref<any[]>([])
 
@@ -924,6 +958,7 @@ const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
   if (!canManagePayment.value) return;
 
   isEarlyPayoff.value = earlyPayoff;
+  isOverpayment.value = false; // 🟢 ຕ້ອງ Reset ທຸກຄັ້ງທີ່ເປີດ Modal ເພື່ອບໍ່ໃຫ້ຄ່າຄ້າງ
   selectedSchedule.value = schedule;
 
   if (earlyPayoff) {
@@ -994,6 +1029,7 @@ const submitPayment = async () => {
       application_id: selectedLoan.value?.id,
       schedule_id: selectedSchedule.value?.id || null,
       is_early_payoff: isEarlyPayoff.value,
+      is_overpayment: isOverpayment.value, // 🟢 ເພີ່ມແຖວນີ້ເພື່ອສົ່ງໄປບອກ Backend
       payoff_interest_months: isEarlyPayoff.value ? paymentForm.payoff_months_to_charge : null,
       amount_paid: paymentForm.amount_received,
       discount_amount: paymentForm.discount_given,

@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import apiClient from '@/api/apiclient';
 import * as customerApi from '@/api/customer'; // 👈 นำเข้า customerApi
+// 👉 Import type DTO หากต้องการใช้ระบุชนิดให้ตัวแปรในอนาคต
+import type { MemberCardDTO } from '@/types/customer';
 
 export const useCustomerStore = defineStore('customer', () => {
   const customers = ref<any[]>([]);
@@ -80,6 +82,20 @@ export const useCustomerStore = defineStore('customer', () => {
     }
   };
 
+  // 🟢 เพิ่มฟังก์ชันดึงข้อมูลบัตรสมาชิกผ่าน customerApi
+  const fetchMemberCardInfo = async (id: number): Promise<MemberCardDTO> => {
+    isLoading.value = true;
+    try {
+      const data = await customerApi.getMemberCardInfo(id);
+      return data;
+    } catch (error) {
+      console.error(`Failed to fetch card info for customer ${id}`, error);
+      throw error;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   // 🟢 4. อัปเดตข้อมูลลูกค้า (รองรับ FormData อัตโนมัติ)
   const updateCustomer = async (id: number, payload: any) => {
     try {
@@ -141,6 +157,7 @@ export const useCustomerStore = defineStore('customer', () => {
     fetchCustomers,
     loadMoreCustomers,
     fetchCustomerById,
+    fetchMemberCardInfo,
     updateCustomer,
     updateKycStatus,
     fetchLocations,

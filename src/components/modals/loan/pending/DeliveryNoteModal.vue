@@ -145,19 +145,24 @@ watch(() => props.isOpen, async (newVal) => {
 const initModalData = async () => {
   isLoading.value = true;
   try {
+    // 1. ເລີ່ມຕົ້ນດ້ວຍຂໍ້ມູນຫຍໍ້ຈາກ Props ກ່ອນ (ເພື່ອ Fallback)
     let fullLoanData = props.loan;
 
-    if (!fullLoanData.customer || !fullLoanData.customer.address) {
-      try {
-        const fetchedLoan = await loanApplicationStore.fetchLoanApplicationById(props.loan.id);
-        if (fetchedLoan) fullLoanData = fetchedLoan;
-      } catch (err) {
-        console.warn('Failed to fetch full loan details');
+    // 🟢 2. BEST PRACTICE: ບັງຄັບໂຫຼດຂໍ້ມູນ Detail ໃໝ່ສະເໝີ (Data Hydration)
+    // ລຶບເງື່ອນໄຂ if ອອກ ໃຫ້ມັນເຮັດວຽກທຸກຄັ້ງທີ່ເປີດ Modal ເພື່ອດຶງ Relation ທີ່ຂາດຫາຍໄປ
+    try {
+      const fetchedLoan = await loanApplicationStore.fetchLoanApplicationById(props.loan.id);
+      if (fetchedLoan) {
+        fullLoanData = fetchedLoan;
       }
+    } catch (err) {
+      console.warn('Failed to fetch full loan details, using shallow props data instead.', err);
     }
 
+    // 3. ເກັບຂໍ້ມູນທີ່ສົມບູນລົງໃນ Ref ພ້ອມສົ່ງໃຫ້ PDF 
     fullLoanDataRef.value = fullLoanData;
 
+    // 4. ດຶງຂໍ້ມູນໃບມອບຮັບສິນຄ້າ
     const existingReceipt = await deliveryReceiptStore.fetchReceiptByApplicationId(props.loan.id);
 
     if (existingReceipt) {
@@ -273,11 +278,88 @@ const saveDeliveryNote = async () => {
   }
 };
 
+// const printDeliveryNote = async () => {
+//   if (!deliveryReceiptStore.currentReceipt || !props.loan) return;
+
+//   isPrinting.value = true;
+//   alert.info('ກຳລັງສ້າງເອກະສານ PDF ກະລຸນາລໍຖ້າ...');
+
+//   const pdfWindow = window.open('', '_blank');
+//   if (pdfWindow) {
+//     pdfWindow.document.write(`
+//       <html lang="lo">
+//         <head><title>ກຳລັງໂຫຼດ PDF...</title></head>
+//         <body style="display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif; background-color:#f3f4f6; color:#555;">
+//           <div style="text-align:center;">
+//             <h2 style="margin-bottom: 10px;">ກຳລັງສ້າງເອກະສານ PDF...</h2>
+//             <p>ກະລຸນາລໍຖ້າຈັກໜ່ອຍ, ລະບົບກຳລັງປະມວນຜົນ.</p>
+//           </div>
+//         </body>
+//       </html>
+//     `);
+//     pdfWindow.document.close();
+//   }
+
+//   try {
+//     // 🟢 ສົ່ງຂໍ້ມູນໄປກົງໆເລີຍ ບໍ່ຕ້ອງມີການຍັດ Dummy Data ແລ້ວ ເພາະ Backend ເກັ່ງຂຶ້ນແລ້ວ
+//     const response = await apiClient.post('/pdf/delivery-receipt', {
+//       loanData: fullLoanDataRef.value || props.loan, 
+//       receiptData: deliveryReceiptStore.currentReceipt,
+//       receiverPhone: form.recipient_phone,
+//       deliveryAddress: form.delivery_address
+//     }, { responseType: 'blob', timeout: 60000 });
+
+//     const blobData = response.data instanceof Blob ? response.data : response;
+//     const file = new Blob([blobData as any], { type: 'application/pdf' });
+//     const url = window.URL.createObjectURL(file);
+
+//     if (pdfWindow) {
+//       pdfWindow.document.open();
+//       pdfWindow.document.write(`
+//         <html>
+//           <head><title>ໃບມອບຮັບສິນຄ້າ - ${deliveryReceiptStore.currentReceipt.receipts_id}</title></head>
+//           <body style="margin:0; padding:0; overflow:hidden;">
+//             <iframe src="${url}" width="100%" height="100%" style="border:none;"></iframe>
+//           </body>
+//         </html>
+//       `);
+//       pdfWindow.document.close();
+//     } else {
+//       const link = document.createElement('a');
+//       link.href = url;
+//       link.download = `receipt-${deliveryReceiptStore.currentReceipt.receipts_id}.pdf`;
+//       document.body.appendChild(link);
+//       link.click();
+//       document.body.removeChild(link);
+//     }
+//   } catch (error) {
+//     if (pdfWindow) pdfWindow.close();
+//     alert.error("ເກີດຂໍ້ຜິດພາດ", "ບໍ່ສາມາດພິມເອກະສານໄດ້.");
+//     console.error("PDF Print Error:", error);
+//   } finally {
+//     isPrinting.value = false;
+//   }
+// };
 const printDeliveryNote = async () => {
   if (!deliveryReceiptStore.currentReceipt || !props.loan) return;
 
   isPrinting.value = true;
   alert.info('ກຳລັງສ້າງເອກະສານ PDF ກະລຸນາລໍຖ້າ...');
+
+  // =======================================================
+  // 🌟 BEST PRACTICE: Just-In-Time (JIT) Data Hydration
+  // ບັງຄັບດຶງຂໍ້ມູນ Detail ສົດໆໃໝ່ໆ ທຸກຄັ້ງກ່ອນພິມເອກະສານ 
+  // ເພື່ອປ້ອງກັນການໃຊ້ props.loan ທີ່ເປັນຂໍ້ມູນຫຍໍ້
+  // =======================================================
+  let completeLoanData;
+  try {
+    completeLoanData = await loanApplicationStore.fetchLoanApplicationById(props.loan.id);
+    if (!completeLoanData) throw new Error("Data missing");
+  } catch (error) {
+    alert.error("ເກີດຂໍ້ຜິດພາດ", "ບໍ່ສາມາດດຶງຂໍ້ມູນລາຍລະອຽດສິນເຊື່ອເພື່ອພິມໄດ້.");
+    isPrinting.value = false;
+    return; // ຢຸດການເຮັດວຽກຖ້າດຶງຂໍ້ມູນເຕັມບໍ່ສຳເລັດ
+  }
 
   const pdfWindow = window.open('', '_blank');
   if (pdfWindow) {
@@ -296,8 +378,9 @@ const printDeliveryNote = async () => {
   }
 
   try {
+    // 🟢 ສົ່ງ completeLoanData ທີ່ໂຫຼດມາໃໝ່ໆໄປໃຫ້ Backend ໂດຍກົງ
     const response = await apiClient.post('/pdf/delivery-receipt', {
-      loanData: fullLoanDataRef.value || props.loan,
+      loanData: completeLoanData, // 👈 ປ່ຽນມາໃຊ້ໂຕນີ້ແທນ
       receiptData: deliveryReceiptStore.currentReceipt,
       receiverPhone: form.recipient_phone,
       deliveryAddress: form.delivery_address
@@ -329,6 +412,7 @@ const printDeliveryNote = async () => {
   } catch (error) {
     if (pdfWindow) pdfWindow.close();
     alert.error("ເກີດຂໍ້ຜິດພາດ", "ບໍ່ສາມາດພິມເອກະສານໄດ້.");
+    console.error("PDF Print Error:", error);
   } finally {
     isPrinting.value = false;
   }

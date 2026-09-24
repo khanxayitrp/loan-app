@@ -1,6 +1,7 @@
 // src/api/customer.ts
 import apiClient from './apiclient'; // หรือ path ที่ apiClient ของคุณอยู่ (ปรับตามโครงสร้างโปรเจกต์)
-
+// 👉 Import types (ปรับ Path ให้ตรงกับไฟล์ Types ของคุณ)
+import type { CustomerQueryParams, MemberCardDTO } from '@/types/customer';
 // Interface สำหรับ request bodies และ responses (เหมือนเดิม)
 interface RequestOtpBody {
   phone: string;
@@ -19,14 +20,14 @@ export interface OtpVerifyResponse {
   // เพิ่มข้อมูลอื่นๆ ถ้า backend ส่งกลับมา เช่น user data, token ฯลฯ
 }
 
-export interface CustomerQueryParams {
-  search?: string;
-  status?: string;
-  startDate?: string;
-  endDate?: string;
-  cursor?: number;
-  limit?: number;
-}
+// export interface CustomerQueryParams {
+//   search?: string;
+//   status?: string;
+//   startDate?: string;
+//   endDate?: string;
+//   cursor?: number;
+//   limit?: number;
+// }
 
 export type KycStatusUpdate = 'verified' | 'rejected' | 'expired';
 
@@ -41,6 +42,13 @@ export const getCustomers = async (params: CustomerQueryParams) => {
 export const getCustomerById = async (id: number) => {
   const response = await apiClient.get(`/customer/${id}`);
   return response.data;
+};
+
+// 🟢 เพิ่ม API สำหรับดึงข้อมูลบัตรสมาชิก (DTO)
+export const getMemberCardInfo = async (id: number): Promise<MemberCardDTO> => {
+  const response = await apiClient.get(`/customer/${id}/card`);
+  // คืนค่าเฉพาะ Data object ด้านในสุด และระบุ Type เป็น MemberCardDTO
+  return response.data?.data || response.data;
 };
 
 // 🟢 อัปเดตข้อมูลลูกค้า (รองรับ FormData สำหรับรูปโปรไฟล์)

@@ -86,19 +86,18 @@ export const useProductStore = defineStore('product', {
         this.currentPage = page;
         this.pageSize = limit;
 
-        // เคลียร์ข้อมูลเดิมทิ้งหากมีการเปลี่ยนร้านค้า
         if (shopId !== undefined && shopId !== this.currentShopId) {
           this.products = [];
           this.total = 0;
           this.currentShopId = shopId;
         }
 
-        // ยิง API ดึงข้อมูลตามเลขหน้าปัจจุบัน
         const response = await getProducts({
           ...params,
           page,
-          limit
-        });
+          limit,
+          for_admin: true // 🌟 ບັງຄັບສົ່ງ for_admin ໄປສະເໝີ ເພາະນີ້ຄືແອັບຂອງຮ້ານຄ້າ
+        } as any);
 
         this.products = response.products || [];
         this.total = response.total || 0;
@@ -138,7 +137,7 @@ export const useProductStore = defineStore('product', {
       this.isLoading = true;
       this.error = null;
       try {
-        const product = await getProductById(id);
+        const product = await getProductById(id, true); // 🌟 ສົ່ງ true ເພື່ອບອກວ່າເປັນ Admin
 
         const productWithUrls = {
           ...product,

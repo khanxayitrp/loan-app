@@ -67,7 +67,9 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     isUploadingDocuments: false,
     documentError: null as string | null,
     customer: null as LoanCustomer | null,
-    error: null as string | null
+    error: null as string | null,
+    // 🌟 1. ປະກາດ State ສຳລັບເກັບຕາຕະລາງຜ່ອນໂດຍສະເພາະ
+    currentRepaymentSchedule: [] as any[],
   }),
 
   getters: {
@@ -370,12 +372,20 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     /**
      * 🟢 บันทึกตารางการผ่อนชำระ (Repayment Schedule)
      */
-    async saveRepaymentSchedule(applicationId: number, scheduleData: any[]) {
+   async saveRepaymentSchedule(applicationId: number, scheduleData: any) {
       this.isSaving = true;
       this.error = null;
       try {
-        const result = await createRepaymentSchedule(applicationId, scheduleData);
-        return result;
+        // ສົມມຸດວ່າທ່ານມີຟັງຊັນ api save
+        const response = await createRepaymentSchedule(applicationId, scheduleData);
+        
+        // 👉 ເມື່ອບັນທຶກສຳເລັດ, ໃຫ້ເອົາ Response ທີ່ Backend ສົ່ງກັບມາ ຍັດເຂົ້າ State ເລີຍ
+        // ໂດຍບໍ່ຕ້ອງຍິງ API Fetch ຊ້ຳອີກຮອບ!
+        if (response && response.data) {
+           this.currentRepaymentSchedule = Array.isArray(response.data) ? response.data : response.data.data;
+        }
+
+        return response;
       } catch (error: any) {
         this.error = error.message || 'Failed to save repayment schedule';
         throw error;
@@ -388,13 +398,19 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
      * 🟢 ดึงตารางการผ่อนชำระ (Repayment Schedule)
      */
     async fetchRepaymentSchedule(applicationId: number) {
-      this.isSaving = true;
+      this.isSaving = true; // ຫຼືອາດຈະໃຊ້ this.isLoading = true
       this.error = null;
       try {
-        const result = await fetchRepaymentSchedule(applicationId as number);
-        return result;
+        const result = await fetchRepaymentSchedule(applicationId);
+        
+        // 👉 ແຍກ Data ໃຫ້ຊັດເຈນ ກ່ອນເກັບລົງ State
+        const scheduleData = Array.isArray(result) ? result : (result?.data || []);
+        this.currentRepaymentSchedule = scheduleData;
+        
+        return scheduleData; 
       } catch (error: any) {
         this.error = error.message || 'Failed to fetch repayment schedule';
+        this.currentRepaymentSchedule = []; // Clear state on error
         throw error;
       } finally {
         this.isSaving = false;
@@ -562,6 +578,10 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     async refresh() {
       // เรียกใช้โดยรีเซ็ต cursor ไว้โหลดใหม่
       await this.fetchLoanApplications({ cursor: undefined })
+    },
+    // 🌟 4. ຢ່າລືມຟັງຊັນລ້າງຄ່າ
+    clearCurrentSchedule() {
+      this.currentRepaymentSchedule = [];
     },
 
     async fetchApprovalLogs(loanId: number) {

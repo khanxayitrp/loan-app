@@ -343,7 +343,12 @@ const generateSchedule = () => {
     let targetMonth = startDate.getMonth() + i;
     let maxDaysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
     let actualDay = Math.min(paymentDay, maxDaysInTargetMonth);
-    let dueDate = new Date(targetYear, targetMonth, actualDay);
+    // 🌟 ປະກອບ String ວັນທີໂດຍກົງ (Timezone-safe)
+    let tempDate = new Date(targetYear, targetMonth, actualDay);
+    let safeYear = tempDate.getFullYear();
+    let safeMonth = String(tempDate.getMonth() + 1).padStart(2, '0');
+    let safeDay = String(tempDate.getDate()).padStart(2, '0');
+    let formattedDueDate = `${safeYear}-${safeMonth}-${safeDay}`;
 
     if (i === term) {
       rowPrincipalRounded = principal - accumulatedPrincipal;
@@ -374,7 +379,7 @@ const generateSchedule = () => {
 
     scheduleRows.value.push({
       installment_number: i,
-      due_date: dueDate.toISOString().split('T')[0] || '',
+      due_date: formattedDueDate,
       principal: rowPrincipalRounded,
       interest: rowInterestRounded,
       total_amount: totalAmountRounded,

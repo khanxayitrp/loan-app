@@ -307,6 +307,16 @@ let debounceTimer: any = null
 const debounceSearch = () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => currentPage.value = 1, 300) }
 const applyDateFilter = () => currentPage.value = 1
 
+const getErrorMessage = (error: any, defaultMessage: string) => {
+  if (error?.response?.data) {
+    const data = error.response.data;
+    if (data.message) return data.message;
+    if (data.error) return data.error;
+    if (data.errors && Array.isArray(data.errors)) return data.errors.join(', ');
+  }
+  return error?.message || defaultMessage;
+};
+
 const fetchData = async () => {
   try {
     await loanApplicationStore.fetchLoanApplications({
@@ -323,7 +333,8 @@ const fetchData = async () => {
       limit: 250
     })
   } catch (error: any) {
-    const errorMsg = error.response?.data?.message || error.message || 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນລາຍການສິນເຊື່ອໄດ້';
+    // 🟢 ດຶງ Error ຈາກ Backend ມາໂຊໃຫ້ຈະແຈ້ງ
+    const errorMsg = getErrorMessage(error, 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນລາຍການສິນເຊື່ອໄດ້');
     alert.error('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ', errorMsg);
   }
 }

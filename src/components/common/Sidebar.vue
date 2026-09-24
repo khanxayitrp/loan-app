@@ -180,6 +180,13 @@ const menuItems = [
         icon: 'icon-[tabler--users]',
         to: '/membership',
         permissions: ['user_view', 'user_manage']
+      },
+      // 🟢 เพิ่มเมนูใหม่ที่นี่
+      {
+        label: 'ອອກບັດສະມາຊິກ (Issue Card)',
+        icon: 'icon-[tabler--id-badge-2]',
+        to: '/membership/issue-card',
+        permissions: ['user_view', 'user_manage']
       }
     ]
   },

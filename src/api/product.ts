@@ -11,15 +11,13 @@ import type {
 /**
  * ดึงรายการสินค้าทั้งหมด
  */
-export const getProducts = async (params?: GetProductsParams) => {
+export const getProducts = async (params?: GetProductsParams & { for_admin?: boolean }) => {
   try {
     const response = await apiClient.get('/products', { params })
     const resData = response.data;
 
-    // Backend ส่งมาเป็น: { success: true, data: { data: [...], total: X, page: Y, limit: Z } }
     const payload = resData.data || resData;
 
-    // ดึง Array และ Total ออกมาให้ตรงชั้น
     const productsArray = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload) ? payload : []);
     const totalCount = payload.total !== undefined ? payload.total : productsArray.length;
 
@@ -36,14 +34,15 @@ export const getProducts = async (params?: GetProductsParams) => {
 }
 
 /**
- * 🟢 ดึงข้อมูลสินค้าเฉพาะ
+ * 🟢 ดึงข้อมูลสินค้าเฉพาะ (ເພີ່ມ forAdmin parameter)
  */
-export const getProductById = async (id: number) => {
+export const getProductById = async (id: number, forAdmin: boolean = false) => {
   try {
-    const response = await apiClient.get(`/products/${id}`)
+    const response = await apiClient.get(`/products/${id}`, {
+      params: { for_admin: forAdmin } // 🌟 ສົ່ງ for_admin ໄປຫາ Backend
+    })
     console.log('[API] Product by ID response:', response.data)
 
-    // Backend ส่งมาเป็น: { success: true, data: { ... } }
     return response.data.data || response.data.product || response.data
   } catch (error: any) {
     console.error(`Error fetching product ${id}:`, error)

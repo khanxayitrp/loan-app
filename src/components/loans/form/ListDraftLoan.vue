@@ -247,6 +247,17 @@ const selectedDraftId = ref<number | null>(null)
 const showSubmitModal = ref(false)
 const draftToSubmit = ref<any>(null)
 
+// 🟢 ฟังก์ชันใหม่: สำหรับสกัดข้อความ Error จาก Backend ให้ผู้ใช้เห็นได้อย่างแม่นยำ
+const getErrorMessage = (error: any, defaultMessage: string) => {
+  if (error?.response?.data) {
+    const data = error.response.data;
+    if (data.message) return data.message; // ดึงฟิลด์ message ที่ Backend ส่งมา
+    if (data.error) return data.error;
+    if (data.errors && Array.isArray(data.errors)) return data.errors.join(', ');
+  }
+  return error?.message || defaultMessage;
+};
+
 const getDraftDisplayName = (draft: any) => draft.customer ? `${draft.customer.first_name || ''} ${draft.customer.last_name || ''}`.trim() : '-'
 const getDraftPhone = (draft: any) => draft.customer?.phone || '-'
 const getProductName = (draft: any) => draft.product?.product_name || '-'
@@ -333,7 +344,7 @@ const fetchData = async () => {
   await loanApplicationStore.fetchLoanApplications({
     status: LoanApplicationStatus.PENDING,
     is_confirmed: 0,
-    limit: 250, // 🟢 ดึงข้อมูลก้อนใหญ่เพื่อใช้กับ Local Filter
+    limit: 250, 
     cursor: undefined
   } as any)
 }
@@ -355,8 +366,9 @@ const deleteDraft = async (id: number) => {
     alert.success('ລຶບຮ່າງສຳເລັດແລ້ວ!')
     await fetchData()
   } catch (error: any) {
-    const errorMsg = error.response?.data?.message || error.message || 'ບໍ່ສາມາດລຶບຮ່າງໄດ້'
-    alert.error('ເກີດຂໍ້ຜິດພາດ', errorMsg)
+    // 🟢 เรียกใช้ฟังก์ชันสกัด Error ให้แจ้งเตือนบอก User ชัดๆ
+    const errorMsg = getErrorMessage(error, 'ບໍ່ສາມາດລຶບຮ່າງໄດ້');
+    alert.error('ເກີດຂໍ້ຜິດພາດ', errorMsg);
   }
 }
 
@@ -374,8 +386,9 @@ const submitDraft = async () => {
     showSubmitModal.value = false
     await fetchData()
   } catch (error: any) {
-    const errorMsg = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດໃນການສົ່ງຄຳຂໍ'
-    alert.error('ສົ່ງຄຳຂໍລົ້ມເຫຼວ', errorMsg)
+    // 🟢 เรียกใช้ฟังก์ชันสกัด Error เพื่อโชว์ว่าพังเพราะอะไร
+    const errorMsg = getErrorMessage(error, 'ເກີດຂໍ້ຜິດພາດໃນການສົ່ງຄຳຂໍ');
+    alert.error('ສົ່ງຄຳຂໍລົ້ມເຫຼວ', errorMsg);
   } finally {
     isVerifying.value = false
   }
@@ -407,7 +420,7 @@ const exportToExcel = () => {
       'ລູກຄ້າ': getDraftDisplayName(d),
       'ເບີໂທ': getDraftPhone(d),
       'ສິນຄ້າ': getProductName(d),
-      'ຈຳນວນເງິນ (ກີບ)': netAmount, // 🟢 ส่งเป็น Number ให้ Excel
+      'ຈຳນວນເງິນ (ກີບ)': netAmount,
       'ສະຖານະ': getStatusText(d.status),
       'ວັນທີ່ສ້າງ': d.createdAt ? formatDate(d.createdAt) : '-'
     }

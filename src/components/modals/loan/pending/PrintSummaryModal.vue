@@ -26,9 +26,17 @@
 
         <div id="print-section" class="flex-1 overflow-y-auto p-8 print:p-0 print:overflow-visible text-black">
 
-          <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold uppercase mb-1">ໃບສະຫຼຸບການປະເມີນສິນເຊື່ອ</h1>
-            <h2 class="text-lg font-bold uppercase tracking-widest text-gray-600">Approval Summary</h2>
+          <!-- 🟢 ແກ້ໄຂ: ປັບໂລໂກ້ໃຫ້ໃຫຍ່ຂຶ້ນ (h-20 ຫຼື h-24) ແລະ ຈັດເຄິ່ງກາງແນວຕັ້ງ -->
+          <div class="relative flex items-center justify-center mb-8 min-h-[5rem]">
+            <!-- ໂລໂກ້ດ້ານຊ້າຍມື (ປ່ຽນ h-16 ເປັນ h-24 ແລະ ຈັດເຄິ່ງກາງແນວຕັ້ງ) -->
+            <img src="/image/LOGO INSEE 2026.png"
+              class="absolute left-0 top-1/2 -translate-y-1/2 h-20 sm:h-24 w-auto object-contain" alt="INSEE Logo" />
+
+            <!-- ຫົວຂໍ້ຢູ່ເຄິ່ງກາງ -->
+            <div class="text-center">
+              <h1 class="text-2xl font-bold uppercase mb-1">ໃບສະຫຼຸບການປະເມີນສິນເຊື່ອ</h1>
+              <h2 class="text-lg font-bold uppercase tracking-widest text-gray-600">Approval Summary</h2>
+            </div>
           </div>
 
           <div class="flex justify-between text-sm mb-4">
@@ -51,7 +59,6 @@
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ເບີໂທຕິດຕໍ່:</td>
                   <td class="border border-gray-400 px-2 py-1">{{ printData.phone }}</td>
                   <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ບ່ອນເຮັດວຽກ:</td>
-                  <!-- ✅ ໂຄ້ດໃໝ່ (ເອົາຄຳວ່າ ປີ ອອກຈາກໃນວົງເລັບ) -->
                   <td class="border border-gray-400 px-2 py-1">{{ printData.companyName }} ({{ printData.jobTenure }})
                   </td>
                 </tr>
@@ -112,7 +119,7 @@
                   <td class="border border-gray-400 px-2 py-1 w-2/3">{{ getCibLabel(printData.cibStatus) }}</td>
                 </tr>
                 <tr>
-                  <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ອັດຕาສ່ວນໜີ້ສິນ (DSR):</td>
+                  <td class="border border-gray-400 px-2 py-1 font-semibold bg-gray-50">ອັດຕາສ່ວນໜີ້ສິນ (DSR):</td>
                   <td class="border border-gray-400 px-2 py-1 font-bold"
                     :class="printData.dsrPercent > 50 ? 'text-error' : 'text-success'">{{
                       printData.dsrPercent.toFixed(2) }}%</td>
@@ -181,20 +188,26 @@
             </table>
           </div>
 
+          <!-- 🟢 ແກ້ໄຂ: ສະລັບຕຳແໜ່ງລາຍເຊັນ -->
           <div class="mt-12 flex justify-between px-8 text-center text-sm break-inside-avoid">
+            <!-- ຜູ້ອະນຸມັດ ຍ້າຍມາເບື້ອງຊ້າຍ -->
             <div class="w-1/3">
               <div class="border-b border-black mb-2 mx-4 h-16"></div>
-              <div>ຜູ້ກວດສອບ / Prepared By</div>
+              <div>ຜູ້ອະນຸມັດ / Approved By</div>
               <div class="text-xs text-gray-500 mt-1">ວັນທີ: ____/____/______</div>
             </div>
+
+            <!-- ຜູ້ກວດກາ ຍັງຢູ່ເຄິ່ງກາງ -->
             <div class="w-1/3">
               <div class="border-b border-black mb-2 mx-4 h-16"></div>
               <div>ຜູ້ກວດກາ / Checked By</div>
               <div class="text-xs text-gray-500 mt-1">ວັນທີ: ____/____/______</div>
             </div>
+
+            <!-- ຜູ້ກວດສອບ ຍ້າຍໄປເບື້ອງຂວາ -->
             <div class="w-1/3">
               <div class="border-b border-black mb-2 mx-4 h-16"></div>
-              <div>ຜູ້ອະນຸມັດ / Approved By</div>
+              <div>ຜູ້ກວດສອບ / Prepared By</div>
               <div class="text-xs text-gray-500 mt-1">ວັນທີ: ____/____/______</div>
             </div>
           </div>
@@ -211,22 +224,20 @@ import apiClient from '@/api/apiclient';
 import { alert } from '@/utils/alert';
 import { formatPrice, getCurrentDateDDMMYYYY, formatDateTime, getStatusText } from '@/utils/formatters';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
-import { usePermissionStore } from '@/stores/permission'; // 🌟 1. Import Permission Store
+import { usePermissionStore } from '@/stores/permission';
 
 const props = defineProps<{ isOpen: boolean; printData: any }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
 
 const loanApplicationStore = useLoanApplicationStore();
-const permissionStore = usePermissionStore(); // 🌟 2. ປະກາດໃຊ້ Store
+const permissionStore = usePermissionStore();
 
 const approvalLogs = ref<any[]>([]);
 const isPrinting = ref(false);
 
 const close = () => emit('close');
 
-// 🌟 3. Computed Property ສຳລັບກວດສອບສິດການພິມ
 const canPrintSummary = computed(() => {
-  // ອະນຸຍາດໃຫ້ພິມສະເພາະຜູ້ທີ່ມີສິດ edit ຫຼື approve (ປ້ອງກັນບໍ່ໃຫ້ Auditor ກົດພິມໄດ້)
   return permissionStore.hasPermission('loan_print') && permissionStore.hasPermission('loan_edit');
 });
 
@@ -265,7 +276,6 @@ const formatRoleName = (role: string) => {
 };
 
 const handlePrint = async () => {
-  // ປ້ອງກັນໄວ້ອີກຊັ້ນໜຶ່ງ: ຖ້າບໍ່ມີສິດພິມ ໃຫ້ return ທັນທີ
   if (!props.printData?.loan || !canPrintSummary.value) return;
 
   isPrinting.value = true;

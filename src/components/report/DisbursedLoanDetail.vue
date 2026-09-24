@@ -252,23 +252,32 @@ const exportToExcel = () => {
       'ອາຍຸ': calculateAge(loan.customer?.date_of_birth),
       'ເງິນເດືອນ': Number(workInfo?.salary || 0),
       'ປີການເຮັດວຽກ': Number(workInfo?.duration_years || 0),
-      'ວັນທີອະນຸມັດ': formatDisplayDate(loan.approved_at || loan.createdAt), // 👈 แก้ตรงนี้
+      'ວັນທີອະນຸມັດ': formatDisplayDate(loan.approved_at || loan.createdAt),
+
+      'ປະເພດສິນຄ້າ': getProductTypeName(loan.product?.productType_id),
+      'ຊື່ສິນຄ້າ': loan.product?.product_name || '-',
+
+      // 🟢 ຊື່ຮ້ານຄ້າ: ດຶງຈາກ product.partner ຕາມໂຄງສ້າງ JSON
+      'ຊື່ຮ້ານຄ້າ': loan.product?.partner?.shop_name || '-',
+
       'ລາຄາສິນຄ້າ': productPrice,
       'ລາຄ່າວາງດາວ': downPayment,
       'ວົງເງິນອະນຸມັດ': approvedAmount,
       'ອັດຕາດອກເບ້ຍ': Number(loan.interest_rate_at_apply || 0),
       'ໄລຍະເວລາຜ່ອນ': Number(loan.loan_period || 0),
       'ຄ່າທຳນຽມ(CIB)': Number(loan.fee || 0),
-      'ປະເພດສິນຄ້າ': getProductTypeName(loan.product?.productType_id),
-      'ວັນທີ່ ເດືອນປີ ເລີ່ມຈ່າຍຄ່າງວດ': formatDisplayDate(getFirstInstallment(loan)), // 👈 แก้ตรงนี้
-      'ວັນທີ່ ເດືອນປີ ສິນສຸດສັນຍາຈ່າຍຄ່າງວດ': formatDisplayDate(getLastInstallment(loan)), // 👈 แก้ตรงนี้
+      'ວັນທີ່ ເດືອນປີ ເລີ່ມຈ່າຍຄ່າງວດ': formatDisplayDate(getFirstInstallment(loan)),
+      'ວັນທີ່ ເດືອນປີ ສິນສຸດສັນຍາຈ່າຍຄ່າງວດ': formatDisplayDate(getLastInstallment(loan)),
       'ຊື່ພະນັກງານຂາຍ': loan.requester?.full_name || loan.requester?.username || '-',
-      'ພະນັກງານປະເມີນ': loan.assessor?.full_name || loan.assessor?.username || 'ຕິ່ງລີ້ ຫຼວງກຳນັນ',
+
+      // 🟢 ຄົນປະເມີນ: ປ່ຽນຄີຈາກ performer ເປັນ performed_by_user ໃຫ້ກົງກັບ JSON
+      'ພະນັກງານປະເມີນ': loan.loan_approval_logs?.[0]?.performed_by_user?.full_name || loan.loan_approval_logs?.[0]?.performed_by_user?.username || '-',
+
       'ຜູ້ອະນຸມັດ': loan.approver?.full_name || loan.approver?.username || '-'
     }
   })
 
-  // 🟢 ແກ້ໄຂ Error ທີ 5: ເພີ່ມ || {} ເພື່ອປ້ອງກັນ TypeScript ມອງວ່າ array[0] ອາດຈະເປັນ undefined
+  // 🟢 ປ້ອງກັນ Error ກໍລະນີບໍ່ມີຂໍ້ມູນ
   const worksheet = XLSX.utils.json_to_sheet(worksheetData)
   const wscols = Object.keys(worksheetData[0] || {}).map(() => ({ wch: 20 }))
   worksheet['!cols'] = wscols

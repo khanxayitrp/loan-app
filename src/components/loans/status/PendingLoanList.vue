@@ -940,9 +940,22 @@ const openCreditScoreModal = async (loan: any) => {
     const contractRes = await loanContractStore.fetchContract(loan.id);
     if (!contractRes) return alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
 
-    const repaymentRes = await loanApplicationStore.fetchRepaymentSchedule(loan.id);
-    const hasRepayments = Array.isArray(repaymentRes) ? repaymentRes.length > 0 : (repaymentRes?.data ? true : false);
-    if (!hasRepayments) return alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຕາຕະລາງຜ່ອນຊຳລະ" ໃຫ້ສຳເລັດກ່ອນ!');
+    // 🌟 ยิง API ตรวจสอบตรงๆ ไปยัง Backend แบบ Zero-Trust Cache
+    let scheduleData = [];
+    try {
+      const res = await apiClient.get(`/loan-application/${loan.id}/repayment-schedule?no_cache=true`);
+      scheduleData = res.data?.data || [];
+    } catch (apiError) {
+      // Fallback เผื่อ API ตรงพัง
+      const storeRes = await loanApplicationStore.fetchRepaymentSchedule(loan.id);
+      scheduleData = Array.isArray(storeRes) ? storeRes : (storeRes?.data || []);
+    }
+
+    const hasRepayments = Array.isArray(scheduleData) && scheduleData.length > 0;
+    
+    if (!hasRepayments) {
+      return alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຕາຕະລາງຜ່ອນຊຳລະ" ໃຫ້ສຳເລັດກ່ອນ!');
+    }
 
     let summaryData = null;
     try {
@@ -964,7 +977,9 @@ const openCreditScoreModal = async (loan: any) => {
     summaryDataForScore.value = summaryData;
     loanForCreditScore.value = loan;
     showCreditScoreModal.value = true;
-  } catch (error) { alert.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບເງື່ອນໄຂ'); }
+  } catch (error) { 
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບເງື່ອນໄຂ'); 
+  }
 }
 
 const isConditionalApproval = computed(() => {

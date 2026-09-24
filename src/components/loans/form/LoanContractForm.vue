@@ -396,10 +396,9 @@ const calculateLoanDetails = () => {
       formData.product.totalInterest = 0
     } else {
       let monthlyPayment = 0
-      let calculatedTotalInterest = 0 // 🌟 เพิ่มตัวแปรนี้เพื่อเก็บดอกเบี้ยเป๊ะๆ ตามสูตร
+      let calculatedTotalInterest = 0
 
       if (interestType === 'flat_rate') {
-        // คำนวณดอกเบี้ยตรงๆ แบบไม่ปัดเศษก่อน
         calculatedTotalInterest = principal * (ratePerMonth / 100) * loanTerm
         monthlyPayment = (principal + calculatedTotalInterest) / loanTerm
       } else if (interestType === 'effective_rate') {
@@ -409,14 +408,10 @@ const calculateLoanDetails = () => {
         calculatedTotalInterest = (monthlyPayment * loanTerm) - principal
       }
 
-      // ปัดเศษค่างวดรายเดือน
       formData.product.monthlyPayment = Math.round(monthlyPayment)
-
-      // 🌟 ใช้ดอกเบี้ยที่ได้จากสูตรโดยตรง (ไม่เอาค่างวดที่ปัดเศษมาคูณกลับ)
       formData.product.totalInterest = Math.round(calculatedTotalInterest)
     }
 
-    // คำนวณค่างวดเดือนแรก (+ ค่าธรรมเนียม)
     formData.product.firstInstallment = formData.product.monthlyPayment + (formData.product.fee || 0)
   }
 }
@@ -536,7 +531,18 @@ const saveForm = async () => {
 
   isSaving.value = true;
   try {
-    emit('save-form', customerId, formData);
+    // 🟢 ສ້າງ Clone ແລະ ແປງຄ່າ Empty String ເປັນ Null ກ່ອນສົ່ງ API
+    const payload = JSON.parse(JSON.stringify(formData));
+    
+    // ເຮັດຄວາມສະອາດຂໍ້ມູນວັນທີ
+    if (payload.customer.censusBookIssueDate === '') payload.customer.censusBookIssueDate = null;
+    if (payload.customer.idCardIssueDate === '') payload.customer.idCardIssueDate = null;
+    if (payload.customer.idCardExpiryDate === '') payload.customer.idCardExpiryDate = null;
+    if (payload.guarantor.censusBookIssueDate === '') payload.guarantor.censusBookIssueDate = null;
+    if (payload.guarantor.idCardIssueDate === '') payload.guarantor.idCardIssueDate = null;
+    if (payload.guarantor.idCardExpiryDate === '') payload.guarantor.idCardExpiryDate = null;
+
+    emit('save-form', customerId, payload);
   }
   catch (error: any) {
     customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message);
@@ -606,7 +612,7 @@ const loadDataFromProps = () => {
     formData.work.companyName = sourceData.cus_company_name || ''
     formData.work.businessType = sourceData.cus_company_businessType || ''
     formData.work.workYears = sourceData.cus_company_workYear || null
-    formData.work.workMonths = sourceData.cus_company_workMonth || null // 🌟 ດຶງເດືອນມາສະແດງໃນຟອມ
+    formData.work.workMonths = sourceData.cus_company_workMonth || null
     formData.work.position = sourceData.cus_position || ''
     formData.work.salary = sourceData.cus_income || null
     formData.work.salaryDay = sourceData.cus_payroll_date || null
@@ -635,15 +641,12 @@ const loadDataFromProps = () => {
     }
 
     if (sourceData.ref_name) {
-      // 🟢 1. Check ref_Type from contract data
       const rawRefType = sourceData.ref_Type || sourceData.ref_type || '';
       const currentRefType = rawRefType.toLowerCase();
 
-      // Assign the checkboxes correctly
       formData.hasGuarantor = currentRefType === 'guarantor';
       formData.hasReference = currentRefType === 'reference';
 
-      // Fallback if ref_type is somehow empty but we have ref data
       if (!formData.hasGuarantor && !formData.hasReference && sourceData.ref_name) {
         formData.hasGuarantor = true;
       }
@@ -705,12 +708,18 @@ const loadDataFromProps = () => {
       formData.customer.fullname = `${sourceData.customer.first_name || ''} ${sourceData.customer.last_name || ''}`.trim()
       formData.customer.dob = sourceData.customer.date_of_birth || ''
       formData.customer.phone = sourceData.customer.phone || ''
+      
+      // 🟢 Mapping ຂໍ້ມູນບັດປະຈຳຕົວໃຫ້ຖືກຕ້ອງ
       formData.customer.idCard = sourceData.customer.identity_number || ''
+      formData.customer.idCardIssueDate = sourceData.customer.issue_date || ''
+      formData.customer.idCardExpiryDate = sourceData.customer.expire_date || sourceData.customer.expired_date || ''
+      
+      // 🟢 Mapping ຂໍ້ມູນສຳມະໂນຄົວທີ່ເຄີຍຂາດຫາຍໄປ
       formData.customer.censusBook = sourceData.customer.census_number || ''
-      formData.customer.idCardExpiryDate = sourceData.customer.issue_date || ''
+      formData.customer.censusBookIssueDate = sourceData.customer.census_created || sourceData.customer.census_issue_date || ''
+      
       formData.customer.censusAuthorizeBy = sourceData.customer.issue_place || ''
       formData.customer.idCardPlace = sourceData.customer.issue_place || ''
-      formData.customer.idCardIssueDate = sourceData.customer.issue_date || ''
       formData.customer.occupation = sourceData.customer.occupation || ''
       formData.customer.unit = sourceData.customer.unit || ''
 
@@ -753,7 +762,6 @@ const loadDataFromProps = () => {
 
     const guarantor = sourceData.loan_guarantors?.[0] || sourceData.loanGuarantors?.[0]
     if (guarantor) {
-      // 🟢 2. Check ref_Type from application data
       const rawRefType = guarantor.ref_type || guarantor.ref_Type || '';
       const currentRefType = rawRefType.toLowerCase();
 
