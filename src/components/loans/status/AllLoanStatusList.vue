@@ -351,7 +351,7 @@ const fetchLoans = async () => {
   try {
     const filters: LoanApplicationFilters = {
       is_confirmed: 1,
-      status: statusFilter.value ? (statusFilter.value as any) : undefined,
+      status: statusFilter.value ? (statusFilter.value as LoanApplicationStatus) : undefined,
       min: amountMin.value,
       max: amountMax.value,
       CustomerId: customer.value?.id || undefined,
