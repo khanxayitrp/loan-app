@@ -1,3 +1,4 @@
+
 // src/types/report.ts
 
 export interface ReportFilters {
@@ -86,3 +87,4 @@ export interface DisbursedLoanReportRow {
   }>;
   [key: string]: any;
 }
+

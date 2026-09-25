@@ -1,3 +1,4 @@
+
 <template>
   <header class="bg-slate-900 text-white p-6 shadow-lg">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
@@ -35,3 +36,4 @@ const lastUpdatedText = computed(() => {
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')} - ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
 })
 </script>
+

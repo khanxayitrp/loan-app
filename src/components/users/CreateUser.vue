@@ -1,3 +1,4 @@
+
 <template>
   <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
     <div class="flex items-center gap-3 mb-6">
@@ -281,3 +282,4 @@ onMounted(() => {
   console.log('[CreateUser] mounted, initialUser:', props.initialUser)
 })
 </script>
+

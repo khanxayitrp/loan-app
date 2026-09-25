@@ -1,3 +1,4 @@
+
 import { defineStore } from 'pinia';
 import { membershipPurposeApi } from '@/api/membership-purpose';
 import type { CreditPurpose } from '@/types/membership-purpose';

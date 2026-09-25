@@ -1,3 +1,4 @@
+
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import apiClient from '@/api/apiclient';
@@ -166,3 +167,4 @@ export const useCustomerStore = defineStore('customer', () => {
     removeLocation
   };
 });
+

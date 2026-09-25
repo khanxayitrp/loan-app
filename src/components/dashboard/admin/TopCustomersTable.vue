@@ -1,3 +1,4 @@
+
 <template>
   <div class="overflow-x-auto h-[350px]">
     <table class="w-full text-left">
@@ -43,3 +44,4 @@ div::-webkit-scrollbar-thumb {
   border-radius: 10px;
 }
 </style>
+

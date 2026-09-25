@@ -1,3 +1,4 @@
+
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { fetchApplicationsAPI, updateKycStatusBulkAPI } from '@/api/membership';

@@ -1,3 +1,4 @@
+
 // src/composables/usePermission.ts
 import { usePermissionStore } from '@/stores/permission'
 
@@ -17,3 +18,4 @@ export function usePermission() {
     canAny
   }
 }
+

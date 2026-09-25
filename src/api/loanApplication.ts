@@ -1,3 +1,4 @@
+
 // src/api/loanApplication.ts
 
 import apiClient from './apiclient'
@@ -379,4 +380,5 @@ export const fetchApprovalLogs = async (
     throw new Error(error.response?.data?.message || 'Failed to fetch approval logs')
   }
 }
+
 

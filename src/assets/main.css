@@ -1,3 +1,4 @@
+
 /* src/assets/main.css */
 @import "tailwindcss";
 @plugin "flyonui";
@@ -15,3 +16,4 @@ body {
 }
 
 @plugin "@iconify/tailwind4";
+

@@ -1,3 +1,4 @@
+
 export interface LoanRepaymentInfo {
   id: number;
   contract_number: string;
@@ -32,3 +33,4 @@ export interface PaymentForm {
   remarks: string;
   installment_number: number;
 }
+

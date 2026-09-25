@@ -1,3 +1,4 @@
+
 <template>
   <section>
     <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800 dark:text-white">
@@ -62,3 +63,4 @@
   border-color: #0ea5e9;
 }
 </style>
+

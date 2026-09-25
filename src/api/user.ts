@@ -1,3 +1,4 @@
+
 // src/api/auth.ts
 import apiClient from './apiclient'
 import type {
@@ -33,3 +34,4 @@ export const deleteUser = async (userId: number): Promise<{ message: string }> =
   const response = await apiClient.delete<{ message: string }>(`/users/${userId}`)
   return response.data
 }
+

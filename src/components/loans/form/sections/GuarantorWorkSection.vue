@@ -1,3 +1,4 @@
+
 <template>
   <section v-if="hasGuarantor || hasReference" class="form-section">
     <h3 class="section-title">VI. ຂໍ້ມູນຫ້ອງການບ່ອນເຮັດວຽກຂອງຜູ້ຄ້ຳປະກັນ</h3>

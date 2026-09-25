@@ -1,3 +1,4 @@
+
 // src/types/draftLoan.ts
 
 /**
@@ -125,3 +126,4 @@ export interface DraftLoanResponse {
   per_page: number
   last_page: number
 }
+

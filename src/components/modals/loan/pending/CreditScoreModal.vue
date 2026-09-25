@@ -1,3 +1,4 @@
+
 <template>
   <teleport to="body">
     <div v-if="isOpen && loan"
@@ -276,9 +277,9 @@ const calculateCreditScore = () => {
   totalScore = ageScore + tenureScore + dsrScore + cibScore + dpScore;
 
   const percentScore = (totalScore / maxTotalScore) * 100;
-  let grade = percentScore >= 80 ? 'APPROVE' : percentScore >= 65 ? 'CONDITIONAL APPROVAL' : 'REJECT';
-  let description = percentScore >= 80 ? 'ຜ່ານອະນຸມັດ' : percentScore >= 65 ? 'ອະນຸມັດແບບມີເງື່ອນໄຂ' : 'ປະຕິເສດການອະນຸມັດ';
-  let colorClass = percentScore >= 80 ? 'bg-gradient-to-r from-emerald-500 to-green-600' : percentScore >= 65 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-red-500 to-rose-600';
+  const grade = percentScore >= 80 ? 'APPROVE' : percentScore >= 65 ? 'CONDITIONAL APPROVAL' : 'REJECT';
+  const description = percentScore >= 80 ? 'ຜ່ານອະນຸມັດ' : percentScore >= 65 ? 'ອະນຸມັດແບບມີເງື່ອນໄຂ' : 'ປະຕິເສດການອະນຸມັດ';
+  const colorClass = percentScore >= 80 ? 'bg-gradient-to-r from-emerald-500 to-green-600' : percentScore >= 65 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-red-500 to-rose-600';
 
   result.value = {
     score: totalScore,
@@ -317,3 +318,4 @@ const saveScore = async () => {
 
 const close = () => emit('close');
 </script>
+

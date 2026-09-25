@@ -1,3 +1,4 @@
+
 import apiClient from './apiclient';
 import type { AdminLoanSnapshot } from '../types/admin-loan';
 
@@ -24,3 +25,4 @@ export const adminLoanApi = {
     return response.data;
   }
 };
+

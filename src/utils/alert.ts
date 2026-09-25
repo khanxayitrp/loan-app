@@ -1,3 +1,4 @@
+
 // src/utils/alert.ts
 import Swal from 'sweetalert2';
 
@@ -116,3 +117,4 @@ export const alert = {
     Swal.close();
   }
 };
+

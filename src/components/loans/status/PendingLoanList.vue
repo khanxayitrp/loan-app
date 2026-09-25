@@ -1,3 +1,4 @@
+
 <template>
   <div class="p-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -1062,3 +1063,4 @@ const exportToExcel = () => {
   XLSX.writeFile(workbook, `pending_loans_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 </script>
+

@@ -1,3 +1,4 @@
+
 <template>
   <div class="loan-contract-form-container">
     <div v-if="isLoadingForm" class="text-center py-12">
@@ -262,7 +263,6 @@ const formData = reactive({
     salaryDay: null as number | null, totalEmployees: null as number | null,
     otherIncome: null as number | null, otherIncomeSource: ''
   },
-
 })
 
 // =======================
@@ -375,7 +375,47 @@ const syncProductWithApplication = () => {
   customAlert.success('ອັບເດດຂໍ້ມູນສິນຄ້າຈາກໃບຄຳຂໍສຳເລັດ!');
 }
 
+// 🌟 1. Regex ตรวจจับ iPhone 18 Series
+const checkIphone18Campaign = (productName: string, model: string = ''): boolean => {
+  const nameToTest = `${productName || ''} ${model || ''}`;
+  return /iphone\s*18/i.test(nameToTest);
+};
+
+// 🌟 2. Logic บังคับกฎของแคมเปญ
+const applyCampaignRules = () => {
+  const isIphone18 = checkIphone18Campaign(formData.product.description, formData.product.model);
+  if (!isIphone18) return;
+
+  // ก. บังคับจำนวนงวด
+  const allowedTerms = [18, 24, 30, 36];
+  if (!allowedTerms.includes(Number(formData.product.loanTerm))) {
+    formData.product.loanTerm = 18;
+  }
+
+  // ข. กำหนดดอกเบี้ยตามขั้นบันได (Tiered Interest)
+  const price = Number(formData.product.price) || 0;
+  const dp = Number(formData.product.downPayment) || 0;
+  const dpPercent = price > 0 ? (dp / price) * 100 : 0;
+
+  if (dpPercent >= 50) {
+    formData.product.interestRate = 0.84;
+  } else if (dpPercent >= 40) {
+    formData.product.interestRate = 0.89;
+  } else if (dpPercent >= 30) {
+    formData.product.interestRate = 0.94;
+  } else if (dpPercent >= 20) {
+    formData.product.interestRate = 0.99;
+  } else if (dpPercent >= 10) {
+    formData.product.interestRate = 1.04;
+  } else {
+    formData.product.interestRate = 1.09;
+  }
+};
+
 const calculateLoanDetails = () => {
+  // 🌟 แทรกการรัน Campaign Rules ก่อนคำนวณการผ่อนชำระ
+  applyCampaignRules();
+
   const price = formData.product.price || 0
   const downPayment = formData.product.downPayment || 0
   const loanTerm = formData.product.loanTerm || 1
@@ -534,13 +574,29 @@ const saveForm = async () => {
     // 🟢 ສ້າງ Clone ແລະ ແປງຄ່າ Empty String ເປັນ Null ກ່ອນສົ່ງ API
     const payload = JSON.parse(JSON.stringify(formData));
     
-    // ເຮັດຄວາມສະອາດຂໍ້ມູນວັນທີ
+    // เคลียร์ข้อมูลขยะหากไม่มีคนค้ำประกัน (ป้องกัน Database บันทึก "ບໍ່ມີ")
+    if (!payload.hasGuarantor && !payload.hasReference) {
+      payload.guarantor = {
+        fullname: '', dob: '', phone: '', gender: '', maritalStatus: '', idCard: '', idCardIssueDate: null, idCardExpiryDate: null,
+        censusBook: '', censusBookIssueDate: null, idCardPlace: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
+        address: { village: '', district: '', district_id: '', province: '', province_id: '' },
+        residenceYears: null, liveWith: '', residenceStatus: '', occupation: '', relationship: '', age: null
+      };
+      payload.guarantorWork = {
+        companyName: '', businessType: '', phone: '',
+        address: { village: '', district: '', district_id: '', province: '', province_id: '' },
+        workYears: null, position: '', salary: null, salaryDay: null, totalEmployees: null,
+        otherIncome: null, otherIncomeSource: ''
+      };
+    } else {
+      if (payload.guarantor.censusBookIssueDate === '') payload.guarantor.censusBookIssueDate = null;
+      if (payload.guarantor.idCardIssueDate === '') payload.guarantor.idCardIssueDate = null;
+      if (payload.guarantor.idCardExpiryDate === '') payload.guarantor.idCardExpiryDate = null;
+    }
+
     if (payload.customer.censusBookIssueDate === '') payload.customer.censusBookIssueDate = null;
     if (payload.customer.idCardIssueDate === '') payload.customer.idCardIssueDate = null;
     if (payload.customer.idCardExpiryDate === '') payload.customer.idCardExpiryDate = null;
-    if (payload.guarantor.censusBookIssueDate === '') payload.guarantor.censusBookIssueDate = null;
-    if (payload.guarantor.idCardIssueDate === '') payload.guarantor.idCardIssueDate = null;
-    if (payload.guarantor.idCardExpiryDate === '') payload.guarantor.idCardExpiryDate = null;
 
     emit('save-form', customerId, payload);
   }
@@ -640,59 +696,70 @@ const loadDataFromProps = () => {
       }
     }
 
-    if (sourceData.ref_name) {
-      const rawRefType = sourceData.ref_Type || sourceData.ref_type || '';
-      const currentRefType = rawRefType.toLowerCase();
+    // 🌟 ดึงข้อมูลและตรวจสอบสถานะของคนค้ำประกัน (Contract Mode)
+    const rawRefType1 = sourceData.ref_Type || sourceData.ref_type || '';
+    const currentRefType1 = rawRefType1.toLowerCase();
 
-      formData.hasGuarantor = currentRefType === 'guarantor';
-      formData.hasReference = currentRefType === 'reference';
+    formData.hasGuarantor = currentRefType1 === 'guarantor';
+    formData.hasReference = currentRefType1 === 'reference';
 
-      if (!formData.hasGuarantor && !formData.hasReference && sourceData.ref_name) {
-        formData.hasGuarantor = true;
-      }
+    if (formData.hasGuarantor || formData.hasReference) {
+      const cleanDBStr = (val: any) => {
+        if (!val) return '';
+        const s = String(val).trim();
+        return (s === 'ບໍ່ມີ' || s === 'ບໍ່ລະບຸ' || s === '0' || s === 'ບໍ່ມີຂໍ້ມູນ') ? '' : s;
+      };
 
-      formData.guarantor.fullname = sourceData.ref_name || ''
+      formData.guarantor.fullname = cleanDBStr(sourceData.ref_name)
       formData.guarantor.dob = sourceData.ref_date_of_birth || ''
       formData.guarantor.age = calculateAge(formData.guarantor.dob) || 0
-      formData.guarantor.phone = sourceData.ref_phone || ''
-      formData.guarantor.gender = sourceData.ref_sex || ''
-      formData.guarantor.maritalStatus = sourceData.ref_marital_status || ''
-      formData.guarantor.idCard = sourceData.ref_id_pass_number || ''
+      formData.guarantor.phone = cleanDBStr(sourceData.ref_phone)
+      formData.guarantor.gender = cleanDBStr(sourceData.ref_sex)
+      formData.guarantor.maritalStatus = cleanDBStr(sourceData.ref_marital_status)
+      formData.guarantor.idCard = cleanDBStr(sourceData.ref_id_pass_number)
       formData.guarantor.idCardIssueDate = sourceData.ref_id_pass_date_start || ''
       formData.guarantor.idCardExpiryDate = sourceData.ref_id_pass_date_expired || ''
-      formData.guarantor.censusBook = sourceData.ref_census_number || ''
+      formData.guarantor.censusBook = cleanDBStr(sourceData.ref_census_number)
       formData.guarantor.censusBookIssueDate = sourceData.ref_census_created || ''
-      formData.guarantor.censusAuthorizeBy = sourceData.ref_census_authorize_by || ''
-      formData.guarantor.houseNumber = sourceData.ref_house_number || ''
+      formData.guarantor.censusAuthorizeBy = cleanDBStr(sourceData.ref_census_authorize_by)
+      formData.guarantor.houseNumber = cleanDBStr(sourceData.ref_house_number)
       formData.guarantor.unit = sourceData.ref_unit || ''
       formData.guarantor.residenceYears = sourceData.ref_lived_year || null
-      formData.guarantor.liveWith = sourceData.ref_lived_with || ''
-      formData.guarantor.residenceStatus = sourceData.ref_lived_situation || ''
-      formData.guarantor.occupation = sourceData.ref_occupation || ''
-      formData.guarantor.relationship = sourceData.ref_relationship || ''
+      formData.guarantor.liveWith = cleanDBStr(sourceData.ref_lived_with)
+      formData.guarantor.residenceStatus = cleanDBStr(sourceData.ref_lived_situation)
+      formData.guarantor.occupation = cleanDBStr(sourceData.ref_occupation)
+      formData.guarantor.relationship = cleanDBStr(sourceData.ref_relationship)
 
       const refAddr = parseAddress(sourceData.ref_address)
-      formData.guarantor.address.village = refAddr.village
-      formData.guarantor.address.district = refAddr.district
-      formData.guarantor.address.province = refAddr.province
+      formData.guarantor.address.village = cleanDBStr(refAddr.village)
+      formData.guarantor.address.district = cleanDBStr(refAddr.district)
+      formData.guarantor.address.province = cleanDBStr(refAddr.province)
       formData.guarantor.address.province_id = sourceData.ref_province_id || ''
       formData.guarantor.address.district_id = sourceData.ref_district_id || ''
 
-      formData.guarantorWork.companyName = sourceData.ref_company_name || ''
-      formData.guarantorWork.businessType = sourceData.ref_company_businessType || ''
+      formData.guarantorWork.companyName = cleanDBStr(sourceData.ref_company_name)
+      formData.guarantorWork.businessType = cleanDBStr(sourceData.ref_company_businessType)
       formData.guarantorWork.workYears = sourceData.ref_company_workYear || null
-      formData.guarantorWork.position = sourceData.ref_position || ''
-      formData.guarantorWork.phone = sourceData.ref_work_phone || sourceData.ref_company_phone || ''
-      formData.guarantorWork.salary = parseFloat(sourceData.ref_work_salary || sourceData.ref_income) || null
-      formData.guarantorWork.salaryDay = sourceData.ref_payroll_date || null
-      formData.guarantorWork.totalEmployees = sourceData.ref_company_emp_number || null
-      formData.guarantorWork.otherIncome = parseFloat(sourceData.ref_income_other) || null
-      formData.guarantorWork.otherIncomeSource = sourceData.ref_income_other_source || ''
+      formData.guarantorWork.position = cleanDBStr(sourceData.ref_position)
+      formData.guarantorWork.phone = cleanDBStr(sourceData.ref_work_phone || sourceData.ref_company_phone)
+      
+      const salaryVal = sourceData.ref_work_salary || sourceData.ref_income;
+      formData.guarantorWork.salary = salaryVal && salaryVal !== '0' ? parseFloat(salaryVal) : null;
+      formData.guarantorWork.salaryDay = sourceData.ref_payroll_date && sourceData.ref_payroll_date !== '0' ? sourceData.ref_payroll_date : null;
+      formData.guarantorWork.totalEmployees = sourceData.ref_company_emp_number || null;
+      
+      const otherIncVal = sourceData.ref_income_other;
+      formData.guarantorWork.otherIncome = otherIncVal && otherIncVal !== '0' ? parseFloat(otherIncVal) : null;
+      formData.guarantorWork.otherIncomeSource = cleanDBStr(sourceData.ref_income_other_source)
 
       const gWorkAddr = parseAddress(sourceData.ref_company_location)
-      formData.guarantorWork.address.village = gWorkAddr.village
-      formData.guarantorWork.address.district = gWorkAddr.district
-      formData.guarantorWork.address.province = gWorkAddr.province
+      formData.guarantorWork.address.village = cleanDBStr(gWorkAddr.village)
+      formData.guarantorWork.address.district = cleanDBStr(gWorkAddr.district)
+      formData.guarantorWork.address.province = cleanDBStr(gWorkAddr.province)
+    } else {
+      // Clear data if no guarantor is checked
+      formData.guarantor.fullname = '';
+      formData.guarantor.phone = '';
     }
   } else {
     formData.contractNumber = sourceData.loan_id || ''
@@ -709,12 +776,10 @@ const loadDataFromProps = () => {
       formData.customer.dob = sourceData.customer.date_of_birth || ''
       formData.customer.phone = sourceData.customer.phone || ''
       
-      // 🟢 Mapping ຂໍ້ມູນບັດປະຈຳຕົວໃຫ້ຖືກຕ້ອງ
       formData.customer.idCard = sourceData.customer.identity_number || ''
       formData.customer.idCardIssueDate = sourceData.customer.issue_date || ''
       formData.customer.idCardExpiryDate = sourceData.customer.expire_date || sourceData.customer.expired_date || ''
       
-      // 🟢 Mapping ຂໍ້ມູນສຳມະໂນຄົວທີ່ເຄີຍຂາດຫາຍໄປ
       formData.customer.censusBook = sourceData.customer.census_number || ''
       formData.customer.censusBookIssueDate = sourceData.customer.census_created || sourceData.customer.census_issue_date || ''
       
@@ -760,59 +825,75 @@ const loadDataFromProps = () => {
       formData.shop.code = sourceData.product.partner.shop_id || ''
     }
 
+    // 🌟 ดึงข้อมูลและตรวจสอบสถานะของคนค้ำประกัน (Draft Mode)
     const guarantor = sourceData.loan_guarantors?.[0] || sourceData.loanGuarantors?.[0]
     if (guarantor) {
-      const rawRefType = guarantor.ref_type || guarantor.ref_Type || '';
-      const currentRefType = rawRefType.toLowerCase();
+      const rawRefType2 = guarantor.ref_type || guarantor.ref_Type || '';
+      const currentRefType2 = rawRefType2.toLowerCase();
 
-      formData.hasGuarantor = currentRefType === 'guarantor';
-      formData.hasReference = currentRefType === 'reference';
+      formData.hasGuarantor = currentRefType2 === 'guarantor';
+      formData.hasReference = currentRefType2 === 'reference';
 
-      if (!formData.hasGuarantor && !formData.hasReference && (guarantor.name || guarantor.fullname)) {
-        formData.hasGuarantor = true;
+      if (formData.hasGuarantor || formData.hasReference) {
+        const cleanDBStr = (val: any) => {
+          if (!val) return '';
+          const s = String(val).trim();
+          return (s === 'ບໍ່ມີ' || s === 'ບໍ່ລະບຸ' || s === '0' || s === 'ບໍ່ມີຂໍ້ມູນ') ? '' : s;
+        };
+
+        formData.guarantor.fullname = cleanDBStr(guarantor.name || guarantor.fullname);
+        formData.guarantor.dob = guarantor.date_of_birth || guarantor.dob || ''
+        formData.guarantor.age = guarantor.age || calculateAge(formData.guarantor.dob) || 0
+        formData.guarantor.phone = cleanDBStr(guarantor.phone)
+        formData.guarantor.gender = cleanDBStr(guarantor.sex || guarantor.gender)
+        formData.guarantor.maritalStatus = cleanDBStr(guarantor.marital_status || guarantor.maritalStatus)
+        formData.guarantor.idCard = cleanDBStr(guarantor.identity_number || guarantor.idCard)
+        formData.guarantor.idCardIssueDate = guarantor.id_pass_date || guarantor.idCardIssueDate || ''
+        formData.guarantor.censusBook = cleanDBStr(guarantor.census_number || guarantor.censusBook)
+        formData.guarantor.censusBookIssueDate = guarantor.census_created || guarantor.censusBookIssueDate || ''
+        formData.guarantor.censusAuthorizeBy = cleanDBStr(guarantor.census_authorize_by || guarantor.censusAuthorizeBy)
+        formData.guarantor.houseNumber = cleanDBStr(guarantor.house_number || guarantor.houseNumber)
+        formData.guarantor.unit = guarantor.unit || ''
+        formData.guarantor.residenceYears = guarantor.lived_year || guarantor.residenceYears || null
+        formData.guarantor.liveWith = cleanDBStr(guarantor.lived_with || guarantor.liveWith)
+        formData.guarantor.residenceStatus = cleanDBStr(guarantor.lived_situation || guarantor.residenceStatus)
+        formData.guarantor.occupation = cleanDBStr(guarantor.occupation)
+        formData.guarantor.relationship = cleanDBStr(guarantor.relationship)
+
+        const gAddr = parseAddress(guarantor.address)
+        formData.guarantor.address.village = cleanDBStr(gAddr.village)
+        formData.guarantor.address.district = cleanDBStr(gAddr.district)
+        formData.guarantor.address.province = cleanDBStr(gAddr.province)
+        formData.guarantor.address.province_id = guarantor.province_id || ''
+        formData.guarantor.address.district_id = guarantor.district_id || ''
+
+        formData.guarantorWork.companyName = cleanDBStr(guarantor.work_company_name || guarantor.companyName)
+        formData.guarantorWork.businessType = cleanDBStr(guarantor.work_business_type || guarantor.businessType)
+        formData.guarantorWork.workYears = guarantor.work_year || guarantor.workYears || null
+        formData.guarantorWork.position = cleanDBStr(guarantor.work_position || guarantor.position)
+        formData.guarantorWork.phone = cleanDBStr(guarantor.work_phone || guarantor.workPhone)
+        
+        const gSalary = guarantor.work_salary || guarantor.salary;
+        formData.guarantorWork.salary = gSalary && gSalary !== '0' ? parseFloat(gSalary) : null;
+        
+        const gSalDay = guarantor.payroll_date || guarantor.salaryDay;
+        formData.guarantorWork.salaryDay = gSalDay && gSalDay !== '0' ? gSalDay : null;
+        
+        formData.guarantorWork.totalEmployees = guarantor.company_emp_number || guarantor.totalEmployees || null
+        
+        const gOtherInc = guarantor.income_other || guarantor.otherIncome;
+        formData.guarantorWork.otherIncome = gOtherInc && gOtherInc !== '0' ? parseFloat(gOtherInc) : null;
+        
+        formData.guarantorWork.otherIncomeSource = cleanDBStr(guarantor.income_other_source || guarantor.otherIncomeSource)
+
+        const gWorkAddr = parseAddress(guarantor.work_location || guarantor.workAddress)
+        formData.guarantorWork.address.village = cleanDBStr(gWorkAddr.village)
+        formData.guarantorWork.address.district = cleanDBStr(gWorkAddr.district)
+        formData.guarantorWork.address.province = cleanDBStr(gWorkAddr.province)
+      } else {
+        formData.guarantor.fullname = '';
+        formData.guarantor.phone = '';
       }
-
-      formData.guarantor.fullname = guarantor.name || guarantor.fullname || ''
-      formData.guarantor.dob = guarantor.date_of_birth || guarantor.dob || ''
-      formData.guarantor.age = guarantor.age || calculateAge(formData.guarantor.dob) || 0
-      formData.guarantor.phone = guarantor.phone || ''
-      formData.guarantor.gender = guarantor.sex || guarantor.gender || ''
-      formData.guarantor.maritalStatus = guarantor.marital_status || guarantor.maritalStatus || ''
-      formData.guarantor.idCard = guarantor.identity_number || guarantor.idCard || ''
-      formData.guarantor.idCardIssueDate = guarantor.id_pass_date || guarantor.idCardIssueDate || ''
-      formData.guarantor.censusBook = guarantor.census_number || guarantor.censusBook || ''
-      formData.guarantor.censusBookIssueDate = guarantor.census_created || guarantor.censusBookIssueDate || ''
-      formData.guarantor.censusAuthorizeBy = guarantor.census_authorize_by || guarantor.censusAuthorizeBy || ''
-      formData.guarantor.houseNumber = guarantor.house_number || guarantor.houseNumber || ''
-      formData.guarantor.unit = guarantor.unit || ''
-      formData.guarantor.residenceYears = guarantor.lived_year || guarantor.residenceYears || null
-      formData.guarantor.liveWith = guarantor.lived_with || guarantor.liveWith || ''
-      formData.guarantor.residenceStatus = guarantor.lived_situation || guarantor.residenceStatus || ''
-      formData.guarantor.occupation = guarantor.occupation || ''
-      formData.guarantor.relationship = guarantor.relationship || ''
-
-      const gAddr = parseAddress(guarantor.address)
-      formData.guarantor.address.village = gAddr.village
-      formData.guarantor.address.district = gAddr.district
-      formData.guarantor.address.province = gAddr.province
-      formData.guarantor.address.province_id = guarantor.province_id || ''
-      formData.guarantor.address.district_id = guarantor.district_id || ''
-
-      formData.guarantorWork.companyName = guarantor.work_company_name || guarantor.companyName || ''
-      formData.guarantorWork.businessType = guarantor.work_business_type || guarantor.businessType || ''
-      formData.guarantorWork.workYears = guarantor.work_year || guarantor.workYears || null
-      formData.guarantorWork.position = guarantor.work_position || guarantor.position || ''
-      formData.guarantorWork.phone = guarantor.work_phone || guarantor.workPhone || ''
-      formData.guarantorWork.salary = parseFloat(guarantor.work_salary || guarantor.salary) || null
-      formData.guarantorWork.salaryDay = guarantor.payroll_date || guarantor.salaryDay || null
-      formData.guarantorWork.totalEmployees = guarantor.company_emp_number || guarantor.totalEmployees || null
-      formData.guarantorWork.otherIncome = parseFloat(guarantor.income_other || guarantor.otherIncome) || null
-      formData.guarantorWork.otherIncomeSource = guarantor.income_other_source || guarantor.otherIncomeSource || ''
-
-      const gWorkAddr = parseAddress(guarantor.work_location || guarantor.workAddress)
-      formData.guarantorWork.address.village = gWorkAddr.village
-      formData.guarantorWork.address.district = gWorkAddr.district
-      formData.guarantorWork.address.province = gWorkAddr.province
     }
   }
 

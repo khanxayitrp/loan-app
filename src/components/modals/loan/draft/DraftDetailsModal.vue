@@ -202,15 +202,10 @@
                     <input v-model="modalDraftForm.customer_phone" type="tel"
                       class="input input-sm input-bordered w-full bg-white" required />
                   </div>
-                  <!-- <div class="form-control">
-                    <label class="label"><span class="label-text font-medium">ເລກບັດປະຈຳຕົວ <span class="text-error">*</span></span></label>
-                    <input v-model="modalDraftForm.customer_id_card" type="text"
-                      class="input input-sm input-bordered w-full bg-white" required />
-                  </div> -->
                   <div class="form-control">
-  <label class="label"><span class="label-text font-medium">ເລກບັດປະຈຳຕົວ</span></label>
-  <input v-model="modalDraftForm.customer_id_card" type="text" class="input input-sm input-bordered w-full bg-white" />
-</div>
+                    <label class="label"><span class="label-text font-medium">ເລກບັດປະຈຳຕົວ</span></label>
+                    <input v-model="modalDraftForm.customer_id_card" type="text" class="input input-sm input-bordered w-full bg-white" />
+                  </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ເລກບັນຊີທະນາຄານ (BCEL)</span></label>
                     <input v-model="modalDraftForm.account_number" type="text"
@@ -374,8 +369,7 @@
                   <label class="label">
                     <span class="label-text font-medium">ຈຳນວນເງິນດາວ
                       <span v-if="modalDraftForm.total_amount > 0" class="text-xs text-gray-500">
-                        ຍອດຈັດ: {{ formatPrice(Math.max(0, modalDraftForm.total_amount - (modalDraftForm.down_payment ||
-                          0))) }}
+                        ຍອດຈັດ: {{ formatPrice(Math.max(0, modalDraftForm.total_amount - (modalDraftForm.down_payment || 0))) }}
                       </span>
                     </span>
                   </label>
@@ -389,12 +383,24 @@
                   <select v-model.number="modalDraftForm.loan_period"
                     class="select select-sm select-bordered w-full bg-white" required @change="handleModalTermChange">
                     <option value="0" disabled>-- ເລືອກຈຳນວນງວດ --</option>
-                    <option value="6">6 ເດືອນ</option>
-                    <option value="12">12 ເດືອນ</option>
-                    <option value="18">18 ເດືອນ</option>
-                    <option value="24">24 ເດືອນ</option>
-                    <option value="36">36 ເດືອນ</option>
-                    <option value="48">48 ເດືອນ</option>
+                    
+                    <!-- 🟢 ຖ້າບໍ່ແມ່ນແຄມເປນພິເສດ -->
+                    <template v-if="!activeModalCampaign">
+                      <option value="6">6 ເດືອນ</option>
+                      <option value="12">12 ເດືອນ</option>
+                      <option value="18">18 ເດືອນ</option>
+                      <option value="24">24 ເດືອນ</option>
+                      <option value="36">36 ເດືອນ</option>
+                      <option value="48">48 ເດືອນ</option>
+                    </template>
+
+                    <!-- 🌟 ຖ້າເປັນແຄມເປນ iPhone 18 -->
+                    <template v-else>
+                      <option value="18">18 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
+                      <option value="24">24 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
+                      <option value="30">30 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
+                      <option value="36">36 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
+                    </template>
                   </select>
                 </div>
 
@@ -413,7 +419,7 @@
                 <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ປະເພດດອກເບ້ຍ <span class="text-error">*</span></span></label>
                   <select v-model="modalDraftForm.interest_type"
-                    @change="modalDraftForm.monthly_payment = calculateModalMonthlyPayment()"
+                    @change="handleModalCalculationChange"
                     class="select select-sm select-bordered w-full bg-white">
                     <option value="flat_rate">ດອກເບ້ຍຄົງທີ່ (Flat Rate)</option>
                     <option value="effective_rate">ລົດຕົ້ນລົດດອກ (Effective Rate)</option>
@@ -615,6 +621,46 @@ const isUploadingDocuments = ref(false)
 const selectedDraft = ref<any | null>(null)
 const selectedContract = ref<any | null>(null)
 
+// 🌟 1. State ສຳລັບແຄມເປນພິເສດໃນ Modal
+const activeModalCampaign = ref(false);
+
+// 🌟 2. Regex ກວດຈັບ iPhone 18 Series (ครอบคลุม 18, 18 pro, 18 pro max, 18 duo)
+const checkIphone18Campaign = (productName: string, model: string = ''): boolean => {
+  const nameToTest = `${productName || ''} ${model || ''}`;
+  return /iphone\s*18/i.test(nameToTest);
+};
+
+// 🌟 3. ໂລຈິກຄຳນວນດອກເບ້ຍຕາມຂັ້ນໄດ (Tiered Rate) ສຳລັບ Modal
+const applyModalCampaignRules = () => {
+  if (!activeModalCampaign.value) return;
+
+  // ກ. ບັງຄັບຈຳນວນງວດ (ຖ້າງວດປັດຈຸບັນບໍ່ຢູ່ໃນເງື່ອນໄຂ ໃຫ້ບັງຄັບໄປທີ່ 18 ເດືອນ)
+  const allowedTerms = [18, 24, 30, 36];
+  if (!allowedTerms.includes(modalDraftForm.loan_period)) {
+    modalDraftForm.loan_period = 18; 
+  }
+
+  // ຂ. ຄຳນວນ % ເງິນດາວ
+  const dpPercent = modalDraftForm.total_amount > 0 
+    ? (modalDraftForm.down_payment / modalDraftForm.total_amount) * 100 
+    : 0;
+
+  // ຄ. ກຳນົດດອກເບ້ຍຕາມ Tier
+  if (dpPercent >= 50) {
+    modalDraftForm.interest_rate = 0.84;
+  } else if (dpPercent >= 40) {
+    modalDraftForm.interest_rate = 0.89;
+  } else if (dpPercent >= 30) {
+    modalDraftForm.interest_rate = 0.94;
+  } else if (dpPercent >= 20) {
+    modalDraftForm.interest_rate = 0.99;
+  } else if (dpPercent >= 10) {
+    modalDraftForm.interest_rate = 1.04;
+  } else {
+    modalDraftForm.interest_rate = 1.09;
+  }
+};
+
 // 🟢 ຟັງຊັນສຳລັບດຶງ Error ຈາກ Backend
 const getErrorMessage = (error: any, defaultMessage: string) => {
   if (error?.response?.data) {
@@ -757,21 +803,9 @@ const loadVariantsForEdit = async (productId: number, variantId?: number) => {
 
 const startEditInModal = async () => {
   if (!selectedDraft.value) return
-  let draftData = selectedDraft.value
+  const draftData = selectedDraft.value
   const shopId = draftData.partner_id || draftData.product?.partner_id || null
   modalShopId.value = shopId
-
-  if (shopId) {
-    await productStore.fetchProducts({ shop_id: shopId, limit: 100 })
-    if (draftData.product_id) {
-      const currentProduct = productStore.products.find(p => p.id === draftData.product_id)
-      if (currentProduct) {
-        selectedModalProduct.value = currentProduct;
-        modalProductSearch.value = currentProduct.product_name
-        await loadVariantsForEdit(currentProduct.id, draftData.variant_id);
-      }
-    }
-  }
 
   modalDraftForm.customer_name = getDraftDisplayName(draftData)
   modalDraftForm.customer_phone = getDraftPhone(draftData)
@@ -799,15 +833,29 @@ const startEditInModal = async () => {
   modalDraftForm.interest_rate = Number(draftData.interest_rate_at_apply || 0)
   modalDraftForm.interest_type = draftData.interest_type || 'flat_rate'
   modalDraftForm.interest_rate_type = draftData.interest_rate_type || 'monthly'
-  modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
+
+  if (shopId) {
+    await productStore.fetchProducts({ shop_id: shopId, limit: 100 })
+    if (draftData.product_id) {
+      const currentProduct = productStore.products.find(p => p.id === draftData.product_id)
+      if (currentProduct) {
+        selectedModalProduct.value = currentProduct;
+        modalProductSearch.value = currentProduct.product_name
+        await loadVariantsForEdit(currentProduct.id, draftData.variant_id);
+        
+        // 🌟 ກວດສອບແຄມເປນເມື່ອໂຫຼດຂໍ້ມູນສິນຄ້າ
+        activeModalCampaign.value = checkIphone18Campaign(currentProduct.product_name, currentProduct.model);
+      }
+    }
+  }
+
+  // 🌟 ຮັບປະກັນວ່າຄຳນວນຖືກຕ້ອງຕາມແຄມເປນຕັ້ງແຕ່ເລີ່ມຕົ້ນ
+  handleModalCalculationChange(); 
 
   isEditingInModal.value = true
 }
 
 const saveDraftFromModal = async () => {
-  // if (!modalDraftForm.customer_id_card || modalDraftForm.customer_id_card.trim() === '') {
-  //   customAlert.error('ກະລຸນາກວດສອບ', 'ເລກບັດປະຈຳຕົວ (ID Card) ຫ້າມເປັນຄ່າຫວ່າງ!'); return;
-  // }
   if (!modalDraftForm.date_of_birth) {
     customAlert.error('ກະລຸນາກວດສອບ', 'ກະລຸນາເລືອກ ວັນເດືອນປີເກີດ!'); return;
   }
@@ -897,6 +945,12 @@ const calculateModalMonthlyPayment = (): number => {
   return Math.round(pmt)
 }
 
+// 🌟 Controller ສຳລັບຄວບຄຸມ Calculation ຫຼັງຈາກ Apply Rule ແລ້ວ
+const handleModalCalculationChange = () => {
+  applyModalCampaignRules();
+  modalDraftForm.monthly_payment = calculateModalMonthlyPayment();
+};
+
 const handleModalCurrencyInput = (field: keyof typeof modalDraftForm, e: Event) => {
   const target = e.target as HTMLInputElement;
   const raw = target.value.replace(/,/g, '');
@@ -904,8 +958,20 @@ const handleModalCurrencyInput = (field: keyof typeof modalDraftForm, e: Event) 
   modalDraftForm[field] = Number(raw) || 0;
   target.value = formatCurrencyInput(Number(modalDraftForm[field]));
 }
-const handleModalPriceInput = (e: Event) => { handleModalCurrencyInput('total_amount', e); modalDraftForm.monthly_payment = calculateModalMonthlyPayment() }
-const handleModalDownPaymentInput = (e: Event) => { handleModalCurrencyInput('down_payment', e); modalDraftForm.monthly_payment = calculateModalMonthlyPayment() }
+
+// 🌟 ເອີ້ນໃຊ້ handleModalCalculationChange ທຸກຄັ້ງທີ່ຄ່າມີການປ່ຽນແປງ
+const handleModalPriceInput = (e: Event) => { 
+  handleModalCurrencyInput('total_amount', e); 
+  if (modalDraftForm.down_payment > modalDraftForm.total_amount) modalDraftForm.down_payment = modalDraftForm.total_amount;
+  handleModalCalculationChange(); 
+}
+
+const handleModalDownPaymentInput = (e: Event) => { 
+  handleModalCurrencyInput('down_payment', e); 
+  if (modalDraftForm.down_payment > modalDraftForm.total_amount) modalDraftForm.down_payment = modalDraftForm.total_amount;
+  handleModalCalculationChange(); 
+}
+
 const getInterestRateByTerm = (months: number): number => {
   if (!months || months <= 6) return 2.50;
   if (months <= 12) return 2.00;
@@ -913,23 +979,53 @@ const getInterestRateByTerm = (months: number): number => {
   if (months <= 24) return 1.75;
   return 1.69;
 }
-const handleModalTermChange = () => { modalDraftForm.interest_rate = getInterestRateByTerm(modalDraftForm.loan_period); }
 
-watch(() => [modalDraftForm.total_amount, modalDraftForm.down_payment, modalDraftForm.interest_rate, modalDraftForm.loan_period], () => {
-  modalDraftForm.monthly_payment = calculateModalMonthlyPayment()
-})
+const handleModalTermChange = () => { 
+  if (modalDraftForm.loan_period > 0) {
+    if (!activeModalCampaign.value) {
+      modalDraftForm.interest_rate = getInterestRateByTerm(modalDraftForm.loan_period); 
+    }
+  }
+  handleModalCalculationChange(); 
+}
 
 // ----------------- ສ່ວນຂອງການເລືອກສິນຄ້າ -----------------
 const handleShopChange = async () => { clearModalProductSelection(); if (modalShopId.value) await productStore.fetchProducts({ shop_id: modalShopId.value, limit: 100 }) }
 const filteredModalProducts = computed(() => { if (!modalProductSearch.value) return productStore.products; return productStore.products.filter(p => p.product_name.toLowerCase().includes(modalProductSearch.value.toLowerCase())) })
+
 const selectModalProduct = async (product: any) => {
-  selectedModalProduct.value = product; modalProductSearch.value = product.product_name; showModalProductDropdown.value = false;
+  selectedModalProduct.value = product; 
+  modalProductSearch.value = product.product_name; 
+  showModalProductDropdown.value = false;
+  
+  // 🌟 ກວດສອບແຄມເປນທັນທີທີ່ເລືອກສິນຄ້າໃໝ່
+  activeModalCampaign.value = checkIphone18Campaign(product.product_name, product.model);
+  if (activeModalCampaign.value) {
+    customAlert.info('🌟 ແຄມເປນພິເສດ iPhone 18 Series', 'ດອກເບ້ຍຈະປ່ຽນຕາມ % ເງິນດາວ (1.09% - 0.84%) ແລະ ຜ່ອນໄດ້ສະເພາະ 18, 24, 30, 36 ເດືອນ');
+  }
+
   await loadVariantsForEdit(product.id);
-  if (modalProductVariants.value.length === 0) { modalDraftForm.total_amount = product.price; } else { modalDraftForm.total_amount = 0; }
-  modalDraftForm.loan_period = product.term || 12; handleModalTermChange();
+  
+  if (modalProductVariants.value.length === 0) { 
+    modalDraftForm.total_amount = product.price; 
+  } else { 
+    modalDraftForm.total_amount = 0; 
+  }
+  
+  modalDraftForm.loan_period = product.term || (activeModalCampaign.value ? 18 : 12);
+  handleModalTermChange(); // 🌟 ຄຳນວນຄ່າຕ່າງໆ
 }
-const selectModalVariant = (variant: any) => { modalSelectedVariant.value = variant; modalDraftForm.total_amount = variant.price; }
-const clearModalProductSelection = () => { selectedModalProduct.value = null; modalProductSearch.value = ''; modalSelectedVariant.value = null; modalProductVariants.value = []; }
+
+const selectModalVariant = (variant: any) => { modalSelectedVariant.value = variant; modalDraftForm.total_amount = variant.price; handleModalCalculationChange(); }
+
+const clearModalProductSelection = () => { 
+  selectedModalProduct.value = null; 
+  modalProductSearch.value = ''; 
+  modalSelectedVariant.value = null; 
+  modalProductVariants.value = []; 
+  activeModalCampaign.value = false; // 🌟 ລຶບສະຖານະແຄມເປນ
+  handleModalCalculationChange();
+}
 
 let modalProductSearchTimer: any = null
 const debounceModalProductSearch = () => { clearTimeout(modalProductSearchTimer); modalProductSearchTimer = setTimeout(() => { }, 300) }
@@ -998,7 +1094,6 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       unit: cData.unit || '', house_number: cData.houseNumber || '', census_number: cData.censusBook || '',
       issue_place: cData.censusAuthorizeBy || '', issue_date: cData.idCardIssueDate || null,
 
-      // 🟢 1. ເພີ່ມຂໍ້ມູນບ່ອນເຮັດວຽກລູກຄ້າ ເພື່ອສົ່ງໄປໃຫ້ Backend (updateDraftLoanApplication)
       work_company_name: wData.companyName || '',
       work_business_type: wData.businessType || '',
       work_business_detail: wData.businessDetail || '',
@@ -1016,23 +1111,18 @@ const handleSaveContract = async (customerId: number, formData: any) => {
 
     const formatAddr = (addr: any) => addr ? [addr.village, addr.district, addr.province].filter(Boolean).join(', ') : 'ບໍ່ລະບຸ';
     
-    // 🟢 Payload ຕົວເຕັມສຳລັບ CreateLoanContractRequest
-    // 🟢 ຊອກຫາ Object ນີ້ໃນຟັງຊັນ handleSaveContract ແລ້ວແທນທີ່ດ້ວຍໂຄ້ດນີ້
     const flatContractPayload = {
       loanId: loanId, 
       cusFullName: cData.fullname || 'ບໍ່ລະບຸ', 
       cusSex: cData.gender || 'ບໍ່ລະບຸ',
-      cusDateOfBirth: cData.dob || null, // 👈 ປ່ຽນຈາກ new Date() ເປັນ null
+      cusDateOfBirth: cData.dob || null, 
       cusPhone: cData.phone || 'ບໍ່ລະບຸ',
       cusMaritalStatus: cData.maritalStatus || 'ບໍ່ລະບຸ', 
       cusIdPassNumber: cData.idCard || 'ບໍ່ລະບຸ',
-      
-      // 🟢 ປ່ຽນການໃຊ້ || new Date() ອອກໃຫ້ໝົດ ແລ້ວໃຫ້ມັນຮັບຄ່າ null ໄດ້
       cusIdPassDate: cData.idCardIssueDate || null,
       cusIdPassExpiryDate: cData.idCardExpiryDate || null,
       cusCensusNumber: cData.censusBook || 'ບໍ່ມີ', 
-      cusCensusCreated: cData.censusBookIssueDate || null, // 👈 ນີ້ຄືຕົ້ນເຫດຂອງການຍັດວັນທີມື້ນີ້
-      
+      cusCensusCreated: cData.censusBookIssueDate || null, 
       cusCensusAuthorizeBy: cData.censusAuthorizeBy || 'ບໍ່ລະບຸ', 
       cusHouseNumber: cData.houseNumber || 'ບໍ່ລະບຸ',
       cusUnit: Number(cData.unit) || 0, 
@@ -1082,13 +1172,10 @@ const handleSaveContract = async (customerId: number, formData: any) => {
       refSex: hasGuarantorOrRef && gData.gender ? gData.gender : 'ບໍ່ລະບຸ',
       refMaritalStatus: hasGuarantorOrRef && gData.maritalStatus ? gData.maritalStatus : 'ບໍ່ລະບຸ',
       refIdPassNumber: hasGuarantorOrRef && gData.idCard ? gData.idCard : 'ບໍ່ມີ',
-      
-      // 🟢 ແກ້ໄຂວັນທີຂອງຜູ້ຄ້ຳປະກັນເຊັ່ນດຽວກັນ
       refIdPassDate: hasGuarantorOrRef && gData.idCardIssueDate ? gData.idCardIssueDate : null,
       refIdPassExpiryDate: hasGuarantorOrRef && gData.idCardExpiryDate ? gData.idCardExpiryDate : null,
       refCensusNumber: hasGuarantorOrRef && gData.censusBook ? gData.censusBook : 'ບໍ່ມີ',
       refCensusCreated: hasGuarantorOrRef && gData.censusBookIssueDate ? gData.censusBookIssueDate : null,
-      
       refCensusAuthorizeBy: hasGuarantorOrRef && gData.censusAuthorizeBy ? gData.censusAuthorizeBy : 'ບໍ່ມີ',
       refHouseNumber: hasGuarantorOrRef && gData.houseNumber ? gData.houseNumber : 'ບໍ່ມີ',
       refUnit: hasGuarantorOrRef ? (Number(gData.unit) || 0) : 0,

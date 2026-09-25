@@ -1,3 +1,4 @@
+
 <template>
   <teleport to="body">
     <div v-if="show && loan" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-60 p-4">
@@ -281,7 +282,7 @@ const fetchSavedSchedule = async () => {
 
       const isConflict = diffPrincipal > 10 || diffMonthlyPay > 10 || diffTerm;
 
-      for (let k in scheduleDifferences) delete scheduleDifferences[k];
+      for (const k in scheduleDifferences) delete scheduleDifferences[k];
 
       if (isConflict) {
         if (diffPrincipal > 10) scheduleDifferences['principal'] = { label: 'ຍອດຈັດ (ຕົ້ນທຶນ)', schedVal: schedPrincipal, appVal: appPrincipal };
@@ -324,7 +325,7 @@ const generateSchedule = () => {
   const paymentDay = Number(loan.payment_day || new Date().getDate());
   const ratePerMonth = rateType === 'yearly' ? (interestRate / 12) / 100 : interestRate / 100;
 
-  let startDate = new Date();
+  const startDate = new Date();
   let accumulatedPrincipal = 0;
   let accumulatedInterest = 0;
 
@@ -339,16 +340,16 @@ const generateSchedule = () => {
     let rowPrincipalRounded = 0;
     let rowInterestRounded = 0;
 
-    let targetYear = startDate.getFullYear();
-    let targetMonth = startDate.getMonth() + i;
-    let maxDaysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-    let actualDay = Math.min(paymentDay, maxDaysInTargetMonth);
+    const targetYear = startDate.getFullYear();
+    const targetMonth = startDate.getMonth() + i;
+    const maxDaysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+    const actualDay = Math.min(paymentDay, maxDaysInTargetMonth);
     // 🌟 ປະກອບ String ວັນທີໂດຍກົງ (Timezone-safe)
-    let tempDate = new Date(targetYear, targetMonth, actualDay);
-    let safeYear = tempDate.getFullYear();
-    let safeMonth = String(tempDate.getMonth() + 1).padStart(2, '0');
-    let safeDay = String(tempDate.getDate()).padStart(2, '0');
-    let formattedDueDate = `${safeYear}-${safeMonth}-${safeDay}`;
+    const tempDate = new Date(targetYear, targetMonth, actualDay);
+    const safeYear = tempDate.getFullYear();
+    const safeMonth = String(tempDate.getMonth() + 1).padStart(2, '0');
+    const safeDay = String(tempDate.getDate()).padStart(2, '0');
+    const formattedDueDate = `${safeYear}-${safeMonth}-${safeDay}`;
 
     if (i === term) {
       rowPrincipalRounded = principal - accumulatedPrincipal;
@@ -364,8 +365,8 @@ const generateSchedule = () => {
         rowPrincipalRounded = Math.round(principal / term);
         rowInterestRounded = Math.round(principal * ratePerMonth);
       } else {
-        let exactInterest = currentBalanceForEffective * ratePerMonth;
-        let exactPrincipal = effectivePmt - exactInterest;
+        const exactInterest = currentBalanceForEffective * ratePerMonth;
+        const exactPrincipal = effectivePmt - exactInterest;
         rowPrincipalRounded = Math.round(exactPrincipal);
         rowInterestRounded = Math.round(exactInterest);
         currentBalanceForEffective -= exactPrincipal;
@@ -375,7 +376,7 @@ const generateSchedule = () => {
     accumulatedPrincipal += rowPrincipalRounded;
     accumulatedInterest += rowInterestRounded;
 
-    let totalAmountRounded = rowPrincipalRounded + rowInterestRounded;
+    const totalAmountRounded = rowPrincipalRounded + rowInterestRounded;
 
     scheduleRows.value.push({
       installment_number: i,
@@ -403,7 +404,7 @@ const recalculateSchedule = () => {
   const initialPrincipal = Number(props.loan.total_amount) - Number(props.loan.down_payment || 0);
   let currentBalance = initialPrincipal;
   for (let i = 0; i < scheduleRows.value.length; i++) {
-    let row = scheduleRows.value[i];
+    const row = scheduleRows.value[i];
     row.principal = Number(row.principal) || 0; row.interest = Number(row.interest) || 0;
     row.total_amount = row.principal + row.interest;
     currentBalance -= row.principal;
@@ -464,3 +465,4 @@ const printSchedule = async () => {
   } catch (error) { alert.error('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF ຕາຕະລາງ'); } finally { isSaving.value = false; }
 }
 </script>
+

@@ -1,3 +1,4 @@
+
 <template>
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="relative w-full h-[300px]">
@@ -95,3 +96,4 @@ onMounted(() => {
   border-radius: 10px;
 }
 </style>
+

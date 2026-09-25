@@ -1,3 +1,4 @@
+
 <template>
   <div class="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
     <div class="bg-white max-w-md w-full rounded-2xl shadow-xl overflow-hidden">

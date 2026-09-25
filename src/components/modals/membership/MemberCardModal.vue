@@ -1,3 +1,4 @@
+
 <template>
   <teleport to="body">
     <div id="print-card-container" v-if="isOpen && memberData"

@@ -1,3 +1,4 @@
+
 <template>
   <div class="flex flex-col h-full">
     <div class="flex-grow flex items-center relative w-full h-[250px]">
@@ -61,3 +62,4 @@ onMounted(() => {
   renderChart() // วาดครั้งแรก (ถึงค่าเป็น 0 ก็วาดโครงไว้ก่อน)
 })
 </script>
+

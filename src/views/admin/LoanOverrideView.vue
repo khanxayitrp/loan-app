@@ -1,3 +1,4 @@
+
 <template>
   <div class="min-h-screen bg-slate-50 p-6 font-lao text-slate-800">
     <div class="max-w-6xl mx-auto space-y-6">

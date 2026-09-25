@@ -1,3 +1,4 @@
+
 // src/directives/can.ts
 import type { Directive } from 'vue'
 import { usePermissionStore } from '../stores/permission'
@@ -29,3 +30,4 @@ const canDirective: Directive<HTMLElement, string | string[]> = {
 }
 
 export default canDirective
+

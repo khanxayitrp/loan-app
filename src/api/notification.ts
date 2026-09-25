@@ -1,3 +1,4 @@
+
 // src/api/notification.api.ts
 import axios from 'axios'; // หรือ instance axios ของโปรเจกต์ เช่น import api from '@/utils/axios'
 import type { Notification, UnreadCountResponse } from '@/types/notification';
@@ -18,3 +19,4 @@ export const notificationApi = {
     return axios.put(`/api/notifications/${id}/read`);
   }
 };
+

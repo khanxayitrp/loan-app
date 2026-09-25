@@ -1,3 +1,4 @@
+
 // src/types/auth.ts
 export interface User {
   id: number
@@ -50,3 +51,4 @@ export interface CurrentUserResponse {
   permissions: string[]
   expiresAt?: number
 }
+

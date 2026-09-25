@@ -1,3 +1,4 @@
+
 <template>
   <div class="app-container">
     <navbar />
@@ -87,3 +88,4 @@ export default defineComponent({
   transform: scale(1.05);
 }
 </style>
+

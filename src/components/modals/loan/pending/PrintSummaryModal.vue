@@ -1,3 +1,4 @@
+
 <template>
   <teleport to="body">
     <div id="print-modal-container" v-if="isOpen && printData"
@@ -355,3 +356,4 @@ const handlePrint = async () => {
   }
 }
 </style>
+

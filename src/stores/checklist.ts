@@ -1,3 +1,4 @@
+
 // ไฟล์: src/stores/checklist.ts
 import { defineStore } from 'pinia';
 import { ref, reactive, computed } from 'vue';

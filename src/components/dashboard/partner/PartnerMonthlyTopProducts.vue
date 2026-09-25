@@ -1,3 +1,4 @@
+
 <template>
   <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
     <div class="lg:col-span-4 bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 border-t-8 border-orange-500">
@@ -59,7 +60,7 @@ const wrapLabels = (labels) => {
   return labels.map(label => {
     if (label.length <= 16) return label;
     const words = label.split(' ');
-    let result = []; let line = "";
+    const result = []; let line = "";
     words.forEach(w => {
       if ((line + w).length > 16) { result.push(line.trim()); line = w + " "; }
       else { line += w + " "; }
@@ -89,7 +90,7 @@ onMounted(() => {
         tooltip: {
           callbacks: {
             title: (items) => {
-              let label = items[0].chart.data.labels[items[0].dataIndex];
+              const label = items[0].chart.data.labels[items[0].dataIndex];
               return Array.isArray(label) ? label.join(' ') : label;
             }
           }
@@ -114,3 +115,4 @@ onMounted(() => {
   border-radius: 10px;
 }
 </style>
+

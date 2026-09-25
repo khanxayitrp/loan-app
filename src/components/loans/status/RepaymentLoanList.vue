@@ -1,3 +1,4 @@
+
 <template>
   <div class="p-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -685,9 +686,9 @@ const calculatedTotalExpected = computed(() => {
 
 const waterfallPreview = computed(() => {
   let remainingCash = paymentForm.amount_received || 0;
-  let actualPenalty = Math.max(0, paymentForm.expected_penalty - paymentForm.discount_given);
-  let remainingDiscount = Math.max(0, paymentForm.discount_given - paymentForm.expected_penalty);
-  let actualInterest = Math.max(0, paymentForm.expected_interest - remainingDiscount);
+  const actualPenalty = Math.max(0, paymentForm.expected_penalty - paymentForm.discount_given);
+  const remainingDiscount = Math.max(0, paymentForm.discount_given - paymentForm.expected_penalty);
+  const actualInterest = Math.max(0, paymentForm.expected_interest - remainingDiscount);
   const penaltyAllocated = Math.min(remainingCash, actualPenalty);
   remainingCash -= penaltyAllocated;
   const interestAllocated = Math.min(remainingCash, actualInterest);
@@ -971,7 +972,7 @@ const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
       const remainingCount = unpaidSchedules.length;
       const monthlyInt = Number(unpaidSchedules[0]?.interest_amount || 0);
 
-      let defaultChargeMonths = remainingCount > 6 ? 5 : remainingCount;
+      const defaultChargeMonths = remainingCount > 6 ? 5 : remainingCount;
 
       Object.assign(paymentForm, {
         payment_date: new Date().toISOString().split('T')[0],
@@ -1088,3 +1089,4 @@ onUnmounted(() => {
   loanAppStore.resetFilters();
 });
 </script>
+

@@ -1,4 +1,5 @@
 
+
 // src/types/loanContract.ts
 
 /**
@@ -93,3 +94,4 @@ export interface LoanContract {
 }
 
 export type CreateLoanContractRequest = Omit<LoanContract, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;
+

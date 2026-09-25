@@ -1,3 +1,4 @@
+
 import apiClient from './apiclient';
 import type {
   DeliveryReceipt,
@@ -88,3 +89,4 @@ export const getLatestReceiptId = async (): Promise<DeliveryReceipt | null> => {
     throw new Error(error.response?.data?.message || 'Failed to fetch last receipt ID');
   }
 };
+

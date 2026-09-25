@@ -1,3 +1,4 @@
+
 // src/types/upload.ts
 
 export interface Document {
@@ -20,3 +21,4 @@ export interface UploadMultipleDocumentsPayload {
   files: File[]
   doc_types: string[]
 }
+

@@ -1,3 +1,4 @@
+
 <template>
   <teleport to="body">
     <div v-if="show" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -86,3 +87,4 @@ const theme = computed(() => {
   }
 });
 </script>
+

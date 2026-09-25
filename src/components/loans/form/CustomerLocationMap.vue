@@ -1,3 +1,4 @@
+
 <template>
   <div class="space-y-6">
     <div v-if="isLoading" class="text-center py-12">
@@ -685,3 +686,4 @@ watch(() => props.locations, () => {
   border-radius: 0.5rem;
 }
 </style>
+

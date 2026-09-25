@@ -1,3 +1,4 @@
+
 // src/api/upload.ts
 import apiClient from './apiclient'
 
@@ -226,3 +227,4 @@ export const uploadVariantImage = async (file: File): Promise<any> => {
     )
   }
 }
+

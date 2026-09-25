@@ -1,3 +1,4 @@
+
 <!-- src/components/shops/CreateShopButton.vue -->
 <template>
   <div class="text-center py-12">
@@ -25,3 +26,4 @@ defineEmits<{
   create: []
 }>()
 </script>
+

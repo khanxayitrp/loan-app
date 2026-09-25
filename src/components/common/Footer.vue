@@ -1,3 +1,4 @@
+
 <template>
 
   <div class="w-full">
@@ -27,3 +28,4 @@ footer {
   transition: all 0.3s ease;
 }
 </style>
+

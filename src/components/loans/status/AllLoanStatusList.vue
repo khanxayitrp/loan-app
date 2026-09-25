@@ -1,3 +1,4 @@
+
 <template>
   <div class="p-6">
     <!-- Toolbar -->
@@ -555,3 +556,4 @@ onMounted(() => {
   fetchLoans()
 })
 </script>
+

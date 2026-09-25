@@ -1,3 +1,4 @@
+
 <template>
   <div class="flex flex-col gap-6">
     <div class="relative w-full h-[250px]">
@@ -91,3 +92,4 @@ onMounted(() => {
   border-radius: 10px;
 }
 </style>
+

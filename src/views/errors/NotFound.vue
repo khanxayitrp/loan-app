@@ -1,3 +1,4 @@
+
 <template>
   <div class="not-found">
     <div class="container">
@@ -56,3 +57,4 @@ p {
   background: #0052a3;
 }
 </style>
+

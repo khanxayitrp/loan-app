@@ -1,3 +1,4 @@
+
 import apiClient from './apiclient';
 import type { FetchApplicationsParams, FetchApplicationsResponse } from '@/types/membership';
 

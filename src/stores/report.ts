@@ -1,3 +1,4 @@
+
 // src/stores/report.ts
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
@@ -37,3 +38,4 @@ export const useReportStore = defineStore('report', () => {
     fetchDisbursedLoans
   };
 });
+

@@ -1,3 +1,4 @@
+
 <template>
   <div class="p-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -233,3 +234,4 @@ watch(cardStatusFilter, () => {
 
 onMounted(() => { fetchData(); });
 </script>
+

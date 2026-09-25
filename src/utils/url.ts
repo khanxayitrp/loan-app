@@ -1,3 +1,4 @@
+
 // src/utils/url.ts
 export const getFullImageUrl = (relativePath: string | null | undefined): string | undefined => {
   if (!relativePath) return undefined
@@ -11,3 +12,4 @@ export const getFullImageUrl = (relativePath: string | null | undefined): string
   const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:15520'
   return `${baseUrl}${relativePath}`
 }
+

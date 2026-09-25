@@ -1,3 +1,4 @@
+
 <!-- src/views/products/ProductManagement.vue -->
 <template>
   <main class="p-6">
@@ -34,3 +35,4 @@ const pageTitle = computed(() => {
   return pageType.value === 'types' ? 'ຈັດການປະເພດສິນຄ້າ' : 'ຈັດການສິນຄ້າ'
 })
 </script>
+

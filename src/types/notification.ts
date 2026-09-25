@@ -1,3 +1,4 @@
+
 // src/types/notification.ts
 
 export interface Notification {
@@ -14,3 +15,4 @@ export interface Notification {
 export interface UnreadCountResponse {
   unread_count: number;
 }
+

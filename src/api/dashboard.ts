@@ -1,3 +1,4 @@
+
 import apiClient from './apiclient';
 import type { AdminDashboardResponse, PartnerDashboardResponse } from '@/types/dashboard';
 
@@ -19,3 +20,4 @@ export const dashboardApi = {
     await apiClient.post('/dashboard/refresh');
   }
 };
+

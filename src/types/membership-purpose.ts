@@ -1,3 +1,4 @@
+
 export interface CreditPurpose {
   id: number;
   purpose_code: string;

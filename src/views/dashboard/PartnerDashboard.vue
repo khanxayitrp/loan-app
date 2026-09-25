@@ -1,3 +1,4 @@
+
 <template>
   <div class="min-h-screen flex flex-col bg-slate-100 font-lao text-slate-800">
 
@@ -36,3 +37,4 @@ import PartnerMonthlyTopProducts from '@/components/dashboard/partner/PartnerMon
   font-family: 'Noto Sans Lao', sans-serif;
 }
 </style>
+

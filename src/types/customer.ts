@@ -1,3 +1,4 @@
+
 export interface CustomerLocation {
   id: number;
   customer_id: number;
@@ -36,3 +37,4 @@ export interface MemberCardDTO {
     credit_limit: number | string;
   };
 }
+

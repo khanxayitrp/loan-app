@@ -1,3 +1,4 @@
+
 // src/api/customer.ts
 import apiClient from './apiclient'; // หรือ path ที่ apiClient ของคุณอยู่ (ปรับตามโครงสร้างโปรเจกต์)
 // 👉 Import types (ปรับ Path ให้ตรงกับไฟล์ Types ของคุณ)
@@ -186,3 +187,4 @@ export const saveCustomerWorkInfo = async (customerId: number | string, data: an
   // ປ່ຽນ URL '/customers/work-info' ໃຫ້ກົງກັບ Endpoint ຈິງຂອງ Backend ທ່ານ
   return await apiClient.post(`/customers/${customerId}/work-info`, data);
 };
+

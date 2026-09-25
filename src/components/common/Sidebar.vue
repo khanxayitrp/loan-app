@@ -1,3 +1,4 @@
+
 <template>
   <div>
     <button type="button" class="btn btn-text btn-square sm:hidden fixed top-4 left-4 z-30" @click="toggleMobile">
@@ -375,3 +376,4 @@ onUnmounted(() => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>
+

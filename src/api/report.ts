@@ -1,3 +1,4 @@
+
 // src/api/report.ts
 import apiClient from './apiclient';
 import type { ReportFilters, ReportResponse, DisbursedLoanReportRow } from '@/types/report';
@@ -13,3 +14,4 @@ export const reportApi = {
   //   return apiClient.get('/reports/collections', { params }).then(res => res.data);
   // }
 };
+

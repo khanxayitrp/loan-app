@@ -1,3 +1,4 @@
+
 // src/stores/global_categories.ts
 import { defineStore } from 'pinia';
 import {
@@ -116,3 +117,4 @@ export const useGlobalCategoryStore = defineStore('globalCategory', {
     }
   }
 });
+

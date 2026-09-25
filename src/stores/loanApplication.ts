@@ -1,3 +1,4 @@
+
 // src/stores/loanApplication.ts
 
 import { defineStore } from 'pinia';
@@ -599,3 +600,4 @@ export const useLoanApplicationStore = defineStore('loanApplication', {
     }
   }
 })
+

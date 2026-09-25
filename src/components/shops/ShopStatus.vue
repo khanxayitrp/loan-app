@@ -1,3 +1,4 @@
+
 <template>
   <div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
     <div v-if="isLoading" class="text-center py-8">

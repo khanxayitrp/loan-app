@@ -1,3 +1,4 @@
+
 import type { Product } from './product';
 import type { CustomerLocation } from './customer';
 import type { DeliveryReceipt } from './delivery_receipt';
@@ -369,4 +370,5 @@ export interface GetLoanByIdResponse {
 
 // สร้าง Type ใหม่ที่บังคับว่าต้องมี customer แน่นอน
 export type LoanCustomer = NonNullable<LoanApplication['customer']>
+
 

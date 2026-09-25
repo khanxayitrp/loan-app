@@ -1,3 +1,4 @@
+
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
 import { usePermissionStore } from './permission'
@@ -222,3 +223,4 @@ export const useAuthStore = defineStore('auth', {
     }
   }
 })
+

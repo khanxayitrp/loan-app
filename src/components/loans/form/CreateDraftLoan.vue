@@ -1,3 +1,4 @@
+
 <template>
   <div class="p-6 max-w-4xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
@@ -157,21 +158,35 @@
               <option value="effective_rate">ຫຼຸດຕົ້ນຫຼຸດດອກ (Effective Rate)</option>
             </select>
           </div>
+          
           <div class="form-control">
             <label class="label"><span class="label-text font-medium">ຈຳນວນງວດ (ເດືອນ) *</span></label>
             <select v-model.number="loanDetails.termMonths" class="select select-bordered w-full"
               :class="{ 'select-error': loanErrors.termMonths }" @change="handleTermChange">
               <option value="0" disabled>ເລືອກຈຳນວນງວດ</option>
-              <option value="6">6 ເດືອນ</option>
-              <option value="12">12 ເດືອນ</option>
-              <option value="18">18 ເດືອນ</option>
-              <option value="24">24 ເດືອນ</option>
-              <option value="36">36 ເດືອນ</option>
-              <option value="48">48 ເດືອນ</option>
+              
+              <!-- 🟢 ຖ້າບໍ່ແມ່ນແຄມເປນພິເສດ -->
+              <template v-if="!activeCampaign">
+                <option value="6">6 ເດືອນ</option>
+                <option value="12">12 ເດືອນ</option>
+                <option value="18">18 ເດືອນ</option>
+                <option value="24">24 ເດືອນ</option>
+                <option value="36">36 ເດືອນ</option>
+                <option value="48">48 ເດືອນ</option>
+              </template>
+
+              <!-- 🌟 ຖ້າເປັນແຄມເປນ iPhone 18 -->
+              <template v-else>
+                <option value="18">18 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
+                <option value="24">24 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
+                <option value="30">30 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
+                <option value="36">36 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
+              </template>
             </select>
             <label v-if="loanErrors.termMonths" class="label text-error"><span class="label-text-alt">{{
               loanErrors.termMonths }}</span></label>
           </div>
+          
           <div class="form-control">
             <label class="label"><span class="label-text font-medium">ເງີນດາວ (ກີບ)</span></label>
             <input :value="formatCurrencyInput(loanDetails.downPayment)" @input="handleDownPaymentInput" type="text"
@@ -276,8 +291,6 @@
             <label v-if="customerErrors.age" class="label text-error"><span class="label-text-alt">{{ customerErrors.age
                 }}</span></label>
           </div>
-          <!-- 🟢 ປຸ່ມຮັບເລກບັນຊີທະນາຄານໃໝ່ທີ່ເພີ່ມເຂົ້າ -->
-          <!-- 🟢 ເອົາເຄື່ອງໝາຍ * ອອກ ແລະ ບໍ່ບັງຄັບປ້ອນ -->
           <div class="form-control">
             <label class="label"><span class="label-text font-medium">ເລກບັນຊີທະນາຄານ (BCEL)</span></label>
             <input v-model="customerForm.account_number" type="text" placeholder="ປ້ອນເລກບັນຊີ (ຖ້າມີ)"
@@ -521,6 +534,47 @@ const canAccessDocuments = ref(false)
 const showSuccessModal = ref(false)
 const loanNumber = ref('LN' + Date.now().toString().slice(-6))
 
+// 🌟 1. State สำหรับแคมเปญพิเศษ
+const activeCampaign = ref(false);
+
+// 🌟 2. Regex ตรวจจับ iPhone 18 (ครอบคลุม 18, 18 pro, 18 pro max, 18 duo)
+const checkIphone18Campaign = (product: Product): boolean => {
+  if (!product) return false;
+  const nameToTest = `${product.product_name || ''} ${product.model || ''}`;
+  return /iphone\s*18/i.test(nameToTest);
+};
+
+// 🌟 3. โลจิกคำนวณดอกเบี้ยตามขั้นบันได (Tiered Rate)
+const applyCampaignRules = () => {
+  if (!activeCampaign.value) return;
+
+  // ก. บังคับจำนวนงวด (หากงวดปัจจุบันไม่อยู่ในเงื่อนไข ให้บังคับไปที่ 18 เดือน)
+  const allowedTerms = [18, 24, 30, 36];
+  if (!allowedTerms.includes(loanDetails.termMonths)) {
+    loanDetails.termMonths = 18; 
+  }
+
+  // ข. คำนวณ % เงินดาวน์
+  const dpPercent = loanDetails.totalAmount > 0 
+    ? (loanDetails.downPayment / loanDetails.totalAmount) * 100 
+    : 0;
+
+  // ค. กำหนดดอกเบี้ยตาม Tier
+  if (dpPercent >= 50) {
+    loanDetails.interestRate = 0.84;
+  } else if (dpPercent >= 40) {
+    loanDetails.interestRate = 0.89;
+  } else if (dpPercent >= 30) {
+    loanDetails.interestRate = 0.94;
+  } else if (dpPercent >= 20) {
+    loanDetails.interestRate = 0.99;
+  } else if (dpPercent >= 10) {
+    loanDetails.interestRate = 1.04;
+  } else {
+    loanDetails.interestRate = 1.09;
+  }
+};
+
 // ==========================================
 // 🟢 3. Shop & Product Selection Logic
 // ==========================================
@@ -596,6 +650,12 @@ const selectProduct = async (product: Product) => {
   selectedVariant.value = null; productVariants.value = []; loanErrors.variant = ''
   isLoadingVariants.value = true
 
+  // 🌟 ตรวจสอบแคมเปญทันทีที่เลือกสินค้า
+  activeCampaign.value = checkIphone18Campaign(product);
+  if (activeCampaign.value) {
+    alert.info('🌟 ແຄມເປນພິເສດ iPhone 18 Series', 'ດອກເບ້ຍຈະປ່ຽນຕາມ % ເງິນດາວ (1.09% - 0.84%) ແລະ ຜ່ອນໄດ້ສະເພາະ 18, 24, 30, 36 ເດືອນ');
+  }
+
   try {
     const variants = await productStore.fetchVariantsByProductId(product.id)
     productVariants.value = variants || []
@@ -617,6 +677,7 @@ const clearProductSelection = () => {
   selectedProduct.value = null; productSearch.value = ''; selectedProductType.value = ''
   selectedVariant.value = null; productVariants.value = []; loanErrors.variant = ''
   loanDetails.totalAmount = 0; loanDetails.downPayment = 0; loanDetails.interestRate = 0; loanDetails.termMonths = 0; loanDetails.monthlyPayment = 0;
+  activeCampaign.value = false; // 🌟 เคลียร์สถานะแคมเปญเมื่อยกเลิกการเลือกสินค้า
 }
 
 const selectVariant = (variant: any) => {
@@ -642,9 +703,13 @@ const calculateInitialLoanDetails = (priceToUse?: number) => {
   loanDetails.totalAmount = priceToUse !== undefined ? Number(priceToUse) : Number(selectedProduct.value.price || 0)
   loanDetails.termMonths = Number(selectedProduct.value.term || 12)
   loanDetails.downPayment = 0
-  loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths)
+  
+  if (!activeCampaign.value) {
+    loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths)
+  }
+  
   loanDetails.interestType = selectedProduct.value.interest_type || 'flat_rate'
-  loanDetails.monthlyPayment = calculateMonthlyPayment()
+  handleCalculationChange(); // 🌟 เรียกใช้เพื่ออัปเดตแคมเปญให้สมบูรณ์
 }
 
 const calculateMonthlyPayment = (): number => {
@@ -666,10 +731,20 @@ const calculateMonthlyPayment = (): number => {
 }
 
 const handleTermChange = () => {
-  if (loanDetails.termMonths > 0) loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths);
+  if (loanDetails.termMonths > 0) {
+    if (!activeCampaign.value) {
+      loanDetails.interestRate = getInterestRateByTerm(loanDetails.termMonths);
+    }
+  }
   handleCalculationChange();
 }
-const handleCalculationChange = () => { validateLoanDetails(); loanDetails.monthlyPayment = calculateMonthlyPayment() }
+
+const handleCalculationChange = () => { 
+  validateLoanDetails(); 
+  applyCampaignRules(); // 🌟 แทรกกฏแคมเปญก่อนคำนวณค่างวด
+  loanDetails.monthlyPayment = calculateMonthlyPayment() 
+}
+
 const calculateTotalPayment = (): number => loanDetails.monthlyPayment * loanDetails.termMonths
 const calculateTotalInterest = (): number => calculateTotalPayment() - Math.max(0, loanDetails.totalAmount - loanDetails.downPayment)
 

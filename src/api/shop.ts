@@ -1,3 +1,4 @@
+
 // src/api/shop.ts
 import apiClient from './apiclient'
 import type { shopType, shopTypeForm } from '@/types/shop'
@@ -119,3 +120,4 @@ export const changeStatus = async (partnerId: number, isActive: boolean): Promis
     throw error
   }
 }
+

@@ -1,3 +1,4 @@
+
 // src/types/permission.ts
 export interface Feature {
   id: number
@@ -21,3 +22,4 @@ export interface PermissionAssignment {
   user_id: number
   feature_ids: number[]
 }
+

@@ -1,3 +1,4 @@
+
 export interface BasicVerification {
   id?: number;
   application_id: number;
@@ -78,3 +79,4 @@ export interface ChecklistSummary {
   field_visits: FieldVisitRecord[];
   income_assessment: IncomeAssessment | null;
 }
+

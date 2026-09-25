@@ -1,3 +1,4 @@
+
 <template>
   <div>
     <nav class="navbar bg-base-100 rounded-box shadow-base-300/20 shadow-sm">
@@ -312,3 +313,4 @@ const handleLogout = async () => {
   }
 }
 </script>
+

@@ -1,3 +1,4 @@
+
 // src/types/shop.ts
 export interface shopType {
   id: number
@@ -23,5 +24,6 @@ export interface shopType1 {
 }
 
 export type shopTypeForm = Omit<shopType, 'shop_id'>
+
 
 
