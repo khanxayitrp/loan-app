@@ -168,7 +168,7 @@
 
             <div class="form-control">
               <label class="flex items-center gap-2 cursor-pointer mt-2">
-                <input v-model="locationForm.is_primary" type="checkbox" class="checkbox checkbox-primary"
+                <input type="checkbox" class="checkbox checkbox-primary"
                   :checked="locationForm.is_primary === 1" @change="toggleIsPrimary" />
                 <span class="label-text font-medium">ຕັ້ງເປັນທີ່ຢູ່ຫຼັກ (Primary)</span>
               </label>
@@ -193,7 +193,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
+import { alert as customAlert } from '@/utils/alert'
 import type { CustomerLocation } from '@/types/loanApplication'
+
+const DEFAULT_MAP_CENTER = { lat: 17.9757, lng: 102.6331 }
 
 const props = defineProps<{
   customerId: number
@@ -249,7 +252,7 @@ const getLocationTypeLabel = (type: string): string => {
 }
 
 const getGoogleMapsLink = (lat: number | string, lng: number | string): string => {
-  return `http://maps.google.com/maps?q=${Number(lat)},${Number(lng)}`
+  return `https://maps.google.com/maps?q=${Number(lat)},${Number(lng)}`
 }
 
 const toggleIsPrimary = () => {
@@ -303,17 +306,14 @@ const handleMapLinkPaste = () => {
 
   // ກວດສອບຄວາມຖືກຕ້ອງ ແລະ ນຳໄປໃຊ້
   if (lat !== null && lng !== null) {
-    // ປ້ອງກັນການດຶງພິກັດທີ່ຜິດພາດ (Validation)
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      alert('ພິກັດບໍ່ຖືກຕ້ອງ (ຄ່າທີ່ອ່ານໄດ້ຢູ່ນອກເໜືອແຜນທີ່ໂລກ)');
+      customAlert.warning('ພິກັດບໍ່ຖືກຕ້ອງ', 'ຄ່າທີ່ອ່ານໄດ້ຢູ່ນອກເໜືອແຜນທີ່ໂລກ');
       return;
     }
 
-    // ບັນທຶກຄ່າລົງຟອມ
     locationForm.value.latitude = lat;
     locationForm.value.longitude = lng;
 
-    // ເລື່ອນແຜນທີ່ ແລະ ສ້າງ/ຍ້າຍ ໝຸດໄປຫາຕຳແໜ່ງໃໝ່ທັນທີ
     if (map.value) {
       const position = { lat, lng };
 
@@ -328,15 +328,14 @@ const handleMapLinkPaste = () => {
       }
 
       map.value.panTo(position);
-      map.value.setZoom(17); // ຊູມເຂົ້າໄປໃກ້ຂຶ້ນອີກໜ້ອຍໜຶ່ງເມື່ອໄດ້ພິກັດທີ່ຊັດເຈນ
+      map.value.setZoom(17);
     }
   } 
-  // ກວດຈັບ Short Link ຂອງ Google Maps ທີ່ມັກພົບເຫັນ
   else if (url.includes('goo.gl') || url.includes('maps.app.goo.gl') || url.includes('g.page')) {
-    alert('ລະບົບບໍ່ສາມາດດຶງພິກັດຈາກ Short link ໄດ້ອັດຕະໂນມັດ, ກະລຸນາເປີດລີ້ງໃນ Browser ກ່ອນ ແລ້ວກັອບປີ້ລີ້ງຍາວ (URL) ດ້ານເທິງມາໃສ່ແທນ');
+    customAlert.info('ຄຳແນະນຳ', 'ລະບົບບໍ່ສາມາດດຶງພິກັດຈາກ Short link ໄດ້ອັດຕະໂນມັດ, ກະລຸນາເປີດລີ້ງໃນ Browser ກ່ອນ ແລ້ວກັອບປີ້ລີ້ງຍາວ (URL) ດ້ານເທິງມາໃສ່ແທນ');
   } 
   else {
-    alert('ບໍ່ສາມາດອ່ານພິກັດຈາກລີ້ງທີ່ວາງໄດ້, ກະລຸນາກວດສອບລີ້ງອີກຄັ້ງ');
+    customAlert.warning('ບໍ່ສາມາດອ່ານພິກັດໄດ້', 'ບໍ່ສາມາດອ່ານພິກັດຈາກລີ້ງທີ່ວາງໄດ້, ກະລຸນາກວດສອບລີ້ງອີກຄັ້ງ');
   }
 }
 
@@ -387,7 +386,7 @@ const initMap = async () => {
     }
 
     map.value = new google.maps.Map(mapContainer.value, {
-      center: { lat: 17.9757, lng: 102.6331 },
+      center: DEFAULT_MAP_CENTER,
       zoom: 13,
       mapTypeControl: true,
       streetViewControl: true,
@@ -401,7 +400,7 @@ const initMap = async () => {
     updateMarkers()
   } catch (error) {
     console.error('Error initializing Google Maps:', error)
-    alert('ບໍ່ສາມາດໂຫຼດແຜນທີ່ໄດ້ ກະລຸນາກວດສອບ API Key')
+    customAlert.error('ບໍ່ສາມາດໂຫຼດແຜນທີ່ໄດ້', 'ກະລຸນາກວດສອບ API Key')
   }
 }
 
@@ -421,7 +420,7 @@ const handleMapClick = (e: google.maps.MapMouseEvent) => {
     map: map.value,
     animation: google.maps.Animation.DROP,
     icon: {
-      url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+      url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
     }
   })
 
@@ -439,7 +438,7 @@ const handleMapClick = (e: google.maps.MapMouseEvent) => {
 // ✅ Reverse Geocoding (แปลงพิกัดเป็นที่อยู่)
 const reverseGeocode = async () => {
   if (!geocoder.value || !locationForm.value.latitude || !locationForm.value.longitude) {
-    alert('ກະລຸນາປັກຈຸດຕຳແໜ່ງກ່ອນ')
+    customAlert.warning('ກະລຸນາປັກຈຸດຕຳແໜ່ງກ່ອນ')
     return
   }
 
@@ -454,11 +453,11 @@ const reverseGeocode = async () => {
     if (response.results && response.results.length > 0) {
       locationForm.value.address = response.results[0]?.formatted_address || 'ບໍ່ສາມາດອ່ານທີ່ຢູ່ໄດ້'
     } else {
-      alert('ບໍ່ພົບຂໍ້ມູນທີ່ຢູ່')
+      customAlert.info('ບໍ່ພົບຂໍ້ມູນທີ່ຢູ່')
     }
   } catch (error) {
     console.error('Reverse geocoding error:', error)
-    alert('ເກີດຂໍ້ຜິດພາດໃນການດຶງທີ່ຢູ່')
+    customAlert.error('ເກີດຂໍ້ຜິດພາດໃນການດຶງທີ່ຢູ່')
   }
 }
 
@@ -488,8 +487,8 @@ const updateMarkers = () => {
         // ປິດ Animation DROP ສຳລັບໝຸດທີ່ໂຫຼດມາແລ້ວ ເພື່ອຄວາມລື່ນໄຫຼ
         icon: {
           url: location.is_primary
-            ? 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-            : 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+            ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+            : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
         }
       })
 
@@ -529,8 +528,7 @@ const updateMarkers = () => {
     } else if (validCount > 1) {
       map.value.fitBounds(bounds, 50); // padding 50 pixels
     } else {
-       // ຖ້າລຶບໝຸດອອກໝົດ ໃຫ້ກັບໄປຄ່າເລີ່ມຕົ້ນ
-       map.value.setCenter({ lat: 17.9757, lng: 102.6331 });
+       map.value.setCenter(DEFAULT_MAP_CENTER);
        map.value.setZoom(13);
     }
   });
@@ -578,12 +576,12 @@ const editLocation = (location: CustomerLocation) => {
 
 const saveLocation = () => {
   if (!locationForm.value.latitude || !locationForm.value.longitude) {
-    alert('ກະລຸນາປັກຈຸດຕຳແໜ່ງໃນແຜນທີ່')
+    customAlert.warning('ກະລຸນາປັກຈຸດຕຳແໜ່ງໃນແຜນທີ່')
     return
   }
 
   if (!locationForm.value.address.trim()) {
-    alert('ກະລຸນາປ້ອນທີ່ຢູ່')
+    customAlert.warning('ກະລຸນາປ້ອນທີ່ຢູ່')
     return
   }
 
@@ -610,8 +608,9 @@ const saveLocation = () => {
   closeLocationModal()
 }
 
-const deleteLocation = (id: number) => {
-  if (confirm('ຕ້ອງການລຶບທີ່ຢູ່ນີ້ບໍ່?')) {
+const deleteLocation = async (id: number) => {
+  const confirmed = await customAlert.confirm('ຢືນຢັນການລຶບ', 'ຕ້ອງການລຶບທີ່ຢູ່ນີ້ບໍ່?')
+  if (confirmed) {
     emit('delete-location', id)
   }
 }

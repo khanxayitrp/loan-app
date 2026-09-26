@@ -11,8 +11,6 @@
 
     <slot name="warnings"></slot>
 
-    <input type="hidden" v-model="data.variantId" />
-
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div class="form-control lg:col-span-2">
         <label class="label"><span class="label-text font-bold">ລາຍລະອຽດສິນຄ້າ: <span class="text-error">*</span></span></label>
@@ -202,29 +200,51 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { formatPrice, formatCurrencyInput } from '@/utils/formatters'
+import type { ProductFormData } from '@/types/loanFormSections'
+
+interface MotorcycleInfo {
+  motorId?: string;
+  motorColor?: string;
+  tankNumber?: string;
+  motorWarranty?: number | null;
+}
+
+interface ExtendedProductFormData extends ProductFormData {
+  description?: string;
+  type?: string;
+  productColor?: string;
+  productSize?: string;
+  approvedAmount?: number | null;
+  interestRateType?: string;
+  loanTerm?: number | null;
+  monthlyPayment?: number | null;
+  firstInstallment?: number | null;
+  motorcycle: MotorcycleInfo;
+}
 
 const props = defineProps<{
-  data: any,
-  productType: any,
+  productType?: unknown,
   isEditing: boolean,
   hasConflict: boolean
 }>()
+
+const data = defineModel<ExtendedProductFormData>('data', { required: true })
 
 const emit = defineEmits(['recalculate', 'sync'])
 
 // 🟢 ປະກາດຕົວແປສຳລັບເກັບ Error ຂອງແຕ່ລະ Field
 const errors = ref<Record<string, string>>({})
 
-const handleCurrencyInput = (field: string, event: Event) => {
+const handleCurrencyInput = (field: 'price' | 'downPayment' | 'fee', event: Event) => {
   const target = event.target as HTMLInputElement;
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
   const numericValue = parseInt(rawValue, 10);
   if (!isNaN(numericValue) && rawValue !== '') {
-    props.data[field] = numericValue;
+    data.value[field] = numericValue;
   } else {
-    props.data[field] = null;
+    data.value[field] = null;
   }
-  target.value = formatCurrencyInput(props.data[field]);
+  target.value = formatCurrencyInput(data.value[field]);
   emit('recalculate');
 };
 
@@ -235,35 +255,35 @@ const validateForm = (): boolean => {
   errors.value = {}; // Reset errors
   let isValid = true;
 
-  if (!props.data.description?.trim()) { errors.value.description = 'ກະລຸນາປ້ອນລາຍລະອຽດສິນຄ້າ'; isValid = false; }
-  if (!props.data.type) { errors.value.type = 'ກະລຸນາເລືອກປະເພດສິນຄ້າ'; isValid = false; }
+  if (!data.value.description?.trim()) { errors.value.description = 'ກະລຸນາປ້ອນລາຍລະອຽດສິນຄ້າ'; isValid = false; }
+  if (!data.value.type) { errors.value.type = 'ກະລຸນາເລືອກປະເພດສິນຄ້າ'; isValid = false; }
   
-  if (!props.data.price || props.data.price <= 0) { errors.value.price = 'ກະລຸນາປ້ອນລາຄາສິນຄ້າທີ່ຖືກຕ້ອງ'; isValid = false; }
+  if (!data.value.price || data.value.price <= 0) { errors.value.price = 'ກະລຸນາປ້ອນລາຄາສິນຄ້າທີ່ຖືກຕ້ອງ'; isValid = false; }
   
-  if (props.data.downPayment !== null && props.data.downPayment !== undefined && props.data.downPayment !== '') {
-    if (props.data.downPayment < 0) {
+  if (data.value.downPayment !== null && data.value.downPayment !== undefined && (data.value.downPayment as unknown as string) !== '') {
+    if (data.value.downPayment < 0) {
       errors.value.downPayment = 'ເງິນດາວຕ້ອງບໍ່ຫຼຸດ 0'; 
       isValid = false;
-    } else if (props.data.downPayment > props.data.price) {
+    } else if (data.value.price && data.value.downPayment > data.value.price) {
       errors.value.downPayment = 'ເງິນດາວບໍ່ສາມາດຫຼາຍກວ່າລາຄາສິນຄ້າໄດ້'; 
       isValid = false;
     }
   }
 
-  if (props.data.interestRate === null || props.data.interestRate === undefined || props.data.interestRate === '') { 
+  if (data.value.interestRate === null || data.value.interestRate === undefined || (data.value.interestRate as unknown as string) === '') {
     errors.value.interestRate = 'ກະລຸນາປ້ອນອັດຕາດອກເບ້ຍ'; 
     isValid = false; 
-  } else if (props.data.interestRate < 0) {
+  } else if (data.value.interestRate < 0) {
     errors.value.interestRate = 'ດອກເບ້ຍຕ້ອງບໍ່ຫຼຸດ 0'; 
     isValid = false; 
   }
 
-  if (!props.data.loanTerm || props.data.loanTerm <= 0) { errors.value.loanTerm = 'ກະລຸນາປ້ອນຈຳນວນງວດ'; isValid = false; }
+  if (!data.value.loanTerm || data.value.loanTerm <= 0) { errors.value.loanTerm = 'ກະລຸນາປ້ອນຈຳນວນງວດ'; isValid = false; }
   
-  if (!props.data.paymentDay) { 
+  if (!data.value.paymentDay) {
     errors.value.paymentDay = 'ກະລຸນາປ້ອນມື້ຊຳລະ'; 
     isValid = false; 
-  } else if (props.data.paymentDay < 1 || props.data.paymentDay > 31) {
+  } else if (data.value.paymentDay < 1 || data.value.paymentDay > 31) {
     errors.value.paymentDay = 'ວັນທີຕ້ອງຢູ່ລະຫວ່າງ 1-31'; 
     isValid = false; 
   }

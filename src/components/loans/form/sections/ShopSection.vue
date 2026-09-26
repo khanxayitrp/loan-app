@@ -3,8 +3,6 @@
   <section class="form-section">
     <h3 class="section-title">IV. ຂໍ້ມູນຮ້ານຄ້າຕົວແທນ</h3>
     
-    <input type="hidden" v-model="data.id" />
-
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="form-control">
         <label class="label"><span class="label-text font-bold">ຊື່ຮ້ານຄ້າຕົວແທນ:</span></label>
@@ -23,5 +21,13 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ data: any, isEditing: boolean }>()
+import type { ShopFormData } from '@/types/loanFormSections'
+
+interface ExtendedShopFormData extends ShopFormData {
+  name?: string;
+  code?: string;
+}
+
+defineProps<{ isEditing: boolean }>()
+const data = defineModel<ExtendedShopFormData>('data', { required: true })
 </script>

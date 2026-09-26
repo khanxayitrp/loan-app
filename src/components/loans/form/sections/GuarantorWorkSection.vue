@@ -114,61 +114,75 @@
 import { ref, watch, onMounted } from 'vue'
 import { useAddressStore } from '@/stores/address'
 import { formatCurrencyInput } from '@/utils/formatters'
+import type { GuarantorWorkFormData } from '@/types/loanFormSections'
+
+interface ExtendedGuarantorWorkFormData extends GuarantorWorkFormData {
+  phone?: string;
+  totalEmployees?: number | null;
+  salaryDay?: number | null;
+}
 
 const props = defineProps<{
-  data: any,
   hasGuarantor: boolean,
   hasReference: boolean,
   isEditing: boolean
 }>()
+
+const data = defineModel<ExtendedGuarantorWorkFormData>('data', { required: true })
 
 const addressStore = useAddressStore()
 
 // ເກັບໄວ້ເພື່ອບໍ່ໃຫ້ Component ແມ່ (Parent) error ເວລາດຶງ ref ໄປໃຊ້
 const errors = ref<Record<string, string>>({})
 
-const localDistricts = ref<any[]>([])
+interface DistrictItem {
+  district_id: string | number;
+  district_name: string;
+}
 
-const loadLocalDistricts = async (provinceId: string) => {
+const localDistricts = ref<DistrictItem[]>([])
+
+const loadLocalDistricts = async (provinceId: string | number) => {
   if (!provinceId) {
     localDistricts.value = [];
     return;
   }
-  await addressStore.fetchDistricts(provinceId);
+  await addressStore.fetchDistricts(String(provinceId));
   localDistricts.value = [...addressStore.districts];
 }
 
 onMounted(async () => {
-  if (props.data.address?.province_id) {
-    await loadLocalDistricts(props.data.address.province_id);
+  if (data.value.companyAddress?.province_id) {
+    await loadLocalDistricts(data.value.companyAddress.province_id);
   }
 });
 
 const handleDistrictChange = () => {
-  const d = localDistricts.value.find(x => x.district_id === props.data.address.district_id);
-  if (d) props.data.address.district = d.district_name;
+  if (!data.value.companyAddress) return;
+  const d = localDistricts.value.find(x => x.district_id === data.value.companyAddress?.district_id);
+  if (d) data.value.companyAddress.district = d.district_name;
 };
 
-watch(() => props.data.address.province_id, async (newVal) => {
-  if (props.isEditing) {
-    props.data.address.district_id = '';
-    props.data.address.district = '';
+watch(() => data.value.companyAddress?.province_id, async (newVal) => {
+  if (props.isEditing && newVal !== undefined && data.value.companyAddress) {
+    data.value.companyAddress.district_id = '';
+    data.value.companyAddress.district = '';
     const p = addressStore.provinces.find(x => x.province_id === newVal);
-    props.data.address.province = p ? p.province_name : '';
+    data.value.companyAddress.province = p ? p.province_name : '';
     if (newVal) await loadLocalDistricts(newVal);
   }
 });
 
-const handleCurrencyInput = (field: string, event: Event) => {
+const handleCurrencyInput = (field: 'salary' | 'otherIncome', event: Event) => {
   const target = event.target as HTMLInputElement;
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
   const numericValue = parseInt(rawValue, 10);
   if (!isNaN(numericValue) && rawValue !== '') {
-    props.data[field] = numericValue;
+    data.value[field] = numericValue;
   } else {
-    props.data[field] = null;
+    data.value[field] = null;
   }
-  target.value = formatCurrencyInput(props.data[field]);
+  target.value = formatCurrencyInput(data.value[field]);
 };
 
 // ==========================================

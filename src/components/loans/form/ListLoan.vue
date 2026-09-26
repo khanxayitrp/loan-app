@@ -164,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
@@ -397,5 +397,13 @@ onMounted(async () => {
     addressStore.fetchProvinces()
   ])
 })
+
+onUnmounted(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  loanApplicationStore.resetFilters();
+});
 </script>
 

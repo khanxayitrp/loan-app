@@ -169,55 +169,72 @@
 import { ref, watch, onMounted } from 'vue'
 import { useAddressStore } from '@/stores/address'
 import { formatCurrencyInput } from '@/utils/formatters'
+import type { WorkFormData } from '@/types/loanFormSections'
 
-const props = defineProps<{ data: any, isEditing: boolean }>()
+interface ExtendedWorkFormData extends WorkFormData {
+  businessDetail?: string;
+  department?: string;
+  phone?: string;
+  totalEmployees?: number | null;
+  salaryDay?: number | null;
+}
+
+const props = defineProps<{ isEditing: boolean }>()
+const data = defineModel<ExtendedWorkFormData>('data', { required: true })
+
 const addressStore = useAddressStore()
 
 // 🟢 ປະກາດຕົວແປສຳລັບເກັບ Error ຂອງແຕ່ລະ Field
 const errors = ref<Record<string, string>>({})
 
-const localDistricts = ref<any[]>([])
+interface DistrictItem {
+  district_id: string | number;
+  district_name: string;
+}
 
-const loadLocalDistricts = async (provinceId: string) => {
+const localDistricts = ref<DistrictItem[]>([])
+
+const loadLocalDistricts = async (provinceId: string | number) => {
   if (!provinceId) {
     localDistricts.value = [];
     return;
   }
-  await addressStore.fetchDistricts(provinceId);
+  await addressStore.fetchDistricts(String(provinceId));
   localDistricts.value = [...addressStore.districts];
 }
 
 onMounted(async () => {
-  if (props.data.address?.province_id) {
-    await loadLocalDistricts(props.data.address.province_id);
+  if (data.value.companyAddress?.province_id) {
+    await loadLocalDistricts(data.value.companyAddress.province_id);
   }
 });
 
 const handleDistrictChange = () => {
-  const d = localDistricts.value.find(x => x.district_id === props.data.address.district_id);
-  if (d) props.data.address.district = d.district_name;
+  if (!data.value.companyAddress) return;
+  const d = localDistricts.value.find(x => x.district_id === data.value.companyAddress?.district_id);
+  if (d) data.value.companyAddress.district = d.district_name;
 };
 
-watch(() => props.data.address.province_id, async (newVal) => {
-  if (props.isEditing) {
-    props.data.address.district_id = '';
-    props.data.address.district = '';
+watch(() => data.value.companyAddress?.province_id, async (newVal) => {
+  if (props.isEditing && newVal !== undefined && data.value.companyAddress) {
+    data.value.companyAddress.district_id = '';
+    data.value.companyAddress.district = '';
     const p = addressStore.provinces.find(x => x.province_id === newVal);
-    props.data.address.province = p ? p.province_name : '';
+    data.value.companyAddress.province = p ? p.province_name : '';
     if (newVal) await loadLocalDistricts(newVal);
   }
 });
 
-const handleCurrencyInput = (field: string, event: Event) => {
+const handleCurrencyInput = (field: 'salary' | 'otherIncome', event: Event) => {
   const target = event.target as HTMLInputElement;
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
   const numericValue = parseInt(rawValue, 10);
   if (!isNaN(numericValue) && rawValue !== '') {
-    props.data[field] = numericValue;
+    data.value[field] = numericValue;
   } else {
-    props.data[field] = null;
+    data.value[field] = null;
   }
-  target.value = formatCurrencyInput(props.data[field]);
+  target.value = formatCurrencyInput(data.value[field]);
 };
 
 // ==========================================
@@ -227,26 +244,26 @@ const validateForm = (): boolean => {
   errors.value = {}; // Reset errors
   let isValid = true;
 
-  if (!props.data.companyName?.trim()) { errors.value.companyName = 'ກະລຸນາປ້ອນຊື່ອົງການ/ບໍລິສັດ'; isValid = false; }
-  if (!props.data.businessType?.trim()) { errors.value.businessType = 'ກະລຸນາປ້ອນປະເພດທຸລະກິດ'; isValid = false; }
+  if (!data.value.companyName?.trim()) { errors.value.companyName = 'ກະລຸນາປ້ອນຊື່ອົງການ/ບໍລິສັດ'; isValid = false; }
+  if (!data.value.businessType?.trim()) { errors.value.businessType = 'ກະລຸນາປ້ອນປະເພດທຸລະກິດ'; isValid = false; }
   
-  if (!props.data.address?.village?.trim()) { errors.value.village = 'ກະລຸນາປ້ອນບ້ານ'; isValid = false; }
-  if (!props.data.address?.district_id) { errors.value.district_id = 'ກະລຸນາເລືອກເມືອງ'; isValid = false; }
-  if (!props.data.address?.province_id) { errors.value.province_id = 'ກະລຸນາເລືອກແຂວງ'; isValid = false; }
+  if (!data.value.companyAddress?.village?.trim()) { errors.value.village = 'ກະລຸນາປ້ອນບ້ານ'; isValid = false; }
+  if (!data.value.companyAddress?.district_id) { errors.value.district_id = 'ກະລຸນາເລືອກເມືອງ'; isValid = false; }
+  if (!data.value.companyAddress?.province_id) { errors.value.province_id = 'ກະລຸນາເລືອກແຂວງ'; isValid = false; }
   
-  if (!props.data.phone?.trim()) { errors.value.phone = 'ກະລຸນາປ້ອນເບີໂທບ່ອນເຮັດວຽກ'; isValid = false; }
+  if (!data.value.phone?.trim()) { errors.value.phone = 'ກະລຸນາປ້ອນເບີໂທບ່ອນເຮັດວຽກ'; isValid = false; }
   
-  if (props.data.workYears === null || props.data.workYears === undefined || props.data.workYears === '') { 
+  if (data.value.workYears === null || data.value.workYears === undefined || (data.value.workYears as unknown as string) === '') {
     errors.value.workYears = 'ກະລຸນາປ້ອນອາຍຸການເຮັດວຽກ'; 
     isValid = false; 
-  } else if (props.data.workYears < 0) {
+  } else if (data.value.workYears < 0) {
     errors.value.workYears = 'ອາຍຸການເຮັດວຽກຕ້ອງບໍ່ຫຼຸດ 0'; 
     isValid = false; 
   }
 
-  if (!props.data.position?.trim()) { errors.value.position = 'ກະລຸນາປ້ອນຕຳແໜ່ງ'; isValid = false; }
+  if (!data.value.position?.trim()) { errors.value.position = 'ກະລຸນາປ້ອນຕຳແໜ່ງ'; isValid = false; }
   
-  if (!props.data.salary || props.data.salary <= 0) { 
+  if (!data.value.salary || data.value.salary <= 0) {
     errors.value.salary = 'ກະລຸນາປ້ອນລາຍຮັບຕໍ່ເດືອນທີ່ຖືກຕ້ອງ'; 
     isValid = false; 
   }
