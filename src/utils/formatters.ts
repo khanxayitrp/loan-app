@@ -1,7 +1,7 @@
 
 // utils/formatters.ts
 
-export const getConfirmedStyle = (status: any) => {
+export const getConfirmedStyle = (status: unknown) => {
   const isTrue = !!status && (status === true || status === 1 || status === 'true');
   return {
     text: isTrue ? 'ຢືນຢັນແລ້ວ' : 'ຍັງບໍ່ຢືນຢັນ',
@@ -191,24 +191,26 @@ export const formatDateOnly = (dateString: string | null | undefined): string =>
 /**
  * 🟢 ລວມຊື່ ແລະ ນາມສະກຸນລູກຄ້າ
  */
-export const getCustomerFullName = (loan: any): string => {
-  return loan?.customer ? `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim() : 'ບໍ່ຮູ້ຊື່'
+export const getCustomerFullName = (loan: Record<string, unknown>): string => {
+  const cust = loan?.customer as Record<string, unknown> | undefined;
+  return cust ? `${cust.first_name || ''} ${cust.last_name || ''}`.trim() : 'ບໍ່ຮູ້ຊື່';
 }
 
 /**
  * 🟢 ຊອກຫາວັນທີງວດທຳອິດ ໂດຍດຶງຈາກ Repayments ຖ້າມີ
  */
-export const getFirstInstallment = (loan: any): string => {
-  if (loan?.repayments && loan.repayments.length > 0) {
-    return formatDateOnly(loan.repayments[0].due_date)
+export const getFirstInstallment = (loan: Record<string, unknown>): string => {
+  const repayments = loan?.repayments as Record<string, unknown>[] | undefined;
+  if (repayments && repayments.length > 0 && repayments[0]?.due_date) {
+    return formatDateOnly(repayments[0].due_date as string);
   }
-  return formatDateOnly(loan?.payment_day || loan?.first_installment_date)
+  return formatDateOnly((loan?.payment_day || loan?.first_installment_date) as string);
 }
 
 /**
  * 🟢 ຄຳນວນວັນທີງວດສຸດທ້າຍ: ງວດທຳອິດ + (ຈຳນວນເດືອນ - 1)
  */
-export const getLastInstallment = (loan: any): string => {
+export const getLastInstallment = (loan: Record<string, unknown>): string => {
   const firstInstallmentDateStr = getFirstInstallment(loan);
   if (firstInstallmentDateStr === '-') return '-';
 
@@ -248,3 +250,32 @@ export const formatDisplayDate = (dateString: string | null | undefined): string
   return `${d}-${m}-${y}`;
 }
 
+/**
+ * 🟢 ແປງສະຖານະ CIB ເປັນຂໍ້ຄວາມພາສາລາວ
+ */
+export const getCibLabel = (status?: string | null): string => {
+  if (!status) return 'ບໍ່ມີຂໍ້ມູນ / ບໍ່ເຄີຍມີປະຫວັດ';
+  switch (status) {
+    case 'no_delay': return 'ດີຫຼາຍ (ບໍ່ມີຊັກຊ້າ)';
+    case 'delay_30_days': return 'ດີ (ຊັກຊ້າ < 30 ວັນ)';
+    case 'delay_60_days': return 'ປານກາງ (ຊັກຊ້າ 30-60 ວັນ)';
+    case 'delay_90_days': return 'ສ່ຽງສູງ (ຊັກຊ້າ 60-90 ວັນ)';
+    case 'blacklist': return 'ບໍ່ດີ (> 90 ວັນ / Blacklist)';
+    default: return 'ບໍ່ມີຂໍ້ມູນ / ບໍ່ເຄີຍມີປະຫວັດ';
+  }
+};
+
+/**
+ * 🟢 ແປງຊື່ Role / Level ເປັນພາສາລາວ
+ */
+export const formatRoleName = (role?: string | null): string => {
+  if (!role) return '';
+  const roleMap: Record<string, string> = {
+    checker: 'ຜູ້ກວດກາ (Checker)',
+    approver: 'ຜູ້ອະນຸມັດ (Approver)',
+    admin: 'ຜູ້ດູແລລະບົບ (Admin)',
+    manager: 'ຜູ້ຈັດການ (Manager)',
+    staff: 'ພະນັກງານ (Staff)'
+  };
+  return roleMap[role.toLowerCase()] || role;
+};

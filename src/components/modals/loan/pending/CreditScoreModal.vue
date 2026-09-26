@@ -116,6 +116,8 @@ import { ref, reactive, watch, computed } from 'vue';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { usePermissionStore } from '@/stores/permission';
 import { alert } from '@/utils/alert';
+import { getCibLabel } from '@/utils/formatters';
+import { calculateAge } from '@/utils/dateUtils';
 
 const props = defineProps<{ isOpen: boolean; loan: any; summaryData: any }>();
 const emit = defineEmits<{ (e: 'close'): void; (e: 'success'): void }>();
@@ -123,8 +125,26 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'success'): void }>();
 const loanApplicationStore = useLoanApplicationStore();
 const permissionStore = usePermissionStore();
 
+interface ScoreResult {
+  score: number;
+  maxScore: number;
+  grade: string;
+  description: string;
+  colorClass: string;
+  details: {
+    ageScore: number;
+    tenureScore: number;
+    cibScore: number;
+    dsrScore: number;
+    dpScore: number;
+    factor1Max: number;
+    factor2Max: number;
+    factor5Max: number;
+  };
+}
+
 const isSaving = ref(false);
-const result = ref<any>(null);
+const result = ref<ScoreResult | null>(null);
 
 const canSaveScore = computed(() => {
   return permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_approve');
@@ -141,11 +161,6 @@ const form = reactive({
   is_gold: false
 });
 
-const getCibLabel = (status: string) => {
-  const map: Record<string, string> = { 'no_delay': 'ດີຫຼາຍ (ບໍ່ມີຊັກຊ້າ)', 'delay_30_days': 'ດີ (ຊັກຊ້າບໍ່ເກີນ 30 ວັນ)', 'delay_60_days': 'ປານກາງ (ຊັກຊ້າ 30-60 ວັນ)', 'delay_90_days': 'ສ່ຽງສູງ (ຊັກຊ້າ 60-90 ວັນ)', 'blacklist': 'ບໍ່ດີ (ຊັກຊ້າ 90+ ວັນ/Blacklist)' };
-  return map[status] || status;
-};
-
 watch(() => props.isOpen, (newVal) => {
   if (newVal && props.loan && props.summaryData) {
     result.value = null;
@@ -155,8 +170,7 @@ watch(() => props.isOpen, (newVal) => {
 
     let age = props.loan.customer?.age || 0;
     if (!age && basic.verified_dob) {
-      const diffMs = Date.now() - new Date(basic.verified_dob).getTime();
-      age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+      age = calculateAge(basic.verified_dob) || 0;
     }
     form.age = age;
 
@@ -309,7 +323,7 @@ const saveScore = async () => {
     alert.success('ບັນທຶກຄະແນນສຳເລັດ', `ສິນເຊື່ອໄດ້ຮັບ ${result.value.score} ຄະແນນ`);
     emit('success');
     close();
-  } catch (error) {
+  } catch {
     alert.error('ເກີດຂໍ້ຜິດພາດການບັນທຶກຄະແນນສິນເຊື່ອ');
   } finally {
     isSaving.value = false;

@@ -1,4 +1,4 @@
-
+<!-- eslint-disable vue/no-mutating-props -->
 <template>
   <teleport to="body">
     <div v-if="show && loan" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-60 p-4">
@@ -24,9 +24,9 @@
                 <div class="flex flex-col sm:flex-row sm:justify-between border-b border-warning/20 border-dashed pb-1">
                   <span class="font-medium">{{ diff.label }}:</span>
                   <span class="mt-1 sm:mt-0">
-                    <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(diff.schedVal)
+                    <span class="line-through text-error opacity-70 mr-2">ຕາຕະລາງເກົ່າ: {{ formatPrice(Number(diff.schedVal))
                       }}</span>
-                    <span class="font-bold text-success">👉 ໃບຄຳຂໍປັດຈຸບັນ: {{ formatPrice(diff.appVal) }}</span>
+                    <span class="font-bold text-success">👉 ໃບຄຳຂໍປັດຈຸບັນ: {{ formatPrice(Number(diff.appVal)) }}</span>
                   </span>
                 </div>
               </template>
@@ -165,7 +165,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { useLoanContractStore } from '@/stores/loanContract'
-import { usePermissionStore } from '@/stores/permission' // 🌟 1. Import Permission Store
+import { usePermissionStore } from '@/stores/permission'
 import apiClient from '@/api/apiclient'
 import { formatPrice, formatCurrencyInput, formatDateToDDMMYYYY } from '@/utils/formatters'
 import { alert } from '@/utils/alert'
@@ -180,21 +180,17 @@ const emit = defineEmits(['close'])
 
 const loanApplicationStore = useLoanApplicationStore()
 const loanContractStore = useLoanContractStore()
-const permissionStore = usePermissionStore() // 🌟 2. ປະກາດໃຊ້ Store
+const permissionStore = usePermissionStore()
 
 const isSaving = ref(false)
 
 const isScheduleSaved = ref(false)
 const hasScheduleConflict = ref(false)
-const scheduleDifferences = reactive<Record<string, any>>({})
+const scheduleDifferences = reactive<Record<string, Record<string, unknown>>>({})
 const scheduleRows = ref<any[]>([])
 
-// 🌟 3. Computed Property ສຳລັບກວດສອບສິດການແກ້ໄຂ
 const canEditSchedule = computed(() => {
-  // ຖ້າຖືກບັງຄັບ View Only ມາຈາກ Prop ກໍຫ້າມແກ້
   if (props.viewOnly) return false;
-
-  // ຖ້າບໍ່ໄດ້ຖືກບັງຄັບ ແຕ່ມີສິດໃດສິດໜຶ່ງໃນນີ້ ກໍສາມາດແກ້ໄດ້ (ເພີ່ມ loan_approve ໃຫ້ພິຈາລະນານຳ)
   return permissionStore.hasPermission('loan_edit') ||
     permissionStore.hasPermission('loan_create') ||
     permissionStore.hasPermission('loan_approve');
@@ -209,7 +205,7 @@ const triggerRowDatePicker = (e: Event) => {
 }
 
 const recalculateDatesFromIndex = (changedIndex: number) => {
-  if (!canEditSchedule.value) return; // 🌟 ເຊັກສິດ
+  if (!canEditSchedule.value) return;
 
   const changedDateStr = scheduleRows.value[changedIndex].due_date;
   if (!changedDateStr) return;
@@ -258,7 +254,7 @@ const fetchSavedSchedule = async () => {
     if (savedData && savedData.length > 0) {
       const tempRows = savedData.map((r: any) => ({
         installment_number: r.installment_no || r.installment_number,
-        due_date: r.due_date ? r.due_date.split('T')[0] : '',
+        due_date: r.due_date ? String(r.due_date).split('T')[0] : '',
         principal: Number(r.principal_amount ?? r.principal ?? 0),
         interest: Number(r.interest_amount ?? r.interest ?? 0),
         total_amount: Number(r.total_due ?? r.total_amount ?? 0),
@@ -289,7 +285,6 @@ const fetchSavedSchedule = async () => {
         if (diffMonthlyPay > 10) scheduleDifferences['monthly'] = { label: 'ຄ່າງວດຕໍ່ເດືອນ', schedVal: schedMonthlyPay, appVal: appMonthlyPay };
         if (diffTerm) scheduleDifferences['term'] = { label: 'ຈຳນວນງວດ (ເດືອນ)', schedVal: schedTerm, appVal: appTerm };
 
-        // 🌟 ຖ້າບໍ່ມີສິດແກ້ ໃຫ້ໂຊຂອງເກົ່າ
         if (!canEditSchedule.value) {
           scheduleRows.value = tempRows;
         } else {
@@ -305,7 +300,7 @@ const fetchSavedSchedule = async () => {
     } else {
       generateSchedule();
     }
-  } catch (error) {
+  } catch {
     generateSchedule();
   }
 }
@@ -344,7 +339,6 @@ const generateSchedule = () => {
     const targetMonth = startDate.getMonth() + i;
     const maxDaysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
     const actualDay = Math.min(paymentDay, maxDaysInTargetMonth);
-    // 🌟 ປະກອບ String ວັນທີໂດຍກົງ (Timezone-safe)
     const tempDate = new Date(targetYear, targetMonth, actualDay);
     const safeYear = tempDate.getFullYear();
     const safeMonth = String(tempDate.getMonth() + 1).padStart(2, '0');
@@ -390,7 +384,7 @@ const generateSchedule = () => {
 }
 
 const handleScheduleInput = (row: any, field: 'principal' | 'interest', event: Event) => {
-  if (!canEditSchedule.value) return; // 🌟 ເຊັກສິດ
+  if (!canEditSchedule.value) return;
   const target = event.target as HTMLInputElement;
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
   const numericValue = Number(rawValue);
@@ -420,7 +414,7 @@ const totalScheduleRemaining = computed(() => {
 })
 
 const saveSchedule = async () => {
-  if (!props.loan || scheduleRows.value.length === 0 || !canEditSchedule.value) return; // 🌟 ເຊັກສິດ
+  if (!props.loan || scheduleRows.value.length === 0 || !canEditSchedule.value) return;
   isSaving.value = true;
   try {
     const firstRowDate = new Date(scheduleRows.value[0].due_date);
@@ -435,17 +429,19 @@ const saveSchedule = async () => {
     await loanContractStore.updateContract(props.loan.id, {
       paymentDay: newPaymentDay,
       payment_day: newPaymentDay
-    } as any);
+    } as Record<string, unknown>);
 
     if (props.loan) {
+      /* eslint-disable vue/no-mutating-props */
       props.loan.payment_day = newPaymentDay;
     }
 
     alert.success('ບັນທຶກຕາຕະລາງສຳເລັດ!');
     isScheduleSaved.value = true;
     hasScheduleConflict.value = false;
-  } catch (error: any) {
-    alert.error('ເກີດຂໍ້ຜິດພາດ: ' + (error.response?.data?.message || error.message));
+  } catch (error: unknown) {
+    const errObj = error as { response?: { data?: { message?: string } }; message?: string };
+    alert.error('ເກີດຂໍ້ຜິດພາດ: ' + (errObj.response?.data?.message || errObj.message || 'ເກີດຂໍ້ຜິດພາດ'));
   } finally {
     isSaving.value = false;
   }
@@ -462,7 +458,7 @@ const printSchedule = async () => {
     }, { responseType: 'blob', timeout: 60000 });
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
     window.open(url, '_blank');
-  } catch (error) { alert.error('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF ຕາຕະລາງ'); } finally { isSaving.value = false; }
+    setTimeout(() => { window.URL.revokeObjectURL(url); }, 60000);
+  } catch { alert.error('ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF ຕາຕະລາງ'); } finally { isSaving.value = false; }
 }
 </script>
-

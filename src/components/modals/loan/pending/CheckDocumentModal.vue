@@ -14,50 +14,6 @@
           </button>
         </div>
 
-        <!-- <div v-if="!isEditing" class="flex-1 overflow-y-auto space-y-6 pr-2 bg-gray-50/50 p-2 sm:p-4 rounded-xl">
-          
-          <div v-if="!currentDocuments || currentDocuments.length === 0" class="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span class="icon-[tabler--file-off] size-8 text-gray-400"></span>
-            </div>
-            <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
-            <p class="text-sm text-gray-500 mt-1">ຍັງບໍ່ມີເອກະສານທີ່ອັບໂຫຼດສຳລັບລາຍການນີ້</p>
-          </div>
-
-          <template v-else>
-            <div v-for="doc in groupedDocuments" :key="doc.id" 
-                 class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-              
-              <div class="flex items-center justify-between mb-4 border-b pb-3">
-                <h4 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                  <span class="icon-[tabler--id-badge] size-5 text-primary"></span> 
-                  {{ getDocumentTypeName(doc.document_type || doc.doc_type) }}
-                </h4>
-              </div>
-
-              <div class="flex flex-wrap gap-4">
-                <div class="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50 w-full sm:w-48 group cursor-pointer shadow-sm hover:shadow-md transition-all"
-                     @click="openInNewTab(getFullImageUrl(doc.file_url))">
-                  
-                  <div class="h-32 w-full overflow-hidden bg-slate-100">
-                    <img v-if="isImage(doc.file_url)" :src="getFullImageUrl(doc.file_url) || ''" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    <div v-else class="w-full h-full flex flex-col items-center justify-center">
-                      <span class="icon-[tabler--file-type-pdf] size-10 text-red-500 mb-2"></span>
-                      <span class="text-xs text-gray-500 truncate px-2 w-full text-center">{{ doc.original_filename || doc.file_name || 'Document' }}</span>
-                    </div>
-                  </div>
-
-                  <div class="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-center py-2 text-[11px] font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                    ເບິ່ງເອກະສານ
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-
-        </div> -->
-
-
         <div v-if="!isEditing" class="flex-1 overflow-y-auto space-y-6 pr-2 bg-white sm:p-2 rounded-xl">
   
   <div v-if="!currentDocuments || currentDocuments.length === 0" class="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -279,22 +235,7 @@ const optionalDocs = ref<DocumentItem[]>([])
 const isImage = (url: string) => /\.(jpg|jpeg|png|webp|avif|gif|svg)$/i.test(url || '')
 const openInNewTab = (url: string | null | undefined) => { if (url) window.open(url, '_blank') }
 
-const sortedCurrentDocuments = computed(() => {
-  const docs = props.currentDocuments || [];
-  const orderList = ['id_card', 'house_reg', 'salary_slip', 'other'];
-  return [...docs].sort((a, b) => {
-    const typeA = a.document_type || a.doc_type || '';
-    const typeB = b.document_type || b.doc_type || '';
-    let indexA = orderList.indexOf(typeA);
-    let indexB = orderList.indexOf(typeB);
-    if (indexA === -1) indexA = 999;
-    if (indexB === -1) indexB = 999;
-    return indexA - indexB;
-  });
-})
-
-// ປ່ຽນຈາກໂຕນີ້: const sortedCurrentDocuments = computed(() => { ... })
-// ມາເປັນໂຕນີ້ແທນ:
+// ຈັດກຸ່ມເອກະສານຕາມປະເພດ
 const groupedDocuments = computed(() => {
   const docs = props.currentDocuments || [];
   const groups: Record<string, any[]> = {};

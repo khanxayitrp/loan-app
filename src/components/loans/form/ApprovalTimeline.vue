@@ -89,7 +89,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { formatDateTime, getStatusBadgeClass, getStatusText } from '@/utils/formatters';
+import { formatDateTime, getStatusBadgeClass, getStatusText, formatRoleName } from '@/utils/formatters';
 
 export interface ApprovalLog {
   id: number;
@@ -109,23 +109,10 @@ const props = defineProps<{
   logs: ApprovalLog[];
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'reply', log: ApprovalLog): void;
 }>();
 
-const formatRoleName = (role?: string) => {
-  if (!role) return '';
-  const roles: Record<string, string> = {
-    'credit_officer': 'ພະນັກງານສິນເຊື່ອ',
-    'sales': 'ພະນັກງານຂາຍ',
-    'credit_manager': 'ຫົວໜ້າສິນເຊື່ອ',
-    'approver': 'ຜູ້ອະນຸມັດ',
-    'deputy_director': 'ຮອງຜູ້ອຳນວຍການ',
-    'director': 'ຜູ້ອຳນວຍການ',
-    'admin': 'ແອັດມິນ'
-  };
-  return roles[role] || role;
-};
 
 // 🌟 O(1) Map Lookup สำหรับหาข้อความต้นฉบับ
 const logsMap = computed(() => {
