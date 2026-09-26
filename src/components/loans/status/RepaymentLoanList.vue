@@ -128,39 +128,24 @@
     </div>
 
     <!-- 🟢 ລະບົບແບ່ງໜ້າ Local -->
-    <div v-if="!isLoading && totalFiltered > 0"
-      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div class="text-gray-500">
-        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
-      </div>
-
-      <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
-          <option :value="10">10 ຕໍ່ໜ້າ</option>
-          <option :value="25">25 ຕໍ່ໜ້າ</option>
-          <option :value="50">50 ຕໍ່ໜ້າ</option>
-        </select>
-
-        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
-        <span class="px-2 font-medium">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
-      </div>
-    </div>
+    <LoanStatusPagination
+      v-if="!isLoading"
+      v-model:pageSize="pageSize"
+      :currentPage="currentPage"
+      :totalFiltered="totalFiltered"
+      :pageOptions="[10, 25, 50]"
+      @previousPage="previousPage"
+      @nextPage="nextPage"
+      @update:pageSize="resetPage"
+    />
 
     <!-- 🟢 ປຸ່ມ Load More -->
-    <div v-if="!isLoading"
-      class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed dark:border-gray-700">
-      <button v-if="loanAppStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs" @click="loadMore"
-        :disabled="loanAppStore.isLoadingMore">
-        <span v-if="loanAppStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
-        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
-        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
-      </button>
-
-      <p v-else class="text-sm text-gray-400 italic">
-        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດແລ້ວ)
-      </p>
-    </div>
+    <LoanStatusLoadMore
+      v-if="!isLoading"
+      :canLoadMore="loanAppStore.canLoadMore"
+      :isLoadingMore="loanAppStore.isLoadingMore"
+      @loadMore="loadMore"
+    />
 
     <teleport to="body">
       <div v-if="showRepaymentHub"
@@ -558,9 +543,18 @@ import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { usePermissionStore } from '@/stores/permission'
+import { useLoanStatus } from '@/composables/useLoanStatus'
 import { LoanApplicationStatus, type LoanApplication } from '@/types/loanApplication'
 import type { DeliveryReceipt } from '@/types/delivery_receipt'
+import LoanStatusPagination from './components/LoanStatusPagination.vue'
+import LoanStatusLoadMore from './components/LoanStatusLoadMore.vue'
 import { storeToRefs } from 'pinia'
+
+const {
+  formatDate,
+  getCustomerFullName: getCustomerName,
+  getContractNumber
+} = useLoanStatus()
 
 const loanAppStore = useLoanApplicationStore()
 const permissionStore = usePermissionStore()
@@ -653,24 +647,7 @@ const statusConfig: Record<string, { class: string, text: string }> = {
   overdue: { class: 'bg-error text-white', text: 'ກາຍກຳນົດ' }
 }
 
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-}
-
 const formatCurrencyInput = (val: number) => val ? val.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0';
-
-const getCustomerName = (loan: LoanApplication) => {
-  return `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.trim() || 'ບໍ່ມີຊື່';
-}
-
-const getContractNumber = (loan: LoanApplication | null): string => {
-  if (loan && loan.loan_contracts && loan.loan_contracts.length > 0 && loan.loan_contracts[0]) {
-    return loan.loan_contracts[0].loan_contract_number || '-';
-  }
-  return '-';
-};
 
 const parseAllocation = (remarks: string | null) => {
   if (!remarks) return null;

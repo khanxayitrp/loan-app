@@ -147,40 +147,23 @@
     </div>
 
     <!-- 🟢 ລະບົບແບ່ງໜ້າແບບ Local Pagination -->
-    <div v-if="!isLoading && totalFiltered > 0"
-      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div class="text-gray-500">
-        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
-      </div>
-
-      <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
-          <option :value="10">10 ຕໍ່ໜ້າ</option>
-          <option :value="25">25 ຕໍ່ໜ້າ</option>
-          <option :value="50">50 ຕໍ່ໜ້າ</option>
-          <option :value="100">100 ຕໍ່ໜ້າ</option>
-        </select>
-
-        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
-        <span class="px-3 font-medium">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
-      </div>
-    </div>
+    <LoanStatusPagination
+      v-if="!isLoading"
+      v-model:pageSize="pageSize"
+      :currentPage="currentPage"
+      :totalFiltered="totalFiltered"
+      @previousPage="previousPage"
+      @nextPage="nextPage"
+      @update:pageSize="resetPage"
+    />
 
     <!-- 🟢 ປຸ່ມ Load More ດຶງຂໍ້ມູນຈາກ Server ຖ້າຄົ້ນຫາບໍ່ເຈີ -->
-    <div v-if="!isLoading"
-      class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed dark:border-gray-700">
-      <button v-if="loanStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs" @click="loadMore"
-        :disabled="loanStore.isLoadingMore">
-        <span v-if="loanStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
-        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
-        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
-      </button>
-
-      <p v-else class="text-sm text-gray-400 italic">
-        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດແລ້ວ)
-      </p>
-    </div>
+    <LoanStatusLoadMore
+      v-if="!isLoading"
+      :canLoadMore="loanStore.canLoadMore"
+      :isLoadingMore="loanStore.isLoadingMore"
+      @loadMore="loadMore"
+    />
 
     <!-- Loan Details Modal (Read-Only) -->
     <teleport to="body">
@@ -295,7 +278,20 @@ import * as XLSX from 'xlsx'
 import { storeToRefs } from 'pinia'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
+import { useLoanStatus } from '@/composables/useLoanStatus'
 import { LoanApplicationStatus, type LoanApplication, type LoanApplicationFilters } from '@/types/loanApplication'
+import LoanStatusPagination from './components/LoanStatusPagination.vue'
+import LoanStatusLoadMore from './components/LoanStatusLoadMore.vue'
+
+const {
+  getStatusBadgeClass,
+  getStatusText,
+  formatDate: formatDateUtil,
+  getCustomerFullName,
+  getCustomerPhone
+} = useLoanStatus()
+
+const formatDate = (dateString: string | undefined): string => formatDateUtil(dateString, true)
 
 // 📦 ใช้ Pinia Store
 const loanStore = useLoanApplicationStore()
@@ -419,62 +415,6 @@ const hasNextPage = computed(() => currentPage.value < totalPages.value)
 const previousPage = () => { if (hasPreviousPage.value) currentPage.value-- }
 const nextPage = () => { if (hasNextPage.value) currentPage.value++ }
 
-// 🏷️ Status Badge Class
-const getStatusBadgeClass = (status: string): string => {
-  const map: Record<string, string> = {
-    'pending': 'bg-slate-400',
-    'verifying': 'bg-amber-500',
-    'verified': 'bg-blue-500',
-    'approved': 'bg-emerald-500',
-    'disbursed': 'bg-indigo-600',
-    'rejected': 'bg-rose-500',
-    'cancelled': 'bg-gray-600',
-    'completed': 'bg-gray-800',
-    'draft': 'bg-gray-300 text-gray-800'
-  }
-  return map[status] || 'bg-gray-400'
-}
-
-// 📝 Status Text (Lao)
-const getStatusText = (status: string): string => {
-  const map: Record<string, string> = {
-    'pending': 'ຄຳຂໍໃໝ່',
-    'verifying': 'ກຳລັງກວດສອບ',
-    'verified': 'ລໍຖ້າອະນຸມັດ',
-    'approved': 'ອະນຸມັດແລ້ວ',
-    'disbursed': 'ປ່ອຍສິນເຊື່ອແລ້ວ',
-    'rejected': 'ປະຕິເສດ',
-    'cancelled': 'ຍົກເລີກ',
-    'completed': 'ປິດບັນຊີ (ສຳເລັດ)',
-    'draft': 'ຮ່າງ'
-  }
-  return map[status] || status
-}
-
-// 📅 Format Date
-const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('lo-LA', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-// 👤 Get Customer Full Name
-const getCustomerFullName = (loan: LoanApplication): string => {
-  if (loan.customer) {
-    return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim() || 'ບໍ່ຮູ້ຊື່'
-  }
-  return 'ບໍ່ຮູ້ຊື່'
-}
-
-// 📞 Get Customer Phone
-const getCustomerPhone = (loan: LoanApplication): string => {
-  return loan.customer?.phone || '-'
-}
 
 // 📋 View Details (Read Only)
 const viewLoanDetails = async (loan: LoanApplication) => {

@@ -173,40 +173,24 @@
     </div>
 
     <!-- 🟢 ລະບົບແບ່ງໜ້າແບບ Local Pagination -->
-    <div v-if="!isLoading && totalFiltered > 0"
-      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div class="text-gray-500">
-        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
-      </div>
-
-      <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
-          <option :value="10">10 ຕໍ່ໜ້າ</option>
-          <option :value="25">25 ຕໍ່ໜ້າ</option>
-          <option :value="50">50 ຕໍ່ໜ້າ</option>
-          <option :value="100">100 ຕໍ່ໜ້າ</option>
-        </select>
-
-        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
-        <span class="px-3 font-medium">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
-      </div>
-    </div>
+    <LoanStatusPagination
+      v-if="!isLoading"
+      v-model:pageSize="pageSize"
+      :currentPage="currentPage"
+      :totalFiltered="totalFiltered"
+      @previousPage="previousPage"
+      @nextPage="nextPage"
+      @update:pageSize="resetPage"
+    />
 
     <!-- 🟢 ປຸ່ມ Load More ດຶງຂໍ້ມູນຈາກ Server ຖ້າຄົ້ນຫາບໍ່ເຈີ -->
-    <div v-if="!isLoading"
-      class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed dark:border-gray-700">
-      <button v-if="loanApplicationStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs"
-        @click="loadMore" :disabled="loanApplicationStore.isLoadingMore">
-        <span v-if="loanApplicationStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
-        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
-        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
-      </button>
-
-      <p v-else class="text-sm text-gray-400 italic">
-        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດ {{ loanApplicationStore.totalRecords }} ລາຍການແລ້ວ)
-      </p>
-    </div>
+    <LoanStatusLoadMore
+      v-if="!isLoading"
+      :canLoadMore="loanApplicationStore.canLoadMore"
+      :isLoadingMore="loanApplicationStore.isLoadingMore"
+      :totalRecords="loanApplicationStore.totalRecords"
+      @loadMore="loadMore"
+    />
 
     <!-- Modals (ອັນເກົ່າທັງໝົດ ຮັກສາໄວ້ຄືເດີມ) -->
     <teleport to="body">
@@ -567,6 +551,16 @@ import LoanScheduleModal from '@/components/modals/loan/detail/LoanScheduleModal
 import ExternalSignatureModal from '@/components/modals/loan/pending/ExternalSignatureModal.vue';
 import DeliveryNoteModal from '@/components/modals/loan/pending/DeliveryNoteModal.vue';
 import PrintSummaryModal from '@/components/modals/loan/pending/PrintSummaryModal.vue';
+import LoanStatusPagination from './components/LoanStatusPagination.vue';
+import LoanStatusLoadMore from './components/LoanStatusLoadMore.vue';
+import { useLoanStatus } from '@/composables/useLoanStatus';
+
+const {
+  formatDate,
+  getCustomerFullName: getCustomerName,
+  getCustomerPhone,
+  getContractNumber
+} = useLoanStatus();
 
 const loanApplicationStore = useLoanApplicationStore();
 const loanContractStore = useLoanContractStore();
@@ -649,22 +643,6 @@ const statusConfig: Record<string, { class: string, text: string }> = {
   overdue: { class: 'bg-error text-white', text: 'ກາຍກຳນົດ' }
 };
 
-const getContractNumber = (loan: LoanApplication | null): string => {
-  if (loan && loan.loan_contracts && loan.loan_contracts.length > 0 && loan.loan_contracts[0]) {
-    return loan.loan_contracts[0].loan_contract_number || '-';
-  }
-  return '-';
-};
-
-const getCustomerName = (loan: LoanApplication): string => {
-  if (!loan.customer) return '-';
-  return `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.trim();
-};
-
-const getCustomerPhone = (loan: LoanApplication): string => {
-  return loan.customer?.phone || '-';
-};
-
 const getDisbursementBadgeClass = (loan: LoanApplication): string => {
   if (loan && loan.status && ['disbursed', 'completed', 'closed'].includes(loan.status)) return 'bg-indigo-600';
   return 'bg-emerald-500';
@@ -673,13 +651,6 @@ const getDisbursementBadgeClass = (loan: LoanApplication): string => {
 const getDisbursementStatusText = (loan: LoanApplication): string => {
   if (['disbursed', 'completed', 'closed'].includes(loan.status)) return 'ຈ່າຍເງິນແລ້ວ (Disbursed)';
   return 'ອະນຸມັດແລ້ວ (Approved)';
-};
-
-const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return '-';
-  const d = new Date(dateString);
-  if (isNaN(d.getTime())) return '-';
-  return d.toLocaleDateString('lo-LA');
 };
 
 const hasContract = (loan: LoanApplication): boolean => {

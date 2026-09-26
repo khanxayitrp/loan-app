@@ -240,39 +240,23 @@
     </div>
 
     <!-- 🟢 ລະບົບແບ່ງໜ້າແບບ Local Pagination -->
-    <div v-if="!isLoading && totalFiltered > 0"
-      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div class="text-gray-500">
-        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
-      </div>
-
-      <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
-          <option :value="10">10 ຕໍ່ໜ້າ</option>
-          <option :value="25">25 ຕໍ່ໜ້າ</option>
-          <option :value="50">50 ຕໍ່ໜ້າ</option>
-          <option :value="100">100 ຕໍ່ໜ້າ</option>
-        </select>
-
-        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
-        <span class="px-3 font-medium">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
-      </div>
-    </div>
+    <LoanStatusPagination
+      v-if="!isLoading"
+      v-model:pageSize="pageSize"
+      :currentPage="currentPage"
+      :totalFiltered="totalFiltered"
+      @previousPage="previousPage"
+      @nextPage="nextPage"
+      @update:pageSize="resetPage"
+    />
 
     <!-- 🟢 ປຸ່ມ Load More ດຶງຂໍ້ມູນຈາກ Server ຖ້າຄົ້ນຫາບໍ່ເຈີ -->
-    <div v-if="!isLoading" class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed">
-      <button v-if="loanApplicationStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs"
-        @click="loadMore" :disabled="loanApplicationStore.isLoadingMore">
-        <span v-if="loanApplicationStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
-        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
-        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
-      </button>
-
-      <p v-else class="text-sm text-gray-400 italic">
-        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດແລ້ວ)
-      </p>
-    </div>
+    <LoanStatusLoadMore
+      v-if="!isLoading"
+      :canLoadMore="loanApplicationStore.canLoadMore"
+      :isLoadingMore="loanApplicationStore.isLoadingMore"
+      @loadMore="loadMore"
+    />
 
     <ScoringGuideModal :is-open="showScoringGuideModal" @close="showScoringGuideModal = false" />
     <VerifyLoanModal :is-open="showVerifyModal" :loan="loanToAction || undefined"
@@ -578,6 +562,15 @@ import LoanScheduleModal from '@/components/modals/loan/detail/LoanScheduleModal
 import LoanContractForm from '@/components/loans/form/LoanContractForm.vue';
 import DocumentModalForm from '@/components/modals/loan/pending/CheckDocumentModal.vue';
 import ApprovalTimeline from '@/components/loans/form/ApprovalTimeline.vue';
+import LoanStatusPagination from './components/LoanStatusPagination.vue';
+import LoanStatusLoadMore from './components/LoanStatusLoadMore.vue';
+import { useLoanStatus } from '@/composables/useLoanStatus';
+
+const {
+  formatDate,
+  getCustomerFullName: getCustomerName,
+  getCustomerPhone
+} = useLoanStatus();
 
 const route = useRoute();
 const router = useRouter();
@@ -854,9 +847,6 @@ const getStatusBadge = (status: string) => {
 }
 
 const hasContract = (loan: LoanApplication): boolean => !!(loan.loan_contracts && loan.loan_contracts.length > 0);
-const formatDate = (dateString: string | undefined): string => { if (!dateString) return '-'; return new Date(dateString).toLocaleDateString('lo-LA'); }
-const getCustomerName = (loan: LoanApplication): string => { if (!loan.customer) return '-'; return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim(); }
-const getCustomerPhone = (loan: LoanApplication): string => loan.customer?.phone || '-';
 
 const viewLoanDetails = async (loan: LoanApplication) => {
   try {
