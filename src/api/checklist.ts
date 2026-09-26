@@ -1,3 +1,4 @@
+
 import apiClient from './apiclient'
 
 export const checklistApi = {
@@ -20,3 +21,4 @@ export const checklistApi = {
     return apiClient.post(`/checklist/income-assessment/${loanId}`, data);
   }
 };
+

@@ -1,3 +1,4 @@
+
 // src/stores/shop.ts
 import { defineStore } from 'pinia'
 import { getFullImageUrl } from '@/utils/url'
@@ -257,3 +258,4 @@ export const useShopStore = defineStore('shop', {
   }
 
 })
+

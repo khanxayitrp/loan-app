@@ -1,3 +1,4 @@
+
 // src/utils/alert.ts
 import Swal from 'sweetalert2';
 
@@ -23,6 +24,17 @@ export const alert = {
       text,
       showConfirmButton: false,
       timer: 2000,
+    });
+  },
+  /**
+   * 🌟 เพิ่มฟังก์ชันแจ้งเตือนแบบเตือน (Warning)
+   */
+  warning(title: string, text: string = '') {
+    return BaseSwal.fire({
+      icon: 'warning',
+      title,
+      text,
+      confirmButtonText: 'ຕົກລົງ',
     });
   },
 
@@ -71,6 +83,17 @@ export const alert = {
     });
     return result.isConfirmed;
   },
+  async prompt(title: string, htmlText: string, inputPlaceholder: string = ''): Promise<string | null> {
+    const result = await BaseSwal.fire({
+      icon: 'warning', title, html: htmlText, input: 'text', inputPlaceholder,
+      showCancelButton: true, confirmButtonText: 'ຢືນຢັນ', cancelButtonText: 'ຍົກເລີກ',
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (!value) return 'ກະລຸນາປ້ອນຂໍ້ມູນກ່ອນຢືນຢັນ!';
+      }
+    });
+    return result.isConfirmed ? result.value : null;
+  },
 
   /**
    * แสดงหน้าจอ Loading บล็อกไม่ให้ผู้ใช้กดอย่างอื่น
@@ -94,3 +117,4 @@ export const alert = {
     Swal.close();
   }
 };
+

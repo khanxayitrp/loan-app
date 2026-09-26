@@ -1,7 +1,10 @@
+
 <template>
   <teleport to="body">
-    <div v-if="isOpen && loan" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-auto animate-in fade-in zoom-in duration-200 overflow-hidden">
+    <div v-if="isOpen && loan"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-auto animate-in fade-in zoom-in duration-200 overflow-hidden">
 
         <div class="bg-info/10 px-6 py-4 border-b border-info/20">
           <h3 class="font-bold text-xl text-info flex items-center gap-2">
@@ -16,18 +19,38 @@
             ຄົບຖ້ວນແລ້ວແມ່ນບໍ່?
           </p>
 
-
-          <div class="form-control bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-4">
+          <div
+            class="form-control bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-4">
             <label class="label pb-1">
               <span class="label-text font-bold text-gray-700 dark:text-gray-300">
-                ກຳນົດວັນທີຊຳລະເງິນ (Payment Day)
+                ກຳນົດວັນທີຊຳລະງວດທຳອິດ (First Due Date)
               </span>
             </label>
-            <input v-model.number="paymentDay" type="number" min="1" max="31" class="input input-bordered w-full bg-white dark:bg-gray-800 focus:border-info focus:ring-1 focus:ring-info" placeholder="ລະບຸວັນທີ 1-31" />
+
+            <div class="flex flex-col gap-2 mt-2 mb-3">
+              <label class="cursor-pointer flex items-center gap-2">
+                <input type="radio" v-model="paymentDateOption" value="keep" class="radio radio-info radio-sm"
+                  :disabled="!loan?.payment_day" />
+                <span class="text-sm text-gray-700 dark:text-gray-300" :class="{ 'opacity-50': !loan?.payment_day }">
+                  ຮັກສາວັນທີຊຳລະເດີມ <span v-if="loan?.payment_day">(ທຸກໆວັນທີ {{ loan.payment_day }})</span>
+                </span>
+              </label>
+              <label class="cursor-pointer flex items-center gap-2">
+                <input type="radio" v-model="paymentDateOption" value="change" class="radio radio-info radio-sm" />
+                <span class="text-sm text-gray-700 dark:text-gray-300">ກຳນົດວັນທີຊຳລະໃໝ່ (ເລືອກວັນທີ, ເດືອນ, ປີ)</span>
+              </label>
+            </div>
+
+            <!-- 🌟 ປ່ຽນມາໃຊ້ type="date" ເພື່ອໃຫ້ເລືອກໄດ້ທັງ ເດືອນ ແລະ ປີ -->
+            <div class="relative">
+              <input v-model="firstPaymentDate" type="date"
+                class="input input-bordered w-full bg-white dark:bg-gray-800 focus:border-info focus:ring-1 focus:ring-info disabled:bg-gray-200 disabled:text-gray-500 disabled:border-gray-300 cursor-pointer"
+                :disabled="paymentDateOption === 'keep'" />
+            </div>
           </div>
 
-          <div class="form-control bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-
+          <div
+            class="form-control bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
             <label class="label pb-1">
               <span class="label-text font-bold text-gray-700 dark:text-gray-300">
                 ຄວາມເຫັນຂອງຜູ້ກວດກາ (Checker's Remark)
@@ -35,15 +58,14 @@
             </label>
             <p class="text-xs text-gray-500 mb-3">ສາມາດລະບຸຄວາມເຫັນເພີ່ມເຕີມເພື່ອໃຫ້ຜູ້ບໍລິຫານພິຈາລະນາ.</p>
 
-            <textarea
-              v-model="verifyRemark"
+            <textarea v-model="verifyRemark"
               class="textarea textarea-bordered w-full h-24 bg-white dark:bg-gray-800 focus:border-info focus:ring-1 focus:ring-info"
-              placeholder="ເຊັ່ນ: ເອກະສານຄົບຖ້ວນ, ລູກຄ້າມີກຳລັງຊຳລະດີ ເຫັນຄວນພິຈາລະນາອະນຸມັດ..."
-            ></textarea>
+              placeholder="ເຊັ່ນ: ເອກະສານຄົບຖ້ວນ, ລູກຄ້າມີກຳລັງຊຳລະດີ ເຫັນຄວນພິຈາລະນາອະນຸມັດ..."></textarea>
           </div>
         </div>
 
-        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/80 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
+        <div
+          class="px-6 py-4 bg-gray-50 dark:bg-gray-900/80 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
           <button class="btn btn-ghost" @click="close">ຍົກເລີກ</button>
           <button class="btn btn-info text-white shadow-sm hover:shadow-md" @click="submit" :disabled="isLoading">
             <span v-if="isLoading" class="loading loading-spinner loading-xs"></span>
@@ -70,14 +92,21 @@ const loanApplicationStore = useLoanApplicationStore();
 const authStore = useAuthStore();
 
 const verifyRemark = ref('');
-const paymentDay = ref<number | null>(null);
+const paymentDateOption = ref<'keep' | 'change'>('keep');
+
+// 🌟 ປ່ຽນຈາກການເກັບແຕ່ຕົວເລກ ມາເກັບເປັນ String Date (YYYY-MM-DD)
+const firstPaymentDate = ref<string>('');
+const isLoading = ref(false);
 
 watch(() => props.loan, (newVal) => {
   if (newVal && newVal.payment_day) {
-    paymentDay.value = Number(newVal.payment_day);
+    paymentDateOption.value = 'keep';
+    firstPaymentDate.value = '';
+  } else {
+    paymentDateOption.value = 'change';
+    firstPaymentDate.value = '';
   }
 }, { immediate: true });
-const isLoading = ref(false);
 
 const customerName = computed(() => {
   if (!props.loan?.customer) return '-';
@@ -86,12 +115,19 @@ const customerName = computed(() => {
 
 const close = () => {
   verifyRemark.value = '';
-  paymentDay.value = null;
+  firstPaymentDate.value = '';
   emit('close');
 };
 
 const submit = async () => {
   if (!props.loan) return;
+
+  // 🟢 ກວດສອບຄວາມຖືກຕ້ອງ ຖ້າເລືອກ "ກຳນົດວັນທີໃໝ່" ຕ້ອງມີການເລືອກວັນທີ
+  if (paymentDateOption.value === 'change' && !firstPaymentDate.value) {
+    alert.error('ຂໍ້ມູນບໍ່ຖືກຕ້ອງ', 'ກະລຸນາເລືອກວັນທີຊຳລະງວດທຳອິດໃນປະຕິທິນ');
+    return;
+  }
+
   isLoading.value = true;
 
   try {
@@ -101,10 +137,19 @@ const submit = async () => {
       approver_id: authStore.user?.id
     };
 
-    if (paymentDay.value !== null) {
-      updateData.payment_day = paymentDay.value;
-    }
+    // 🟢 ສົ່ງຄ່າ Payment Date ແລະ Payment Day ໄປໃຫ້ Backend
+    if (paymentDateOption.value === 'change' && firstPaymentDate.value) {
+      const selectedDate = new Date(firstPaymentDate.value);
 
+      // ສົ່ງວັນທີເຕັມ (YYYY-MM-DD) ໄປໃຫ້ Backend ເພື່ອໃຊ້ສ້າງຕາຕະລາງເລີ່ມຕົ້ນທີ່ເດືອນໃດກໍໄດ້
+      updateData.first_due_date = firstPaymentDate.value;
+
+      // ແຍກເອົາສະເພາະ "ວັນທີ" (1-31) ສົ່ງໄປນຳ ເພື່ອໃຫ້ Backend ເອົາໄປອັບເດດໃນຖັນ payment_day
+      updateData.payment_day = selectedDate.getDate();
+
+    } else if (paymentDateOption.value === 'keep' && props.loan.payment_day) {
+      updateData.payment_day = props.loan.payment_day;
+    }
 
     if (verifyRemark.value.trim()) {
       updateData.remarks = verifyRemark.value.trim();
@@ -123,3 +168,4 @@ const submit = async () => {
   }
 };
 </script>
+

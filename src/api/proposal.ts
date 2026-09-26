@@ -1,3 +1,4 @@
+
 import apiClient from './apiclient'
 import type { WorkInfo, Guarantor } from '@/types/loanApplication'
 
@@ -53,3 +54,4 @@ export const saveCustProposal = async (customerId: number, loan_id: number, data
     throw new Error(error.response?.data?.message || 'Failed to create proposal');
   }
 }
+

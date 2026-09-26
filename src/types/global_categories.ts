@@ -1,3 +1,4 @@
+
 // src/types/global_categories.ts
 
 export interface GlobalCategory {
@@ -20,3 +21,4 @@ export interface CreateGlobalCategoryDto {
 
 // ข้อมูลสำหรับตอนแก้ไขหมวดหมู่ (ส่งแค่บางฟิลด์ที่ต้องการแก้ได้)
 export type UpdateGlobalCategoryDto = Partial<CreateGlobalCategoryDto>;
+

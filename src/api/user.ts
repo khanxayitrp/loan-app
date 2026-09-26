@@ -1,3 +1,4 @@
+
 // src/api/auth.ts
 import apiClient from './apiclient'
 import type {
@@ -10,7 +11,7 @@ export const updateUser = async (userId: number, userData: {
   // email?: string
   role?: 'admin' | 'staff' | 'partner' | 'customer'
   full_name?: string
-  staff_level?: 'requester' | 'approver' | 'none'
+  staff_level?: 'assistant_director' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none'
 }): Promise<{ message: string; user: User }> => {
   const response = await apiClient.put<{ message: string; user: User }>(`/users/${userId}`, userData)
   return response.data
@@ -33,3 +34,4 @@ export const deleteUser = async (userId: number): Promise<{ message: string }> =
   const response = await apiClient.delete<{ message: string }>(`/users/${userId}`)
   return response.data
 }
+

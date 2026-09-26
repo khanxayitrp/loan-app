@@ -1,3 +1,4 @@
+
 import { defineStore } from 'pinia';
 import {
   createDeliveryReceipt,
@@ -105,3 +106,4 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipt', {
     }
   }
 });
+

@@ -1,4 +1,5 @@
 
+
 // src/types/loanContract.ts
 
 /**
@@ -7,6 +8,7 @@
  */
 export interface LoanContract {
   id?: number;
+  loan_contract_number?: string;
   loanId: number;
   cusFullName: string;
   cusSex: string;
@@ -14,7 +16,8 @@ export interface LoanContract {
   cusPhone: string;
   cusMaritalStatus: string;
   cusIdPassNumber: string;
-  cusIdPassDate?: string | null;
+  cusIdPassDateStart?: string | null;
+  cusIdPassDateExpired?: string | null;
   cusCensusNumber?: string | null;
   cusCensusCreated?: string | null;
   cusCensusAuthorizeBy: string;
@@ -28,6 +31,7 @@ export interface LoanContract {
   cusCompanyBusinessType: string;
   cusCompanyLocation: string;
   cusCompanyWorkYear: number;
+  cusCompanyWorkMonth: number;
   cusPosition: string;
   cusIncome?: number | null;
   cusPayrollDate?: string | null;
@@ -61,7 +65,8 @@ export interface LoanContract {
   refSex: string;
   refMaritalStatus: string;
   refIdPassNumber: string;
-  refIdPassDate?: string | null;
+  refIdPassDateStart?: string | null;
+  refIdPassDateExpired?: string | null;
   refCensusNumber?: string | null;
   refCensusCreated?: string | null;
   refCensusAuthorizeBy: string;
@@ -89,3 +94,4 @@ export interface LoanContract {
 }
 
 export type CreateLoanContractRequest = Omit<LoanContract, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;
+

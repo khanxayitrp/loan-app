@@ -1,11 +1,12 @@
+
 <template>
   <div
     class="flex h-auto min-h-screen items-center justify-center overflow-x-hidden bg-[url('https://cdn.flyonui.com/fy-assets/blocks/marketing-ui/auth/auth-background-2.png')] bg-cover bg-center bg-no-repeat py-10">
     <div class="relative flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div class="bg-base-100 shadow-base-300/20 z-1 w-full space-y-6 rounded-xl p-6 shadow-md sm:min-w-md lg:p-8">
         <div class="flex items-center gap-3">
-          <img src="/image/LOGO INSEE.png" class="size-8" alt="brand-logo" />
-          <h2 class="text-base-content text-xl font-bold">ສະຖາບັນການເງິນຈຸລະພາກທີ່ບໍ່ຮັບເງິນຝາກອິນຊີ</h2>
+          <img src="/image/LOGO INSEE 2026.png" class="size-8" alt="brand-logo" />
+          <h2 class="text-base-content text-xl font-bold">ສະຖາບັນການເງິນຈຸລະພາກທີ່ຮັບເງິນຝາກອິນຊີ</h2>
         </div>
 
         <div>
@@ -54,6 +55,8 @@
   </div>
 </template>
 
+<!-- ส่วน <template> คืนค่าตามเดิม -->
+
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -89,7 +92,7 @@ const handleLogin = async () => {
       return
     }
 
-    // 2. ໂຫຼດຂໍ້ມູນ Auth ຄືນໃໝ່ໃຫ້ໝັ້ນໃຈ
+    // โหลดข้อมูล Auth และสิทธิ์คืนใหม่
     await authStore.checkAuth()
     const user = authStore.currentUser
 
@@ -98,38 +101,37 @@ const handleLogin = async () => {
       return
     }
 
-    // 3. 🛡️ ຖ້າເປັນການລັອກອິນຄັ້ງທຳອິດ -> ບັງຄັບປ່ຽນລະຫັດ
     const loginCount = await authStore.checkFirstLogin()
     if (loginCount === 0 || loginCount === 1) {
-       router.replace({ name: 'ChangeMyPassword' }) // ⚡️ ໃຊ້ replace
-       return
+      router.replace({ name: 'ChangeMyPassword' })
+      return
     }
 
-    // 4. ✅ ກວດສອບ Redirect Query ຫຼື Redirect ຕາມ Role
     const redirect = router.currentRoute.value.query.redirect as string | undefined
 
     if (redirect) {
-      router.replace(redirect) // ⚡️ ໃຊ້ replace
+      router.replace(redirect)
     } else {
-      // Logic ການ Redirect ຕາມ Role
       const role = user.role.toLowerCase()
 
       if (role === 'admin') {
         router.replace({ name: 'DashboardHome' })
       } else if (role === 'partner') {
-      router.replace({ name: 'PartnerDashboard' }); // 👈 Partner ໄປ Partner Dashboard
-    } else if (role === 'staff') {
-        // 👈 ສຳລັບ Staff ເຊັກຕາມສິດທີ່ພວກເຂົາມີ
-      if (permissionStore.hasPermission('view_admin_dashboard')) {
-        router.replace({ name: 'DashboardHome' });
-      } else if (permissionStore.hasPermission('loan_view_all')) {
-        router.replace({ name: 'LoanListAll' });
-      } else if (permissionStore.hasPermission('loan_view_assigned')) {
-        router.replace({ name: 'ListLoans' });
+        router.replace({ name: 'PartnerDashboard' })
+      } else if (role === 'auditor') {
+        router.replace({ name: 'DashboardHome' })
+      } else if (role === 'staff') {
+        // 🌟 ໃຫ້ Staff ເຊັກຕາມສິດທີ່ພວກເຂົາມີ (เรียงลำดับให้ตรงกับ Router)
+        if (permissionStore.hasPermission('view_admin_dashboard')) {
+          router.replace({ name: 'DashboardHome' })
+        } else if (permissionStore.hasPermission('loan_view_all')) {
+          router.replace({ name: 'LoanListAll' })
+        } else if (permissionStore.hasPermission('loan_view_assigned')) {
+          router.replace({ name: 'PendingLoans' })
+        } else {
+          router.replace({ name: 'Unauthorized' }) // ຖ້າບໍ່ມີສິດຫຍັງເລີຍ
+        }
       } else {
-        router.replace({ name: 'PendingLoans' }); // ຄ່າເລີ່ມຕົ້ນຂອງ Staff
-      }
-      }  else {
         router.replace({ name: 'PendingLoans' })
       }
     }
@@ -140,3 +142,4 @@ const handleLogin = async () => {
   }
 }
 </script>
+

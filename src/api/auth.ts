@@ -1,3 +1,4 @@
+
 // src/api/auth.ts
 import apiClient from './apiclient'
 import type {
@@ -83,7 +84,7 @@ export const registerUser = async (userData: {
   password: string
   role: 'admin' | 'staff' | 'partner' | 'customer'
   full_name: string
-  staff_level?: 'requester' | 'approver' | 'none'
+  staff_level?: 'assistant_director' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none'
 }): Promise<{ message: string; user: User }> => {
   try {
     console.log('REGISTER → Sending request with data:', userData)
@@ -102,8 +103,8 @@ export const registerUser = async (userData: {
 
     // ✅ แสดง error message จาก backend
     const errorMessage = error.response?.data?.message ||
-                        error.response?.data?.error ||
-                        'เกิดข้อผิดพลาดในการสร้างผู้ใช้'
+      error.response?.data?.error ||
+      'เกิดข้อผิดพลาดในการสร้างผู้ใช้'
 
     throw new Error(errorMessage)
   }
@@ -131,3 +132,4 @@ export const LoginCount = async (): Promise<{ count: number }> => {
     throw new Error(error.response?.data?.message || 'Failed to fetch login count')
   }
 }
+

@@ -1,3 +1,4 @@
+
 // src/api/global_categories.ts
 import apiClient from './apiclient';
 import type {
@@ -88,3 +89,4 @@ export const deleteGlobalCategory = async (id: number): Promise<boolean> => {
     throw new Error(error.response?.data?.message || 'ລຶບໝວດໝູ່ກາງລົ້ມເຫຼວ');
   }
 };
+

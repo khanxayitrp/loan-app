@@ -1,3 +1,4 @@
+
 <template>
   <div class="loan-contract-form-container">
     <div v-if="isLoadingForm" class="text-center py-12">
@@ -7,19 +8,21 @@
 
     <div v-else class="loan-contract-form">
       <div class="print-button-container flex flex-col gap-2">
-        <button @click="printRequestForm" class="btn btn-info btn-sm gap-2 shadow-md text-white" :disabled="!canPrintProposal || isGeneratingPDF">
+        <button @click="printRequestForm" class="btn btn-info btn-sm gap-2 shadow-md text-white"
+          :disabled="!canPrintProposal || isGeneratingPDF">
           <span v-if="isGeneratingPDF" class="loading loading-spinner loading-xs"></span>
           <span v-else class="icon-[tabler--file-text] size-4"></span>
           ພິມໃບສະເໜີຂໍກູ້
         </button>
-        <button @click="printContract" class="btn btn-primary btn-sm gap-2 shadow-md" :disabled="!canPrintContract || isGeneratingPDF">
+        <button @click="printContract" class="btn btn-primary btn-sm gap-2 shadow-md"
+          :disabled="!canPrintContract || isGeneratingPDF">
           <span v-if="isGeneratingPDF" class="loading loading-spinner loading-xs"></span>
           <span v-else class="icon-[tabler--printer] size-4"></span>
           ພິມສັນຍາກູ້ຢືມ
         </button>
       </div>
 
-      <div v-if="!isEditing" class="edit-button-container">
+      <div v-if="!isEditing && !viewOnly" class="edit-button-container">
         <button @click="enableEdit" class="btn btn-warning btn-sm gap-2 shadow-md">
           <span class="icon-[tabler--pencil] size-4"></span>
           ແກ້ໄຂຂໍ້ມູນ
@@ -37,7 +40,8 @@
 
         <h1 class="contract-title">ຂໍ້ມູນສັນຍາກູ້ຢືມປະເພດສິນເຊື່ອຊົມໃຊ້</h1>
 
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 flex flex-wrap gap-6 justify-center items-center">
+        <div
+          class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 flex flex-wrap gap-6 justify-center items-center">
           <div class="flex items-center gap-2">
             <span class="font-bold">ເລກທີສັນຍາ:</span>
             <input v-model="formData.contractNumber" type="text" :readonly="!isEditing"
@@ -58,34 +62,33 @@
 
         <div class="flex justify-center gap-6 mb-8">
           <label class="cursor-pointer flex items-center gap-2">
-            <input type="checkbox" v-model="formData.productType.gold" :disabled="!isEditing" class="checkbox checkbox-primary" />
+            <input type="checkbox" v-model="formData.productType.gold" :disabled="!isEditing"
+              class="checkbox checkbox-primary" />
             <span class="font-medium">ສິນຄ້າຄຳ</span>
           </label>
           <label class="cursor-pointer flex items-center gap-2">
-            <input type="checkbox" v-model="formData.productType.general" :disabled="!isEditing" class="checkbox checkbox-primary" />
+            <input type="checkbox" v-model="formData.productType.general" :disabled="!isEditing"
+              class="checkbox checkbox-primary" />
             <span class="font-medium">ສິນຄ້າທົ່ວໄປ</span>
           </label>
           <label class="cursor-pointer flex items-center gap-2">
-            <input type="checkbox" v-model="formData.productType.motorcycle" :disabled="!isEditing" class="checkbox checkbox-primary" />
+            <input type="checkbox" v-model="formData.productType.motorcycle" :disabled="!isEditing"
+              class="checkbox checkbox-primary" />
             <span class="font-medium">ສິນຄ້າລົດຈັກ</span>
           </label>
         </div>
       </div>
 
       <form @submit.prevent="saveForm" class="space-y-8">
-        
-        <CustomerSection :data="formData.customer" :is-editing="isEditing" />
-        
-        <WorkSection :data="formData.work" :is-editing="isEditing" />
-        
-        <ProductSection 
-          :data="formData.product" 
-          :product-type="formData.productType"
-          :is-editing="isEditing" 
-          :has-conflict="hasProductConflict"
-          @recalculate="calculateLoanDetails"
+
+        <CustomerSection ref="customerSectionRef" :data="formData.customer" :is-editing="isEditing" />
+
+        <WorkSection ref="workSectionRef" :data="formData.work" :is-editing="isEditing" />
+
+        <ProductSection ref="productSectionRef" :data="formData.product" :product-type="formData.productType"
+          :is-editing="isEditing" :has-conflict="hasProductConflict" @recalculate="calculateLoanDetails"
           @sync="syncProductWithApplication">
-          
+
           <template #warnings v-if="hasProductConflict">
             <div class="alert alert-warning shadow-sm mb-6 flex-row items-start p-3">
               <span class="icon-[tabler--alert-triangle] size-6 shrink-0 mt-0.5"></span>
@@ -111,20 +114,13 @@
         </ProductSection>
 
         <ShopSection :data="formData.shop" :is-editing="isEditing" />
-        
-        <GuarantorSection 
-          :data="formData.guarantor" 
-          :has-guarantor="formData.hasGuarantor"
-          :has-reference="formData.hasReference"
-          :is-editing="isEditing"
-          @update:hasGuarantor="formData.hasGuarantor = $event"
-          @update:hasReference="formData.hasReference = $event" />
-          
-        <GuarantorWorkSection 
-          :data="formData.guarantorWork" 
-          :has-guarantor="formData.hasGuarantor"
-          :has-reference="formData.hasReference"
-          :is-editing="isEditing" />
+
+        <GuarantorSection ref="guarantorSectionRef" :data="formData.guarantor" :has-guarantor="formData.hasGuarantor"
+          :has-reference="formData.hasReference" :is-editing="isEditing"
+          @update:hasGuarantor="formData.hasGuarantor = $event" @update:hasReference="formData.hasReference = $event" />
+
+        <GuarantorWorkSection ref="guarantorWorkSectionRef" :data="formData.guarantorWork"
+          :has-guarantor="formData.hasGuarantor" :has-reference="formData.hasReference" :is-editing="isEditing" />
 
         <div v-if="isEditing" class="flex justify-end gap-4 mt-8 pt-4 border-t">
           <button type="button" class="btn btn-ghost" @click="cancelEdit">ຍົກເລີກ</button>
@@ -138,7 +134,8 @@
   </div>
 
   <teleport to="body">
-    <div v-if="isGeneratingPDF" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
+    <div v-if="isGeneratingPDF"
+      class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white transition-opacity duration-300">
       <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
       <h2 class="text-xl font-bold tracking-wide">ກຳລັງສ້າງເອກະສານ PDF...</h2>
       <p class="text-sm mt-2 opacity-80">ກະລຸນາລໍຖ້າຈັກໜ້ອຍ ລະບົບກຳລັງປະມວນຜົນຂໍ້ມູນ</p>
@@ -146,20 +143,27 @@
   </teleport>
 
   <teleport to="body">
-    <div v-if="showPdfPreview" class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+    <div v-if="showPdfPreview"
+      class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 p-4 sm:p-6 transition-opacity duration-300">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div
+          class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <h3 class="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-white">
             <span class="icon-[tabler--file-type-pdf] text-error size-6"></span>
             {{ pdfModalTitle }}
           </h3>
           <div class="flex gap-3">
-            <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm"><span class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ</button>
-            <button @click="closePdfPreview" class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10"><span class="icon-[tabler--x] size-5"></span></button>
+            <button @click="downloadPdf" class="btn btn-primary btn-sm gap-2 shadow-sm"><span
+                class="icon-[tabler--download] size-4"></span> ດາວໂຫຼດ</button>
+            <button @click="closePdfPreview"
+              class="btn btn-ghost btn-sm btn-circle text-gray-500 hover:text-error hover:bg-error/10"><span
+                class="icon-[tabler--x] size-5"></span></button>
           </div>
         </div>
         <div class="flex-1 w-full bg-gray-300 dark:bg-gray-800 relative">
-          <iframe v-if="pdfPreviewUrl" :src="pdfPreviewUrl" class="w-full h-full border-none" title="PDF Preview"></iframe>
+          <iframe v-if="pdfPreviewUrl" :src="pdfPreviewUrl" class="w-full h-full border-none"
+            title="PDF Preview"></iframe>
         </div>
       </div>
     </div>
@@ -188,6 +192,7 @@ const props = defineProps<{
   loanApplication?: any | null
   loanContract?: any | null
   isEditing?: boolean
+  viewOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -204,7 +209,12 @@ const isEditing = ref(props.isEditing || false)
 const hasProductConflict = ref(false);
 const productDifferences = reactive<Record<string, any>>({});
 
-// 🟢 Data State หลัก
+const customerSectionRef = ref<InstanceType<typeof CustomerSection> | null>(null);
+const workSectionRef = ref<InstanceType<typeof WorkSection> | null>(null);
+const productSectionRef = ref<InstanceType<typeof ProductSection> | null>(null);
+const guarantorSectionRef = ref<InstanceType<typeof GuarantorSection> | null>(null);
+const guarantorWorkSectionRef = ref<InstanceType<typeof GuarantorWorkSection> | null>(null);
+
 const formData = reactive({
   contractNumber: '',
   contractDate: { day: '', month: '', year: '' },
@@ -212,7 +222,7 @@ const formData = reactive({
   customer: {
     fullname: '', dob: '', phone: '', gender: '', maritalStatus: '',
     idCard: '', idCardIssueDate: '', idCardExpiryDate: '', idCardPlace: '',
-    censusBook: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
+    censusBook: '', censusBookIssueDate: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
     address: { village: '', district: '', district_id: '', province: '', province_id: '' },
     residenceYears: null as number | null, liveWith: '', residenceStatus: '',
     occupation: '', relationship: '', age: null as number | null
@@ -225,7 +235,9 @@ const formData = reactive({
     otherIncome: null as number | null, otherIncomeSource: '', phone: '', department: ''
   },
   product: {
-    description: '', type: '', brand: '', model: '',
+    description: '', type: '', brand: '', model: '', productColor: '',
+    productSize: '',
+    variantId: null as number | null,
     price: null as number | null, downPayment: null as number | null,
     approvedAmount: null as number | null, interestRate: null as number | null,
     interestType: 'flat_rate', interestRateType: 'monthly',
@@ -234,11 +246,11 @@ const formData = reactive({
     firstInstallment: null as number | null, paymentDay: null as number | null,
     motorcycle: { motorId: '', tankNumber: '', motorColor: '', insurance: null as number | null, motorWarranty: null as number | null }
   },
-  shop: { name: '', branch: '', code: '' },
+  shop: { id: '', name: '', branch: '', code: '' },
   hasGuarantor: false,
   hasReference: false,
   guarantor: {
-    fullname: '', dob: '', phone: '', gender: '', maritalStatus: '', idCard: '', idCardIssueDate: '',
+    fullname: '', dob: '', phone: '', gender: '', maritalStatus: '', idCard: '', idCardIssueDate: '', idCardExpiryDate: '',
     censusBook: '', censusBookIssueDate: '', idCardPlace: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
     address: { village: '', district: '', district_id: '', province: '', province_id: '' },
     residenceYears: null as number | null, liveWith: '', residenceStatus: '',
@@ -250,7 +262,7 @@ const formData = reactive({
     workYears: null as number | null, position: '', salary: null as number | null,
     salaryDay: null as number | null, totalEmployees: null as number | null,
     otherIncome: null as number | null, otherIncomeSource: ''
-  }
+  },
 })
 
 // =======================
@@ -277,47 +289,133 @@ const checkProductConflicts = () => {
 
   if (!contract || !contract.id) return;
 
-  const getCVal = (key: string) => Number(contract[key]) || 0;
-  const getAVal = (key: string) => Number(app[key]) || 0;
+  const getCVal = (key: string) => Number(contract[key] || 0);
+  const getAVal = (key: string) => Number(app[key] || 0);
 
-  const contractProductPrice = getCVal('product_price');
-  const appProductPrice = getAVal('total_amount'); 
-
-  const contractDownPayment = getCVal('product_down_payment');
-  const appDownPayment = getAVal('down_payment');
-
-  const contractApprovedAmount = getCVal('total_amount');
-  const appApprovedAmount = appProductPrice - appDownPayment;
-
-  const checks = [
-    { key: 'product_price', label: 'ລາຄາສິນຄ້າ', cVal: contractProductPrice, aVal: appProductPrice },
-    { key: 'approved_amount', label: 'ວົງເງິນອະນຸມັດ/ຍອດຈັດ', cVal: contractApprovedAmount, aVal: appApprovedAmount },
-    { key: 'down_payment', label: 'ເງິນວາງດາວ', cVal: contractDownPayment, aVal: appDownPayment },
+  const numberChecks = [
+    { key: 'product_price', label: 'ລາຄາສິນຄ້າ', cVal: getCVal('product_price'), aVal: getAVal('total_amount') },
+    { key: 'down_payment', label: 'ເງິນວາງດາວ', cVal: getCVal('product_down_payment'), aVal: getAVal('down_payment') },
     { key: 'interest_rate', label: 'ອັດຕາດອກເບ້ຍ (%)', cVal: getCVal('interest_rate_at_apply'), aVal: getAVal('interest_rate_at_apply') },
     { key: 'loan_period', label: 'ໄລຍະເວລາ (ເດືອນ)', cVal: getCVal('loan_period'), aVal: getAVal('loan_period') },
-    { key: 'monthly_pay', label: 'ຄ່າງວດຕໍ່ເດືອນ', cVal: getCVal('monthly_pay'), aVal: getAVal('monthly_pay') },
   ];
 
-  let isConflict = false;
-
-  checks.forEach(item => {
+  numberChecks.forEach(item => {
     if (Math.abs(item.cVal - item.aVal) > 1) {
-      isConflict = true;
+      hasProductConflict.value = true;
       productDifferences[item.key] = {
         label: item.label, contractVal: item.cVal, appVal: item.aVal, hasDiff: true,
-        format: (val: number) => item.key === 'interest_rate' || item.key === 'loan_period' ? val.toString() : formatPrice(val)
+        format: (val: number) => (item.key === 'interest_rate' || item.key === 'loan_period') ? val.toString() : formatPrice(val)
       };
     }
   });
-  hasProductConflict.value = isConflict;
+
+  const stringChecks = [
+    { key: 'description', label: 'ລາຍລະອຽດສິນຄ້າ', cVal: contract.product_detail || '', aVal: app.product?.product_name || '' },
+    { key: 'brand', label: 'ຍີ່ຫໍ້', cVal: contract.product_brand || '', aVal: app.product?.brand || '' },
+    { key: 'model', label: 'ລຸ້ນ', cVal: contract.product_model || '', aVal: app.product?.model || '' },
+  ];
+
+  stringChecks.forEach(item => {
+    if (item.cVal.trim() !== item.aVal.trim()) {
+      hasProductConflict.value = true;
+      productDifferences[item.key] = {
+        label: item.label, contractVal: item.cVal, appVal: item.aVal, hasDiff: true,
+        format: (val: string) => val || 'ບໍ່ລະບຸ'
+      };
+    }
+  });
+
+  const appVariant = app.variant || {};
+  const variantChecks = [
+    { key: 'product_color', label: 'ສີ', cVal: contract.product_color || '', aVal: appVariant.color || '' },
+    { key: 'product_size', label: 'ຂະໜາດ/ຄວາມຈຸ', cVal: contract.product_size || '', aVal: appVariant.size_or_capacity || appVariant.size || '' },
+  ];
+
+  variantChecks.forEach(item => {
+    const cValStr = String(item.cVal || '').trim();
+    const aValStr = String(item.aVal || '').trim();
+
+    if (cValStr !== aValStr) {
+      hasProductConflict.value = true;
+      productDifferences[item.key] = {
+        label: item.label, contractVal: item.cVal, appVal: item.aVal, hasDiff: true,
+        format: (val: string) => val || 'ບໍ່ລະບຸ'
+      };
+    }
+  });
 }
 
 const syncProductWithApplication = () => {
-  loadDataFromProps();
-  customAlert.success('ອັບເດດຂໍ້ມູນຕາມໃບຄຳຂໍສຳເລັດແລ້ວ. ກະລຸນາກວດສອບ ແລະ ກົດບັນທຶກ.');
+  const app = props.loanApplication;
+  if (!app) return;
+
+  formData.product.description = app.product?.product_name || app.product_detail || '';
+  formData.product.brand = app.product?.brand || '';
+  formData.product.model = app.product?.model || '';
+
+  formData.product.price = Number(app.total_amount) || 0;
+  formData.product.downPayment = Number(app.down_payment) || 0;
+  formData.product.interestRate = Number(app.interest_rate_at_apply) || 0;
+  formData.product.loanTerm = Number(app.loan_period) || 1;
+  formData.product.monthlyPayment = Number(app.monthly_pay) || 0;
+
+  if (app.variant) {
+    formData.product.productColor = app.variant.color || '';
+    formData.product.productSize = app.variant.size_or_capacity || '';
+  } else {
+    formData.product.productColor = '';
+    formData.product.productSize = '';
+  }
+
+  formData.product.variantId = app.variant_id || app.variant?.id || null;
+
+  calculateLoanDetails();
+  checkProductConflicts();
+
+  customAlert.success('ອັບເດດຂໍ້ມູນສິນຄ້າຈາກໃບຄຳຂໍສຳເລັດ!');
 }
 
+// 🌟 1. Regex ตรวจจับ iPhone 18 Series
+const checkIphone18Campaign = (productName: string, model: string = ''): boolean => {
+  const nameToTest = `${productName || ''} ${model || ''}`;
+  return /iphone\s*18/i.test(nameToTest);
+};
+
+// 🌟 2. Logic บังคับกฎของแคมเปญ
+const applyCampaignRules = () => {
+  const isIphone18 = checkIphone18Campaign(formData.product.description, formData.product.model);
+  if (!isIphone18) return;
+
+  // ก. บังคับจำนวนงวด
+  const allowedTerms = [18, 24, 30, 36];
+  if (!allowedTerms.includes(Number(formData.product.loanTerm))) {
+    formData.product.loanTerm = 18;
+  }
+
+  // ข. กำหนดดอกเบี้ยตามขั้นบันได (Tiered Interest)
+  const price = Number(formData.product.price) || 0;
+  const dp = Number(formData.product.downPayment) || 0;
+  const dpPercent = price > 0 ? (dp / price) * 100 : 0;
+
+  if (dpPercent >= 50) {
+    formData.product.interestRate = 0.84;
+  } else if (dpPercent >= 40) {
+    formData.product.interestRate = 0.89;
+  } else if (dpPercent >= 30) {
+    formData.product.interestRate = 0.94;
+  } else if (dpPercent >= 20) {
+    formData.product.interestRate = 0.99;
+  } else if (dpPercent >= 10) {
+    formData.product.interestRate = 1.04;
+  } else {
+    formData.product.interestRate = 1.09;
+  }
+};
+
 const calculateLoanDetails = () => {
+  // 🌟 แทรกการรัน Campaign Rules ก่อนคำนวณการผ่อนชำระ
+  applyCampaignRules();
+
   const price = formData.product.price || 0
   const downPayment = formData.product.downPayment || 0
   const loanTerm = formData.product.loanTerm || 1
@@ -335,20 +433,25 @@ const calculateLoanDetails = () => {
 
     if (ratePerMonth <= 0) {
       formData.product.monthlyPayment = Math.round(principal / loanTerm)
+      formData.product.totalInterest = 0
     } else {
       let monthlyPayment = 0
+      let calculatedTotalInterest = 0
+
       if (interestType === 'flat_rate') {
-        const totalInterest = principal * (ratePerMonth / 100) * loanTerm
-        monthlyPayment = (principal + totalInterest) / loanTerm
+        calculatedTotalInterest = principal * (ratePerMonth / 100) * loanTerm
+        monthlyPayment = (principal + calculatedTotalInterest) / loanTerm
       } else if (interestType === 'effective_rate') {
         const r = ratePerMonth / 100
         const n = loanTerm
         monthlyPayment = (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+        calculatedTotalInterest = (monthlyPayment * loanTerm) - principal
       }
+
       formData.product.monthlyPayment = Math.round(monthlyPayment)
+      formData.product.totalInterest = Math.round(calculatedTotalInterest)
     }
-    const totalPayment = formData.product.monthlyPayment * loanTerm
-    formData.product.totalInterest = totalPayment - principal
+
     formData.product.firstInstallment = formData.product.monthlyPayment + (formData.product.fee || 0)
   }
 }
@@ -435,12 +538,74 @@ const enableEdit = () => { isEditing.value = true; emit('enable-edit') }
 const cancelEdit = () => { emit('cancel-edit'); isEditing.value = false; loadDataFromProps() }
 
 const saveForm = async () => {
+  const el = document.querySelector('.form-section');
+
+  if (customerSectionRef.value && !customerSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນລູກຄ້າໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (workSectionRef.value && !workSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນບ່ອນເຮັດວຽກໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (productSectionRef.value && !productSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນສິນຄ້າໃນຊ່ອງທີ່ມີດອກຈັນ (*) ໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (guarantorSectionRef.value && !guarantorSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນຜູ້ຄ້ຳປະກັນ/ຜູ້ອ້າງອີງໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (guarantorWorkSectionRef.value && !guarantorWorkSectionRef.value.validateForm()) {
+    customAlert.error('ຂໍ້ມູນບໍ່ຄົບຖ້ວນ', 'ກະລຸນາກວດສອບ ແລະ ປ້ອນຂໍ້ມູນບ່ອນເຮັດວຽກຂອງຜູ້ຄ້ຳປະກັນໃຫ້ຄົບຖ້ວນ.');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
   const customerId = props.loanContract?.customer_id || props.loanContract?.data?.customer_id || props.loanApplication?.customer_id;
   if (!customerId) return customAlert.error('ຂໍ້ຜິດພາດ', 'ບໍ່ພົບຂໍ້ມູນລູກຄ້າ');
+
   isSaving.value = true;
-  try { emit('save-form', customerId, formData); } 
-  catch (error: any) { customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message); } 
-  finally { isSaving.value = false; }
+  try {
+    // 🟢 ສ້າງ Clone ແລະ ແປງຄ່າ Empty String ເປັນ Null ກ່ອນສົ່ງ API
+    const payload = JSON.parse(JSON.stringify(formData));
+    
+    // เคลียร์ข้อมูลขยะหากไม่มีคนค้ำประกัน (ป้องกัน Database บันทึก "ບໍ່ມີ")
+    if (!payload.hasGuarantor && !payload.hasReference) {
+      payload.guarantor = {
+        fullname: '', dob: '', phone: '', gender: '', maritalStatus: '', idCard: '', idCardIssueDate: null, idCardExpiryDate: null,
+        censusBook: '', censusBookIssueDate: null, idCardPlace: '', censusAuthorizeBy: '', houseNumber: '', unit: '',
+        address: { village: '', district: '', district_id: '', province: '', province_id: '' },
+        residenceYears: null, liveWith: '', residenceStatus: '', occupation: '', relationship: '', age: null
+      };
+      payload.guarantorWork = {
+        companyName: '', businessType: '', phone: '',
+        address: { village: '', district: '', district_id: '', province: '', province_id: '' },
+        workYears: null, position: '', salary: null, salaryDay: null, totalEmployees: null,
+        otherIncome: null, otherIncomeSource: ''
+      };
+    } else {
+      if (payload.guarantor.censusBookIssueDate === '') payload.guarantor.censusBookIssueDate = null;
+      if (payload.guarantor.idCardIssueDate === '') payload.guarantor.idCardIssueDate = null;
+      if (payload.guarantor.idCardExpiryDate === '') payload.guarantor.idCardExpiryDate = null;
+    }
+
+    if (payload.customer.censusBookIssueDate === '') payload.customer.censusBookIssueDate = null;
+    if (payload.customer.idCardIssueDate === '') payload.customer.idCardIssueDate = null;
+    if (payload.customer.idCardExpiryDate === '') payload.customer.idCardExpiryDate = null;
+
+    emit('save-form', customerId, payload);
+  }
+  catch (error: any) {
+    customAlert.error('ເກີດຂໍ້ຜິດພາດ', error.message);
+  }
+  finally {
+    isSaving.value = false;
+  }
 }
 
 const parseAddress = (addressStr: string) => {
@@ -454,8 +619,8 @@ const loadDataFromProps = () => {
   let hasRealContract = false;
 
   if (props.loanContract) {
-    if (props.loanContract.data?.data?.id) { contractData = props.loanContract.data.data; hasRealContract = true; } 
-    else if (props.loanContract.data?.id) { contractData = props.loanContract.data; hasRealContract = true; } 
+    if (props.loanContract.data?.data?.id) { contractData = props.loanContract.data.data; hasRealContract = true; }
+    else if (props.loanContract.data?.id) { contractData = props.loanContract.data; hasRealContract = true; }
     else if (props.loanContract.id) { contractData = props.loanContract; hasRealContract = true; }
   }
 
@@ -480,16 +645,17 @@ const loadDataFromProps = () => {
     formData.customer.maritalStatus = sourceData.cus_marital_status || ''
     formData.customer.occupation = sourceData.cus_occupation || ''
     formData.customer.idCard = sourceData.cus_id_pass_number || ''
-    formData.customer.idCardIssueDate = sourceData.cus_id_pass_date || ''
+    formData.customer.idCardIssueDate = sourceData.cus_id_pass_date_start || ''
+    formData.customer.idCardExpiryDate = sourceData.cus_id_pass_date_expired || ''
     formData.customer.censusBook = sourceData.cus_census_number || ''
-    formData.customer.idCardExpiryDate = sourceData.cus_census_created || ''
+    formData.customer.censusBookIssueDate = sourceData.cus_census_created || ''
     formData.customer.censusAuthorizeBy = sourceData.cus_census_authorize_by || ''
     formData.customer.houseNumber = sourceData.cus_house_number || ''
     formData.customer.unit = sourceData.cus_unit || ''
     formData.customer.residenceYears = sourceData.cus_lived_year || null
     formData.customer.liveWith = sourceData.cus_lived_with || ''
     formData.customer.residenceStatus = sourceData.cus_lived_situation || ''
-    
+
     formData.customer.age = calculateAge(formData.customer.dob)
 
     const addr = parseAddress(sourceData.cus_address)
@@ -502,6 +668,7 @@ const loadDataFromProps = () => {
     formData.work.companyName = sourceData.cus_company_name || ''
     formData.work.businessType = sourceData.cus_company_businessType || ''
     formData.work.workYears = sourceData.cus_company_workYear || null
+    formData.work.workMonths = sourceData.cus_company_workMonth || null
     formData.work.position = sourceData.cus_position || ''
     formData.work.salary = sourceData.cus_income || null
     formData.work.salaryDay = sourceData.cus_payroll_date || null
@@ -514,53 +681,85 @@ const loadDataFromProps = () => {
     formData.work.address.district = workAddr.district
     formData.work.address.province = workAddr.province
 
+    formData.shop.id = sourceData["partner.id"] || sourceData.partner_id || ''
     formData.shop.name = sourceData["partner.shop_name"] || sourceData.shop_name || ''
     formData.shop.branch = sourceData.shop_branch || ''
     formData.shop.code = sourceData.shop_id || ''
 
-    if (sourceData.ref_name) {
-      formData.hasGuarantor = true
-      formData.guarantor.fullname = sourceData.ref_name || ''
+    if (!formData.shop.id || !formData.shop.name) {
+      const appPartner = props.loanApplication?.product?.partner;
+      if (appPartner) {
+        formData.shop.id = formData.shop.id || appPartner.id || '';
+        formData.shop.name = formData.shop.name || appPartner.shop_name || '';
+        formData.shop.branch = formData.shop.branch || appPartner.address || '';
+        formData.shop.code = formData.shop.code || appPartner.shop_id || '';
+      }
+    }
+
+    // 🌟 ดึงข้อมูลและตรวจสอบสถานะของคนค้ำประกัน (Contract Mode)
+    const rawRefType1 = sourceData.ref_Type || sourceData.ref_type || '';
+    const currentRefType1 = rawRefType1.toLowerCase();
+
+    formData.hasGuarantor = currentRefType1 === 'guarantor';
+    formData.hasReference = currentRefType1 === 'reference';
+
+    if (formData.hasGuarantor || formData.hasReference) {
+      const cleanDBStr = (val: any) => {
+        if (!val) return '';
+        const s = String(val).trim();
+        return (s === 'ບໍ່ມີ' || s === 'ບໍ່ລະບຸ' || s === '0' || s === 'ບໍ່ມີຂໍ້ມູນ') ? '' : s;
+      };
+
+      formData.guarantor.fullname = cleanDBStr(sourceData.ref_name)
       formData.guarantor.dob = sourceData.ref_date_of_birth || ''
       formData.guarantor.age = calculateAge(formData.guarantor.dob) || 0
-      formData.guarantor.phone = sourceData.ref_phone || ''
-      formData.guarantor.gender = sourceData.ref_sex || ''
-      formData.guarantor.maritalStatus = sourceData.ref_marital_status || ''
-      formData.guarantor.idCard = sourceData.ref_id_pass_number || ''
-      formData.guarantor.idCardIssueDate = sourceData.ref_id_pass_date || ''
-      formData.guarantor.censusBook = sourceData.ref_census_number || ''
+      formData.guarantor.phone = cleanDBStr(sourceData.ref_phone)
+      formData.guarantor.gender = cleanDBStr(sourceData.ref_sex)
+      formData.guarantor.maritalStatus = cleanDBStr(sourceData.ref_marital_status)
+      formData.guarantor.idCard = cleanDBStr(sourceData.ref_id_pass_number)
+      formData.guarantor.idCardIssueDate = sourceData.ref_id_pass_date_start || ''
+      formData.guarantor.idCardExpiryDate = sourceData.ref_id_pass_date_expired || ''
+      formData.guarantor.censusBook = cleanDBStr(sourceData.ref_census_number)
       formData.guarantor.censusBookIssueDate = sourceData.ref_census_created || ''
-      formData.guarantor.censusAuthorizeBy = sourceData.ref_census_authorize_by || ''
-      formData.guarantor.houseNumber = sourceData.ref_house_number || ''
+      formData.guarantor.censusAuthorizeBy = cleanDBStr(sourceData.ref_census_authorize_by)
+      formData.guarantor.houseNumber = cleanDBStr(sourceData.ref_house_number)
       formData.guarantor.unit = sourceData.ref_unit || ''
       formData.guarantor.residenceYears = sourceData.ref_lived_year || null
-      formData.guarantor.liveWith = sourceData.ref_lived_with || ''
-      formData.guarantor.residenceStatus = sourceData.ref_lived_situation || ''
-      formData.guarantor.occupation = sourceData.ref_occupation || ''
-      formData.guarantor.relationship = sourceData.ref_relationship || ''
+      formData.guarantor.liveWith = cleanDBStr(sourceData.ref_lived_with)
+      formData.guarantor.residenceStatus = cleanDBStr(sourceData.ref_lived_situation)
+      formData.guarantor.occupation = cleanDBStr(sourceData.ref_occupation)
+      formData.guarantor.relationship = cleanDBStr(sourceData.ref_relationship)
 
       const refAddr = parseAddress(sourceData.ref_address)
-      formData.guarantor.address.village = refAddr.village
-      formData.guarantor.address.district = refAddr.district
-      formData.guarantor.address.province = refAddr.province
+      formData.guarantor.address.village = cleanDBStr(refAddr.village)
+      formData.guarantor.address.district = cleanDBStr(refAddr.district)
+      formData.guarantor.address.province = cleanDBStr(refAddr.province)
       formData.guarantor.address.province_id = sourceData.ref_province_id || ''
       formData.guarantor.address.district_id = sourceData.ref_district_id || ''
 
-      formData.guarantorWork.companyName = sourceData.ref_company_name || ''
-      formData.guarantorWork.businessType = sourceData.ref_company_businessType || ''
+      formData.guarantorWork.companyName = cleanDBStr(sourceData.ref_company_name)
+      formData.guarantorWork.businessType = cleanDBStr(sourceData.ref_company_businessType)
       formData.guarantorWork.workYears = sourceData.ref_company_workYear || null
-      formData.guarantorWork.position = sourceData.ref_position || ''
-      formData.guarantorWork.phone = sourceData.ref_work_phone || sourceData.ref_company_phone || '' 
-      formData.guarantorWork.salary = parseFloat(sourceData.ref_work_salary || sourceData.ref_income) || null
-      formData.guarantorWork.salaryDay = sourceData.ref_payroll_date || null
-      formData.guarantorWork.totalEmployees = sourceData.ref_company_emp_number || null
-      formData.guarantorWork.otherIncome = parseFloat(sourceData.ref_income_other) || null
-      formData.guarantorWork.otherIncomeSource = sourceData.ref_income_other_source || ''
+      formData.guarantorWork.position = cleanDBStr(sourceData.ref_position)
+      formData.guarantorWork.phone = cleanDBStr(sourceData.ref_work_phone || sourceData.ref_company_phone)
+      
+      const salaryVal = sourceData.ref_work_salary || sourceData.ref_income;
+      formData.guarantorWork.salary = salaryVal && salaryVal !== '0' ? parseFloat(salaryVal) : null;
+      formData.guarantorWork.salaryDay = sourceData.ref_payroll_date && sourceData.ref_payroll_date !== '0' ? sourceData.ref_payroll_date : null;
+      formData.guarantorWork.totalEmployees = sourceData.ref_company_emp_number || null;
+      
+      const otherIncVal = sourceData.ref_income_other;
+      formData.guarantorWork.otherIncome = otherIncVal && otherIncVal !== '0' ? parseFloat(otherIncVal) : null;
+      formData.guarantorWork.otherIncomeSource = cleanDBStr(sourceData.ref_income_other_source)
 
       const gWorkAddr = parseAddress(sourceData.ref_company_location)
-      formData.guarantorWork.address.village = gWorkAddr.village
-      formData.guarantorWork.address.district = gWorkAddr.district
-      formData.guarantorWork.address.province = gWorkAddr.province
+      formData.guarantorWork.address.village = cleanDBStr(gWorkAddr.village)
+      formData.guarantorWork.address.district = cleanDBStr(gWorkAddr.district)
+      formData.guarantorWork.address.province = cleanDBStr(gWorkAddr.province)
+    } else {
+      // Clear data if no guarantor is checked
+      formData.guarantor.fullname = '';
+      formData.guarantor.phone = '';
     }
   } else {
     formData.contractNumber = sourceData.loan_id || ''
@@ -576,12 +775,16 @@ const loadDataFromProps = () => {
       formData.customer.fullname = `${sourceData.customer.first_name || ''} ${sourceData.customer.last_name || ''}`.trim()
       formData.customer.dob = sourceData.customer.date_of_birth || ''
       formData.customer.phone = sourceData.customer.phone || ''
+      
       formData.customer.idCard = sourceData.customer.identity_number || ''
+      formData.customer.idCardIssueDate = sourceData.customer.issue_date || ''
+      formData.customer.idCardExpiryDate = sourceData.customer.expire_date || sourceData.customer.expired_date || ''
+      
       formData.customer.censusBook = sourceData.customer.census_number || ''
-      formData.customer.idCardExpiryDate = sourceData.customer.issue_date || ''
+      formData.customer.censusBookIssueDate = sourceData.customer.census_created || sourceData.customer.census_issue_date || ''
+      
       formData.customer.censusAuthorizeBy = sourceData.customer.issue_place || ''
       formData.customer.idCardPlace = sourceData.customer.issue_place || ''
-      formData.customer.idCardIssueDate = sourceData.customer.issue_date || ''
       formData.customer.occupation = sourceData.customer.occupation || ''
       formData.customer.unit = sourceData.customer.unit || ''
 
@@ -616,55 +819,81 @@ const loadDataFromProps = () => {
     }
 
     if (sourceData.product && sourceData.product.partner) {
+      formData.shop.id = sourceData.product.partner.id || ''
       formData.shop.name = sourceData.product.partner.shop_name || ''
       formData.shop.branch = sourceData.product.partner.address || ''
       formData.shop.code = sourceData.product.partner.shop_id || ''
     }
 
+    // 🌟 ดึงข้อมูลและตรวจสอบสถานะของคนค้ำประกัน (Draft Mode)
     const guarantor = sourceData.loan_guarantors?.[0] || sourceData.loanGuarantors?.[0]
     if (guarantor) {
-      formData.hasGuarantor = true
-      formData.guarantor.fullname = guarantor.name || guarantor.fullname || ''
-      formData.guarantor.dob = guarantor.date_of_birth || guarantor.dob || ''
-      formData.guarantor.age = guarantor.age || calculateAge(formData.guarantor.dob) || 0
-      formData.guarantor.phone = guarantor.phone || ''
-      formData.guarantor.gender = guarantor.sex || guarantor.gender || ''
-      formData.guarantor.maritalStatus = guarantor.marital_status || guarantor.maritalStatus || ''
-      formData.guarantor.idCard = guarantor.identity_number || guarantor.idCard || ''
-      formData.guarantor.idCardIssueDate = guarantor.id_pass_date || guarantor.idCardIssueDate || ''
-      formData.guarantor.censusBook = guarantor.census_number || guarantor.censusBook || ''
-      formData.guarantor.censusBookIssueDate = guarantor.census_created || guarantor.censusBookIssueDate || ''
-      formData.guarantor.censusAuthorizeBy = guarantor.census_authorize_by || guarantor.censusAuthorizeBy || ''
-      formData.guarantor.houseNumber = guarantor.house_number || guarantor.houseNumber || ''
-      formData.guarantor.unit = guarantor.unit || ''
-      formData.guarantor.residenceYears = guarantor.lived_year || guarantor.residenceYears || null
-      formData.guarantor.liveWith = guarantor.lived_with || guarantor.liveWith || ''
-      formData.guarantor.residenceStatus = guarantor.lived_situation || guarantor.residenceStatus || ''
-      formData.guarantor.occupation = guarantor.occupation || ''
-      formData.guarantor.relationship = guarantor.relationship || ''
+      const rawRefType2 = guarantor.ref_type || guarantor.ref_Type || '';
+      const currentRefType2 = rawRefType2.toLowerCase();
 
-      const gAddr = parseAddress(guarantor.address)
-      formData.guarantor.address.village = gAddr.village
-      formData.guarantor.address.district = gAddr.district
-      formData.guarantor.address.province = gAddr.province
-      formData.guarantor.address.province_id = guarantor.province_id || ''
-      formData.guarantor.address.district_id = guarantor.district_id || ''
+      formData.hasGuarantor = currentRefType2 === 'guarantor';
+      formData.hasReference = currentRefType2 === 'reference';
 
-      formData.guarantorWork.companyName = guarantor.work_company_name || guarantor.companyName || ''
-      formData.guarantorWork.businessType = guarantor.work_business_type || guarantor.businessType || ''
-      formData.guarantorWork.workYears = guarantor.work_year || guarantor.workYears || null
-      formData.guarantorWork.position = guarantor.work_position || guarantor.position || ''
-      formData.guarantorWork.phone = guarantor.work_phone || guarantor.workPhone || '' 
-      formData.guarantorWork.salary = parseFloat(guarantor.work_salary || guarantor.salary) || null
-      formData.guarantorWork.salaryDay = guarantor.payroll_date || guarantor.salaryDay || null
-      formData.guarantorWork.totalEmployees = guarantor.company_emp_number || guarantor.totalEmployees || null
-      formData.guarantorWork.otherIncome = parseFloat(guarantor.income_other || guarantor.otherIncome) || null
-      formData.guarantorWork.otherIncomeSource = guarantor.income_other_source || guarantor.otherIncomeSource || ''
+      if (formData.hasGuarantor || formData.hasReference) {
+        const cleanDBStr = (val: any) => {
+          if (!val) return '';
+          const s = String(val).trim();
+          return (s === 'ບໍ່ມີ' || s === 'ບໍ່ລະບຸ' || s === '0' || s === 'ບໍ່ມີຂໍ້ມູນ') ? '' : s;
+        };
 
-      const gWorkAddr = parseAddress(guarantor.work_location || guarantor.workAddress)
-      formData.guarantorWork.address.village = gWorkAddr.village
-      formData.guarantorWork.address.district = gWorkAddr.district
-      formData.guarantorWork.address.province = gWorkAddr.province
+        formData.guarantor.fullname = cleanDBStr(guarantor.name || guarantor.fullname);
+        formData.guarantor.dob = guarantor.date_of_birth || guarantor.dob || ''
+        formData.guarantor.age = guarantor.age || calculateAge(formData.guarantor.dob) || 0
+        formData.guarantor.phone = cleanDBStr(guarantor.phone)
+        formData.guarantor.gender = cleanDBStr(guarantor.sex || guarantor.gender)
+        formData.guarantor.maritalStatus = cleanDBStr(guarantor.marital_status || guarantor.maritalStatus)
+        formData.guarantor.idCard = cleanDBStr(guarantor.identity_number || guarantor.idCard)
+        formData.guarantor.idCardIssueDate = guarantor.id_pass_date || guarantor.idCardIssueDate || ''
+        formData.guarantor.censusBook = cleanDBStr(guarantor.census_number || guarantor.censusBook)
+        formData.guarantor.censusBookIssueDate = guarantor.census_created || guarantor.censusBookIssueDate || ''
+        formData.guarantor.censusAuthorizeBy = cleanDBStr(guarantor.census_authorize_by || guarantor.censusAuthorizeBy)
+        formData.guarantor.houseNumber = cleanDBStr(guarantor.house_number || guarantor.houseNumber)
+        formData.guarantor.unit = guarantor.unit || ''
+        formData.guarantor.residenceYears = guarantor.lived_year || guarantor.residenceYears || null
+        formData.guarantor.liveWith = cleanDBStr(guarantor.lived_with || guarantor.liveWith)
+        formData.guarantor.residenceStatus = cleanDBStr(guarantor.lived_situation || guarantor.residenceStatus)
+        formData.guarantor.occupation = cleanDBStr(guarantor.occupation)
+        formData.guarantor.relationship = cleanDBStr(guarantor.relationship)
+
+        const gAddr = parseAddress(guarantor.address)
+        formData.guarantor.address.village = cleanDBStr(gAddr.village)
+        formData.guarantor.address.district = cleanDBStr(gAddr.district)
+        formData.guarantor.address.province = cleanDBStr(gAddr.province)
+        formData.guarantor.address.province_id = guarantor.province_id || ''
+        formData.guarantor.address.district_id = guarantor.district_id || ''
+
+        formData.guarantorWork.companyName = cleanDBStr(guarantor.work_company_name || guarantor.companyName)
+        formData.guarantorWork.businessType = cleanDBStr(guarantor.work_business_type || guarantor.businessType)
+        formData.guarantorWork.workYears = guarantor.work_year || guarantor.workYears || null
+        formData.guarantorWork.position = cleanDBStr(guarantor.work_position || guarantor.position)
+        formData.guarantorWork.phone = cleanDBStr(guarantor.work_phone || guarantor.workPhone)
+        
+        const gSalary = guarantor.work_salary || guarantor.salary;
+        formData.guarantorWork.salary = gSalary && gSalary !== '0' ? parseFloat(gSalary) : null;
+        
+        const gSalDay = guarantor.payroll_date || guarantor.salaryDay;
+        formData.guarantorWork.salaryDay = gSalDay && gSalDay !== '0' ? gSalDay : null;
+        
+        formData.guarantorWork.totalEmployees = guarantor.company_emp_number || guarantor.totalEmployees || null
+        
+        const gOtherInc = guarantor.income_other || guarantor.otherIncome;
+        formData.guarantorWork.otherIncome = gOtherInc && gOtherInc !== '0' ? parseFloat(gOtherInc) : null;
+        
+        formData.guarantorWork.otherIncomeSource = cleanDBStr(guarantor.income_other_source || guarantor.otherIncomeSource)
+
+        const gWorkAddr = parseAddress(guarantor.work_location || guarantor.workAddress)
+        formData.guarantorWork.address.village = cleanDBStr(gWorkAddr.village)
+        formData.guarantorWork.address.district = cleanDBStr(gWorkAddr.district)
+        formData.guarantorWork.address.province = cleanDBStr(gWorkAddr.province)
+      } else {
+        formData.guarantor.fullname = '';
+        formData.guarantor.phone = '';
+      }
     }
   }
 
@@ -672,16 +901,16 @@ const loadDataFromProps = () => {
 
   if (app && app.customer && app.customer.customer_work_infos?.length > 0) {
     const appWorkInfo = app.customer.customer_work_infos[0];
-    const guarantorInfo = app.loan_guarantors?.[0]; 
-    
+    const guarantorInfo = app.loan_guarantors?.[0];
+
     if (!formData.work.workMonths) formData.work.workMonths = appWorkInfo.duration_months || null;
     if (!formData.work.address.province_id) formData.work.address.province_id = appWorkInfo.province_id || null;
     if (!formData.work.address.district_id) formData.work.address.district_id = appWorkInfo.district_id || null;
     if (!formData.work.businessDetail) formData.work.businessDetail = appWorkInfo.business_detail || '';
     if (!formData.work.department) formData.work.department = appWorkInfo.department || '';
     if (!formData.work.phone) formData.work.phone = appWorkInfo.phone || '';
-    
-    if (guarantorInfo) { 
+
+    if (guarantorInfo) {
       if (!formData.guarantor.address.province_id) formData.guarantor.address.province_id = guarantorInfo.province_id || '';
       if (!formData.guarantor.address.district_id) formData.guarantor.address.district_id = guarantorInfo.district_id || '';
       if (!formData.guarantorWork.phone) formData.guarantorWork.phone = guarantorInfo.work_phone || '';
@@ -703,6 +932,7 @@ const loadDataFromProps = () => {
   }
 
   if (app && app.id) {
+    formData.product.variantId = app.variant_id || app.variant?.id || null;
     formData.product.price = Number(app.total_amount) || 0;
     formData.product.downPayment = Number(app.down_payment) || 0;
     formData.product.interestRate = Number(app.interest_rate_at_apply) || 0;
@@ -720,12 +950,46 @@ const loadDataFromProps = () => {
     formData.product.motorcycle.motorWarranty = app.motor_warranty || app.motorWarranty || null;
   }
 
-  if (formData.product.motorcycle.motorId || formData.product.motorcycle.tankNumber) {
+  formData.productType.gold = false;
+  formData.productType.general = false;
+  formData.productType.motorcycle = false;
+
+  const typeName = String(sourceData?.["producttype.type_name"] || sourceData?.product_type || app?.product?.producttype?.type_name || app?.producttype?.type_name || '').trim();
+  const typeId = Number(sourceData?.producttype_id || sourceData?.["producttype.id"] || app?.producttype_id || app?.product?.producttype_id || 0);
+
+  if (formData.product.motorcycle.motorId || formData.product.motorcycle.tankNumber || typeName.includes('ລົດຈັກ') || typeId === 1) {
     formData.productType.motorcycle = true;
-    formData.productType.gold = false;
-    formData.productType.general = false;
-  } else {
+  }
+  else if (typeName.includes('ຄຳ') || typeId === 8) {
+    formData.productType.gold = true;
+  }
+  else {
     formData.productType.general = true;
+  }
+
+  if (!formData.productType.motorcycle) {
+    if (app && app.id) {
+      formData.product.description = app.product?.product_name || app.product_detail || '';
+      formData.product.brand = app.product?.brand || '';
+      formData.product.model = app.product?.model || '';
+      formData.product.price = Number(app.total_amount) || 0;
+    } else if (contractData) {
+      formData.product.description = contractData.product_detail || '';
+      formData.product.brand = contractData.product_brand || '';
+      formData.product.model = contractData.product_model || '';
+      formData.product.price = Number(contractData.product_price) || 0;
+    }
+
+    if (app?.variant) {
+      formData.product.productColor = app.variant.color || '';
+      formData.product.productSize = app.variant.size_or_capacity || app.variant.size || '';
+    } else if (contractData) {
+      formData.product.productColor = contractData.product_color || '';
+      formData.product.productSize = contractData.product_size || '';
+    } else {
+      formData.product.productColor = '';
+      formData.product.productSize = '';
+    }
   }
 
   calculateLoanDetails()
@@ -735,9 +999,9 @@ const loadDataFromProps = () => {
 watch(() => [props.loanContract, props.loanApplication], () => { loadDataFromProps() }, { deep: true, immediate: true })
 watch(() => props.isEditing, (newVal) => { isEditing.value = newVal })
 
-onMounted(async () => { 
-  loadDataFromProps() 
-  await addressStore.fetchProvinces(); 
+onMounted(async () => {
+  loadDataFromProps()
+  await addressStore.fetchProvinces();
   if (formData.customer.address.province_id) await addressStore.fetchDistricts(formData.customer.address.province_id);
   if (formData.work.address.province_id) await addressStore.fetchDistricts(formData.work.address.province_id);
   if (formData.guarantor.address.province_id) await addressStore.fetchDistricts(formData.guarantor.address.province_id);
@@ -839,7 +1103,7 @@ onMounted(async () => {
   gap: 5px;
 }
 
-:deep(.input-sub span) {
+:deep(.input-sub span:not(.text-error)) {
   font-size: 12px;
   white-space: nowrap;
   color: #666;
@@ -866,6 +1130,7 @@ onMounted(async () => {
 }
 
 @media print {
+
   .print-button-container,
   .edit-button-container {
     display: none !important;

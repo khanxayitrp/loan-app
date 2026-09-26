@@ -1,3 +1,4 @@
+
 // src/api/permission.ts
 import apiClient from './apiclient'
 import type {
@@ -57,3 +58,4 @@ export const deleteAllUserPermissions = async (userId: number): Promise<boolean>
   const response = await apiClient.delete(`/permissions/user/${userId}`)
   return response.data.success
 }
+

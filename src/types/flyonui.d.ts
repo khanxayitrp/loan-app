@@ -1,3 +1,4 @@
+
 // src/types/flyonui.d.ts
 import type { IStaticMethods } from "flyonui/flyonui";
 
@@ -18,3 +19,4 @@ declare global {
 
 // Export เพื่อให้ไฟล์นี้เป็น module declaration (สำคัญ!)
 export {};
+

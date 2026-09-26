@@ -1,3 +1,4 @@
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
@@ -44,3 +45,4 @@ app.use(VueQueryPlugin) // 👈 ใช้แบบ default
 app.directive('can', canDirective) // ลงทะเบียน directive
 
 app.mount('#app')
+

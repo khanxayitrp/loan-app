@@ -1,6 +1,8 @@
+
 import type { Product } from './product';
 import type { CustomerLocation } from './customer';
 import type { DeliveryReceipt } from './delivery_receipt';
+import type { LoanContract } from './loanContract';
 export type { CustomerLocation };
 
 /**
@@ -72,6 +74,16 @@ export interface WorkInfo {
   created_at?: string
 }
 
+export interface ProductVariant {
+  // 🟢 2. ເພີ່ມ Object ຂອງ variant ເຂົ້າໄປ
+  id: number;
+  color: string;
+  size_or_capacity: string;
+  merchant_sku: string;
+  price: number;
+}
+
+
 export interface Guarantor {
   id: number
   name: string
@@ -100,6 +112,7 @@ export interface LoanApplication {
   down_payment?: number | string
   loan_period: number
   interest_rate_at_apply: number
+  interest_rate_type?: string
   monthly_pay: number
   is_confirmed: number
   status: LoanApplicationStatus
@@ -122,11 +135,23 @@ export interface LoanApplication {
   guarantor_signature_date?: string
   staff_signature_date?: string
   loan_guarantors?: Guarantor[]
+  document_signatures?: Array<{
+    document_type: string;
+    status: string;
+    role_type: string;
+    user_id?: number;
+    signer_name?: string;
+    user?: { first_name?: string; full_name?: string; username?: string };
+  }>;
 
   // Relations (ถ้า backend ส่งมา)
   customer?: CustomerLoan
+  contract?: LoanContract;
+  loan_contracts?: LoanContract[]; // ข้อมูล contracts แบบ array จาก backend
   product?: Product
+  variant?: ProductVariant; // 🟢 เพิ่มข้อมูลสินค้าย่อย (Variant) เข้าไปใน LoanApplication เพื่อให้เข้าถึงได้ง่ายขึ้น
   guarantor?: Guarantor;
+  delivery_receipt?: DeliveryReceipt;
   delivery_receipts?: DeliveryReceipt[]; // ຮອງຮັບການ Join ຈາກ backend
   requester?: { id: number; name: string }
   approver?: { id: number; full_name: string; username: string; }
@@ -251,11 +276,12 @@ export interface CreateWithCustomerDto {
   first_name: string
   last_name: string
   address: string
-  province_id?: string | number 
+  province_id?: string | number
   district_id?: string | number
   occupation: string
   income_per_month: number
   product_id: number
+  variant_id?: number | null
   quantity?: number
   total_amount: number
   loan_period: number
@@ -280,6 +306,7 @@ export interface UpdateLoanApplicationDto {
   credit_score?: number
   remarks?: string
   approver_id?: number
+  payment_day?: number;
 }
 
 export interface ChangeStatusDto {
@@ -294,18 +321,26 @@ export interface ConfirmDraftDto {
 }
 
 /**
- * Filters สำหรับดึงรายการ (รองรับ Pagination)
+ * Filters สำหรับดึงรายการ (รองรับ Cursor Pagination)
  */
 export interface LoanApplicationFilters {
   CustomerId?: number
   requesterId?: number
   productId?: number
-  status?: LoanApplicationStatus
+  status?: LoanApplicationStatus | LoanApplicationStatus[]
   min?: number
   max?: number
   is_confirmed?: number
-  page?: number  // ✅ เพิ่ม
-  limit?: number // ✅ เพิ่ม
+  limit?: number     // ✅ คงไว้
+  cursor?: number    // 🌟 เปลี่ยนจาก page เป็น cursor
+  page?: number
+  minScore?: number
+  maxScore?: number
+
+  // 🌟 ເພີ່ມ 3 Field ນີ້ເຂົ້າໄປເພື່ອຮອງຮັບ Server-Side Filtering
+  search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 
@@ -319,13 +354,12 @@ export interface CreateWithCustomerResponse {
 }
 
 /**
- * Pagination Meta Data
+ * 🌟 Cursor Pagination Meta Data
  */
 export interface PaginationMeta {
   total: number;
-  page: number;
   limit: number;
-  totalPages: number;
+  next_cursor: number | null; // 🌟 เปลี่ยนจาก page, totalPages มาใช้ next_cursor
 }
 
 /**
@@ -346,4 +380,5 @@ export interface GetLoanByIdResponse {
 
 // สร้าง Type ใหม่ที่บังคับว่าต้องมี customer แน่นอน
 export type LoanCustomer = NonNullable<LoanApplication['customer']>
+
 

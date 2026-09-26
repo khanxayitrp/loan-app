@@ -1,3 +1,4 @@
+
 export type DeliveryReceiptStatus = 'pending' | 'approved' | 'rejected';
 
 export interface DeliveryReceipt {
@@ -44,3 +45,4 @@ export interface DeliveryReceiptArrayResponse {
   message: string;
   data: DeliveryReceipt[]; // ເພາະ Backend ໃຊ້ findAll ຈຶ່ງສົົ່ງມາເປັນ Array
 }
+

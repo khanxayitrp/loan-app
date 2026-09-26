@@ -1,3 +1,4 @@
+
 import { describe, it, expect } from 'vitest'
 
 import { mount } from '@vue/test-utils'
@@ -9,3 +10,4 @@ describe('App', () => {
     expect(wrapper.text()).toContain('You did it!')
   })
 })
+

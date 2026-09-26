@@ -1,3 +1,4 @@
+
 // src/types/product.ts
 export interface ProductType {
   id: number
@@ -85,3 +86,4 @@ export interface UploadGalleryResponse {
     failed: string[]
   }
 }
+

@@ -1,3 +1,4 @@
+
 // src/api/product.ts
 import apiClient from './apiclient'
 import type {
@@ -11,15 +12,13 @@ import type {
 /**
  * ดึงรายการสินค้าทั้งหมด
  */
-export const getProducts = async (params?: GetProductsParams) => {
+export const getProducts = async (params?: GetProductsParams & { for_admin?: boolean }) => {
   try {
     const response = await apiClient.get('/products', { params })
     const resData = response.data;
 
-    // Backend ส่งมาเป็น: { success: true, data: { data: [...], total: X, page: Y, limit: Z } }
     const payload = resData.data || resData;
 
-    // ดึง Array และ Total ออกมาให้ตรงชั้น
     const productsArray = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload) ? payload : []);
     const totalCount = payload.total !== undefined ? payload.total : productsArray.length;
 
@@ -36,17 +35,32 @@ export const getProducts = async (params?: GetProductsParams) => {
 }
 
 /**
- * 🟢 ดึงข้อมูลสินค้าเฉพาะ
+ * 🟢 ดึงข้อมูลสินค้าเฉพาะ (ເພີ່ມ forAdmin parameter)
  */
-export const getProductById = async (id: number) => {
+export const getProductById = async (id: number, forAdmin: boolean = false) => {
   try {
-    const response = await apiClient.get(`/products/${id}`)
+    const response = await apiClient.get(`/products/${id}`, {
+      params: { for_admin: forAdmin } // 🌟 ສົ່ງ for_admin ໄປຫາ Backend
+    })
     console.log('[API] Product by ID response:', response.data)
 
-    // Backend ส่งมาเป็น: { success: true, data: { ... } }
     return response.data.data || response.data.product || response.data
   } catch (error: any) {
     console.error(`Error fetching product ${id}:`, error)
+    throw error
+  }
+}
+
+/**
+ * 🟢 ดึงข้อมูลสินค้าย่อย (Variants) ตาม ID สินค้าหลัก
+ */
+export const getProductVariants = async (productId: number) => {
+  try {
+    const response = await apiClient.get(`/products/${productId}/variants`)
+    // Backend ส่งมาเป็น: { success: true, data: [...] }
+    return response.data.data || response.data
+  } catch (error: any) {
+    console.error(`Error fetching variants for product ${productId}:`, error)
     throw error
   }
 }
@@ -178,20 +192,22 @@ export const getProductGallery = async (productId: number) => {
 };
 
 /**
- * เปลี่ยนสถานะสินค้า (อิงตาม Controller ที่ไม่พ่น Data กลับมา)
+ * เปลี่ยนสถานะสินค้า
  */
-export const toggleProductStatus = async (id: number, isActive: boolean) => {
+export const toggleProductStatus = async (id: number, targetStatus: boolean | number) => {
   try {
+    // 🟢 เช็คแค่ true กับ 1 ก็พอครับ
+    const finalStatus = (targetStatus === true || targetStatus === 1) ? 1 : 0;
+
     const response = await apiClient.patch(`/products/${id}`, {
-      is_active: isActive ? 1 : 0
+      is_active: finalStatus
     });
 
     const resData = response.data;
     return {
       success: resData.success ?? true,
-      message: resData.message ?? (isActive ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
-      // Controller deActivatedOneProduct ไม่ได้ส่ง data กลับมา เราจำลอง Object ให้ Store ทำงานต่อได้
-      product: resData.data || { id, is_active: isActive ? 1 : 0 }
+      message: resData.message ?? (finalStatus === 1 ? 'ເປີດໃຊ້ງານສຳເລັດ' : 'ປີດໃຊ້ງານສຳເລັດ'),
+      product: resData.data || { id, is_active: finalStatus }
     };
   } catch (error: any) {
     const errMsg = error.response?.data?.message || 'ປ່ຽນສະຖານະມີບັນຫາ';
@@ -235,6 +251,7 @@ export const getProductTypes = async () => {
     throw error
   }
 }
+
 /**
  * 🟢 นำเข้าข้อมูลสินค้าจากไฟล์ Excel (Smart Bulk Import)
  * @param file - ไฟล์ Excel (.xlsx, .xls, .csv)
@@ -263,3 +280,4 @@ export const importProductsFromExcel = async (file: File, shopId: number) => {
     throw new Error(errMsg);
   }
 };
+

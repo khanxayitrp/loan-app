@@ -1,3 +1,4 @@
+
 // src/types/productType.ts
 export interface ProductType {
   id: number
@@ -13,3 +14,4 @@ export interface ProductTypeForm {
   description: string | null
   is_active: number
 }
+

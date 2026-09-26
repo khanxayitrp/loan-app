@@ -1,10 +1,11 @@
+
 // src/types/auth.ts
 export interface User {
   id: number
   username: string
   full_name: string
   role: 'admin' | 'staff' | 'partner' | 'customer'
-  staff_level?:  'approver' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'none' ;
+  staff_level?: 'assistant_director' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none';
   is_active?: boolean | number
   avatar?: string; // 🟢 ເພີ່ມບັນທັດນີ້ເຂົ້າໄປ (ໃຊ້ ? ໝາຍຄວາມວ່າ ອາດຈະມີ ຫຼື ບໍ່ມີກໍໄດ້)
   created_at?: string
@@ -50,3 +51,4 @@ export interface CurrentUserResponse {
   permissions: string[]
   expiresAt?: number
 }
+

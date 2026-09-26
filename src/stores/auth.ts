@@ -1,3 +1,4 @@
+
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
 import { usePermissionStore } from './permission'
@@ -30,7 +31,9 @@ export const useAuthStore = defineStore('auth', {
     isAdmin: (state) => state.user?.role === 'admin',
     isStaff: (state) => state.user?.role === 'staff',
     isTokenExpired: (state) => {
-      if (!state.expiresAt) return true
+      // 🌟 ປ່ຽນເປັນ return false ໄວ້ກ່ອນຖ້າບໍ່ມີ expiresAt
+      // ເພື່ອປ້ອງກັນບໍ່ໃຫ້ Router Guard ໄປ Loop ຍິງ API checkAuth ຕະຫຼອດເວລາ
+      if (!state.expiresAt) return false
       return Date.now() >= state.expiresAt * 1000
     },
     token: (state) => {
@@ -108,7 +111,7 @@ export const useAuthStore = defineStore('auth', {
       password: string
       role: 'admin' | 'staff' | 'partner' | 'customer'
       full_name: string
-      staff_level?: 'requester' | 'approver' | 'none'
+      staff_level?: 'assistant_director' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none'
       is_active?: number
     }): Promise<void> {
       try {
@@ -130,7 +133,7 @@ export const useAuthStore = defineStore('auth', {
       username?: string
       role?: 'admin' | 'staff' | 'partner' | 'customer'
       full_name?: string
-      staff_level?: 'requester' | 'approver' | 'none'
+      staff_level?: 'assistant_director' | 'sales' | 'credit_officer' | 'credit_manager' | 'deputy_director' | 'director' | 'auditor' | 'none'
       is_active?: number
       password?: string
     }): Promise<void> {
@@ -220,3 +223,4 @@ export const useAuthStore = defineStore('auth', {
     }
   }
 })
+

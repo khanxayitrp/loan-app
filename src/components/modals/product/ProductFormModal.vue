@@ -1,7 +1,10 @@
+
 <template>
   <teleport to="body">
     <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto my-auto relative flex flex-col max-h-[90vh]">
+      <!-- ປ່ຽນແຖວທີ 4 ຂອງໄຟລ໌ -->
+<!-- 🟢 ปรับให้ใช้ 98vw และ max-w-7xl เพื่อให้เหลือพื้นที่กว้างพอสำหรับหน้าจอที่มี DevTools -->
+<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-[98vw] max-w-7xl mx-auto my-auto relative flex flex-col max-h-[92vh]">
 
         <div class="flex justify-between items-center p-6 border-b border-base-200 shrink-0">
           <h3 class="text-xl font-bold text-gray-800 dark:text-white">
@@ -140,39 +143,129 @@
                   <span class="icon-[tabler--plus] size-4"></span> ເພີ່ມຫົວຂໍ້ຕົວເລືອກທີ 2
                 </button>
 
-                <div v-if="form.variants.length > 0" class="overflow-x-auto mt-6 border border-base-300 rounded-xl shadow-inner bg-white dark:bg-base-100">
-                  <table class="table table-zebra w-full">
-                    <thead class="bg-base-200/60 text-gray-700">
-                      <tr>
-                        <th v-if="variantOptions.some(o => o.name.includes('ສີ') || o.name.includes('Color'))">ສີ (Color)</th>
-                        <th v-if="variantOptions.some(o => o.name.includes('ຂະໜາດ') || o.name.includes('Size'))">ຂະໜາດ (Size)</th>
-                        <th class="text-center w-32">ຮູບພາບ</th>
-                        <th>ລາຄາ (ກີບ) *</th>
-                        <th>ສະຕັອກ *</th>
-                        <th>SKU ຍ່ອຍ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="(v, index) in form.variants" :key="index" class="hover:bg-base-200/30">
-                        <td v-if="v.color" class="font-bold text-primary">{{ v.color }}</td>
-                        <td v-if="v.size_or_capacity" class="font-bold text-secondary">{{ v.size_or_capacity }}</td>
-                        <td class="align-middle">
-                          <div class="flex flex-col gap-2 items-center justify-center">
-                            <div class="w-12 h-12 bg-base-200 rounded-lg border flex items-center justify-center cursor-pointer overflow-hidden hover:border-primary shrink-0 shadow-sm" @click="triggerVariantImage(index)" title="ຄລິກເພື່ອອັບໂຫຼດຮູບພາບ">
-                              <img v-if="v.image_url" :src="getProductImageUrl(v.image_url)" class="w-full h-full object-cover" @error="handleImageError" />
-                              <span v-else class="icon-[tabler--photo-plus] text-gray-400 size-5"></span>
-                            </div>
-                            <input type="file" :id="`variant-img-${index}`" class="hidden" accept="image/jpeg,image/png,image/webp" @change="handleVariantImageUpload($event, index)" />
-                            <input v-model="v.image_url" type="text" class="input input-xs input-bordered w-full text-center text-[10px]" placeholder="ວາງ Link..." />
-                          </div>
-                        </td>
-                        <td><input v-model.number="v.price" type="number" class="input input-sm input-bordered w-28" min="0" required /></td>
-                        <td><input v-model.number="v.stock_quantity" type="number" class="input input-sm input-bordered w-20 text-center" min="0" required /></td>
-                        <td><input v-model="v.merchant_sku" type="text" class="input input-sm input-bordered w-full" placeholder="SKU" /></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+<!-- 🌟 ຕາຕະລາງ Variants ແບບ table-fixed ບັງຄັບລົງ 100% ບໍ່ມີ Scroll ລວງນອນ 🌟 -->
+
+
+<!-- 🌟 ຕາຕະລາງ Variants: ຍຸບຖັນ ສີ ແລະ ຂະໜາດ ເຂົ້າກັນ ເພື່ອຄືນພື້ນທີ່ໃຫ້ຖັນ "ສະຖານະ" 🌟 -->
+<div v-if="form.variants.length > 0" class="overflow-x-auto mt-6 border border-base-300 rounded-xl shadow-xs bg-white dark:bg-base-100">
+  <table class="table w-full">
+    <thead class="bg-base-200/80 text-gray-700 dark:text-gray-200 text-xs">
+      <tr>
+        <!-- 🟢 1. ຍຸບຖັນ ສີ ແລະ ຂະໜາດ ເຂົ້າກັນເປັນຖັນດຽວ -->
+        <th class="w-44 text-left">ຕົວເລືອກ (ສີ / ຂະໜາດ)</th>
+        
+        <!-- 2. ຮູບ -->
+        <th class="w-20 text-center">ຮູບພາບ</th>
+        
+        <!-- 3. ລາຄາ -->
+        <th class="w-36 text-left">ລາຄາ (ກີບ) *</th>
+        
+        <!-- 4. ສະຕັອກ -->
+        <th class="w-24 text-center">ສະຕັອກ *</th>
+        
+        <!-- 5. SKU ຍ່ອຍ -->
+        <th class="text-left">SKU ຍ່ອຍ</th>
+        
+        <!-- 🟢 6. ຖັນສະຖານະ: ຈະເຫັນໄດ້ຊັດເຈນທັນທີ ເພາະມີພື້ນທີ່ເພີ່ມຂຶ້ນ -->
+        <th class="w-28 text-center bg-primary/10 text-primary font-bold">ສະຖານະ</th> 
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-base-200 text-xs">
+      <tr v-for="(v, index) in form.variants" :key="index" class="hover:bg-base-200/30 transition-colors">
+        
+        <!-- 🟢 1. ສະແດງ ສີ ຄັ້ນດ້ວຍ / ແລະ ຂະໜາດ -->
+        <td class="font-medium">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span v-if="v.color" class="font-bold text-primary">{{ v.color }}</span>
+            <span v-if="v.color && v.size_or_capacity" class="text-gray-400 font-normal">/</span>
+            <span v-if="v.size_or_capacity" class="font-bold text-secondary">{{ v.size_or_capacity }}</span>
+            <span v-if="!v.color && !v.size_or_capacity" class="text-gray-400">ມາດຕະຖານ</span>
+          </div>
+        </td>
+
+        <!-- 2. ຮູບພາບ -->
+        <td class="text-center align-middle">
+          <div class="flex justify-center items-center">
+            <div 
+              class="w-10 h-10 bg-base-200 rounded-lg border flex items-center justify-center cursor-pointer overflow-hidden hover:border-primary shrink-0 shadow-xs" 
+              @click="triggerVariantImage(index)" 
+              title="ຄລິກເພື່ອອັບໂຫຼດຮູບ"
+            >
+              <img v-if="v.image_url" :src="getProductImageUrl(v.image_url)" class="w-full h-full object-cover" @error="handleImageError" />
+              <span v-else class="icon-[tabler--photo-plus] text-gray-400 size-5"></span>
+            </div>
+            <input type="file" :id="`variant-img-${index}`" class="hidden" accept="image/jpeg,image/png,image/webp" @change="handleVariantImageUpload($event, index)" />
+          </div>
+        </td>
+
+        <!-- 3. ລາຄາ -->
+        <td>
+          <input 
+            v-model.number="v.price" 
+            type="number" 
+            class="input input-sm input-bordered w-full font-medium" 
+            min="0" 
+            required 
+          />
+        </td>
+
+        <!-- 4. ສະຕັອກ -->
+        <td>
+          <input 
+            v-model.number="v.stock_quantity" 
+            type="number" 
+            class="input input-sm input-bordered w-full text-center font-medium" 
+            min="0" 
+            required 
+          />
+        </td>
+
+        <!-- 5. SKU ຍ່ອຍ -->
+        <td>
+          <input 
+            v-model="v.merchant_sku" 
+            type="text" 
+            class="input input-sm input-bordered w-full" 
+            placeholder="SKU ຍ່ອຍ" 
+          />
+        </td>
+
+        <!-- 🟢 6. ສະຖານະ (Toggle Switch) ຕິດຂອບຂວາ ບໍ່ມີຫຼຸດຂອບ -->
+        <td class="text-center align-middle bg-primary/5">
+          <!-- ສຳລັບ Variant ທີ່ມີໃນ DB ແລ້ວ (ມີ ID) -->
+          <div 
+            v-if="v.id" 
+            class="tooltip tooltip-left cursor-pointer inline-flex items-center" 
+            :data-tip="v.is_active === 1 ? 'ກົດເພື່ອປິດການຂາຍ' : 'ກົດເພື່ອເປີດຂາຍ'" 
+            @click="openVariantStatusModal(v, index)"
+          >
+            <input 
+              type="checkbox" 
+              :checked="v.is_active === 1" 
+              class="toggle toggle-success toggle-sm pointer-events-none" 
+            />
+          </div>
+
+          <!-- ສຳລັບ Variant ທີ່ສ້າງໃໝ່ຍັງບໍ່ບັນທຶກ -->
+          <div 
+            v-else 
+            class="tooltip tooltip-left inline-flex items-center" 
+            :data-tip="v.is_active === 1 ? 'ເປີດຂາຍຢູ່' : 'ປິດການຂາຍ'"
+          >
+            <input 
+              type="checkbox" 
+              v-model="v.is_active" 
+              :true-value="1" 
+              :false-value="0" 
+              class="toggle toggle-success toggle-sm cursor-pointer" 
+            />
+          </div>
+        </td>
+
+      </tr>
+    </tbody>
+  </table>
+</div>
               </div>
             </div>
 
@@ -208,7 +301,7 @@
             <div class="form-control bg-base-200 p-4 rounded-xl mt-4">
               <label class="label cursor-pointer justify-start gap-4">
                 <input type="checkbox" v-model="form.is_active" :true-value="1" :false-value="0" class="toggle toggle-success" />
-                <span class="label-text font-bold">ເປີດສະຖານະພ້ອມຂາຍ (Active)</span>
+                <span class="label-text font-bold">ເປີດສະຖານະພ້ອມຂາຍ (Active - ສຳລັບສິນຄ້າຫຼັກ)</span>
               </label>
             </div>
 
@@ -231,6 +324,38 @@
       </div>
     </div>
   </teleport>
+
+  <!-- 🌟 Modal ສຳລັບຢືນຢັນການເປີດ/ປິດ ສະຖານະ Variant ໂດຍສະເພາະ 🌟 -->
+  <!-- 🌟 Modal ສຳລັບຢືນຢັນການເປີດ/ປິດ ສະຖານະ Variant ໂດຍສະເພາະ 🌟 -->
+  <teleport to="body">
+    <div v-if="showVariantStatusModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md animate-in fade-in zoom-in duration-200">
+        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+          <span class="icon-[tabler--alert-circle] text-warning size-6"></span>
+          {{ variantToToggle?.variant.is_active === 1 ? 'ຢືນຢັນການປິດຂາຍ' : 'ຢືນຢັນການເປີດຂາຍ' }}
+        </h3>
+        <p class="py-4 text-gray-700 dark:text-gray-300">
+          ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການ <strong>{{ variantToToggle?.variant.is_active === 1 ? 'ປິດ' : 'ເປີດ' }}</strong> ການຂາຍສິນຄ້າຕົວເລືອກນີ້:
+          <br/><br/>
+          <span class="font-bold text-primary bg-primary/10 px-3 py-1 rounded-lg inline-block">
+            {{ variantToToggle?.variant.color || '' }} {{ variantToToggle?.variant.size_or_capacity || '' }}
+            <span class="text-sm font-normal text-gray-500 ml-1">
+              (SKU: {{ variantToToggle?.variant.merchant_sku || variantToToggle?.variant.system_sku || 'N/A' }})
+            </span>
+          </span>
+        </p>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" class="btn btn-ghost" @click="showVariantStatusModal = false" :disabled="isTogglingVariant">ຍົກເລີກ</button>
+          <button type="button" class="btn" :class="variantToToggle?.variant.is_active === 1 ? 'btn-error' : 'btn-success'" @click="confirmToggleVariantStatus" :disabled="isTogglingVariant">
+            <span v-if="isTogglingVariant" class="loading loading-spinner size-5"></span>
+            <span v-else class="icon-[tabler--check] size-5"></span>
+            {{ variantToToggle?.variant.is_active === 1 ? 'ຢືນຢັນປິດຂາຍ' : 'ຢືນຢັນເປີດຂາຍ' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </teleport>
+
 </template>
 
 <script setup lang="ts">
@@ -240,6 +365,7 @@ import { useShopStore } from '@/stores/shop'
 import { useGlobalCategoryStore } from '@/stores/global_categories'
 import { getFullImageUrl } from '@/utils/url'
 import { alert } from '@/utils/alert'
+import apiClient from '@/api/apiclient' // 🌟 ເພີ່ມການ Import apiClient ມາໃຊ້ຍິງ API ປ່ຽນສະຖານະ
 import { uploadVariantImage } from '@/api/upload'
 import type { Product } from '@/types/product'
 
@@ -268,6 +394,11 @@ const form = reactive({
 
 const errors = reactive({ product_name: '', product_brand: '', product_model: '', productType_id: '', price: '' })
 const variantOptions = ref([{ id: 1, name: 'ສີ (Color)', values: [''] }])
+
+// 🌟 State ສຳລັບ Variant Status Modal
+const showVariantStatusModal = ref(false)
+const variantToToggle = ref<{ variant: any, index: number } | null>(null)
+const isTogglingVariant = ref(false)
 
 const isBase64 = (str: any) => typeof str === 'string' && (str.startsWith('data:') || str.startsWith('blob:'))
 const getProductImageUrl = (url: any) => {
@@ -326,7 +457,8 @@ watch(() => props.isOpen, async (newVal) => {
             id: v.id, color: v.color || '', size_or_capacity: v.size_or_capacity || '',
             merchant_sku: v.merchant_sku || '', price: Number(v.price) || 0,
             stock_quantity: Number(v.stock_quantity) || 0, weight_gram: Number(v.weight_gram) || 0,
-            image_url: v.image_url || '', file: null
+            image_url: v.image_url || '', file: null,
+            is_active: v.is_active !== undefined ? Number(v.is_active) : 1
           }))
 
           const uniqueColors = [...new Set(variants.map((v: any) => v.color).filter(Boolean))] as string[]
@@ -398,7 +530,8 @@ const generateVariantMatrix = () => {
       id: existing?.id || undefined, color: row.color || '', size_or_capacity: row.size_or_capacity || '',
       merchant_sku: existing?.merchant_sku || `${form.merchant_sku || 'SKU'}-${index + 1}`,
       price: existing?.price || form.price || 0, stock_quantity: existing?.stock_quantity || 0,
-      weight_gram: existing?.weight_gram || 0, image_url: existing?.image_url || '', file: existing?.file || null
+      weight_gram: existing?.weight_gram || 0, image_url: existing?.image_url || '', file: existing?.file || null,
+      is_active: existing?.is_active !== undefined ? existing.is_active : 1
     }
   })
 }
@@ -440,6 +573,39 @@ const processGalleryFiles = async (files: File[]) => {
 }
 const removeGalleryImage = (index: number) => form.gallery.splice(index, 1)
 
+// 🌟 ຟັງຊັນສຳລັບເປີດ Modal ຢືນຢັນ Variant Status
+const openVariantStatusModal = (variant: any, index: number) => {
+  variantToToggle.value = { variant, index };
+  showVariantStatusModal.value = true;
+};
+
+// 🌟 ຟັງຊັນສຳລັບການຍິງ API ອັບເດດ Variant Status
+const confirmToggleVariantStatus = async () => {
+  if (!variantToToggle.value) return;
+  
+  isTogglingVariant.value = true;
+  const { variant, index } = variantToToggle.value;
+  const targetStatus = variant.is_active === 1 ? 0 : 1;
+
+  try {
+    // ຍິງ API ໄປອັບເດດໃນ Database ທັນທີ
+    await apiClient.patch(`/products/variants/${variant.id}/status`, { is_active: targetStatus });
+    
+    alert.success(`ປ່ຽນສະຖານະຕົວເລືອກສຳເລັດ!`);
+    
+    // ອັບເດດຄ່າໃນ UI ໃຫ້ປ່ຽນໄປຕາມທີ່ແກ້ໄຂ
+    form.variants[index].is_active = targetStatus;
+    
+  } catch (error: any) {
+    console.error('Error toggling variant status:', error);
+    alert.error('ເກີດຂໍ້ຜິດພາດ', error.response?.data?.message || 'ບໍ່ສາມາດປ່ຽນສະຖານະໄດ້');
+  } finally {
+    isTogglingVariant.value = false;
+    showVariantStatusModal.value = false;
+    variantToToggle.value = null;
+  }
+};
+
 const validateForm = () => {
   Object.keys(errors).forEach(key => errors[key as keyof typeof errors] = '')
   let isValid = true
@@ -451,6 +617,14 @@ const validateForm = () => {
 
 const saveProduct = async () => {
   if (!validateForm()) return
+
+  // 🌟 ແຈ້ງເຕືອນຢືນຢັນກ່ອນບັນທຶກສິນຄ້າ
+  const isConfirm = await alert.confirm(
+    'ຢືນຢັນການບັນທຶກ', 
+    props.editingProduct ? 'ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການບັນທຶກການແກ້ໄຂສິນຄ້ານີ້?' : 'ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການເພີ່ມສິນຄ້າໃໝ່ນີ້?'
+  );
+  if (!isConfirm) return;
+
   loading.value = true
 
   try {
@@ -482,7 +656,11 @@ const saveProduct = async () => {
       allowed_loan_type: form.allowed_loan_type, is_active: form.is_active,
       price: form.has_variants && form.variants.length > 0 ? form.variants[0].price : form.price,
       stock_quantity: form.has_variants ? form.variants.reduce((sum, v) => sum + (v.stock_quantity || 0), 0) : form.stock_quantity,
-      variants: form.has_variants ? form.variants.map(v => ({ id: v.id, color: v.color, size_or_capacity: v.size_or_capacity, merchant_sku: v.merchant_sku, price: v.price, stock_quantity: v.stock_quantity, weight_gram: v.weight_gram, image_url: v.image_url })) : []
+      variants: form.has_variants ? form.variants.map(v => ({ 
+        id: v.id, color: v.color, size_or_capacity: v.size_or_capacity, merchant_sku: v.merchant_sku, 
+        price: v.price, stock_quantity: v.stock_quantity, weight_gram: v.weight_gram, image_url: v.image_url, 
+        is_active: v.is_active 
+      })) : []
     };
 
     if (props.editingProduct) {
@@ -539,8 +717,34 @@ const saveProduct = async () => {
 </script>
 
 <style scoped>
+/* ลายเส้น Scrollbar แนวตั้ง */
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+
+/* 🌟 ป้องกัน Input ยืด Table ใน table-fixed */
+input[type="number"], input[type="text"] {
+  min-width: 0 !important;
+}
+
+/* 🌟 สไตล์บังคับแสดง Scrollbar แนวนอนให้เห็นชัดเจนบน macOS */
+.custom-scrollbar-x {
+  scrollbar-width: thin;
+  scrollbar-color: #6366f1 transparent;
+}
+.custom-scrollbar-x::-webkit-scrollbar { 
+  height: 8px !important; 
+}
+.custom-scrollbar-x::-webkit-scrollbar-track { 
+  background: #f1f5f9; 
+  border-radius: 8px;
+}
+.custom-scrollbar-x::-webkit-scrollbar-thumb { 
+  background-color: #818cf8; 
+  border-radius: 8px; 
+}
+.custom-scrollbar-x::-webkit-scrollbar-thumb:hover { 
+  background-color: #4f46e5; 
+}
 </style>

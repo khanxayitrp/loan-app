@@ -1,3 +1,4 @@
+
 <!-- src/App.vue -->
 <template>
   <!-- ใช้ BlankLayout สำหรับ error pages + login -->
@@ -28,3 +29,4 @@ const shouldUseBlankLayout = computed(() => {
   return !authStore.isAuthenticated || route.meta.layout === 'blank'
 })
 </script>
+

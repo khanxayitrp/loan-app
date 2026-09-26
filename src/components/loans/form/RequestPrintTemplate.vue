@@ -1,3 +1,4 @@
+
 <template>
   <div class="print-template" id="print-area">
     <div class="top-info">
@@ -317,3 +318,4 @@ const formatDateSlash = (dateStr: string | null) => {
   }
 }
 </style>
+
