@@ -136,6 +136,12 @@
                     <span class="icon-[tabler--eye] size-5"></span>
                   </button>
                 </div>
+                <div class="tooltip tooltip-top" data-tip="ເບິ່ງຕາຕະລາງຜ່ອນຊຳລະ">
+                  <button class="btn btn-circle btn-text btn-sm text-info" @click="openSchedule(loan)">
+                    <span class="icon-[tabler--calendar-stats] size-4"></span>
+                  </button>
+                </div>
+
 
                 <div v-if="hasContract(loan)" class="tooltip tooltip-top" data-tip="ຈັດການລາຍເຊັນເອກະສານ"
                   title="ຈັດການລາຍເຊັນເອກະສານ (ລູກຄ້າ/ນາຍບ້ານ)">
@@ -525,6 +531,14 @@
       </div>
     </teleport>
 
+
+    <LoanScheduleModal
+      :show="showScheduleModal"
+      :loan="selectedScheduleLoan"
+      :canEdit="false"
+      :canPrint="selectedScheduleLoan?.status === 'verified'"
+      @close="showScheduleModal = false"
+    />
   </div>
 
   <LoanScheduleModal :show="showScheduleModal" :loan="loanForSchedule || undefined" :view-only="true"

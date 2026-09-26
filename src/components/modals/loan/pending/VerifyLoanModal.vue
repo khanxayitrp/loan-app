@@ -131,6 +131,7 @@ const submit = async () => {
   isLoading.value = true;
 
   try {
+
     const updateData: any = {
       status: LoanApplicationStatus.VERIFIED,
       approver_id: authStore.user?.id
