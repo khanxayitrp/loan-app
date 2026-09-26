@@ -128,39 +128,24 @@
     </div>
 
     <!-- 🟢 ລະບົບແບ່ງໜ້າ Local -->
-    <div v-if="!isLoading && totalFiltered > 0"
-      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div class="text-gray-500">
-        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
-      </div>
-
-      <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
-          <option :value="10">10 ຕໍ່ໜ້າ</option>
-          <option :value="25">25 ຕໍ່ໜ້າ</option>
-          <option :value="50">50 ຕໍ່ໜ້າ</option>
-        </select>
-
-        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
-        <span class="px-2 font-medium">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
-      </div>
-    </div>
+    <LoanStatusPagination
+      v-if="!isLoading"
+      v-model:pageSize="pageSize"
+      :currentPage="currentPage"
+      :totalFiltered="totalFiltered"
+      :pageOptions="[10, 25, 50]"
+      @previousPage="previousPage"
+      @nextPage="nextPage"
+      @update:pageSize="resetPage"
+    />
 
     <!-- 🟢 ປຸ່ມ Load More -->
-    <div v-if="!isLoading"
-      class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed dark:border-gray-700">
-      <button v-if="loanAppStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs" @click="loadMore"
-        :disabled="loanAppStore.isLoadingMore">
-        <span v-if="loanAppStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
-        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
-        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
-      </button>
-
-      <p v-else class="text-sm text-gray-400 italic">
-        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດແລ້ວ)
-      </p>
-    </div>
+    <LoanStatusLoadMore
+      v-if="!isLoading"
+      :canLoadMore="loanAppStore.canLoadMore"
+      :isLoadingMore="loanAppStore.isLoadingMore"
+      @loadMore="loadMore"
+    />
 
     <teleport to="body">
       <div v-if="showRepaymentHub"
@@ -232,17 +217,17 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(sch, index) in currentSchedules" :key="sch.id"
+                  <tr v-for="(sch, index) in currentSchedules" :key="sch.id || index"
                     :class="{ 'bg-emerald-50/50 dark:bg-emerald-900/10': sch.payment_status === 'paid' }">
                     <td class="font-bold text-center">{{ sch.installment_no }}</td>
-                    <td class="font-medium text-gray-700">{{ formatDate(sch.due_date) }}</td>
+                    <td>{{ formatDate(sch.due_date ?? null) }}</td>
                     <td class="text-gray-500 text-right">{{ formatPrice(sch.principal_amount) }}</td>
                     <td class="text-gray-500 text-right">{{ formatPrice(sch.interest_amount) }}</td>
                     <td class="font-bold text-right text-primary">{{ formatPrice(sch.total_due) }}</td>
                     <td class="text-center">
                       <span class="badge badge-sm border-0 font-medium"
-                        :class="statusConfig[sch.payment_status]?.class || 'badge-ghost'">
-                        {{ statusConfig[sch.payment_status]?.text || sch.payment_status }}
+                        :class="(sch.payment_status && statusConfig[sch.payment_status]?.class) || 'badge-ghost'">
+                        {{ (sch.payment_status && statusConfig[sch.payment_status]?.text) || sch.payment_status }}
                       </span>
                     </td>
                     <td class="text-center">
@@ -491,7 +476,7 @@
                 </div>
 
                 <div class="text-gray-500">ວັນທີຊຳລະ:</div>
-                <div class="font-medium text-right">{{ formatDate(tx.paid_at || tx.createdAt) }}</div>
+                <div class="font-medium text-right">{{ formatDate(tx.paid_at || tx.createdAt || null) }}</div>
 
                 <div class="text-gray-500 mt-1">ຍອດເງິນທີ່ຈ່າຍ:</div>
                 <div class="font-bold text-right text-primary text-base mt-1">{{ formatPrice(tx.amount_paid) }} ກີບ
@@ -558,8 +543,18 @@ import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useLoanApplicationStore } from '@/stores/loanApplication'
 import { usePermissionStore } from '@/stores/permission'
-import type { LoanApplication } from '@/types/loanApplication'
+import { useLoanStatus } from '@/composables/useLoanStatus'
+import { LoanApplicationStatus, type LoanApplication } from '@/types/loanApplication'
+import type { DeliveryReceipt } from '@/types/delivery_receipt'
+import LoanStatusPagination from './components/LoanStatusPagination.vue'
+import LoanStatusLoadMore from './components/LoanStatusLoadMore.vue'
 import { storeToRefs } from 'pinia'
+
+const {
+  formatDate,
+  getCustomerFullName: getCustomerName,
+  getContractNumber
+} = useLoanStatus()
 
 const loanAppStore = useLoanApplicationStore()
 const permissionStore = usePermissionStore()
@@ -576,18 +571,53 @@ const pageSize = ref(10)
 const debouncedSearch = ref('')
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+interface RepaymentScheduleItem {
+  id?: number;
+  application_id?: number;
+  installment_no?: number;
+  due_date?: string | null;
+  principal_amount?: number;
+  interest_amount?: number;
+  penalty?: number;
+  paid_principal?: number;
+  paid_interest?: number;
+  paid_penalty?: number;
+  total_due?: number;
+  payment_status?: string;
+}
+
+interface ReceiptTransactionItem {
+  id?: number;
+  transaction_type?: string;
+  schedule?: {
+    installment_no?: number;
+    paid_principal?: number;
+    paid_interest?: number;
+    paid_penalty?: number;
+  };
+  paid_at?: string;
+  createdAt?: string;
+  amount_paid?: number;
+  payment_channel?: string;
+  recorded_by_user?: {
+    full_name?: string;
+    username?: string;
+  };
+  proof_url?: string;
+}
+
 const showRepaymentHub = ref(false)
 const showPaymentModal = ref(false)
 const selectedLoan = ref<LoanApplication | null>(null)
-const selectedSchedule = ref<any | null>(null)
+const selectedSchedule = ref<RepaymentScheduleItem | null>(null)
 const isEarlyPayoff = ref(false)
 const isOverpayment = ref(false) // 🟢 ເພີ່ມແຖວນີ້
 const slipInput = ref<HTMLInputElement | null>(null);
-const currentSchedules = ref<any[]>([])
+const currentSchedules = ref<RepaymentScheduleItem[]>([])
 
 const showReceiptModal = ref(false);
 const isReceiptLoading = ref(false);
-const receiptTransactions = ref<any[]>([]);
+const receiptTransactions = ref<ReceiptTransactionItem[]>([]);
 
 const canManagePayment = computed(() => {
   return permissionStore.hasPermission('payment_create') || permissionStore.hasPermission('loan_edit');
@@ -617,24 +647,7 @@ const statusConfig: Record<string, { class: string, text: string }> = {
   overdue: { class: 'bg-error text-white', text: 'ກາຍກຳນົດ' }
 }
 
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-}
-
 const formatCurrencyInput = (val: number) => val ? val.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0';
-
-const getCustomerName = (loan: LoanApplication) => {
-  return `${loan.customer?.first_name || ''} ${loan.customer?.last_name || ''}`.trim() || 'ບໍ່ມີຊື່';
-}
-
-const getContractNumber = (loan: any): string => {
-  if (loan && loan.loan_contracts && loan.loan_contracts.length > 0) {
-    return loan.loan_contracts[0].loan_contract_number || '-';
-  }
-  return '-';
-};
 
 const parseAllocation = (remarks: string | null) => {
   if (!remarks) return null;
@@ -698,31 +711,31 @@ const waterfallPreview = computed(() => {
   return { penalty: penaltyAllocated, interest: interestAllocated, principal: principalAllocated, overpay: remainingCash };
 });
 
-const handleCurrencyInputGeneric = (field: keyof typeof paymentForm, e: Event) => {
+const handleCurrencyInputGeneric = (field: 'amount_received' | 'discount_given', e: Event) => {
   const target = e.target as HTMLInputElement;
   const rawValue = target.value.replace(/,/g, '').replace(/[^\d]/g, '');
-  (paymentForm as any)[field] = Number(rawValue) || 0;
-  target.value = formatCurrencyInput((paymentForm as any)[field]);
+  paymentForm[field] = Number(rawValue) || 0;
+  target.value = formatCurrencyInput(paymentForm[field]);
 };
 
 const handleAmountInput = (e: Event) => handleCurrencyInputGeneric('amount_received', e);
 const handleDiscountInput = (e: Event) => handleCurrencyInputGeneric('discount_given', e);
 
-const hasApprovedDelivery = (loan: any): boolean => {
+const hasApprovedDelivery = (loan: LoanApplication): boolean => {
   if (!loan) return false;
   if (loan.document_signatures !== undefined) {
     if (Array.isArray(loan.document_signatures)) {
-      return loan.document_signatures.some((sig: any) => sig.document_type === 'delivery_note' && sig.status === 'signed');
+      return loan.document_signatures.some((sig) => sig.document_type === 'delivery_note' && sig.status === 'signed');
     }
     return false;
   }
   if (loan.delivery_receipt) {
-    if (Array.isArray(loan.delivery_receipt)) return loan.delivery_receipt.some((receipt: any) => receipt.status === 'approved');
-    else if (typeof loan.delivery_receipt === 'object') return loan.delivery_receipt.status === 'approved';
+    const dr = loan.delivery_receipt as unknown;
+    if (Array.isArray(dr)) return (dr as DeliveryReceipt[]).some((receipt) => receipt.status === 'approved');
+    else if (typeof dr === 'object' && dr !== null) return (dr as DeliveryReceipt).status === 'approved';
   }
   if (loan.delivery_receipts) {
-    if (Array.isArray(loan.delivery_receipts)) return loan.delivery_receipts.some((receipt: any) => receipt.status === 'approved');
-    else if (typeof loan.delivery_receipts === 'object') return loan.delivery_receipts.status === 'approved';
+    if (Array.isArray(loan.delivery_receipts)) return loan.delivery_receipts.some((receipt) => receipt.status === 'approved');
   }
   return false;
 }
@@ -747,16 +760,16 @@ const filteredLoans = computed(() => {
 
   // 1. กรองตามสถานะ
   if (statusFilter.value === 'completed') {
-    loans = loans.filter((loan: any) => loan.status === 'completed' || loan.status === 'closed_early');
+    loans = loans.filter((loan) => loan.status === LoanApplicationStatus.COMPLETED || loan.status === LoanApplicationStatus.CLOSED_EARLY);
   } else {
     // Default to active (disbursed)
-    loans = loans.filter((loan: any) => loan.status === 'disbursed' || loan.status === 'active');
+    loans = loans.filter((loan) => loan.status === LoanApplicationStatus.DISBURSED || (loan.status as string) === 'active');
   }
 
   // 2. ค้นหาแบบ Text
   if (debouncedSearch.value) {
     const q = debouncedSearch.value.toLowerCase().trim();
-    loans = loans.filter((loan: any) =>
+    loans = loans.filter((loan) =>
       getCustomerName(loan).toLowerCase().includes(q) ||
       (loan.customer?.phone || '').includes(q) ||
       (loan.loan_id || loan.id?.toString()).toLowerCase().includes(q) ||
@@ -795,17 +808,19 @@ const summary = computed(() => {
   return { totalPayable, totalPaid, remainingBalance: Math.max(0, totalPayable - totalPaid) };
 });
 
-const viewReceipt = async (schedule: any) => {
+const viewReceipt = async (schedule: RepaymentScheduleItem) => {
   showReceiptModal.value = true;
   isReceiptLoading.value = true;
   receiptTransactions.value = [];
 
   try {
-    const response = await apiClient.get(`/repayments/transactions/application/${schedule.application_id}`);
+    if (schedule.application_id) {
+      const response = await apiClient.get(`/repayments/transactions/application/${schedule.application_id}`);
 
-    if (response.data && response.data.data) {
-      const txData = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
-      receiptTransactions.value = [...txData];
+      if (response.data && response.data.data) {
+        const txData = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
+        receiptTransactions.value = [...txData];
+      }
     }
   } catch (error) {
     console.error('Failed to fetch receipt:', error);
@@ -837,19 +852,20 @@ const viewReceiptHistory = async (applicationId: number) => {
 // 🌟 Fetch Loans based on status Filter
 const fetchLoans = async () => {
   try {
-    let apiStatuses = ['disbursed'];
+    let apiStatuses: LoanApplicationStatus[] = [LoanApplicationStatus.DISBURSED];
     if (statusFilter.value === 'completed') {
-      apiStatuses = ['completed', 'closed_early'];
+      apiStatuses = [LoanApplicationStatus.COMPLETED, LoanApplicationStatus.CLOSED_EARLY];
     }
 
     await loanAppStore.fetchLoanApplications({
       is_confirmed: 1,
-      status: apiStatuses as any,
+      status: apiStatuses,
       limit: 100, // 🟢 ดึงข้อมูลก้อนใหญ่เพื่อทำ Local Pagination
       cursor: undefined
     });
-  } catch (error: any) {
-    alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້', error.message);
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : (error as { message?: string })?.message || 'Unknown error';
+    alert.error('ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້', errMessage);
   }
 }
 
@@ -925,23 +941,27 @@ const openRepaymentHub = async (loan: LoanApplication) => {
     const res = await loanAppStore.fetchRepaymentSchedule(loan.id);
 
     // 🌟 ดักจับทุกกรณีที่ API อาจจะส่งมา
-    let rawData = [];
+    let rawData: RepaymentScheduleItem[] = [];
     if (Array.isArray(res)) {
       rawData = res;
-    } else if (res?.data && Array.isArray(res.data)) {
-      rawData = res.data;
-    } else if (res?.data?.data && Array.isArray(res.data.data)) {
-      rawData = res.data.data;
+    } else if (res && typeof res === 'object' && 'data' in res) {
+      const resData = (res as { data: unknown }).data;
+      if (Array.isArray(resData)) {
+        rawData = resData;
+      } else if (resData && typeof resData === 'object' && 'data' in resData && Array.isArray((resData as { data: unknown }).data)) {
+        rawData = (resData as { data: RepaymentScheduleItem[] }).data;
+      }
     } else if (typeof res === 'string') {
       try {
         const parsed = JSON.parse(res);
         rawData = Array.isArray(parsed) ? parsed : (parsed.data || []);
-      } catch (e) { }
+      } catch (e) { console.error(e); }
     }
 
     // 🌟 บังคับ Clone ข้อมูลใหม่เพื่อให้ Vue กระตุ้นการ Render
     currentSchedules.value = [...rawData];
-  } catch (error: any) {
+  } catch (error: unknown) {
+    console.error(error);
     alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຕາຕະລາງການຜ່ອນຊຳລະໄດ້');
     currentSchedules.value = [];
   } finally {
@@ -955,7 +975,7 @@ const closeRepaymentHub = () => {
   currentSchedules.value = [];
 }
 
-const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
+const openPaymentModal = async (schedule: RepaymentScheduleItem | null, earlyPayoff = false) => {
   if (!canManagePayment.value) return;
 
   isEarlyPayoff.value = earlyPayoff;
@@ -989,12 +1009,13 @@ const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
 
       recalculatePayoffInterest();
       showPaymentModal.value = true;
-    } catch (error: any) {
-      alert.error('ເກີດຂໍ້ຜິດພາດ', error.response?.data?.message || 'ບໍ່ສາມາດຄຳນວນຍອດປິດບັນຊີໄດ້');
+    } catch (error: unknown) {
+      const errMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'ບໍ່ສາມາດຄຳນວນຍອດປິດບັນຊີໄດ້';
+      alert.error('ເກີດຂໍ້ຜິດພາດ', errMessage);
     } finally {
       isProcessing.value = false;
     }
-  } else {
+  } else if (schedule) {
     const expectedPrincipal = (Number(schedule.principal_amount) || 0) - (Number(schedule.paid_principal) || 0);
     const expectedInterest = (Number(schedule.interest_amount) || 0) - (Number(schedule.paid_interest) || 0);
     const expectedPenalty = (Number(schedule.penalty) || 0) - (Number(schedule.paid_penalty) || 0);
@@ -1010,7 +1031,7 @@ const openPaymentModal = async (schedule: any | null, earlyPayoff = false) => {
       expected_penalty: Math.max(0, expectedPenalty),
       amount_received: totalOwed,
       discount_given: 0,
-      installment_number: schedule.installment_no
+      installment_number: schedule.installment_no || 0
     });
 
     showPaymentModal.value = true;
@@ -1068,8 +1089,9 @@ const submitPayment = async () => {
     if (selectedLoan.value) {
       await openRepaymentHub(selectedLoan.value);
     }
-  } catch (error: any) {
-    alert.error('ເກີດຂໍ້ຜິດພາດໃນການຊຳລະ', error.response?.data?.message || error.message);
+  } catch (error: unknown) {
+    const errMessage = (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as Error)?.message || 'Unknown error';
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການຊຳລະ', errMessage);
   } finally {
     isProcessing.value = false;
   }

@@ -240,52 +240,36 @@
     </div>
 
     <!-- 🟢 ລະບົບແບ່ງໜ້າແບບ Local Pagination -->
-    <div v-if="!isLoading && totalFiltered > 0"
-      class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 text-sm">
-      <div class="text-gray-500">
-        ສະແດງ {{ startIndex }} - {{ endIndex }} ຈາກທີ່ຄົ້ນຫາພົບ {{ totalFiltered }} ລາຍການ
-      </div>
-
-      <div class="flex items-center gap-2">
-        <select v-model.number="pageSize" class="select select-sm select-bordered" @change="resetPage">
-          <option :value="10">10 ຕໍ່ໜ້າ</option>
-          <option :value="25">25 ຕໍ່ໜ້າ</option>
-          <option :value="50">50 ຕໍ່ໜ້າ</option>
-          <option :value="100">100 ຕໍ່ໜ້າ</option>
-        </select>
-
-        <button class="btn btn-sm btn-outline" :disabled="!hasPreviousPage" @click="previousPage">ກ່ອນໜ້າ</button>
-        <span class="px-3 font-medium">ໜ້າ {{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn btn-sm btn-outline" :disabled="!hasNextPage" @click="nextPage">ຖັດໄປ</button>
-      </div>
-    </div>
+    <LoanStatusPagination
+      v-if="!isLoading"
+      v-model:pageSize="pageSize"
+      :currentPage="currentPage"
+      :totalFiltered="totalFiltered"
+      @previousPage="previousPage"
+      @nextPage="nextPage"
+      @update:pageSize="resetPage"
+    />
 
     <!-- 🟢 ປຸ່ມ Load More ດຶງຂໍ້ມູນຈາກ Server ຖ້າຄົ້ນຫາບໍ່ເຈີ -->
-    <div v-if="!isLoading" class="flex flex-col items-center mt-6 mb-4 border-t pt-6 border-dashed">
-      <button v-if="loanApplicationStore.canLoadMore" class="btn btn-primary btn-outline w-full max-w-xs"
-        @click="loadMore" :disabled="loanApplicationStore.isLoadingMore">
-        <span v-if="loanApplicationStore.isLoadingMore" class="loading loading-spinner loading-sm"></span>
-        <span v-else class="icon-[tabler--arrow-down-circle] size-5"></span>
-        ໂຫຼດຂໍ້ມູນຈາກຖານຂໍ້ມູນເພີ່ມເຕີມ
-      </button>
-
-      <p v-else class="text-sm text-gray-400 italic">
-        (ດຶງຂໍ້ມູນມາຄົບທັງໝົດແລ້ວ)
-      </p>
-    </div>
+    <LoanStatusLoadMore
+      v-if="!isLoading"
+      :canLoadMore="loanApplicationStore.canLoadMore"
+      :isLoadingMore="loanApplicationStore.isLoadingMore"
+      @loadMore="loadMore"
+    />
 
     <ScoringGuideModal :is-open="showScoringGuideModal" @close="showScoringGuideModal = false" />
-    <VerifyLoanModal :is-open="showVerifyModal" :loan="loanToAction"
+    <VerifyLoanModal :is-open="showVerifyModal" :loan="loanToAction || undefined"
       @close="showVerifyModal = false; loanToAction = null" @success="fetchData" />
-    <PrintSummaryModal :is-open="showPrintModal" :print-data="printData"
+    <PrintSummaryModal :is-open="showPrintModal" :print-data="printData || undefined"
       @close="showPrintModal = false; printData = null" />
-    <ChecklistModal :is-open="showChecklistModal" :loan="selectedChecklistLoan"
+    <ChecklistModal :is-open="showChecklistModal" :loan="selectedChecklistLoan || undefined"
       @close="showChecklistModal = false; selectedChecklistLoan = null" />
-    <CreditScoreModal :is-open="showCreditScoreModal" :loan="loanForCreditScore" :summary-data="summaryDataForScore"
+    <CreditScoreModal :is-open="showCreditScoreModal" :loan="loanForCreditScore || undefined" :summary-data="summaryDataForScore || undefined"
       @close="showCreditScoreModal = false; loanForCreditScore = null" @success="fetchData" />
-    <ExternalSignatureModal :is-open="showSignatureModal" :loan-id="loanForSignature?.id"
+    <ExternalSignatureModal :is-open="showSignatureModal" :loan-id="loanForSignature?.id ?? null"
       @close="showSignatureModal = false; loanForSignature = null" @updated="fetchData" />
-    <DeliveryNoteModal :is-open="showDeliveryNoteModal" :loan="loanForDeliveryNote" :is-pending-view="true"
+    <DeliveryNoteModal :is-open="showDeliveryNoteModal" :loan="loanForDeliveryNote || undefined" :is-pending-view="true"
       @close="showDeliveryNoteModal = false; loanForDeliveryNote = null" @updated="fetchData" />
 
     <teleport to="body">
@@ -543,7 +527,7 @@
 
   </div>
 
-  <LoanScheduleModal :show="showScheduleModal" :loan="loanForSchedule" :view-only="true"
+  <LoanScheduleModal :show="showScheduleModal" :loan="loanForSchedule || undefined" :view-only="true"
     @close="showScheduleModal = false; loanForSchedule = null" />
   <DocumentModalForm :show="showDocumentModal" :allow-edit="false"
     :current-documents="loanApplicationStore.currentDocuments"
@@ -562,9 +546,10 @@ import { usePermissionStore } from '@/stores/permission';
 import apiClient from '@/api/apiclient';
 import { alert } from '@/utils/alert';
 import { formatPrice } from '@/utils/formatters';
-import { LoanApplicationStatus } from '@/types/loanApplication';
+import { LoanApplicationStatus, type LoanApplication, type ChecklistSummary, type UpdateLoanApplicationDto } from '@/types/loanApplication';
+import type { LoanContract } from '@/types/loanContract';
 
-const props = defineProps<{ loanStatus?: string; }>();
+defineProps<{ loanStatus?: string; }>();
 
 import ScoringGuideModal from '@/components/modals/loan/pending/ScoringGuideModal.vue';
 import VerifyLoanModal from '@/components/modals/loan/pending/VerifyLoanModal.vue';
@@ -577,6 +562,15 @@ import LoanScheduleModal from '@/components/modals/loan/detail/LoanScheduleModal
 import LoanContractForm from '@/components/loans/form/LoanContractForm.vue';
 import DocumentModalForm from '@/components/modals/loan/pending/CheckDocumentModal.vue';
 import ApprovalTimeline from '@/components/loans/form/ApprovalTimeline.vue';
+import LoanStatusPagination from './components/LoanStatusPagination.vue';
+import LoanStatusLoadMore from './components/LoanStatusLoadMore.vue';
+import { useLoanStatus } from '@/composables/useLoanStatus';
+
+const {
+  formatDate,
+  getCustomerFullName: getCustomerName,
+  getCustomerPhone
+} = useLoanStatus();
 
 const route = useRoute();
 const router = useRouter();
@@ -595,15 +589,16 @@ const dateTo = ref('');
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-const approvalLogs = ref<any[]>([]);
-const newComment = ref('');
-const replyingTo = ref<any>(null);
-const isSubmittingComment = ref(false);
+interface ApprovalLogItem {
+  id: number;
+  remarks: string;
+  user?: { first_name?: string; full_name?: string };
+}
 
-const currentUserLevel = computed(() => authStore.user?.staff_level || '');
-const isSalesOrOfficer = computed(() => ['sales', 'credit_officer'].includes(currentUserLevel.value));
-const isManager = computed(() => currentUserLevel.value === 'credit_manager');
-const isApproverGroup = computed(() => ['credit_manager', 'deputy_director', 'director', 'assistant_director'].includes(currentUserLevel.value));
+const approvalLogs = ref<ApprovalLogItem[]>([]);
+const newComment = ref('');
+const replyingTo = ref<ApprovalLogItem | null>(null);
+const isSubmittingComment = ref(false);
 
 const showDetailsModal = ref(false);
 const showApproveModal = ref(false);
@@ -616,21 +611,21 @@ const showCreditScoreModal = ref(false);
 const showSignatureModal = ref(false);
 const showDeliveryNoteModal = ref(false);
 
-const loanForDeliveryNote = ref<any>(null);
-const loanForSignature = ref<any>(null);
+const loanForDeliveryNote = ref<LoanApplication | null>(null);
+const loanForSignature = ref<LoanApplication | null>(null);
 const showScheduleModal = ref(false);
-const loanForSchedule = ref<any>(null);
+const loanForSchedule = ref<LoanApplication | null>(null);
 const showContractModal = ref(false);
-const selectedContract = ref<any>(null);
+const selectedContract = ref<LoanContract | null>(null);
 const showDocumentModal = ref(false);
-const loanForDocument = ref<any>(null);
+const loanForDocument = ref<LoanApplication | null>(null);
 
-const selectedLoan = ref<any>(null);
-const loanToAction = ref<any>(null);
-const selectedChecklistLoan = ref<any>(null);
-const loanForCreditScore = ref<any>(null);
-const summaryDataForScore = ref<any>(null);
-const printData = ref<any>(null);
+const selectedLoan = ref<LoanApplication | null>(null);
+const loanToAction = ref<LoanApplication | null>(null);
+const selectedChecklistLoan = ref<LoanApplication | null>(null);
+const loanForCreditScore = ref<LoanApplication | null>(null);
+const summaryDataForScore = ref<ChecklistSummary | null>(null);
+const printData = ref<Record<string, unknown> | null>(null);
 const actionRemark = ref('');
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -699,7 +694,7 @@ const fetchData = async () => {
         LoanApplicationStatus.PENDING,
         LoanApplicationStatus.VERIFYING,
         LoanApplicationStatus.VERIFIED
-      ] as any,
+      ],
       is_confirmed: 1,
       limit: 100, // 🟢 ດຶງຂໍ້ມູນມາເທື່ອລະຊຸດ
       cursor: undefined
@@ -713,9 +708,9 @@ const loadMore = async () => {
   await loanApplicationStore.loadMoreLoanApplications();
 };
 
-const applyNotificationFilter = (id: any) => {
+const applyNotificationFilter = (id: unknown) => {
   if (!id) return;
-  const targetLoan = loanApplicationStore.loanApplications.find((l: any) => l.id === Number(id));
+  const targetLoan = loanApplicationStore.loanApplications.find((l: LoanApplication) => l.id === Number(id));
 
   if (targetLoan && targetLoan.loan_id) {
     searchQuery.value = targetLoan.loan_id;
@@ -748,7 +743,7 @@ onUnmounted(() => {
   loanApplicationStore.resetFilters();
 });
 
-const handleReply = (log: any) => {
+const handleReply = (log: ApprovalLogItem) => {
   replyingTo.value = log;
   setTimeout(() => {
     const commentBox = document.getElementById('comment-textarea');
@@ -768,7 +763,10 @@ const submitComment = async () => {
     });
     approvalLogs.value = await loanApplicationStore.fetchApprovalLogs(selectedLoan.value.id);
     newComment.value = ''; replyingTo.value = null; alert.success('ບັນທຶກຄວາມຄິດເຫັນສຳເລັດ');
-  } catch (error: any) { alert.error('ເກີດຂໍ້ຜິດພາດ', error.response?.data?.message || 'ບໍ່ສາມາດບັນທຶກຄວາມຄິດເຫັນໄດ້'); }
+  } catch (error: unknown) {
+    const errMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'ບໍ່ສາມາດບັນທຶກຄວາມຄິດເຫັນໄດ້';
+    alert.error('ເກີດຂໍ້ຜິດພາດ', errMessage);
+  }
   finally { isSubmittingComment.value = false; }
 };
 
@@ -778,41 +776,42 @@ const closeDetailsModal = () => {
 
 const targetApproverRoles = ['credit_head', 'approver_1', 'approver_2', 'approver_3'];
 
-const getSignedApprovers = (loan: any) => {
+const getSignedApprovers = (loan: LoanApplication) => {
   if (!loan.document_signatures || !Array.isArray(loan.document_signatures)) return [];
-  return loan.document_signatures.filter((sig: any) => sig.document_type === 'contract' && sig.status === 'signed' && targetApproverRoles.includes(sig.role_type)).map((sig: any) => ({
+  return loan.document_signatures.filter((sig) => sig.document_type === 'contract' && sig.status === 'signed' && targetApproverRoles.includes(sig.role_type)).map((sig) => ({
     role: sig.role_type, name: sig.user?.first_name || sig.user?.full_name || sig.user?.username || sig.signer_name || 'ຜູ້ອະນຸມັດ'
   }));
 };
 
-const hasCurrentUserSigned = (loan: any) => {
+const hasCurrentUserSigned = (loan: LoanApplication) => {
   if (!loan.document_signatures || !Array.isArray(loan.document_signatures) || !authStore.user) return false;
-  return loan.document_signatures.some((sig: any) => sig.document_type === 'contract' && sig.status === 'signed' && sig.user_id === authStore.user?.id);
+  return loan.document_signatures.some((sig) => sig.document_type === 'contract' && sig.status === 'signed' && sig.user_id === authStore.user?.id);
 };
 
 const getInitials = (name: string) => name ? name.substring(0, 2) : '?';
 
-const openDocumentModal = async (loan: any) => {
+const openDocumentModal = async (loan: LoanApplication) => {
   try { loanForDocument.value = loan; showDocumentModal.value = true; await loanApplicationStore.fetchDocuments(loan.customer_id); }
-  catch (error: any) { alert.error('ບໍ່ສາມາດໂຫຼດເອກະສານໄດ້', 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'); showDocumentModal.value = false; }
+  catch (error: unknown) { console.error(error); alert.error('ບໍ່ສາມາດໂຫຼດເອກະສານໄດ້', 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'); showDocumentModal.value = false; }
 };
 
-const openDeliveryNoteModal = async (loan: any) => {
+const openDeliveryNoteModal = async (loan: LoanApplication) => {
   try {
     const contractRes = await loanContractStore.fetchContract(loan.id);
-    const contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
-    if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຮ່າງສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
+    const rawRes = contractRes as unknown as { data?: { data?: LoanContract } | LoanContract };
+    const contractData = rawRes?.data && typeof rawRes.data === 'object' && 'data' in rawRes.data ? rawRes.data.data : rawRes?.data || contractRes;
+    if (!contractData || typeof contractData !== 'object' || Object.keys(contractData).length === 0) return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຮ່າງສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
 
     const repaymentRes = await loanApplicationStore.fetchRepaymentSchedule(loan.id);
-    const hasRepayments = Array.isArray(repaymentRes) ? repaymentRes.length > 0 : (repaymentRes?.data ? true : false);
+    const hasRepayments = Array.isArray(repaymentRes) ? repaymentRes.length > 0 : (repaymentRes && typeof repaymentRes === 'object' && 'data' in repaymentRes ? true : false);
     if (!hasRepayments) return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຕາຕະລາງຜ່ອນຊຳລະ" ໃຫ້ສຳເລັດກ່ອນ!');
 
     let summaryData = null;
-    try { const res = await apiClient.get(`/checklist/summary/${loan.id}`); summaryData = res.data?.data; } catch (e) { }
+    try { const res = await apiClient.get(`/checklist/summary/${loan.id}`); summaryData = res.data?.data; } catch (e) { console.error(e); }
     if (!summaryData) return alert.error('ບໍ່ສາມາດພິມໃບມອບຮັບໄດ້', 'ທ່ານຍັງບໍ່ໄດ້ບັນທຶກຂໍ້ມູນໃນ "ຟອມກວດສອບສິນເຊື່ອ (Checklist)" ເລີຍ!');
 
     loanForDeliveryNote.value = loan; showDeliveryNoteModal.value = true;
-  } catch (error) { alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດກວດສອບຂໍ້ມູນສັນຍາ ແລະ ຕາຕະລາງຜ່ອນໄດ້.'); }
+  } catch (error) { console.error(error); alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດກວດສອບຂໍ້ມູນສັນຍາ ແລະ ຕາຕະລາງຜ່ອນໄດ້.'); }
 };
 
 const openDraftContractModal = async () => {
@@ -820,17 +819,18 @@ const openDraftContractModal = async () => {
   try {
     showContractModal.value = true; selectedContract.value = null;
     const contractRes = await loanContractStore.fetchContract(selectedLoan.value.id);
-    const contractData = (contractRes as any)?.data?.data || (contractRes as any)?.data || contractRes;
-    if (!contractData || Object.keys(contractData).length === 0 || (!contractData.id && !contractData.loan_id)) throw new Error("No Contract");
-    selectedContract.value = contractData;
-  } catch (error) { showContractModal.value = false; alert.error('ບໍ່ພົບຂໍ້ມູນ', 'ຍັງບໍ່ມີການສ້າງຮ່າງສັນຍາສຳລັບສິນເຊື່ອນີ້'); }
+    const rawRes = contractRes as unknown as { data?: { data?: LoanContract } | LoanContract };
+    const contractData = rawRes?.data && typeof rawRes.data === 'object' && 'data' in rawRes.data ? rawRes.data.data : (rawRes?.data as LoanContract) || contractRes;
+    if (!contractData || typeof contractData !== 'object' || Object.keys(contractData).length === 0) throw new Error("No Contract");
+    selectedContract.value = contractData as LoanContract;
+  } catch (error) { console.error(error); showContractModal.value = false; alert.error('ບໍ່ພົບຂໍ້ມູນ', 'ຍັງບໍ່ມີການສ້າງຮ່າງສັນຍາສຳລັບສິນເຊື່ອນີ້'); }
 };
 
-const openScheduleModal = async (loan: any) => {
+const openScheduleModal = async (loan: LoanApplication) => {
   try {
     const fullLoan = await loanApplicationStore.fetchLoanApplicationById(loan.id);
-    loanForSchedule.value = fullLoan; showScheduleModal.value = true;
-  } catch (error) { alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້'); }
+    loanForSchedule.value = fullLoan || loan; showScheduleModal.value = true;
+  } catch (error) { console.error(error); alert.error('ເກີດຂໍ້ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຕາຕະລາງໄດ້'); }
 };
 
 const getStatusBadge = (status: string) => {
@@ -846,33 +846,35 @@ const getStatusBadge = (status: string) => {
   }
 }
 
-const hasContract = (loan: any): boolean => !!(loan.loan_contracts && loan.loan_contracts.length > 0);
-const formatDate = (dateString: string | undefined): string => { if (!dateString) return '-'; return new Date(dateString).toLocaleDateString('lo-LA'); }
-const getCustomerName = (loan: any): string => { if (!loan.customer) return '-'; return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim(); }
-const getCustomerPhone = (loan: any): string => loan.customer?.phone || '-';
+const hasContract = (loan: LoanApplication): boolean => !!(loan.loan_contracts && loan.loan_contracts.length > 0);
 
-const viewLoanDetails = async (loan: any) => {
+const viewLoanDetails = async (loan: LoanApplication) => {
   try {
     if (loan.id) {
       const fullDetails = await loanApplicationStore.fetchLoanApplicationById(loan.id);
       selectedLoan.value = fullDetails || loan;
     } else { selectedLoan.value = loan; }
-    approvalLogs.value = await loanApplicationStore.fetchApprovalLogs(selectedLoan.value.id);
+    if (selectedLoan.value?.id) {
+      approvalLogs.value = await loanApplicationStore.fetchApprovalLogs(selectedLoan.value.id);
+    }
     showDetailsModal.value = true;
-  } catch (error: any) { alert.error("ກະລຸນາກວດສອບຂໍ້ມູນ", "ເນື່ອງຈາກ: " + (error.response?.data?.message || error.message)); }
+  } catch (error: unknown) {
+    const errMessage = (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as Error)?.message || 'Unknown error';
+    alert.error("ກະລຸນາກວດສອບຂໍ້ມູນ", "ເນື່ອງຈາກ: " + errMessage);
+  }
 }
 
-const openSignatureModal = (loan: any) => { loanForSignature.value = loan; showSignatureModal.value = true; };
-const verifyLoan = (loan: any) => { loanToAction.value = loan; showVerifyModal.value = true; };
-const openChecklistModal = (loan: any) => { selectedChecklistLoan.value = loan; showChecklistModal.value = true; };
+const openSignatureModal = (loan: LoanApplication) => { loanForSignature.value = loan; showSignatureModal.value = true; };
+const verifyLoan = (loan: LoanApplication) => { loanToAction.value = loan; showVerifyModal.value = true; };
+const openChecklistModal = (loan: LoanApplication) => { selectedChecklistLoan.value = loan; showChecklistModal.value = true; };
 
-const openPrintSummary = async (loan: any) => {
+const openPrintSummary = async (loan: LoanApplication) => {
   try {
     let summaryData = null;
     try {
       const res = await apiClient.get(`/checklist/summary/${loan.id}`);
       summaryData = res.data?.data;
-    } catch (e) { }
+    } catch (e) { console.error(e); }
 
     if (!summaryData) return alert.error('ບໍ່ສາມາດພິມໄດ້', 'ກະລຸນາປະເມີນຄະແນນ ແລະ Checklist ໃຫ້ຄົບຖ້ວນກ່ອນພິມ.');
 
@@ -885,7 +887,8 @@ const openPrintSummary = async (loan: any) => {
       age = Math.abs(new Date(Date.now() - new Date(basic.verified_dob).getTime()).getUTCFullYear() - 1970);
     }
 
-    const workInfo = loan.customer?.customer_work_infos?.[0] || loan.customer?.work_info?.[0] || {};
+    const customerWithWorkInfos = loan.customer as unknown as { customer_work_infos?: Array<{ company_name?: string; duration_years?: number; duration_months?: number }> };
+    const workInfo = customerWithWorkInfos?.customer_work_infos?.[0] || loan.customer?.work_info?.[0] || {};
     const workYears = Number(basic.work_years) || Number(workInfo.duration_years) || 0;
     const workMonths = Number(basic.work_months) || Number(workInfo.duration_months) || 0;
 
@@ -932,24 +935,26 @@ const openPrintSummary = async (loan: any) => {
     };
     showPrintModal.value = true;
   } catch (error) {
+    console.error(error);
     alert.error('ເກີດຂໍ້ຜິດພາດໃນການກຽມຂໍ້ມູນພິມ');
   }
 }
 
-const openCreditScoreModal = async (loan: any) => {
+const openCreditScoreModal = async (loan: LoanApplication) => {
   try {
     const contractRes = await loanContractStore.fetchContract(loan.id);
     if (!contractRes) return alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ສັນຍາກູ້ຢືມ" ໃຫ້ສຳເລັດກ່ອນ!');
 
     // 🌟 ยิง API ตรวจสอบตรงๆ ไปยัง Backend แบบ Zero-Trust Cache
-    let scheduleData = [];
+    let scheduleData: unknown[] = [];
     try {
       const res = await apiClient.get(`/loan-application/${loan.id}/repayment-schedule?no_cache=true`);
       scheduleData = res.data?.data || [];
     } catch (apiError) {
+      console.error(apiError);
       // Fallback เผื่อ API ตรงพัง
       const storeRes = await loanApplicationStore.fetchRepaymentSchedule(loan.id);
-      scheduleData = Array.isArray(storeRes) ? storeRes : (storeRes?.data || []);
+      scheduleData = Array.isArray(storeRes) ? storeRes : (storeRes && typeof storeRes === 'object' && 'data' in storeRes && Array.isArray((storeRes as { data: unknown[] }).data) ? (storeRes as { data: unknown[] }).data : []);
     }
 
     const hasRepayments = Array.isArray(scheduleData) && scheduleData.length > 0;
@@ -962,7 +967,7 @@ const openCreditScoreModal = async (loan: any) => {
     try {
       const res = await apiClient.get(`/checklist/summary/${loan.id}`);
       summaryData = res.data?.data;
-    } catch (e) { }
+    } catch (e) { console.error(e); }
 
     if (!summaryData) return alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ທ່ານຍັງບໍ່ໄດ້ບັນທຶກຂໍ້ມູນໃນ "ຟອມກວດສອບສິນເຊື່ອ (Checklist)" ເລີຍ!');
 
@@ -979,6 +984,7 @@ const openCreditScoreModal = async (loan: any) => {
     loanForCreditScore.value = loan;
     showCreditScoreModal.value = true;
   } catch (error) { 
+    console.error(error);
     alert.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບເງື່ອນໄຂ'); 
   }
 }
@@ -988,8 +994,8 @@ const isConditionalApproval = computed(() => {
   return loanToAction.value.credit_score >= 65 && loanToAction.value.credit_score <= 79;
 });
 
-const approveLoan = (loan: any) => { loanToAction.value = loan; actionRemark.value = ''; showApproveModal.value = true; }
-const rejectLoan = (loan: any) => { loanToAction.value = loan; actionRemark.value = ''; showRejectModal.value = true; }
+const approveLoan = (loan: LoanApplication) => { loanToAction.value = loan; actionRemark.value = ''; showApproveModal.value = true; }
+const rejectLoan = (loan: LoanApplication) => { loanToAction.value = loan; actionRemark.value = ''; showRejectModal.value = true; }
 
 const confirmReturnForEdit = async () => {
   if (!loanToAction.value) return;
@@ -1002,7 +1008,10 @@ const confirmReturnForEdit = async () => {
     alert.success('ຕີກັບເອກະສານສຳເລັດແລ້ວ!', 'ລະບົບໄດ້ບັນທຶກປະຫວັດ ແລະ ສົ່ງກັບໃຫ້ພະນັກງານແກ້ໄຂແລ້ວ.');
     showApproveModal.value = false;
     fetchData();
-  } catch (error: any) { alert.error('ການຕີກັບເອກະສານຜິດພາດ!', error.response?.data?.message || error.message); }
+  } catch (error: unknown) {
+    const errMessage = (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as Error)?.message || 'Unknown error';
+    alert.error('ການຕີກັບເອກະສານຜິດພາດ!', errMessage);
+  }
   finally { loanToAction.value = null; }
 }
 
@@ -1011,13 +1020,16 @@ const confirmApproveLoan = async () => {
   if (isConditionalApproval.value && !actionRemark.value.trim()) return alert.error('ກະລຸນາປ້ອນເຫດຜົນ', 'ລູກຄ້າຢູ່ໃນເກນ (65-79 ຄະແນນ) ຕ້ອງລະບຸເຫດຜົນກ່ອນອະນຸມັດ!');
 
   try {
-    const updateData: any = { status: LoanApplicationStatus.DISBURSED, approver_id: authStore.user?.id };
+    const updateData: UpdateLoanApplicationDto = { status: LoanApplicationStatus.DISBURSED, approver_id: authStore.user?.id };
     if (actionRemark.value.trim()) updateData.remarks = actionRemark.value.trim();
     await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData);
     alert.success('ອະນຸມັດສິນເຊື່ອສຳເລັດແລ້ວ!');
     showApproveModal.value = false;
     fetchData();
-  } catch (error: any) { alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!', error.response?.data?.message || error.message); }
+  } catch (error: unknown) {
+    const errMessage = (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as Error)?.message || 'Unknown error';
+    alert.error('ການອະນຸມັດສິນເຊື່ອຜິດພາດ!', errMessage);
+  }
   finally { loanToAction.value = null; }
 }
 
@@ -1026,13 +1038,16 @@ const confirmRejectLoan = async () => {
   if (!actionRemark.value.trim()) return alert.error('ກະລຸນາປ້ອນເຫດຜົນ', 'ການປະຕິເສດສິນເຊື່ອຈຳເປັນຕ້ອງລະບຸເຫດຜົນເພື່ອແຈ້ງໃຫ້ພະນັກງານຊາບ!');
 
   try {
-    const updateData: any = { status: LoanApplicationStatus.REJECTED, approver_id: authStore.user?.id };
+    const updateData: UpdateLoanApplicationDto = { status: LoanApplicationStatus.REJECTED, approver_id: authStore.user?.id };
     if (actionRemark.value.trim()) updateData.remarks = actionRemark.value.trim();
     await loanApplicationStore.updateLoanApplication(loanToAction.value.id, updateData);
     alert.success('ປະຕິເສດສິນເຊື່ອສຳເລັດແລ້ວ!');
     showRejectModal.value = false;
     fetchData();
-  } catch (error: any) { alert.error('ການປະຕິເສດສິນເຊື່ອຜິດພາດ!', error.response?.data?.message || error.message); }
+  } catch (error: unknown) {
+    const errMessage = (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as Error)?.message || 'Unknown error';
+    alert.error('ການປະຕິເສດສິນເຊື່ອຜິດພາດ!', errMessage);
+  }
   finally { loanToAction.value = null; }
 }
 

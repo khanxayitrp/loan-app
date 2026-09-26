@@ -112,6 +112,7 @@ export interface LoanApplication {
   down_payment?: number | string
   loan_period: number
   interest_rate_at_apply: number
+  interest_rate_type?: string
   monthly_pay: number
   is_confirmed: number
   status: LoanApplicationStatus
@@ -134,6 +135,14 @@ export interface LoanApplication {
   guarantor_signature_date?: string
   staff_signature_date?: string
   loan_guarantors?: Guarantor[]
+  document_signatures?: Array<{
+    document_type: string;
+    status: string;
+    role_type: string;
+    user_id?: number;
+    signer_name?: string;
+    user?: { first_name?: string; full_name?: string; username?: string };
+  }>;
 
   // Relations (ถ้า backend ส่งมา)
   customer?: CustomerLoan
@@ -142,6 +151,7 @@ export interface LoanApplication {
   product?: Product
   variant?: ProductVariant; // 🟢 เพิ่มข้อมูลสินค้าย่อย (Variant) เข้าไปใน LoanApplication เพื่อให้เข้าถึงได้ง่ายขึ้น
   guarantor?: Guarantor;
+  delivery_receipt?: DeliveryReceipt;
   delivery_receipts?: DeliveryReceipt[]; // ຮອງຮັບການ Join ຈາກ backend
   requester?: { id: number; name: string }
   approver?: { id: number; full_name: string; username: string; }
@@ -317,7 +327,7 @@ export interface LoanApplicationFilters {
   CustomerId?: number
   requesterId?: number
   productId?: number
-  status?: LoanApplicationStatus
+  status?: LoanApplicationStatus | LoanApplicationStatus[]
   min?: number
   max?: number
   is_confirmed?: number
