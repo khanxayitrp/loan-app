@@ -7,7 +7,7 @@
         <p class="text-sm text-indigo-600">ບັນທຶກປະຫວັດການກູ້ຢືມແຕ່ລະບັນຊີຈາກໃບລາຍງານ CIB</p>
       </div>
       <div class="flex gap-2">
-        <button v-if="canEdit" class="btn btn-success btn-sm" @click="$emit('triggerFileInput')">
+        <button v-if="canEdit" class="btn btn-success btn-sm" @click="triggerFileInput">
           <span v-if="isImporting" class="loading loading-spinner loading-xs"></span>
           <span v-else class="icon-[tabler--file-upload] size-4"></span> ນຳເຂົ້າ PDF
         </button>
@@ -108,20 +108,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import { formatPrice } from '@/utils/formatters';
 import { useChecklistStore } from '@/stores/checklist';
 
 const props = defineProps<{
-  formCIB: any;
-  formCIBDetails: any[];
+  formCIB: Record<string, unknown>;
+  formCIBDetails: Record<string, unknown>[];
   canEdit: boolean;
   isImporting: boolean;
-  fileInputRefExternal?: HTMLInputElement | null;
 }>();
 
 defineEmits<{
-  (e: 'triggerFileInput'): void;
   (e: 'handleFileUpload', event: Event): void;
   (e: 'addCibDetail'): void;
   (e: 'removeCibDetail', index: number): void;
@@ -130,9 +128,11 @@ defineEmits<{
 const checklistStore = useChecklistStore();
 const fileInputRef = ref<HTMLInputElement | null>(null);
 
-watch(() => props.fileInputRefExternal, (newVal) => {
-  if (newVal) fileInputRef.value = newVal;
-});
+const triggerFileInput = () => {
+  if (fileInputRef.value) {
+    fileInputRef.value.click();
+  }
+};
 
 const getCibStatusColor = (status: string) => {
   switch (status) {
