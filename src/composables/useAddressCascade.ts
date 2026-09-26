@@ -25,7 +25,7 @@ export function useAddressCascade(
 
   const handleDistrictChange = () => {
     if (!addressRef.value) return;
-    const d = localDistricts.value.find((x) => x.district_id === addressRef.value?.district_id);
+    const d = localDistricts.value.find((x) => String(x.district_id) === String(addressRef.value?.district_id));
     if (d) {
       addressRef.value.district = d.district_name;
     }
@@ -44,7 +44,7 @@ export function useAddressCascade(
       if (editing && addressRef.value) {
         addressRef.value.district_id = '';
         addressRef.value.district = '';
-        const p = addressStore.provinces.find((x) => x.province_id === newVal);
+        const p = addressStore.provinces.find((x) => String(x.province_id) === String(newVal));
         addressRef.value.province = p ? p.province_name : '';
         if (newVal) {
           await loadLocalDistricts(newVal);

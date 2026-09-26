@@ -152,23 +152,23 @@ const loadLocalDistricts = async (provinceId: string | number) => {
 }
 
 onMounted(async () => {
-  if (data.value.companyAddress?.province_id) {
-    await loadLocalDistricts(data.value.companyAddress.province_id);
+  if (data.value.address?.province_id) {
+    await loadLocalDistricts(data.value.address.province_id);
   }
 });
 
 const handleDistrictChange = () => {
-  if (!data.value.companyAddress) return;
-  const d = localDistricts.value.find(x => x.district_id === data.value.companyAddress?.district_id);
-  if (d) data.value.companyAddress.district = d.district_name;
+  if (!data.value.address) return;
+  const d = localDistricts.value.find(x => String(x.district_id) === String(data.value.address?.district_id));
+  if (d) data.value.address.district = d.district_name;
 };
 
-watch(() => data.value.companyAddress?.province_id, async (newVal) => {
-  if (props.isEditing && newVal !== undefined && data.value.companyAddress) {
-    data.value.companyAddress.district_id = '';
-    data.value.companyAddress.district = '';
-    const p = addressStore.provinces.find(x => x.province_id === newVal);
-    data.value.companyAddress.province = p ? p.province_name : '';
+watch(() => data.value.address?.province_id, async (newVal) => {
+  if (props.isEditing && newVal !== undefined && data.value.address) {
+    data.value.address.district_id = '';
+    data.value.address.district = '';
+    const p = addressStore.provinces.find(x => String(x.province_id) === String(newVal));
+    data.value.address.province = p ? p.province_name : '';
     if (newVal) await loadLocalDistricts(newVal);
   }
 });
