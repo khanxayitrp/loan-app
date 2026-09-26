@@ -442,6 +442,10 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
   loanApplicationStore.resetFilters();
 });
 </script>

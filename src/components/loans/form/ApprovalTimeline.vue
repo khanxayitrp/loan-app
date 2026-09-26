@@ -88,16 +88,33 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { formatDateTime, getStatusBadgeClass, getStatusText } from '@/utils/formatters';
 
+export interface ApprovalLog {
+  id: number;
+  performed_by_user?: {
+    full_name?: string;
+    username?: string;
+    staff_level?: string;
+  };
+  performed_at?: string;
+  reply_to_id?: number | null;
+  status_to?: string;
+  action?: string;
+  remarks?: string;
+}
+
 const props = defineProps<{
-  logs: any[];
+  logs: ApprovalLog[];
 }>();
 
-// 🌟 ประกาศ Event ที่จะส่งให้ Component แม่
-const emit = defineEmits(['reply']);
+const emit = defineEmits<{
+  (e: 'reply', log: ApprovalLog): void;
+}>();
 
-const formatRoleName = (role: string) => {
+const formatRoleName = (role?: string) => {
+  if (!role) return '';
   const roles: Record<string, string> = {
     'credit_officer': 'ພະນັກງານສິນເຊື່ອ',
     'sales': 'ພະນັກງານຂາຍ',
@@ -110,12 +127,20 @@ const formatRoleName = (role: string) => {
   return roles[role] || role;
 };
 
-// 🌟 ฟังก์ชันหาข้อความต้นฉบับจาก ID 
+// 🌟 O(1) Map Lookup สำหรับหาข้อความต้นฉบับ
+const logsMap = computed(() => {
+  const map = new Map<number, ApprovalLog>();
+  if (Array.isArray(props.logs)) {
+    props.logs.forEach((log) => {
+      if (log.id) map.set(log.id, log);
+    });
+  }
+  return map;
+});
+
 const getOriginalMessage = (replyToId: number) => {
-  const originalLog = props.logs.find((l: any) => l.id === replyToId);
+  const originalLog = logsMap.value.get(replyToId);
   if (!originalLog) return 'ຂໍ້ຄວາມຖືກລຶບ ຫຼື ບໍ່ພົບຂໍ້ມູນ';
-  
-  // ถ้าคอมเมนต์ต้นทางไม่มี remarks ให้เอาชื่อ Action มาโชว์แทน
-  return originalLog.remarks || `[ການອັບເດດສະຖານະ: ${getStatusText(originalLog.status_to) || originalLog.action}]`;
+  return originalLog.remarks || `[ການອັບເດດສະຖານະ: ${getStatusText(originalLog.status_to || '') || originalLog.action}]`;
 };
 </script>

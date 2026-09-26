@@ -285,13 +285,15 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useAddressStore } from '@/stores/address'
 import { formatDateToDDMMYYYY } from '@/utils/formatters'
 import { calculateAge } from '@/utils/dateUtils'
+import type { GuarantorFormData } from '@/types/loanFormSections'
 
 const props = defineProps<{
-  data: any,
   hasGuarantor: boolean,
   hasReference: boolean,
   isEditing: boolean
 }>()
+
+const data = defineModel<GuarantorFormData>('data', { required: true })
 
 const emit = defineEmits(['update:hasGuarantor', 'update:hasReference'])
 const addressStore = useAddressStore()
@@ -302,10 +304,10 @@ const errors = ref<Record<string, string>>({})
 // ==========================================
 // 🟢 Date Pickers Logic
 // ==========================================
-const displayDob = computed(() => formatDateToDDMMYYYY(props.data.dob))
-const displayIdCardIssueDate = computed(() => formatDateToDDMMYYYY(props.data.idCardIssueDate))
-const displayIdCardExpiryDate = computed(() => formatDateToDDMMYYYY(props.data.idCardExpiryDate))
-const displayCensusBookIssueDate = computed(() => formatDateToDDMMYYYY(props.data.censusBookIssueDate))
+const displayDob = computed(() => formatDateToDDMMYYYY(data.value.dob ?? undefined))
+const displayIdCardIssueDate = computed(() => formatDateToDDMMYYYY(data.value.idCardIssueDate ?? undefined))
+const displayIdCardExpiryDate = computed(() => formatDateToDDMMYYYY(data.value.idCardExpiryDate ?? undefined))
+const displayCensusBookIssueDate = computed(() => formatDateToDDMMYYYY(data.value.censusBookIssueDate ?? undefined))
 
 const hiddenDateInput = ref<HTMLInputElement | null>(null)
 const triggerDatePicker = () => { if (hiddenDateInput.value) hiddenDateInput.value.showPicker() }
@@ -347,17 +349,18 @@ const handleDateTyping = (e: Event, field: string) => {
 
     if (day > 0 && day <= 31 && month > 0 && month <= 12 && year > 1900 && year <= 2100) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      props.data[field] = dateStr;
+      (data.value as unknown as Record<string, unknown>)[field] = dateStr;
     }
   } else if (val.length === 0) {
-    props.data[field] = '';
+    (data.value as unknown as Record<string, unknown>)[field] = '';
   }
 };
 
 const handleDateBlur = (e: Event, field: string) => {
   const target = e.target as HTMLInputElement;
   if (target.value.length > 0 && target.value.length < 10) {
-    target.value = formatDateToDDMMYYYY(props.data[field]);
+    const val = (data.value as unknown as Record<string, unknown>)[field] as string | undefined;
+    target.value = formatDateToDDMMYYYY(val);
   }
 };
 
@@ -368,92 +371,97 @@ const getTodayDateString = (): string => {
   return new Date().toISOString().split('T')[0] || '';
 }
 
-watch(() => props.data.dob, (newDob: string | undefined | null) => {
+watch(() => data.value.dob, (newDob: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newDob) {
-    props.data.age = null;
+    data.value.age = null;
     return;
   }
 
   if (newDob > getTodayDateString()) {
-    props.data.dob = '';
-    props.data.age = null;
+    data.value.dob = '';
+    data.value.age = null;
     return;
   }
 
   const calculatedAge = calculateAge(newDob);
   if (calculatedAge !== null) {
     if (calculatedAge < 18 || calculatedAge > 100) {
-      props.data.dob = '';
-      props.data.age = null;
+      data.value.dob = '';
+      data.value.age = null;
       return;
     }
   }
-  props.data.age = calculatedAge;
+  data.value.age = calculatedAge;
 });
 
-watch(() => props.data.idCardIssueDate, (newStartDate: string | undefined | null) => {
+watch(() => data.value.idCardIssueDate, (newStartDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newStartDate) return;
 
   if (newStartDate > getTodayDateString()) {
-    props.data.idCardIssueDate = '';
+    data.value.idCardIssueDate = '';
     return;
   }
-  const expiryDate = props.data.idCardExpiryDate;
+  const expiryDate = data.value.idCardExpiryDate;
   if (expiryDate && newStartDate >= expiryDate) {
-    props.data.idCardIssueDate = '';
+    data.value.idCardIssueDate = '';
   }
 });
 
-watch(() => props.data.idCardExpiryDate, (newExpiryDate: string | undefined | null) => {
+watch(() => data.value.idCardExpiryDate, (newExpiryDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newExpiryDate) return;
-  const startDate = props.data.idCardIssueDate;
+  const startDate = data.value.idCardIssueDate;
   if (startDate && newExpiryDate <= startDate) {
-    props.data.idCardExpiryDate = '';
+    data.value.idCardExpiryDate = '';
   }
 });
 
-watch(() => props.data.censusBookIssueDate, (newDate: string | undefined | null) => {
+watch(() => data.value.censusBookIssueDate, (newDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newDate) return;
   if (newDate > getTodayDateString()) {
-    props.data.censusBookIssueDate = '';
+    data.value.censusBookIssueDate = '';
   }
 });
 
 // ==========================================
 // 🟢 Address Management
 // ==========================================
-const localDistricts = ref<any[]>([])
+interface DistrictItem {
+  district_id: string | number;
+  district_name: string;
+}
 
-const loadLocalDistricts = async (provinceId: string) => {
+const localDistricts = ref<DistrictItem[]>([])
+
+const loadLocalDistricts = async (provinceId: string | number) => {
   if (!provinceId) {
     localDistricts.value = [];
     return;
   }
-  await addressStore.fetchDistricts(provinceId);
+  await addressStore.fetchDistricts(String(provinceId));
   localDistricts.value = [...addressStore.districts];
 }
 
 onMounted(async () => {
-  if (props.data.address?.province_id) {
-    await loadLocalDistricts(props.data.address.province_id);
+  if (data.value.address?.province_id) {
+    await loadLocalDistricts(data.value.address.province_id);
   }
 });
 
 const handleDistrictChange = () => {
-  const d = localDistricts.value.find(x => x.district_id === props.data.address.district_id);
-  if (d) props.data.address.district = d.district_name;
+  const d = localDistricts.value.find(x => x.district_id === data.value.address.district_id);
+  if (d) data.value.address.district = d.district_name;
 };
 
-watch(() => props.data.address.province_id, async (newVal) => {
-  if (props.isEditing) {
-    props.data.address.district_id = '';
-    props.data.address.district = '';
+watch(() => data.value.address?.province_id, async (newVal) => {
+  if (props.isEditing && newVal !== undefined) {
+    data.value.address.district_id = '';
+    data.value.address.district = '';
     const p = addressStore.provinces.find(x => x.province_id === newVal);
-    props.data.address.province = p ? p.province_name : '';
+    data.value.address.province = p ? p.province_name : '';
     if (newVal) await loadLocalDistricts(newVal);
   }
 });
@@ -471,11 +479,8 @@ const validateForm = (): boolean => {
   }
 
   // 🟢 ກວດສອບສະເພາະ 5 ຈຸດ ຕາມທີ່ກຳນົດ
-  if (!props.data.fullname?.trim()) { errors.value.fullname = 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ'; isValid = false; }
-  if (!props.data.relationship?.trim()) { errors.value.relationship = 'ກະລຸນາປ້ອນສາຍພົວພັນ'; isValid = false; }
-  // if (!props.data.address?.village?.trim()) { errors.value.village = 'ກະລຸນາປ້ອນບ້ານ'; isValid = false; }
-  // if (!props.data.address?.district_id) { errors.value.district_id = 'ກະລຸນາເລືອກເມືອງ'; isValid = false; }
-  // if (!props.data.address?.province_id) { errors.value.province_id = 'ກະລຸນາເລືອກແຂວງ'; isValid = false; }
+  if (!data.value.fullname?.trim()) { errors.value.fullname = 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ'; isValid = false; }
+  if (!data.value.relationship?.trim()) { errors.value.relationship = 'ກະລຸນາປ້ອນສາຍພົວພັນ'; isValid = false; }
 
   return isValid;
 };

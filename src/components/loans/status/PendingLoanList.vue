@@ -357,7 +357,7 @@
                 <div>
                   <div class="text-xs font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
                     <span class="icon-[tabler--corner-down-right] size-3"></span>
-                    ຕອບກັບ: {{ replyingTo.user?.first_name || replyingTo.user?.full_name || 'ພະນັກງານ' }}
+                    ຕອບກັບ: {{ replyingTo.performed_by_user?.full_name || replyingTo.performed_by_user?.username || 'ພະນັກງານ' }}
                   </div>
                   <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2 italic">
                     "{{ replyingTo.remarks }}"
@@ -603,15 +603,11 @@ const dateTo = ref('');
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-interface ApprovalLogItem {
-  id: number;
-  remarks: string;
-  user?: { first_name?: string; full_name?: string };
-}
+import type { ApprovalLog } from '@/components/loans/form/ApprovalTimeline.vue';
 
-const approvalLogs = ref<ApprovalLogItem[]>([]);
+const approvalLogs = ref<ApprovalLog[]>([]);
 const newComment = ref('');
-const replyingTo = ref<ApprovalLogItem | null>(null);
+const replyingTo = ref<ApprovalLog | null>(null);
 const isSubmittingComment = ref(false);
 
 const showDetailsModal = ref(false);
@@ -757,7 +753,7 @@ onUnmounted(() => {
   loanApplicationStore.resetFilters();
 });
 
-const handleReply = (log: ApprovalLogItem) => {
+const handleReply = (log: ApprovalLog) => {
   replyingTo.value = log;
   setTimeout(() => {
     const commentBox = document.getElementById('comment-textarea');

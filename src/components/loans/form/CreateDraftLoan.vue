@@ -615,10 +615,12 @@ const productTypeDisplay = computed(() => {
   return 'ບໍ່ລະບຸປະເພດ'
 })
 
-let shopSearchTimer: NodeJS.Timeout | null = null
+let shopSearchTimer: ReturnType<typeof setTimeout> | null = null
 const debounceShopSearch = () => {
   if (shopSearchTimer) clearTimeout(shopSearchTimer)
-  shopSearchTimer = setTimeout(() => { }, 300)
+  shopSearchTimer = setTimeout(() => {
+    showShopDropdown.value = true;
+  }, 300)
 }
 
 let productSearchTimer: NodeJS.Timeout | null = null
@@ -958,18 +960,55 @@ const useExistingDocuments = async () => {
   router.push({ name: 'ListDraftLoans' });
 }
 
-const handleDocumentUpload = async (typeId: string, event: Event) => {
-  const target = event.target as HTMLInputElement; const files = target.files;
-  if (!files || files.length === 0) return;
-  const category = allDocumentCategories.value.find(c => c.id === typeId); if (!category) return;
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]; if (!file) continue;
-    if (file.size > 5 * 1024 * 1024) { alert.error(`ໄຟລ໌ ${file.name} ໃຫຍ່ເກີນໄປ (ສູງສຸດ 5MB)`); continue; }
-    const isPdf = file.type === 'application/pdf'; const reader = new FileReader();
-    reader.onload = (e) => { category.files.push({ file: file, preview: (e.target?.result as string) || '', isPdf: isPdf, name: file.name }); };
+const readFileAsDataURL = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve((e.target?.result as string) || '');
+    reader.onerror = (e) => reject(e);
     reader.readAsDataURL(file);
+  });
+}
+
+const handleDocumentUpload = async (typeId: string, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files || files.length === 0) return;
+  const category = allDocumentCategories.value.find(c => c.id === typeId);
+  if (!category) return;
+
+  const validFiles: File[] = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file) continue;
+    if (file.size > 5 * 1024 * 1024) {
+      alert.error(`ໄຟລ໌ ${file.name} ໃຫຍ່ເກີນໄປ (ສູງສຸດ 5MB)`);
+      continue;
+    }
+    validFiles.push(file);
   }
-  target.value = '';
+
+  try {
+    const fileResults = await Promise.all(
+      validFiles.map(async (file) => {
+        const preview = await readFileAsDataURL(file);
+        return {
+          file,
+          preview,
+          isPdf: file.type === 'application/pdf',
+          name: file.name
+        };
+      })
+    );
+
+    fileResults.forEach((fileObj) => {
+      category.files.push(fileObj);
+    });
+  } catch (err) {
+    console.error('Failed to read document files:', err);
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການອ່ານໄຟລ໌ເອກະສານ');
+  } finally {
+    target.value = '';
+  }
 }
 
 const removeDocument = (typeId: string, fileIndex: number) => {

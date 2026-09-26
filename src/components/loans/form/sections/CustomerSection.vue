@@ -292,9 +292,11 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useAddressStore } from '@/stores/address'
 import { formatDateToDDMMYYYY } from '@/utils/formatters'
 import { calculateAge } from '@/utils/dateUtils'
-import { alert as customAlert } from '@/utils/alert'
+import type { CustomerFormData } from '@/types/loanFormSections'
 
-const props = defineProps<{ data: any, isEditing: boolean }>()
+const props = defineProps<{ isEditing: boolean }>()
+const data = defineModel<CustomerFormData>('data', { required: true })
+
 const addressStore = useAddressStore()
 
 // 🟢 ປະກາດຕົວແປສຳລັບເກັບ Error ຂອງແຕ່ລະ Field
@@ -303,10 +305,10 @@ const errors = ref<Record<string, string>>({})
 // ==========================================
 // 🟢 Date Pickers Logic
 // ==========================================
-const displayDob = computed(() => formatDateToDDMMYYYY(props.data.dob))
-const displayIdCardStartDate = computed(() => formatDateToDDMMYYYY(props.data.idCardIssueDate))
-const displayIdCardExpiryDate = computed(() => formatDateToDDMMYYYY(props.data.idCardExpiryDate))
-const displayCensusBookIssueDate = computed(() => formatDateToDDMMYYYY(props.data.censusBookIssueDate))
+const displayDob = computed(() => formatDateToDDMMYYYY(data.value.dob ?? undefined))
+const displayIdCardStartDate = computed(() => formatDateToDDMMYYYY(data.value.idCardIssueDate ?? undefined))
+const displayIdCardExpiryDate = computed(() => formatDateToDDMMYYYY(data.value.idCardExpiryDate ?? undefined))
+const displayCensusBookIssueDate = computed(() => formatDateToDDMMYYYY(data.value.censusBookIssueDate ?? undefined))
 
 const hiddenDateInput = ref<HTMLInputElement | null>(null)
 const triggerDatePicker = () => { if (hiddenDateInput.value) hiddenDateInput.value.showPicker() }
@@ -348,24 +350,23 @@ const handleDateTyping = (e: Event, field: string) => {
 
     if (day > 0 && day <= 31 && month > 0 && month <= 12 && year > 1900 && year <= 2100) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      props.data[field] = dateStr;
+      (data.value as unknown as Record<string, unknown>)[field] = dateStr;
     } else {
       errors.value[field] = 'ວັນທີບໍ່ຖືກຕ້ອງ (ຕົວຢ່າງ: 25/05/1999)';
     }
   } else if (val.length === 0) {
-    props.data[field] = '';
+    (data.value as unknown as Record<string, unknown>)[field] = '';
     errors.value[field] = ''; // 🟢 Clear error ทิ้งด้วยเมื่อผู้ใช้ลบข้อมูลจนว่างเปล่า
   } else {
-    // 🟢 ถ้ากรอกยังไม่ครบ 8 ตัว หรือถูกลบกลางคัน ให้เซ็ตตัวแปรหลังบ้านเป็นค่าว่างไว้ก่อน
-    // ป้องกันการเซฟค่าวันที่แหว่งๆ เช่น "2026-05-" ลงฐานข้อมูล
-    props.data[field] = '';
+    (data.value as unknown as Record<string, unknown>)[field] = '';
   }
 };
 
 const handleDateBlur = (e: Event, field: string) => {
   const target = e.target as HTMLInputElement;
   if (target.value.length > 0 && target.value.length < 10) {
-    target.value = formatDateToDDMMYYYY(props.data[field]);
+    const val = (data.value as unknown as Record<string, unknown>)[field] as string | undefined;
+    target.value = formatDateToDDMMYYYY(val);
   }
 };
 
@@ -376,17 +377,17 @@ const getTodayDateString = (): string => {
   return new Date().toISOString().split('T')[0] || '';
 }
 
-watch(() => props.data.dob, (newDob: string | undefined | null) => {
+watch(() => data.value.dob, (newDob: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newDob) {
-    props.data.age = null;
+    data.value.age = null;
     return;
   }
 
   if (newDob > getTodayDateString()) {
     errors.value.dob = 'ວັນເດືອນປີເກີດບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້';
-    props.data.dob = '';
-    props.data.age = null;
+    data.value.dob = '';
+    data.value.age = null;
     return;
   }
 
@@ -395,92 +396,97 @@ watch(() => props.data.dob, (newDob: string | undefined | null) => {
   if (calculatedAge !== null) {
     if (calculatedAge < 18) {
       errors.value.dob = 'ລູກຄ້າຕ້ອງມີອາຍຸ 18 ປີຂຶ້ນໄປ';
-      props.data.dob = '';
-      props.data.age = null;
+      data.value.dob = '';
+      data.value.age = null;
       return;
     }
 
     if (calculatedAge > 100) {
       errors.value.dob = 'ອາຍຸບໍ່ສາມາດເກີນ 100 ປີໄດ້';
-      props.data.dob = '';
-      props.data.age = null;
+      data.value.dob = '';
+      data.value.age = null;
       return;
     }
   }
 
-  props.data.age = calculatedAge;
+  data.value.age = calculatedAge;
 });
 
-watch(() => props.data.idCardIssueDate, (newStartDate: string | undefined | null) => {
+watch(() => data.value.idCardIssueDate, (newStartDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newStartDate) return;
 
   if (newStartDate > getTodayDateString()) {
     errors.value.idCardIssueDate = 'ວັນທີອອກບັດບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້';
-    props.data.idCardIssueDate = '';
+    data.value.idCardIssueDate = '';
     return;
   }
 
-  const expiryDate = props.data.idCardExpiryDate;
+  const expiryDate = data.value.idCardExpiryDate;
   if (expiryDate && newStartDate >= expiryDate) {
     errors.value.idCardIssueDate = 'ວັນທີອອກບັດບໍ່ສາມາດກາຍ ຫຼື ເທົ່າກັບວັນທີໝົດອາຍຸບັດໄດ້';
-    props.data.idCardIssueDate = '';
+    data.value.idCardIssueDate = '';
   }
 });
 
-watch(() => props.data.idCardExpiryDate, (newExpiryDate: string | undefined | null) => {
+watch(() => data.value.idCardExpiryDate, (newExpiryDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newExpiryDate) return;
 
-  const startDate = props.data.idCardIssueDate;
+  const startDate = data.value.idCardIssueDate;
 
   if (startDate && newExpiryDate <= startDate) {
     errors.value.idCardExpiryDate = 'ວັນເດືອນປີໝົດອາຍຸບັດຕ້ອງຫຼາຍກວ່າວັນທີອອກບັດ';
-    props.data.idCardExpiryDate = '';
+    data.value.idCardExpiryDate = '';
   }
 });
 
-watch(() => props.data.censusBookIssueDate, (newDate: string | undefined | null) => {
+watch(() => data.value.censusBookIssueDate, (newDate: string | undefined | null) => {
   if (!props.isEditing) return;
   if (!newDate) return;
 
   if (newDate > getTodayDateString()) {
     errors.value.censusBookIssueDate = 'ວັນເດືອນປີອອກປຶ້ມສຳມະໂນຄົວບໍ່ສາມາດເກີນວັນທີປະຈຸບັນໄດ້';
-    props.data.censusBookIssueDate = '';
+    data.value.censusBookIssueDate = '';
   }
 });
 
 // ==========================================
 // 🟢 Address Management
 // ==========================================
-const localDistricts = ref<any[]>([])
+interface DistrictItem {
+  district_id: string | number;
+  district_name: string;
+}
 
-const loadLocalDistricts = async (provinceId: string) => {
+const localDistricts = ref<DistrictItem[]>([])
+
+const loadLocalDistricts = async (provinceId: string | number) => {
   if (!provinceId) {
     localDistricts.value = [];
     return;
   }
-  await addressStore.fetchDistricts(provinceId);
+  await addressStore.fetchDistricts(String(provinceId));
   localDistricts.value = [...addressStore.districts];
 }
 
 onMounted(async () => {
-  if (props.data.address?.province_id) {
-    await loadLocalDistricts(props.data.address.province_id);
+  if (data.value.address?.province_id) {
+    await loadLocalDistricts(data.value.address.province_id);
   }
 });
 
 const handleDistrictChange = () => {
-  const d = localDistricts.value.find(x => x.district_id === props.data.address.district_id);
-  if (d) props.data.address.district = d.district_name;
+  const d = localDistricts.value.find(x => x.district_id === data.value.address.district_id);
+  if (d) data.value.address.district = d.district_name;
 };
 
-watch(() => props.data.address.province_id, async (newVal) => {
+watch(() => data.value.address.province_id, async (newVal) => {
   if (props.isEditing) {
-    props.data.address.district_id = '';
-    props.data.address.district = '';
+    data.value.address.district_id = '';
+    data.value.address.district = '';
     const p = addressStore.provinces.find(x => x.province_id === newVal);
-    props.data.address.province = p ? p.province_name : '';
+    data.value.address.province = p ? p.province_name : '';
     if (newVal) await loadLocalDistricts(newVal);
   }
 });
@@ -493,22 +499,17 @@ const validateForm = (): boolean => {
   let isValid = true;
 
   // ກວດສອບຂໍ້ມູນທົ່ວໄປ
-  if (!props.data.fullname?.trim()) { errors.value.fullname = 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ'; isValid = false; }
-  if (!props.data.dob) { errors.value.dob = 'ກະລຸນາປ້ອນວັນເດືອນປີເກີດ'; isValid = false; }
-  if (!props.data.phone?.trim()) { errors.value.phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'; isValid = false; }
-  if (!props.data.gender) { errors.value.gender = 'ກະລຸນາເລືອກເພດ'; isValid = false; }
-  if (!props.data.maritalStatus) { errors.value.maritalStatus = 'ກະລຸນາເລືອກສະຖານະພາບ'; isValid = false; }
-  if (!props.data.occupation?.trim()) { errors.value.occupation = 'ກະລຸນາປ້ອນອາຊີບ'; isValid = false; }
-
-  // ກວດສອບເອກະສານຢັ້ງຢືນຕົວຕົນ
-  // if (!props.data.idCard?.trim()) { errors.value.idCard = 'ກະລຸນາປ້ອນເລກບັດປະຈຳຕົວ/Passport'; isValid = false; }
-  // if (!props.data.idCardStartDate) { errors.value.idCardStartDate = 'ກະລຸນາປ້ອນວັນເດືອນປີອອກບັດ'; isValid = false; }
-  // if (!props.data.idCardExpiryDate) { errors.value.idCardExpiryDate = 'ກະລຸນາປ້ອນວັນເດືອນປີໝົດອາຍຸບັດ'; isValid = false; }
+  if (!data.value.fullname?.trim()) { errors.value.fullname = 'ກະລຸນາປ້ອນຊື່ ແລະ ນາມສະກຸນ'; isValid = false; }
+  if (!data.value.dob) { errors.value.dob = 'ກະລຸນາປ້ອນວັນເດືອນປີເກີດ'; isValid = false; }
+  if (!data.value.phone?.trim()) { errors.value.phone = 'ກະລຸນາປ້ອນເບີໂທລະສັບ'; isValid = false; }
+  if (!data.value.gender) { errors.value.gender = 'ກະລຸນາເລືອກເພດ'; isValid = false; }
+  if (!data.value.maritalStatus) { errors.value.maritalStatus = 'ກະລຸນາເລືອກສະຖານະພາບ'; isValid = false; }
+  if (!data.value.occupation?.trim()) { errors.value.occupation = 'ກະລຸນາປ້ອນອາຊີບ'; isValid = false; }
 
   // ກວດສອບຂໍ້ມູນທີ່ຢູ່
-  if (!props.data.address?.village?.trim()) { errors.value.village = 'ກະລຸນາປ້ອນບ້ານ'; isValid = false; }
-  if (!props.data.address?.district_id) { errors.value.district_id = 'ກະລຸນາເລືອກເມືອງ'; isValid = false; }
-  if (!props.data.address?.province_id) { errors.value.province_id = 'ກະລຸນາເລືອກແຂວງ'; isValid = false; }
+  if (!data.value.address?.village?.trim()) { errors.value.village = 'ກະລຸນາປ້ອນບ້ານ'; isValid = false; }
+  if (!data.value.address?.district_id) { errors.value.district_id = 'ກະລຸນາເລືອກເມືອງ'; isValid = false; }
+  if (!data.value.address?.province_id) { errors.value.province_id = 'ກະລຸນາເລືອກແຂວງ'; isValid = false; }
 
   return isValid;
 };
