@@ -82,10 +82,10 @@
 import { ref, computed, watch } from 'vue';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { useAuthStore } from '@/stores/auth';
-import { LoanApplicationStatus } from '@/types/loanApplication';
+import { LoanApplicationStatus, type LoanApplication } from '@/types/loanApplication';
 import { alert } from '@/utils/alert';
 
-const props = defineProps<{ isOpen: boolean; loan: any }>();
+const props = defineProps<{ isOpen: boolean; loan: LoanApplication | null }>();
 const emit = defineEmits<{ (e: 'close'): void; (e: 'success'): void }>();
 
 const loanApplicationStore = useLoanApplicationStore();
@@ -132,20 +132,21 @@ const submit = async () => {
 
   try {
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status: LoanApplicationStatus.VERIFIED,
       approver_id: authStore.user?.id
     };
 
     // 🟢 ສົ່ງຄ່າ Payment Date ແລະ Payment Day ໄປໃຫ້ Backend
     if (paymentDateOption.value === 'change' && firstPaymentDate.value) {
-      const selectedDate = new Date(firstPaymentDate.value);
-
       // ສົ່ງວັນທີເຕັມ (YYYY-MM-DD) ໄປໃຫ້ Backend ເພື່ອໃຊ້ສ້າງຕາຕະລາງເລີ່ມຕົ້ນທີ່ເດືອນໃດກໍໄດ້
       updateData.first_due_date = firstPaymentDate.value;
 
-      // ແຍກເອົາສະເພາະ "ວັນທີ" (1-31) ສົ່ງໄປນຳ ເພື່ອໃຫ້ Backend ເອົາໄປອັບເດດໃນຖັນ payment_day
-      updateData.payment_day = selectedDate.getDate();
+      // ແຍກເອົາສະເພາະ "ວັນທີ" (1-31) ສົ່ງໄປນຳ ໂດຍ parse จาก string โดยตรง ป้องกัน timezone shift
+      const dayParts = firstPaymentDate.value.split('-');
+      if (dayParts[2]) {
+        updateData.payment_day = parseInt(dayParts[2], 10);
+      }
 
     } else if (paymentDateOption.value === 'keep' && props.loan.payment_day) {
       updateData.payment_day = props.loan.payment_day;
@@ -160,9 +161,10 @@ const submit = async () => {
 
     emit('success');
     close();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error verifying loan:", error);
-    alert.error('ເກີດຂໍ້ຜິດພາດ!', error.response?.data?.message || 'ບໍ່ສາມາດຢືນຢັນການກວດກາໄດ້');
+    const errObj = error as { response?: { data?: { message?: string } } };
+    alert.error('ເກີດຂໍ້ຜິດພາດ!', errObj.response?.data?.message || 'ບໍ່ສາມາດຢືນຢັນການກວດກາໄດ້');
   } finally {
     isLoading.value = false;
   }

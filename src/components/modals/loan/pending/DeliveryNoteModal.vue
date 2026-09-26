@@ -89,16 +89,20 @@ import { ref, reactive, computed, watch } from 'vue';
 import { useDeliveryReceiptStore } from '@/stores/delivery_receipt';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { usePermissionStore } from '@/stores/permission'; // 🌟 1. Import Permission Store
+import type { LoanApplication } from '@/types/loanApplication';
 import { alert } from '@/utils/alert';
 import apiClient from '@/api/apiclient';
 
-const props = defineProps({
-  isOpen: { type: Boolean, required: true },
-  loan: { type: Object, default: null },
-  isPendingView: { type: Boolean, default: false }
-});
+const props = defineProps<{
+  isOpen: boolean;
+  loan?: LoanApplication | Record<string, unknown> | null;
+  isPendingView?: boolean;
+}>();
 
-const emit = defineEmits(['close', 'updated']);
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'updated'): void;
+}>();
 
 const deliveryReceiptStore = useDeliveryReceiptStore();
 const loanApplicationStore = useLoanApplicationStore();
@@ -116,9 +120,9 @@ const form = reactive({
   approved: false
 });
 
-const originalData = ref<any>(null);
+const originalData = ref<Record<string, unknown> | null>(null);
 const originalApprovedStatus = ref(false);
-const fullLoanDataRef = ref<any>(null);
+const fullLoanDataRef = ref<Record<string, unknown> | null>(null);
 
 // 🌟 3. Computed Property ສຳລັບເຊັກສິດການແກ້ໄຂ
 const canEditNote = computed(() => {
@@ -126,13 +130,15 @@ const canEditNote = computed(() => {
 });
 
 // Helpers
-const getCustomerName = (loan: any): string => {
-  if (!loan.customer) return '-';
-  return `${loan.customer.first_name || ''} ${loan.customer.last_name || ''}`.trim();
+const getCustomerName = (loan: Record<string, unknown>): string => {
+  const cust = loan.customer as Record<string, unknown> | undefined;
+  if (!cust) return '-';
+  return `${cust.first_name || ''} ${cust.last_name || ''}`.trim();
 };
 
-const getCustomerPhone = (loan: any): string => {
-  return loan.customer?.phone || '-';
+const getCustomerPhone = (loan: Record<string, unknown>): string => {
+  const cust = loan.customer as Record<string, unknown> | undefined;
+  return (cust?.phone as string) || '-';
 };
 
 watch(() => props.isOpen, async (newVal) => {
@@ -146,32 +152,32 @@ watch(() => props.isOpen, async (newVal) => {
 const initModalData = async () => {
   isLoading.value = true;
   try {
-    // 1. ເລີ່ມຕົ້ນດ້ວຍຂໍ້ມູນຫຍໍ້ຈາກ Props ກ່ອນ (ເພື່ອ Fallback)
-    let fullLoanData = props.loan;
+    let fullLoanData = props.loan as Record<string, unknown>;
 
-    // 🟢 2. BEST PRACTICE: ບັງຄັບໂຫຼດຂໍ້ມູນ Detail ໃໝ່ສະເໝີ (Data Hydration)
-    // ລຶບເງື່ອນໄຂ if ອອກ ໃຫ້ມັນເຮັດວຽກທຸກຄັ້ງທີ່ເປີດ Modal ເພື່ອດຶງ Relation ທີ່ຂາດຫາຍໄປ
     try {
-      const fetchedLoan = await loanApplicationStore.fetchLoanApplicationById(props.loan.id);
-      if (fetchedLoan) {
-        fullLoanData = fetchedLoan;
+      const loanId = props.loan ? (props.loan as Record<string, unknown>).id as number : undefined;
+      if (loanId) {
+        const fetchedLoan = await loanApplicationStore.fetchLoanApplicationById(loanId);
+        if (fetchedLoan) {
+          fullLoanData = fetchedLoan as unknown as Record<string, unknown>;
+        }
       }
-    } catch (err) {
-      console.warn('Failed to fetch full loan details, using shallow props data instead.', err);
+    } catch {
+      console.warn('Failed to fetch full loan details, using shallow props data instead.');
     }
 
-    // 3. ເກັບຂໍ້ມູນທີ່ສົມບູນລົງໃນ Ref ພ້ອມສົ່ງໃຫ້ PDF 
     fullLoanDataRef.value = fullLoanData;
 
-    // 4. ດຶງຂໍ້ມູນໃບມອບຮັບສິນຄ້າ
-    const existingReceipt = await deliveryReceiptStore.fetchReceiptByApplicationId(props.loan.id);
+    const loanIdVal = (props.loan as Record<string, unknown>).id as number;
+    const existingReceipt = await deliveryReceiptStore.fetchReceiptByApplicationId(loanIdVal);
 
+    const customerObj = (fullLoanData?.customer || {}) as Record<string, unknown>;
     if (existingReceipt) {
       form.note_number = existingReceipt.receipts_id;
       form.recipient_name = existingReceipt.receiver_name;
       form.approved = existingReceipt.status === 'approved';
       form.recipient_phone = getCustomerPhone(fullLoanData);
-      form.delivery_address = fullLoanData.customer?.address || '';
+      form.delivery_address = (customerObj.address as string) || '';
 
       originalData.value = { receiver_name: existingReceipt.receiver_name };
       originalApprovedStatus.value = existingReceipt.status === 'approved';
@@ -192,20 +198,20 @@ const initModalData = async () => {
         } else {
           nextReceiptId = `DR-${currentYear}-000001`;
         }
-      } catch (e) {
+      } catch {
         nextReceiptId = `DR-${currentYear}-000001`;
       }
 
       form.note_number = nextReceiptId;
       form.recipient_name = getCustomerName(fullLoanData);
       form.recipient_phone = getCustomerPhone(fullLoanData);
-      form.delivery_address = fullLoanData.customer?.address || '';
+      form.delivery_address = (customerObj.address as string) || '';
       form.approved = false;
 
       originalData.value = null;
       originalApprovedStatus.value = false;
     }
-  } catch (error) {
+  } catch {
     alert.error('ບໍ່ສາມາດດຶງຂໍ້ມູນໃບມອບຮັບໄດ້');
   } finally {
     isLoading.value = false;
@@ -255,8 +261,10 @@ const saveDeliveryNote = async () => {
   isSaving.value = true;
 
   try {
+    const loanObj = props.loan as Record<string, unknown>;
+    const appId = loanObj.id as number;
     const payload = {
-      application_id: props.loan.id,
+      application_id: appId,
       delivery_date: new Date().toISOString(),
       receiver_name: form.recipient_name,
       status: (form.approved && !props.isPendingView ? 'approved' : 'pending') as 'pending' | 'approved' | 'rejected',
@@ -266,81 +274,20 @@ const saveDeliveryNote = async () => {
       await deliveryReceiptStore.updateReceipt(deliveryReceiptStore.currentReceipt.id, payload);
       alert.success('ອັບເດດໃບຮັບສິນຄ້າສຳເລັດ');
     } else {
-      await deliveryReceiptStore.createReceipt(props.loan.id, payload);
+      await deliveryReceiptStore.createReceipt(appId, payload);
       alert.success('ສ້າງໃບຮັບສິນຄ້າສຳເລັດ');
     }
 
     emit('updated');
     closeModal();
-  } catch (error: any) {
-    alert.error('ເກີດຂໍ້ຜິດພາດ: ' + (error.message || 'ບໍ່ສາມາດບັນທຶກໄດ້'));
+  } catch (error: unknown) {
+    const errObj = error as { message?: string };
+    alert.error('ເກີດຂໍ້ຜິດພາດ: ' + (errObj.message || 'ບໍ່ສາມາດບັນທຶກໄດ້'));
   } finally {
     isSaving.value = false;
   }
 };
 
-// const printDeliveryNote = async () => {
-//   if (!deliveryReceiptStore.currentReceipt || !props.loan) return;
-
-//   isPrinting.value = true;
-//   alert.info('ກຳລັງສ້າງເອກະສານ PDF ກະລຸນາລໍຖ້າ...');
-
-//   const pdfWindow = window.open('', '_blank');
-//   if (pdfWindow) {
-//     pdfWindow.document.write(`
-//       <html lang="lo">
-//         <head><title>ກຳລັງໂຫຼດ PDF...</title></head>
-//         <body style="display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif; background-color:#f3f4f6; color:#555;">
-//           <div style="text-align:center;">
-//             <h2 style="margin-bottom: 10px;">ກຳລັງສ້າງເອກະສານ PDF...</h2>
-//             <p>ກະລຸນາລໍຖ້າຈັກໜ່ອຍ, ລະບົບກຳລັງປະມວນຜົນ.</p>
-//           </div>
-//         </body>
-//       </html>
-//     `);
-//     pdfWindow.document.close();
-//   }
-
-//   try {
-//     // 🟢 ສົ່ງຂໍ້ມູນໄປກົງໆເລີຍ ບໍ່ຕ້ອງມີການຍັດ Dummy Data ແລ້ວ ເພາະ Backend ເກັ່ງຂຶ້ນແລ້ວ
-//     const response = await apiClient.post('/pdf/delivery-receipt', {
-//       loanData: fullLoanDataRef.value || props.loan, 
-//       receiptData: deliveryReceiptStore.currentReceipt,
-//       receiverPhone: form.recipient_phone,
-//       deliveryAddress: form.delivery_address
-//     }, { responseType: 'blob', timeout: 60000 });
-
-//     const blobData = response.data instanceof Blob ? response.data : response;
-//     const file = new Blob([blobData as any], { type: 'application/pdf' });
-//     const url = window.URL.createObjectURL(file);
-
-//     if (pdfWindow) {
-//       pdfWindow.document.open();
-//       pdfWindow.document.write(`
-//         <html>
-//           <head><title>ໃບມອບຮັບສິນຄ້າ - ${deliveryReceiptStore.currentReceipt.receipts_id}</title></head>
-//           <body style="margin:0; padding:0; overflow:hidden;">
-//             <iframe src="${url}" width="100%" height="100%" style="border:none;"></iframe>
-//           </body>
-//         </html>
-//       `);
-//       pdfWindow.document.close();
-//     } else {
-//       const link = document.createElement('a');
-//       link.href = url;
-//       link.download = `receipt-${deliveryReceiptStore.currentReceipt.receipts_id}.pdf`;
-//       document.body.appendChild(link);
-//       link.click();
-//       document.body.removeChild(link);
-//     }
-//   } catch (error) {
-//     if (pdfWindow) pdfWindow.close();
-//     alert.error("ເກີດຂໍ້ຜິດພາດ", "ບໍ່ສາມາດພິມເອກະສານໄດ້.");
-//     console.error("PDF Print Error:", error);
-//   } finally {
-//     isPrinting.value = false;
-//   }
-// };
 const printDeliveryNote = async () => {
   if (!deliveryReceiptStore.currentReceipt || !props.loan) return;
 
@@ -354,9 +301,10 @@ const printDeliveryNote = async () => {
   // =======================================================
   let completeLoanData;
   try {
-    completeLoanData = await loanApplicationStore.fetchLoanApplicationById(props.loan.id);
+    const loanObj = props.loan as Record<string, unknown>;
+    completeLoanData = await loanApplicationStore.fetchLoanApplicationById(loanObj.id as number);
     if (!completeLoanData) throw new Error("Data missing");
-  } catch (error) {
+  } catch {
     alert.error("ເກີດຂໍ້ຜິດພາດ", "ບໍ່ສາມາດດຶງຂໍ້ມູນລາຍລະອຽດສິນເຊື່ອເພື່ອພິມໄດ້.");
     isPrinting.value = false;
     return; // ຢຸດການເຮັດວຽກຖ້າດຶງຂໍ້ມູນເຕັມບໍ່ສຳເລັດ
@@ -388,7 +336,7 @@ const printDeliveryNote = async () => {
     }, { responseType: 'blob', timeout: 60000 });
 
     const blobData = response.data instanceof Blob ? response.data : response;
-    const file = new Blob([blobData as any], { type: 'application/pdf' });
+    const file = new Blob([blobData as BlobPart], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(file);
 
     if (pdfWindow) {
@@ -402,6 +350,7 @@ const printDeliveryNote = async () => {
         </html>
       `);
       pdfWindow.document.close();
+      setTimeout(() => { window.URL.revokeObjectURL(url); }, 60000);
     } else {
       const link = document.createElement('a');
       link.href = url;
@@ -409,6 +358,7 @@ const printDeliveryNote = async () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => { window.URL.revokeObjectURL(url); }, 1000);
     }
   } catch (error) {
     if (pdfWindow) pdfWindow.close();

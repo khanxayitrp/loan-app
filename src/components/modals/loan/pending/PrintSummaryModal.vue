@@ -223,7 +223,7 @@
 import { ref, computed, watch } from 'vue';
 import apiClient from '@/api/apiclient';
 import { alert } from '@/utils/alert';
-import { formatPrice, getCurrentDateDDMMYYYY, formatDateTime, getStatusText } from '@/utils/formatters';
+import { formatPrice, getCurrentDateDDMMYYYY, formatDateTime, getStatusText, getCibLabel, formatRoleName } from '@/utils/formatters';
 import { useLoanApplicationStore } from '@/stores/loanApplication';
 import { usePermissionStore } from '@/stores/permission';
 
@@ -250,31 +250,6 @@ watch(() => props.isOpen, async (newVal) => {
   }
 });
 
-const getCibLabel = (status: string) => {
-  const map: Record<string, string> = {
-    'no_delay': 'ດີຫຼາຍ (ບໍ່ມີຊັກຊ້າ)',
-    'delay_30_days': 'ດີ (ຊັກຊ້າບໍ່ເກີນ 30 ວັນ)',
-    'delay_60_days': 'ປານກາງ (ຊັກຊ້າ 30-60 ວັນ)',
-    'delay_90_days': 'ສ່ຽງສູງ (ຊັກซ້າ 60-90 ວັນ)',
-    'blacklist': 'ບໍ່ດີ (ຊັກซ້າ 90+ ວັນ/Blacklist)'
-  }
-  return map[status] || status;
-};
-
-const formatRoleName = (role: string) => {
-  if (!role) return 'System';
-  const roles: Record<string, string> = {
-    'credit_officer': 'ພະນັກງານສິນເຊື່ອ',
-    'sales': 'ພະນັກງານຂາຍ',
-    'credit_manager': 'ຫົວໜ້າສິນເຊື່ອ',
-    'approver': 'ຜູ້ອະນຸມັດ',
-    'deputy_director': 'ຮອງຜູ້ອຳນວຍການ',
-    'director': 'ຜູ້ອຳນວຍການ',
-    'admin': 'ແອັດມິນ',
-    'auditor': 'ຜູ້ກວດສອບພາຍໃນ'
-  };
-  return roles[role] || role;
-};
 
 const handlePrint = async () => {
   if (!props.printData?.loan || !canPrintSummary.value) return;

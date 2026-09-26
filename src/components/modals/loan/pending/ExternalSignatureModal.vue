@@ -99,7 +99,7 @@
                 </label>
 
                 <div class="space-y-3">
-                  <div v-for="(signer, index) in form.signers" :key="signer.role"
+                  <div v-for="signer in form.signers" :key="signer.role"
                     class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border rounded-lg bg-base-50 transition-all"
                     :class="{ 'border-primary bg-primary/5': signer.checked }">
                     <label class="cursor-pointer flex items-center gap-3 w-full sm:w-1/3">
@@ -416,9 +416,10 @@ const submitSignature = async () => {
       throw new Error(response.data?.message || 'ເກີດຂໍ້ຜິດພາດ');
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Submit signature error:', error);
-    alert.error('ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້', error.response?.data?.message || error.message);
+    const errObj = error as { response?: { data?: { message?: string } }; message?: string };
+    alert.error('ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້', errObj.response?.data?.message || errObj.message || 'ເກີດຂໍ້ຜິດພາດ');
   } finally {
     isSaving.value = false;
   }

@@ -70,7 +70,7 @@
                   <td class="text-center font-bold text-warning border-l bg-amber-50/30">10</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-2 border-b">< 6 ເດືອນ</td>
+                  <td class="px-4 py-2 border-b">&lt; 6 ເດືອນ</td>
                   <td class="text-center font-bold text-error border-l">5</td>
                   <td class="text-center font-bold text-error border-l bg-amber-50/30">5</td>
                 </tr>
@@ -92,7 +92,7 @@
                   <td class="text-center font-bold text-success border-l">20</td>
                   <td class="text-center font-bold text-success border-l bg-amber-50/30">20</td>
                 </tr>
-                <tr><td class="px-4 py-2">ດີ (ຊັກຊ້າ < 30 ວັນ)</td><td class="text-center font-bold text-success border-l">15</td><td class="text-center font-bold text-success border-l bg-amber-50/30">15</td></tr>
+                <tr><td class="px-4 py-2">ດີ (ຊັກຊ້າ &lt; 30 ວັນ)</td><td class="text-center font-bold text-success border-l">15</td><td class="text-center font-bold text-success border-l bg-amber-50/30">15</td></tr>
                 <tr><td class="px-4 py-2">ປານກາງ (ຊັກຊ້າ 30-60 ວັນ)</td><td class="text-center font-bold text-warning border-l">10</td><td class="text-center font-bold text-warning border-l bg-amber-50/30">10</td></tr>
                 <tr><td class="px-4 py-2">ສ່ຽງສູງ (ຊັກຊ້າ 60-90 ວັນ)</td><td class="text-center font-bold text-error border-l">5</td><td class="text-center font-bold text-error border-l bg-amber-50/30">5</td></tr>
                 <tr><td class="px-4 py-2 border-b">ບໍ່ດີ (> 90 ວັນ / Blacklist)</td><td class="text-center font-bold text-error border-l">0</td><td class="text-center font-bold text-error border-l bg-amber-50/30">0</td></tr>
@@ -108,7 +108,7 @@
                 </tr>
                 <tr><td class="px-4 py-2">≥ 20%</td><td class="text-center font-bold text-success border-l">12</td></tr>
                 <tr><td class="px-4 py-2">≥ 10%</td><td class="text-center font-bold text-warning border-l">8</td></tr>
-                <tr><td class="px-4 py-2 border-b">< 10%</td><td class="text-center font-bold text-error border-l">5</td></tr>
+                <tr><td class="px-4 py-2 border-b">&lt; 10%</td><td class="text-center font-bold text-error border-l">5</td></tr>
 
                 <tr>
                   <td rowspan="5" class="align-top font-bold text-amber-700 bg-amber-50/50 px-4 py-3 border-r border-b">
@@ -147,7 +147,7 @@
                 <p class="text-sm text-gray-600">ອະນຸມັດແບບມີເງື່ອນໄຂ (ເຊັ່ນ: ຕ້ອງເພີ່ມເງິນດາວ ຫຼື ຂໍຄົນຄ້ຳ)</p>
               </div>
               <div class="bg-error/10 border border-error/30 rounded-xl p-4 text-center">
-                <div class="text-error font-black text-2xl mb-1">< 65</div>
+                <div class="text-error font-black text-2xl mb-1">&lt; 65</div>
                 <div class="badge badge-error text-white mb-2">REJECT</div>
                 <p class="text-sm text-gray-600">ປະຕິເສດ, ລູກຄ້າມີຄວາມສ່ຽງສູງເກີນໄປ</p>
               </div>
