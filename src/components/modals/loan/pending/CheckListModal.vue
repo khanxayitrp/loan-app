@@ -61,7 +61,7 @@
           <ChecklistCallTab v-else-if="checklistTab === 'call'" :formCalls="formCalls" :canEdit="canEditChecklist" @addCall="addCallRecord" @removeCall="removeCallRecord" />
 
           <!-- TAB 3: CIB -->
-          <ChecklistCibTab v-else-if="checklistTab === 'cib'" :formCIB="formCIB" :formCIBDetails="formCIBDetails" :canEdit="canEditChecklist" :isImporting="isImporting" :fileInputRefExternal="fileInput" @triggerFileInput="triggerFileInput" @handleFileUpload="handleFileUpload" @addCibDetail="addCIBDetail" @removeCibDetail="removeCIBDetail" />
+          <ChecklistCibTab v-else-if="checklistTab === 'cib'" :formCIB="formCIB" :formCIBDetails="formCIBDetails" :canEdit="canEditChecklist" :isImporting="isImporting" @handleFileUpload="handleFileUpload" @addCibDetail="addCIBDetail" @removeCibDetail="removeCIBDetail" />
 
           <!-- TAB 4: Field -->
           <ChecklistFieldTab v-else-if="checklistTab === 'field'" :formFieldVisits="formFieldVisits" :canEdit="canEditChecklist" @addFieldVisit="addFieldVisit" @removeFieldVisit="removeFieldVisit" @getCurrentLocation="getCurrentLocation" @handleVisitImageUpload="handleVisitImageUpload" @removeVisitImage="removeVisitImage" />
@@ -142,9 +142,7 @@ const resetForms = () => {
 };
 
 // PDF Import CIB
-const fileInput = ref<HTMLInputElement | null>(null);
 const isImporting = ref(false);
-const triggerFileInput = () => { if (fileInput.value) fileInput.value.click(); };
 
 const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement; const file = target.files?.[0]; if (!file) return;
