@@ -1,4 +1,3 @@
-
 <template>
   <div class="min-h-screen flex flex-col bg-slate-100 font-lao text-slate-800">
     <DashboardHeader />
@@ -9,8 +8,42 @@
         <span class="loading loading-spinner loading-lg text-sky-500"></span>
       </div>
 
+      <!-- 1. Operational Metrics (ຕົວຊີ້ວັດການປະຕິບັດງານເດີມ) -->
       <DashboardMetrics />
 
+      <!-- 🌟 2. Financial Metrics (ຕົວຊີ້ວັດທາງການເງິນ) -->
+      <section>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-slate-800 flex items-center">
+            <span class="mr-3 p-2 bg-blue-100 rounded-lg text-blue-600 text-sm">💰</span>
+            ພາບລວມການເງິນ ແລະ ພອດສິນເຊື່ອ (Financial Overview)
+          </h3>
+        </div>
+        <FinancialSummaryCards />
+      </section>
+
+      <!-- 🌟 3. Risk & Efficiency (ຄວາມສ່ຽງ ແລະ ປະສິດທິພາບ) -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Portfolio Health -->
+        <div class="bg-white p-8 rounded-[2rem] shadow-xl border-t-8 border-red-500">
+          <h3 class="text-xl font-bold mb-6 text-slate-800 flex items-center">
+            <span class="mr-3 p-2 bg-red-100 rounded-lg text-red-600 text-sm">🛡️</span>
+            ຄຸນນະພາບພອດສິນເຊື່ອ (Portfolio Health & Aging)
+          </h3>
+          <PortfolioHealthChart />
+        </div>
+
+        <!-- Approval Funnel -->
+        <div class="bg-white p-8 rounded-[2rem] shadow-xl border-t-8 border-blue-500">
+          <h3 class="text-xl font-bold mb-6 text-slate-800 flex items-center">
+            <span class="mr-3 p-2 bg-blue-100 rounded-lg text-blue-600 text-sm">🎯</span>
+            ປະສິດທິພາບການອະນຸມັດ (Approval Funnel)
+          </h3>
+          <ApprovalFunnel />
+        </div>
+      </section>
+
+      <!-- 4. Analytical Charts (ກຣາຟວິເຄາະສິນຄ້າ ແລະ ລູກຄ້າ) -->
       <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 bg-white p-8 rounded-[2rem] shadow-xl">
           <h3 class="text-xl font-bold mb-6 text-slate-800 flex items-center">
@@ -29,6 +62,7 @@
         </div>
       </section>
 
+      <!-- 5. Top Performance & Tables -->
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div class="bg-white p-8 rounded-[2rem] shadow-xl border-t-8 border-sky-600">
           <h3 class="text-xl font-bold mb-6 text-slate-800">Top 5 ສິນຄ້າ (ເດືອນນີ້)</h3>
@@ -41,7 +75,7 @@
         </div>
       </section>
 
-      <!-- 🌟 เพิ่มตารางวิเคราะห์รายเดือนใหม่ตรงนี้ 🌟 -->
+      <!-- 6. Monthly Conversion Table -->
       <section class="bg-white p-8 rounded-[2rem] shadow-xl border-t-8 border-emerald-500">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-bold text-slate-800 flex items-center">
@@ -65,11 +99,17 @@ import { useAdminDashboardStore } from '@/stores/admin_dashboard'
 
 import DashboardHeader from '@/components/dashboard/admin/DashboardHeader.vue'
 import DashboardMetrics from '@/components/dashboard/admin/DashboardMetrics.vue'
+import FinancialSummaryCards from '@/components/dashboard/admin/FinancialSummaryCards.vue'
+
+// 🌟 Import 2 Components ใหม่เข้ามาตรงนี้ 🌟
+import PortfolioHealthChart from '@/components/dashboard/admin/PortfolioHealthChart.vue'
+import ApprovalFunnel from '@/components/dashboard/admin/ApprovalFunnel.vue'
+
 import TopProductsChart from '@/components/dashboard/admin/TopProductsChart.vue'
 import RepeatRateChart from '@/components/dashboard/admin/RepeatRateChart.vue'
 import MonthlyTopChart from '@/components/dashboard/admin/MonthlyTopChart.vue'
 import TopCustomersTable from '@/components/dashboard/admin/TopCustomersTable.vue'
-import MonthlyLoanComparisonTable from '@/components/dashboard/admin/MonthlyLoanComparisonTable.vue' // 🌟 นำเข้า Component
+import MonthlyLoanComparisonTable from '@/components/dashboard/admin/MonthlyLoanComparisonTable.vue'
 import DashboardFooter from '@/components/dashboard/admin/DashboardFooter.vue'
 
 const store = useAdminDashboardStore()
