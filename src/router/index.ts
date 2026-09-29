@@ -19,9 +19,9 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/verify/:code',
     name: 'VerifyMember',
-    // ໝາຍເຫດ: ປັບ Path ໃຫ້ກົງກັບບ່ອນທີ່ທ່ານ Save ໄຟລ໌ VerifyMember.vue ໄວ້ 
+    // ໝາຍເຫດ: ປັບ Path ໃຫ້ກົງກັບບ່ອນທີ່ທ່ານ Save ໄຟລ໌ VerifyMember.vue ໄວ້
     // ຕົວຢ່າງ: ຖ້າເອົາໄວ້ໃນ views/public/ ກໍໃຊ້ '@/views/public/VerifyMember.vue'
-    component: () => import('@/views/public/VerifyMember.vue'), 
+    component: () => import('@/views/public/VerifyMember.vue'),
     meta: { requiresAuth: false, layout: 'blank' }
   },
   {
@@ -261,6 +261,17 @@ const routes: RouteRecordRaw[] = [
     path: '/reports/disbursed-loans',
     name: 'ReportDisbursedLoans',
     component: () => import('@/components/report/DisbursedLoanDetail.vue'), // ກະລຸນາກວດສອບ Path ໃຫ້ກົງກັບທີ່ທ່ານສ້າງແທ້
+    meta: {
+      requiresAuth: true,
+      permissions: ['loan_view_all']
+    }
+  },
+  // 🌟 ເພີ່ມ Route ໃໝ່ສຳລັບລາຍລະອຽດໜີ້ຄ້າງຊຳລະ 🌟
+  {
+    path: '/reports/portfolio-health',
+    name: 'ReportPortfolioHealth',
+    // ⚠️ ກວດສອບ Path ໃຫ້ກົງກັບບ່ອນທີ່ທ່ານ Save ໄຟລ໌ PortfolioHealthReport.vue ແທ້ໆ
+    component: () => import('@/components/report/PortfolioHealthReport.vue'),
     meta: {
       requiresAuth: true,
       permissions: ['loan_view_all']

@@ -1,4 +1,3 @@
-
 <template>
   <div class="p-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -128,24 +127,13 @@
     </div>
 
     <!-- 🟢 ລະບົບແບ່ງໜ້າ Local -->
-    <LoanStatusPagination
-      v-if="!isLoading"
-      v-model:pageSize="pageSize"
-      :currentPage="currentPage"
-      :totalFiltered="totalFiltered"
-      :pageOptions="[10, 25, 50]"
-      @previousPage="previousPage"
-      @nextPage="nextPage"
-      @update:pageSize="resetPage"
-    />
+    <LoanStatusPagination v-if="!isLoading" v-model:pageSize="pageSize" :currentPage="currentPage"
+      :totalFiltered="totalFiltered" :pageOptions="[10, 25, 50]" @previousPage="previousPage" @nextPage="nextPage"
+      @update:pageSize="resetPage" />
 
     <!-- 🟢 ປຸ່ມ Load More -->
-    <LoanStatusLoadMore
-      v-if="!isLoading"
-      :canLoadMore="loanAppStore.canLoadMore"
-      :isLoadingMore="loanAppStore.isLoadingMore"
-      @loadMore="loadMore"
-    />
+    <LoanStatusLoadMore v-if="!isLoading" :canLoadMore="loanAppStore.canLoadMore"
+      :isLoadingMore="loanAppStore.isLoadingMore" @loadMore="loadMore" />
 
     <teleport to="body">
       <div v-if="showRepaymentHub"
@@ -286,19 +274,44 @@
               </div>
             </div>
 
-            <div v-if="isEarlyPayoff" class="form-control bg-blue-50 p-3 rounded-lg border border-blue-200 mt-2">
-              <label class="label pb-1">
-                <span class="label-text font-medium text-blue-800">ຈຳນວນເດືອນດອກເບ້ຍທີ່ຕ້ອງຈ່າຍ (ເງື່ອນໄຂປິດກ່ອນ)</span>
-              </label>
-              <select v-model.number="paymentForm.payoff_months_to_charge" @change="recalculatePayoffInterest"
-                class="select select-sm select-bordered w-full font-bold text-blue-700">
-                <option v-for="n in 12" :key="n" :value="n">ຈ່າຍດອກເບ້ຍ {{ n }} ເດືອນ</option>
-                <option :value="0">ຍົກເວັ້ນດອກເບ້ຍ (0 ເດືອນ)</option>
-              </select>
-              <p class="text-xs text-blue-600 mt-1">
-                * ຖ້າງວດຍັງເຫຼືອຫຼາຍກວ່າ 6 ງວດ, ລະບົບຈະຕັ້ງຄ່າເລີ່ມຕົ້ນໃຫ້ເກັບດອກເບ້ຍລ່ວງໜ້າ 5 ເດືອນ
-              </p>
+            <!-- 🌟 ສ່ວນເງື່ອນໄຂປິດບັນຊีก່ອນກຳນົດ (ມີຄ່າປັບໃໝ %) -->
+            <div v-if="isEarlyPayoff" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+              <div class="form-control bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <label class="label pb-1">
+                  <span class="label-text font-medium text-blue-800">ເດືອນດອກເບ້ຍລ່ວງໜ້າ</span>
+                </label>
+                <select v-model.number="paymentForm.payoff_months_to_charge" @change="recalculatePayoffInterest"
+                  class="select select-sm select-bordered w-full font-bold text-blue-700">
+                  <option v-for="n in 12" :key="n" :value="n">ຈ່າຍ {{ n }} ເດືອນ</option>
+                  <option :value="0">ຍົກເວັ້ນ (0 ເດືອນ)</option>
+                </select>
+              </div>
+
+              <div class="form-control bg-red-50 p-3 rounded-lg border border-red-200">
+                <label class="label pb-1">
+                  <span class="label-text font-medium text-red-800">ຄ່າປັບໃໝປິດກ່ອນ (%)</span>
+                </label>
+                <select v-model.number="paymentForm.payoff_penalty_percentage" @change="recalculatePayoffInterest"
+                  class="select select-sm select-bordered w-full font-bold text-red-700">
+                  <option :value="0">ບໍ່ມີຄ່າປັບໃໝ (0%)</option>
+                  <option :value="1">1% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="2">2% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="3">3% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="4">4% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="5">5% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="6">6% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="7">7% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="8">8% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="9">9% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                  <option :value="10">10% ຂອງເງິນຕົ້ນເຫຼືອ</option>
+                </select>
+              </div>
             </div>
+
+            <p v-if="isEarlyPayoff" class="text-xs text-blue-600 mt-1 mb-2 leading-tight">
+              * ລະບົບຈະຕັ້ງຄ່າເກັບດອກເບ້ຍ 5 ເດືອນຖ້າງວດເຫຼືອ > 6 ງວດ. ສ່ວນຄ່າປັບໃໝຈະຄິດໄລ່ຈາກຍອດເງິນຕົ້ນຄົງເຫຼືອ ({{
+                formatPrice(paymentForm.expected_principal) }} ກີບ).
+            </p>
 
             <div class="form-control bg-green-50 p-3 rounded-lg border border-green-200 mt-2">
               <label class="label pb-1"><span class="label-text font-medium text-green-700">ມອບສ່ວນຫຼຸດ
@@ -313,7 +326,8 @@
             <!-- 🌟 1. ຊ່ອງຮັບເງິນ (ປັບໃຫ້ສວຍງາມ ແລະ ແຈ້ງຂຶ້ນ) -->
             <div class="form-control mt-4">
               <label class="label pb-1">
-                <span class="label-text font-bold text-gray-700 dark:text-gray-300">ຍອດເງິນທີ່ຮັບຈາກລູກຄ້າ (ກີບ) *</span>
+                <span class="label-text font-bold text-gray-700 dark:text-gray-300">ຍອດເງິນທີ່ຮັບຈາກລູກຄ້າ (ກີບ)
+                  *</span>
               </label>
               <div class="relative">
                 <input type="text" :value="formatCurrencyInput(paymentForm.amount_received)" @input="handleAmountInput"
@@ -322,60 +336,67 @@
               </div>
             </div>
 
-            <!-- 🌟 2. ກ່ອງ Waterfall & Overpayment (ປັບ Layout ໃໝ່ທັງໝົດ) -->
-            <div class="bg-gray-50 dark:bg-gray-800/80 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mt-4 shadow-sm">
+            <!-- 🌟 2. ກ່ອງ Waterfall & Overpayment -->
+            <div
+              class="bg-gray-50 dark:bg-gray-800/80 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mt-4 shadow-sm">
               <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 font-medium flex items-center gap-1.5">
                 <span class="icon-[tabler--calculator] size-4"></span> ລະບົບຈະຈັດສັນເງິນອັດຕະໂນມັດ (Auto-Waterfall):
               </p>
 
-              <!-- Waterfall breakdown grid (ຈັດກາງ ແລະ ໃສ່ກອບແຍກໃຫ້ເບິ່ງງ່າຍ) -->
               <div class="grid grid-cols-3 gap-3 text-sm">
-                <div class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+                <div
+                  class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
                   <span class="text-[11px] text-gray-400 mb-0.5">ຄ່າປັບໃໝ</span>
                   <span class="font-bold text-error text-base">{{ formatPrice(waterfallPreview.penalty) }}</span>
                 </div>
-                <div class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+                <div
+                  class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
                   <span class="text-[11px] text-gray-400 mb-0.5">ດອກເບ້ຍ</span>
                   <span class="font-bold text-orange-500 text-base">{{ formatPrice(waterfallPreview.interest) }}</span>
                 </div>
-                <div class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+                <div
+                  class="flex flex-col py-2 px-1 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm text-center">
                   <span class="text-[11px] text-gray-400 mb-0.5">ຕົ້ນທຶນ</span>
-                  <span class="font-bold text-blue-600 dark:text-blue-400 text-base">{{ formatPrice(waterfallPreview.principal) }}</span>
+                  <span class="font-bold text-blue-600 dark:text-blue-400 text-base">{{
+                    formatPrice(waterfallPreview.principal) }}</span>
                 </div>
               </div>
 
-              <!-- ສ່ວນສະແດງເງິນທອນ ຫຼື ເງິນໂປະ (Overpayment) -->
-              <div v-if="waterfallPreview.overpay > 0" class="mt-4 pt-4 border-t border-dashed border-gray-300 dark:border-gray-600">
+              <div v-if="waterfallPreview.overpay > 0"
+                class="mt-4 pt-4 border-t border-dashed border-gray-300 dark:border-gray-600">
                 <div class="flex justify-between items-center text-success mb-3">
                   <span class="font-medium text-sm" v-if="!isOverpayment">ເງິນທອນ / ຈ່າຍລ່ວງໜ້າງວດຕໍ່ໄປ:</span>
                   <span class="font-medium text-sm" v-else>ຍອດໂປະເງິນຕົ້ນ (Principal Reduction):</span>
-                  <span class="font-bold text-lg bg-success/10 px-2 py-0.5 rounded-md">+{{ formatPrice(waterfallPreview.overpay) }}</span>
+                  <span class="font-bold text-lg bg-success/10 px-2 py-0.5 rounded-md">+{{
+                    formatPrice(waterfallPreview.overpay) }}</span>
                 </div>
 
-                <!-- 🌟 ກ່ອງ Checkbox ໂປະເງິນ (Clickable Card Design) 🌟 -->
                 <label class="flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200"
                   :class="isOverpayment ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-primary/40'">
                   <div class="pt-0.5">
-                    <input type="checkbox" v-model="isOverpayment" class="checkbox checkbox-primary checkbox-sm rounded" />
+                    <input type="checkbox" v-model="isOverpayment"
+                      class="checkbox checkbox-primary checkbox-sm rounded" />
                   </div>
                   <div class="flex flex-col">
-                    <span class="text-sm font-bold leading-tight" :class="isOverpayment ? 'text-primary' : 'text-gray-700 dark:text-gray-300'">
+                    <span class="text-sm font-bold leading-tight"
+                      :class="isOverpayment ? 'text-primary' : 'text-gray-700 dark:text-gray-300'">
                       ນຳເງິນສ່ວນເກີນໄປໂປະເງິນຕົ້ນ
                     </span>
-                    <span class="text-xs mt-1 leading-snug" :class="isOverpayment ? 'text-primary/80' : 'text-gray-500 dark:text-gray-400'">
+                    <span class="text-xs mt-1 leading-snug"
+                      :class="isOverpayment ? 'text-primary/80' : 'text-gray-500 dark:text-gray-400'">
                       ລະບົບຈະນຳເງິນໄປຕັດຕົ້ນທຶນຄົງເຫຼືອ ແລະ ສ້າງຕາຕະລາງຜ່ອນຊຳລະໃໝ່.
                     </span>
                   </div>
                 </label>
               </div>
-              
-              <!-- ສ່ວນສະແດງຍອດຍັງຄ້າງ (Underpayment) -->
+
               <div v-else-if="paymentForm.amount_received > 0 && paymentForm.amount_received < calculatedTotalExpected"
                 class="mt-4 pt-3 border-t border-dashed border-gray-300 dark:border-gray-600 flex justify-between items-center text-warning">
                 <span class="font-medium text-sm flex items-center gap-1.5">
-                   <span class="icon-[tabler--alert-triangle] size-4"></span> ຍອດຍັງຄ້າງ (ໜີ້ຍົກໄປ):
+                  <span class="icon-[tabler--alert-triangle] size-4"></span> ຍອດຍັງຄ້າງ (ໜີ້ຍົກໄປ):
                 </span>
-                <span class="font-bold text-lg bg-warning/10 px-2 py-0.5 rounded-md">{{ formatPrice(calculatedTotalExpected - paymentForm.amount_received) }}</span>
+                <span class="font-bold text-lg bg-warning/10 px-2 py-0.5 rounded-md">{{
+                  formatPrice(calculatedTotalExpected - paymentForm.amount_received) }}</span>
               </div>
             </div>
 
@@ -611,7 +632,7 @@ const showPaymentModal = ref(false)
 const selectedLoan = ref<LoanApplication | null>(null)
 const selectedSchedule = ref<RepaymentScheduleItem | null>(null)
 const isEarlyPayoff = ref(false)
-const isOverpayment = ref(false) // 🟢 ເພີ່ມແຖວນີ້
+const isOverpayment = ref(false)
 const slipInput = ref<HTMLInputElement | null>(null);
 const currentSchedules = ref<RepaymentScheduleItem[]>([])
 
@@ -623,11 +644,13 @@ const canManagePayment = computed(() => {
   return permissionStore.hasPermission('payment_create') || permissionStore.hasPermission('loan_edit');
 });
 
+// 🌟 ເພີ່ມ payoff_penalty_percentage
 const paymentForm = reactive({
   expected_principal: 0,
   expected_interest: 0,
   expected_penalty: 0,
   payoff_months_to_charge: 5,
+  payoff_penalty_percentage: 0,
   base_monthly_interest: 0,
   amount_received: 0,
   discount_given: 0,
@@ -669,8 +692,14 @@ const triggerSlipUpload = () => {
   if (slipInput.value) slipInput.value.click();
 }
 
+// 🌟 ປັບປຸງການຄິດໄລ່ຄ່າປັບໃໝຈາກເປີເຊັນ
 const recalculatePayoffInterest = () => {
   paymentForm.expected_interest = paymentForm.base_monthly_interest * paymentForm.payoff_months_to_charge;
+
+  if (isEarlyPayoff.value) {
+    paymentForm.expected_penalty = (paymentForm.expected_principal * paymentForm.payoff_penalty_percentage) / 100;
+  }
+
   paymentForm.amount_received = paymentForm.expected_principal + paymentForm.expected_interest + paymentForm.expected_penalty;
 }
 
@@ -758,15 +787,12 @@ const resetPage = () => {
 const filteredLoans = computed(() => {
   let loans = loanApplications.value || [];
 
-  // 1. กรองตามสถานะ
   if (statusFilter.value === 'completed') {
     loans = loans.filter((loan) => loan.status === LoanApplicationStatus.COMPLETED || loan.status === LoanApplicationStatus.CLOSED_EARLY);
   } else {
-    // Default to active (disbursed)
     loans = loans.filter((loan) => loan.status === LoanApplicationStatus.DISBURSED || (loan.status as string) === 'active');
   }
 
-  // 2. ค้นหาแบบ Text
   if (debouncedSearch.value) {
     const q = debouncedSearch.value.toLowerCase().trim();
     loans = loans.filter((loan) =>
@@ -849,7 +875,6 @@ const viewReceiptHistory = async (applicationId: number) => {
   }
 };
 
-// 🌟 Fetch Loans based on status Filter
 const fetchLoans = async () => {
   try {
     let apiStatuses: LoanApplicationStatus[] = [LoanApplicationStatus.DISBURSED];
@@ -860,7 +885,7 @@ const fetchLoans = async () => {
     await loanAppStore.fetchLoanApplications({
       is_confirmed: 1,
       status: apiStatuses,
-      limit: 100, // 🟢 ดึงข้อมูลก้อนใหญ่เพื่อทำ Local Pagination
+      limit: 100,
       cursor: undefined
     });
   } catch (error: unknown) {
@@ -869,7 +894,6 @@ const fetchLoans = async () => {
   }
 }
 
-// Watch statusFilter to re-fetch relevant data
 watch(statusFilter, () => {
   resetPage();
   fetchLoans();
@@ -940,7 +964,6 @@ const openRepaymentHub = async (loan: LoanApplication) => {
   try {
     const res = await loanAppStore.fetchRepaymentSchedule(loan.id);
 
-    // 🌟 ดักจับทุกกรณีที่ API อาจจะส่งมา
     let rawData: RepaymentScheduleItem[] = [];
     if (Array.isArray(res)) {
       rawData = res;
@@ -958,7 +981,6 @@ const openRepaymentHub = async (loan: LoanApplication) => {
       } catch (e) { console.error(e); }
     }
 
-    // 🌟 บังคับ Clone ข้อมูลใหม่เพื่อให้ Vue กระตุ้นการ Render
     currentSchedules.value = [...rawData];
   } catch (error: unknown) {
     console.error(error);
@@ -968,7 +990,6 @@ const openRepaymentHub = async (loan: LoanApplication) => {
     isScheduleLoading.value = false;
   }
 }
-
 const closeRepaymentHub = () => {
   showRepaymentHub.value = false;
   selectedLoan.value = null;
@@ -979,7 +1000,7 @@ const openPaymentModal = async (schedule: RepaymentScheduleItem | null, earlyPay
   if (!canManagePayment.value) return;
 
   isEarlyPayoff.value = earlyPayoff;
-  isOverpayment.value = false; // 🟢 ຕ້ອງ Reset ທຸກຄັ້ງທີ່ເປີດ Modal ເພື່ອບໍ່ໃຫ້ຄ່າຄ້າງ
+  isOverpayment.value = false;
   selectedSchedule.value = schedule;
 
   if (earlyPayoff) {
@@ -1003,6 +1024,7 @@ const openPaymentModal = async (schedule: RepaymentScheduleItem | null, earlyPay
         expected_penalty: Number(payoffData.total_penalty),
         base_monthly_interest: monthlyInt,
         payoff_months_to_charge: defaultChargeMonths,
+        payoff_penalty_percentage: 0, // 🌟 ຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ 0%
         discount_given: 0,
         installment_number: 0
       });
@@ -1051,8 +1073,10 @@ const submitPayment = async () => {
       application_id: selectedLoan.value?.id,
       schedule_id: selectedSchedule.value?.id || null,
       is_early_payoff: isEarlyPayoff.value,
-      is_overpayment: isOverpayment.value, // 🟢 ເພີ່ມແຖວນີ້ເພື່ອສົ່ງໄປບອກ Backend
+      is_overpayment: isOverpayment.value,
       payoff_interest_months: isEarlyPayoff.value ? paymentForm.payoff_months_to_charge : null,
+      // 🔥 ส่งยอดเงินค่าปรับสุทธิที่หน้าบ้านคำนวณแล้วไปให้ Backend
+      payoff_penalty_amount: isEarlyPayoff.value ? paymentForm.expected_penalty : null,
       amount_paid: paymentForm.amount_received,
       discount_amount: paymentForm.discount_given,
       payment_method: paymentForm.payment_method,
@@ -1111,4 +1135,3 @@ onUnmounted(() => {
   loanAppStore.resetFilters();
 });
 </script>
-

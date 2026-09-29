@@ -1,4 +1,3 @@
-
 <template>
   <div class="p-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -136,11 +135,11 @@
                     <span class="icon-[tabler--eye] size-5"></span>
                   </button>
                 </div>
-                <div class="tooltip tooltip-top" data-tip="ເບິ່ງຕາຕະລາງຜ່ອນຊຳລະ">
+                <!-- <div class="tooltip tooltip-top" data-tip="ເບິ່ງຕາຕະລາງຜ່ອນຊຳລະ">
                   <button class="btn btn-circle btn-text btn-sm text-info" @click="openSchedule(loan)">
                     <span class="icon-[tabler--calendar-stats] size-4"></span>
                   </button>
-                </div>
+                </div> -->
 
 
                 <div v-if="hasContract(loan)" class="tooltip tooltip-top" data-tip="ຈັດການລາຍເຊັນເອກະສານ"
@@ -246,33 +245,23 @@
     </div>
 
     <!-- 🟢 ລະບົບແບ່ງໜ້າແບບ Local Pagination -->
-    <LoanStatusPagination
-      v-if="!isLoading"
-      v-model:pageSize="pageSize"
-      :currentPage="currentPage"
-      :totalFiltered="totalFiltered"
-      @previousPage="previousPage"
-      @nextPage="nextPage"
-      @update:pageSize="resetPage"
-    />
+    <LoanStatusPagination v-if="!isLoading" v-model:pageSize="pageSize" :currentPage="currentPage"
+      :totalFiltered="totalFiltered" @previousPage="previousPage" @nextPage="nextPage" @update:pageSize="resetPage" />
 
     <!-- 🟢 ປຸ່ມ Load More ດຶງຂໍ້ມູນຈາກ Server ຖ້າຄົ້ນຫາບໍ່ເຈີ -->
-    <LoanStatusLoadMore
-      v-if="!isLoading"
-      :canLoadMore="loanApplicationStore.canLoadMore"
-      :isLoadingMore="loanApplicationStore.isLoadingMore"
-      @loadMore="loadMore"
-    />
+    <LoanStatusLoadMore v-if="!isLoading" :canLoadMore="loanApplicationStore.canLoadMore"
+      :isLoadingMore="loanApplicationStore.isLoadingMore" @loadMore="loadMore" />
 
     <ScoringGuideModal :is-open="showScoringGuideModal" @close="showScoringGuideModal = false" />
-    <VerifyLoanModal :is-open="showVerifyModal" :loan="loanToAction || undefined"
+    <VerifyLoanModal :is-open="showVerifyModal" :loan="loanToAction || null"
       @close="showVerifyModal = false; loanToAction = null" @success="fetchData" />
     <PrintSummaryModal :is-open="showPrintModal" :print-data="printData || undefined"
       @close="showPrintModal = false; printData = null" />
-    <ChecklistModal :is-open="showChecklistModal" :loan="selectedChecklistLoan || undefined"
+    <ChecklistModal :is-open="showChecklistModal" :loan="selectedChecklistLoan || null"
       @close="showChecklistModal = false; selectedChecklistLoan = null" />
-    <CreditScoreModal :is-open="showCreditScoreModal" :loan="loanForCreditScore || undefined" :summary-data="summaryDataForScore || undefined"
-      @close="showCreditScoreModal = false; loanForCreditScore = null" @success="fetchData" />
+    <CreditScoreModal :is-open="showCreditScoreModal" :loan="loanForCreditScore || undefined"
+      :summary-data="summaryDataForScore || undefined" @close="showCreditScoreModal = false; loanForCreditScore = null"
+      @success="fetchData" />
     <ExternalSignatureModal :is-open="showSignatureModal" :loan-id="loanForSignature?.id ?? null"
       @close="showSignatureModal = false; loanForSignature = null" @updated="fetchData" />
     <DeliveryNoteModal :is-open="showDeliveryNoteModal" :loan="loanForDeliveryNote || undefined" :is-pending-view="true"
@@ -357,7 +346,8 @@
                 <div>
                   <div class="text-xs font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
                     <span class="icon-[tabler--corner-down-right] size-3"></span>
-                    ຕອບກັບ: {{ replyingTo.performed_by_user?.full_name || replyingTo.performed_by_user?.username || 'ພະນັກງານ' }}
+                    ຕອບກັບ: {{ replyingTo.performed_by_user?.full_name || replyingTo.performed_by_user?.username ||
+                      'ພະນັກງານ' }}
                   </div>
                   <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2 italic">
                     "{{ replyingTo.remarks }}"
@@ -532,13 +522,8 @@
     </teleport>
 
 
-    <LoanScheduleModal
-      :show="showScheduleModal"
-      :loan="selectedScheduleLoan"
-      :canEdit="false"
-      :canPrint="selectedScheduleLoan?.status === 'verified'"
-      @close="showScheduleModal = false"
-    />
+    <LoanScheduleModal :show="showScheduleModal" :loan="selectedScheduleLoan" :canEdit="false"
+      :canPrint="selectedScheduleLoan?.status === 'verified'" @close="showScheduleModal = false" />
   </div>
 
   <LoanScheduleModal :show="showScheduleModal" :loan="loanForSchedule || undefined" :view-only="true"
@@ -621,9 +606,11 @@ const showCreditScoreModal = ref(false);
 const showSignatureModal = ref(false);
 const showDeliveryNoteModal = ref(false);
 
+
 const loanForDeliveryNote = ref<LoanApplication | null>(null);
 const loanForSignature = ref<LoanApplication | null>(null);
 const showScheduleModal = ref(false);
+const selectedScheduleLoan = ref<LoanApplication | null>(null);
 const loanForSchedule = ref<LoanApplication | null>(null);
 const showContractModal = ref(false);
 const selectedContract = ref<LoanContract | null>(null);
@@ -968,7 +955,7 @@ const openCreditScoreModal = async (loan: LoanApplication) => {
     }
 
     const hasRepayments = Array.isArray(scheduleData) && scheduleData.length > 0;
-    
+
     if (!hasRepayments) {
       return alert.error('ບໍ່ສາມາດຄຳນວນຄະແນນໄດ້', 'ກະລຸນາສ້າງ ແລະ ບັນທຶກ "ຕາຕະລາງຜ່ອນຊຳລະ" ໃຫ້ສຳເລັດກ່ອນ!');
     }
@@ -993,9 +980,9 @@ const openCreditScoreModal = async (loan: LoanApplication) => {
     summaryDataForScore.value = summaryData;
     loanForCreditScore.value = loan;
     showCreditScoreModal.value = true;
-  } catch (error) { 
+  } catch (error) {
     console.error(error);
-    alert.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບເງື່ອນໄຂ'); 
+    alert.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບເງື່ອນໄຂ');
   }
 }
 
@@ -1088,4 +1075,3 @@ const exportToExcel = () => {
   XLSX.writeFile(workbook, `pending_loans_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 </script>
-

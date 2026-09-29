@@ -1,4 +1,3 @@
-
 <template>
   <div class="loan-contract-form-container">
     <div v-if="isLoadingForm" class="text-center py-12">
@@ -381,18 +380,36 @@ const checkIphone18Campaign = (productName: string, model: string = ''): boolean
   return /iphone\s*18/i.test(nameToTest);
 };
 
-// 🌟 2. Logic บังคับกฎของแคมเปญ
+// 🌟 2. Helper: ฟังก์ชันดึงดอกเบี้ยมาตรฐาน (Single Source of Truth)
+const getInterestRateByTerm = (months: number): number => {
+  if (!months || months <= 6) return 2.50;
+  if (months <= 12) return 2.00;
+  if (months <= 18) return 1.89;
+  if (months <= 24) return 1.75;
+  return 1.69;
+};
+
+// 🌟 2. Logic บังคับกฎของแคมเปญ (ยกเลิกการยกเว้น Fee ตามคำขอ)
 const applyCampaignRules = () => {
   const isIphone18 = checkIphone18Campaign(formData.product.description, formData.product.model);
+
   if (!isIphone18) return;
 
-  // ก. บังคับจำนวนงวด
-  const allowedTerms = [18, 24, 30, 36];
-  if (!allowedTerms.includes(Number(formData.product.loanTerm))) {
+  // ก. บังคับจำนวนงวดที่อนุญาต
+  const allowedTerms = [6, 12, 18, 24, 30, 36];
+  let currentTerm = Number(formData.product.loanTerm);
+  if (!allowedTerms.includes(currentTerm)) {
     formData.product.loanTerm = 18;
+    currentTerm = 18;
   }
 
-  // ข. กำหนดดอกเบี้ยตามขั้นบันได (Tiered Interest)
+  // ข. Early Return สำหรับ 6 และ 12 เดือน (บังคับดอกเบี้ยปกติ)
+  if (currentTerm === 6 || currentTerm === 12) {
+    formData.product.interestRate = getInterestRateByTerm(currentTerm);
+    return; // สิ้นสุดฟังก์ชัน
+  }
+
+  // ค. กำหนดดอกเบี้ยตามขั้นบันไดเงินดาวน์ (Tiered Interest สำหรับ 18 เดือนขึ้นไป)
   const price = Number(formData.product.price) || 0;
   const dp = Number(formData.product.downPayment) || 0;
   const dpPercent = price > 0 ? (dp / price) * 100 : 0;
@@ -573,7 +590,7 @@ const saveForm = async () => {
   try {
     // 🟢 ສ້າງ Clone ແລະ ແປງຄ່າ Empty String ເປັນ Null ກ່ອນສົ່ງ API
     const payload = JSON.parse(JSON.stringify(formData));
-    
+
     // เคลียร์ข้อมูลขยะหากไม่มีคนค้ำประกัน (ป้องกัน Database บันทึก "ບໍ່ມີ")
     if (!payload.hasGuarantor && !payload.hasReference) {
       payload.guarantor = {
@@ -742,12 +759,12 @@ const loadDataFromProps = () => {
       formData.guarantorWork.workYears = sourceData.ref_company_workYear || null
       formData.guarantorWork.position = cleanDBStr(sourceData.ref_position)
       formData.guarantorWork.phone = cleanDBStr(sourceData.ref_work_phone || sourceData.ref_company_phone)
-      
+
       const salaryVal = sourceData.ref_work_salary || sourceData.ref_income;
       formData.guarantorWork.salary = salaryVal && salaryVal !== '0' ? parseFloat(salaryVal) : null;
       formData.guarantorWork.salaryDay = sourceData.ref_payroll_date && sourceData.ref_payroll_date !== '0' ? sourceData.ref_payroll_date : null;
       formData.guarantorWork.totalEmployees = sourceData.ref_company_emp_number || null;
-      
+
       const otherIncVal = sourceData.ref_income_other;
       formData.guarantorWork.otherIncome = otherIncVal && otherIncVal !== '0' ? parseFloat(otherIncVal) : null;
       formData.guarantorWork.otherIncomeSource = cleanDBStr(sourceData.ref_income_other_source)
@@ -775,14 +792,14 @@ const loadDataFromProps = () => {
       formData.customer.fullname = `${sourceData.customer.first_name || ''} ${sourceData.customer.last_name || ''}`.trim()
       formData.customer.dob = sourceData.customer.date_of_birth || ''
       formData.customer.phone = sourceData.customer.phone || ''
-      
+
       formData.customer.idCard = sourceData.customer.identity_number || ''
       formData.customer.idCardIssueDate = sourceData.customer.issue_date || ''
       formData.customer.idCardExpiryDate = sourceData.customer.expire_date || sourceData.customer.expired_date || ''
-      
+
       formData.customer.censusBook = sourceData.customer.census_number || ''
       formData.customer.censusBookIssueDate = sourceData.customer.census_created || sourceData.customer.census_issue_date || ''
-      
+
       formData.customer.censusAuthorizeBy = sourceData.customer.issue_place || ''
       formData.customer.idCardPlace = sourceData.customer.issue_place || ''
       formData.customer.occupation = sourceData.customer.occupation || ''
@@ -872,18 +889,18 @@ const loadDataFromProps = () => {
         formData.guarantorWork.workYears = guarantor.work_year || guarantor.workYears || null
         formData.guarantorWork.position = cleanDBStr(guarantor.work_position || guarantor.position)
         formData.guarantorWork.phone = cleanDBStr(guarantor.work_phone || guarantor.workPhone)
-        
+
         const gSalary = guarantor.work_salary || guarantor.salary;
         formData.guarantorWork.salary = gSalary && gSalary !== '0' ? parseFloat(gSalary) : null;
-        
+
         const gSalDay = guarantor.payroll_date || guarantor.salaryDay;
         formData.guarantorWork.salaryDay = gSalDay && gSalDay !== '0' ? gSalDay : null;
-        
+
         formData.guarantorWork.totalEmployees = guarantor.company_emp_number || guarantor.totalEmployees || null
-        
+
         const gOtherInc = guarantor.income_other || guarantor.otherIncome;
         formData.guarantorWork.otherIncome = gOtherInc && gOtherInc !== '0' ? parseFloat(gOtherInc) : null;
-        
+
         formData.guarantorWork.otherIncomeSource = cleanDBStr(guarantor.income_other_source || guarantor.otherIncomeSource)
 
         const gWorkAddr = parseAddress(guarantor.work_location || guarantor.workAddress)

@@ -69,115 +69,178 @@
         <div v-if="activeTab === 'details'" class="space-y-6">
           <div v-if="!isEditingInModal" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label class="text-sm font-medium text-gray-500">Loan ID</label><p class="font-medium">{{ selectedLoan?.loan_id }}</p></div>
-              <div><label class="text-sm font-medium text-gray-500">ລູກຄ້າ ID</label><p>{{ selectedLoan?.customer_id }}</p></div>
-              <div><label class="text-sm font-medium text-gray-500">ສິນຄ້າ ID</label><p>{{ selectedLoan?.product_id }}</p></div>
+              <div><label class="text-sm font-medium text-gray-500">Loan ID</label>
+                <p class="font-medium">{{ selectedLoan?.loan_id }}</p>
+              </div>
+              <div><label class="text-sm font-medium text-gray-500">ລູກຄ້າ ID</label>
+                <p>{{ selectedLoan?.customer_id }}</p>
+              </div>
+              <div><label class="text-sm font-medium text-gray-500">ສິນຄ້າ ID</label>
+                <p>{{ selectedLoan?.product_id }}</p>
+              </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ຈຳນວນເງິນກູ້ (ຍອດຈັດ)</label>
-                <p class="font-medium text-primary">{{ formatPrice(Number(selectedLoan?.total_amount || 0) - Number(selectedLoan?.down_payment || 0)) }}</p>
+                <p class="font-medium text-primary">{{ formatPrice(Number(selectedLoan?.total_amount || 0) -
+                  Number(selectedLoan?.down_payment || 0)) }}</p>
               </div>
-              <div><label class="text-sm font-medium text-gray-500">ເງິນດາວ</label><p class="font-medium">{{ formatPrice(selectedLoan?.down_payment || 0) }}</p></div>
-              <div><label class="text-sm font-medium text-gray-500">ດອກເບ້ຍ</label><p>{{ selectedLoan?.interest_rate_at_apply }}%</p></div>
-              <div><label class="text-sm font-medium text-gray-500">ໄລຍະເວລາ</label><p>{{ selectedLoan?.loan_period }} ເດືອນ</p></div>
-              <div><label class="text-sm font-medium text-gray-500">ຄ່າຜ່ອນ/ເດືອນ</label><p class="font-medium text-success">{{ formatPrice(selectedLoan?.monthly_pay) }}</p></div>
+              <div><label class="text-sm font-medium text-gray-500">ເງິນດາວ</label>
+                <p class="font-medium">{{ formatPrice(selectedLoan?.down_payment || 0) }}</p>
+              </div>
+              <div><label class="text-sm font-medium text-gray-500">ດອກເບ້ຍ</label>
+                <p>{{ selectedLoan?.interest_rate_at_apply }}%</p>
+              </div>
+              <div><label class="text-sm font-medium text-gray-500">ໄລຍະເວລາ</label>
+                <p>{{ selectedLoan?.loan_period }} ເດືອນ</p>
+              </div>
+              <div><label class="text-sm font-medium text-gray-500">ຄ່າຜ່ອນ/ເດືອນ</label>
+                <p class="font-medium text-success">{{ formatPrice(selectedLoan?.monthly_pay) }}</p>
+              </div>
               <div>
                 <label class="text-sm font-medium text-gray-500">ສະຖານະ</label>
-                <p><span class="badge badge-soft" :class="getStatusBadgeClass(selectedLoan?.status || '')">{{ getStatusText(selectedLoan?.status || '') }}</span></p>
+                <p><span class="badge badge-soft" :class="getStatusBadgeClass(selectedLoan?.status || '')">{{
+                  getStatusText(selectedLoan?.status || '') }}</span></p>
               </div>
-              <div><label class="text-sm font-medium text-gray-500">ເຈົ້າໜ້າທີ່</label><p>{{ getRequesterName(selectedLoan) || 'ID: ' + selectedLoan?.requester_id }}</p></div>
+              <div><label class="text-sm font-medium text-gray-500">ເຈົ້າໜ້າທີ່</label>
+                <p>{{ getRequesterName(selectedLoan) || 'ID: ' + selectedLoan?.requester_id }}</p>
+              </div>
             </div>
 
             <div v-if="selectedLoan?.customer" class="border-t pt-4 mt-4">
               <h4 class="font-medium mb-3">ຂໍ້ມູນລູກຄ້າ</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label class="text-sm font-medium text-gray-500">ຊື່</label><p>{{ getCustomerName(selectedLoan) }}</p></div>
-                <div><label class="text-sm font-medium text-gray-500">ເບີໂທ</label><p>{{ getCustomerPhone(selectedLoan) }}</p></div>
-                <div><label class="text-sm font-medium text-gray-500">ເລກບັດປະຈຳຕົວ</label><p class="font-medium">{{ selectedLoan.customer?.identity_number || '-' }}</p></div>
+                <div><label class="text-sm font-medium text-gray-500">ຊື່</label>
+                  <p>{{ getCustomerName(selectedLoan) }}</p>
+                </div>
+                <div><label class="text-sm font-medium text-gray-500">ເບີໂທ</label>
+                  <p>{{ getCustomerPhone(selectedLoan) }}</p>
+                </div>
+                <div><label class="text-sm font-medium text-gray-500">ເລກບັດປະຈຳຕົວ</label>
+                  <p class="font-medium">{{ selectedLoan.customer?.identity_number || '-' }}</p>
+                </div>
                 <div>
                   <label class="text-sm font-medium text-gray-500">ວັນເດືອນປີເກີດ (ອາຍຸ)</label>
-                  <p>{{ selectedLoan.customer?.date_of_birth ? new Date(selectedLoan.customer.date_of_birth).toLocaleDateString('lo-LA') : '-' }}
+                  <p>{{ selectedLoan.customer?.date_of_birth ? new
+                    Date(selectedLoan.customer.date_of_birth).toLocaleDateString('lo-LA') : '-' }}
                     <span class="text-gray-500">({{ selectedLoan.customer?.age || 0 }} ປີ)</span>
                   </p>
                 </div>
-                <div><label class="text-sm font-medium text-gray-500">ເລກບັນຊີທະນາຄານ (BCEL)</label><p class="font-medium text-indigo-600">{{ selectedLoan?.customer?.account_number || '-' }}</p></div>
+                <div><label class="text-sm font-medium text-gray-500">ເລກບັນຊີທະນາຄານ (BCEL)</label>
+                  <p class="font-medium text-indigo-600">{{ selectedLoan?.customer?.account_number || '-' }}</p>
+                </div>
                 <div>
                   <label class="text-sm font-medium text-gray-500">ລາຍຮັບ</label>
-                  <p v-if="selectedLoan.customer.income_per_month" class="text-success">{{ formatPrice(selectedLoan.customer.income_per_month) }}</p><p v-else>-</p>
+                  <p v-if="selectedLoan.customer.income_per_month" class="text-success">{{
+                    formatPrice(selectedLoan.customer.income_per_month) }}</p>
+                  <p v-else>-</p>
                 </div>
-                <div class="md:col-span-2"><label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label><p>{{ getCustomerAddress(selectedLoan) }}</p></div>
+                <div class="md:col-span-2"><label class="text-sm font-medium text-gray-500">ທີ່ຢູ່</label>
+                  <p>{{ getCustomerAddress(selectedLoan) }}</p>
+                </div>
               </div>
             </div>
 
             <div v-if="selectedLoan?.product" class="border-t pt-4 mt-4">
               <h4 class="font-medium mb-3">ຂໍ້ມູນສິນຄ້າ</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="md:col-span-2"><label class="text-sm font-medium text-gray-500">ສິນຄ້າ</label><p class="font-medium">{{ getProductName(selectedLoan) }}</p></div>
+                <div class="md:col-span-2"><label class="text-sm font-medium text-gray-500">ສິນຄ້າ</label>
+                  <p class="font-medium">{{ getProductName(selectedLoan) }}</p>
+                </div>
                 <div v-if="selectedLoan?.variant">
                   <label class="text-sm font-medium text-gray-500">ສີ / ຂະໜາດ</label>
-                  <p><span class="badge badge-primary badge-soft">{{ selectedLoan.variant.color || 'ບໍ່ລະບຸສີ' }} / {{ selectedLoan.variant.size_or_capacity || selectedLoan.variant.size || 'ບໍ່ລະບຸຂະໜາດ' }}</span></p>
+                  <p><span class="badge badge-primary badge-soft">{{ selectedLoan.variant.color || 'ບໍ່ລະບຸສີ' }} / {{
+                    selectedLoan.variant.size_or_capacity || selectedLoan.variant.size || 'ບໍ່ລະບຸຂະໜາດ' }}</span></p>
                 </div>
-                <div v-else><label class="text-sm font-medium text-gray-500">ສີ / ຂະໜາດ</label><p class="text-gray-400 text-sm">ບໍ່ມີຕົວເລືອກຍ່ອຍ</p></div>
-                <div><label class="text-sm font-medium text-gray-500">ລາຄາສິນຄ້າຕົວຈິງ</label><p class="font-medium text-primary">{{ formatPrice(selectedLoan?.total_amount || selectedLoan.product.price) }}</p></div>
+                <div v-else><label class="text-sm font-medium text-gray-500">ສີ / ຂະໜາດ</label>
+                  <p class="text-gray-400 text-sm">ບໍ່ມີຕົວເລືອກຍ່ອຍ</p>
+                </div>
+                <div><label class="text-sm font-medium text-gray-500">ລາຄາສິນຄ້າຕົວຈິງ</label>
+                  <p class="font-medium text-primary">{{ formatPrice(selectedLoan?.total_amount ||
+                    selectedLoan.product.price)
+                    }}</p>
+                </div>
               </div>
             </div>
           </div>
 
           <div v-else class="space-y-6">
             <div>
-              <h4 class="font-medium text-lg mb-4 flex items-center gap-2"><span class="icon-[tabler--user-edit] size-5 text-primary"></span> ແກ້ໄຂຂໍ້ມູນລູກຄ້າເບື້ອງຕົ້ນ</h4>
+              <h4 class="font-medium text-lg mb-4 flex items-center gap-2"><span
+                  class="icon-[tabler--user-edit] size-5 text-primary"></span> ແກ້ໄຂຂໍ້ມູນລູກຄ້າເບື້ອງຕົ້ນ</h4>
               <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="form-control">
-                    <label class="label"><span class="label-text font-medium">ຊື່ ແລະ ນາມສະກຸນ <span class="text-error">*</span></span></label>
-                    <input v-model="modalLoanForm.customer_name" type="text" class="input input-sm input-bordered w-full bg-white" required />
+                    <label class="label"><span class="label-text font-medium">ຊື່ ແລະ ນາມສະກຸນ <span
+                          class="text-error">*</span></span></label>
+                    <input v-model="modalLoanForm.customer_name" type="text"
+                      class="input input-sm input-bordered w-full bg-white" required />
                   </div>
                   <div class="form-control">
-                    <label class="label"><span class="label-text font-medium">ເບີໂທລະສັບ <span class="text-error">*</span></span></label>
-                    <input v-model="modalLoanForm.customer_phone" type="tel" class="input input-sm input-bordered w-full bg-white" required />
+                    <label class="label"><span class="label-text font-medium">ເບີໂທລະສັບ <span
+                          class="text-error">*</span></span></label>
+                    <input v-model="modalLoanForm.customer_phone" type="tel"
+                      class="input input-sm input-bordered w-full bg-white" required />
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ເລກບັດປະຈຳຕົວ</span></label>
-                    <input v-model="modalLoanForm.customer_id_card" type="text" class="input input-sm input-bordered w-full bg-white" />
+                    <input v-model="modalLoanForm.customer_id_card" type="text"
+                      class="input input-sm input-bordered w-full bg-white" />
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ເລກບັນຊີທະນາຄານ (BCEL)</span></label>
-                    <input v-model="modalLoanForm.account_number" type="text" class="input input-sm input-bordered w-full bg-white" />
+                    <input v-model="modalLoanForm.account_number" type="text"
+                      class="input input-sm input-bordered w-full bg-white" />
                   </div>
 
                   <div class="form-control">
-                    <label class="label"><span class="label-text font-medium">ວັນເດືອນປີເກີດ <span class="text-error">*</span></span></label>
-                    <input v-model="modalLoanForm.date_of_birth" type="date" class="input input-sm input-bordered w-full bg-white" required />
+                    <label class="label"><span class="label-text font-medium">ວັນເດືອນປີເກີດ <span
+                          class="text-error">*</span></span></label>
+                    <input v-model="modalLoanForm.date_of_birth" type="date"
+                      class="input input-sm input-bordered w-full bg-white" required />
                   </div>
                   <div class="form-control">
                     <label class="label"><span class="label-text font-medium">ອາຍຸ (ປີ)</span></label>
-                    <input :value="calculatedAge" type="number" class="input input-sm input-bordered w-full bg-gray-100 cursor-not-allowed font-medium text-primary" readonly />
+                    <input :value="calculatedAge" type="number"
+                      class="input input-sm input-bordered w-full bg-gray-100 cursor-not-allowed font-medium text-primary"
+                      readonly />
                   </div>
 
                   <div class="form-control">
-                    <label class="label"><span class="label-text font-medium">ອາຊີບ <span class="text-error">*</span></span></label>
-                    <input v-model="modalLoanForm.occupation" type="text" class="input input-sm input-bordered w-full bg-white" required />
+                    <label class="label"><span class="label-text font-medium">ອາຊີບ <span
+                          class="text-error">*</span></span></label>
+                    <input v-model="modalLoanForm.occupation" type="text"
+                      class="input input-sm input-bordered w-full bg-white" required />
                   </div>
                   <div class="form-control">
-                    <label class="label"><span class="label-text font-medium">ລາຍຮັບຕໍ່ເດືອນ <span class="text-error">*</span></span></label>
-                    <input type="text" :value="formatCurrencyInput(modalLoanForm.monthly_income)" @input="handleModalCurrencyInput('monthly_income', $event)" class="input input-sm input-bordered w-full bg-white text-success font-medium" />
+                    <label class="label"><span class="label-text font-medium">ລາຍຮັບຕໍ່ເດືອນ <span
+                          class="text-error">*</span></span></label>
+                    <input type="text" :value="formatCurrencyInput(modalLoanForm.monthly_income)"
+                      @input="handleModalCurrencyInput('monthly_income', $event)"
+                      class="input input-sm input-bordered w-full bg-white text-success font-medium" />
                   </div>
 
                   <div class="form-control md:col-span-2">
-                    <label class="label"><span class="label-text font-medium">ທີ່ຢູ່ປະຈຸບັນ <span class="text-error">*</span></span></label>
+                    <label class="label"><span class="label-text font-medium">ທີ່ຢູ່ປະຈຸບັນ <span
+                          class="text-error">*</span></span></label>
                     <div class="address-grid-custom mt-1">
-                      <div class="input-sub"><span class="font-bold">ບ້ານ:</span><input v-model="modalLoanForm.customer_address" type="text" class="input input-sm input-bordered w-full bg-white" placeholder="ບ້ານ" required /></div>
+                      <div class="input-sub"><span class="font-bold">ບ້ານ:</span><input
+                          v-model="modalLoanForm.customer_address" type="text"
+                          class="input input-sm input-bordered w-full bg-white" placeholder="ບ້ານ" required /></div>
                       <div class="input-sub">
                         <span class="font-bold">ແຂວງ:</span>
-                        <select v-model="modalLoanForm.province_id" @change="handleProvinceChange" class="select-addr select-sm select-bordered w-full bg-white" required>
+                        <select v-model="modalLoanForm.province_id" @change="handleProvinceChange"
+                          class="select-addr select-sm select-bordered w-full bg-white" required>
                           <option value="" disabled>-- ເລືອກແຂວງ --</option>
-                          <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{ p.province_name }}</option>
+                          <option v-for="p in addressStore.provinces" :key="p.province_id" :value="p.province_id">{{
+                            p.province_name }}</option>
                         </select>
                       </div>
                       <div class="input-sub">
                         <span class="font-bold">ເມືອງ:</span>
-                        <select v-model="modalLoanForm.district_id" :disabled="!modalLoanForm.province_id" class="select-addr select-sm select-bordered w-full bg-white" required>
+                        <select v-model="modalLoanForm.district_id" :disabled="!modalLoanForm.province_id"
+                          class="select-addr select-sm select-bordered w-full bg-white" required>
                           <option value="" disabled>-- ເລືອກເມືອງ --</option>
-                          <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">{{ d.district_name }}</option>
+                          <option v-for="d in addressStore.districts" :key="d.district_id" :value="d.district_id">{{
+                            d.district_name }}</option>
                         </select>
                       </div>
                     </div>
@@ -187,39 +250,71 @@
             </div>
 
             <div class="border-t pt-6">
-              <h4 class="font-medium text-lg mb-4 flex items-center gap-2"><span class="icon-[tabler--building-store] size-5 text-primary"></span> ເລືອກຮ້ານຄ້າ ແລະ ສິນຄ້າ</h4>
+              <h4 class="font-medium text-lg mb-4 flex items-center gap-2"><span
+                  class="icon-[tabler--building-store] size-5 text-primary"></span> ເລືອກຮ້ານຄ້າ ແລະ ສິນຄ້າ</h4>
               <div class="form-control mb-4">
-                <label class="label"><span class="label-text font-medium">ຮ້ານຄ້າ / ຕົວແທນ <span class="text-error">*</span></span></label>
-                <select v-model="modalShopId" class="select select-sm select-bordered w-full bg-white" @change="handleShopChange" required>
+                <label class="label"><span class="label-text font-medium">ຮ້ານຄ້າ / ຕົວແທນ <span
+                      class="text-error">*</span></span></label>
+                <select v-model="modalShopId" class="select select-sm select-bordered w-full bg-white"
+                  @change="handleShopChange" required>
                   <option :value="null" disabled>-- ກະລຸນາເລືອກຮ້ານຄ້າ --</option>
                   <option v-for="shop in shopsList" :key="shop.id" :value="shop.id">{{ shop.shop_name }}</option>
                 </select>
               </div>
               <div class="form-control mb-4">
                 <label class="label">
-                  <span class="label-text font-medium" :class="{ 'text-gray-400': !modalShopId }">ສິນຄ້າ <span class="text-error">*</span></span>
+                  <span class="label-text font-medium" :class="{ 'text-gray-400': !modalShopId }">ສິນຄ້າ <span
+                      class="text-error">*</span></span>
                   <span v-if="!modalShopId" class="text-xs text-error">ກະລຸນາເລືອກຮ້ານຄ້າກ່ອນ</span>
                 </label>
                 <div class="relative">
-                  <input v-model="modalProductSearch" type="text" placeholder="ພິມຊື່ສິນຄ້າ ຫຼື ລະຫັດ…" class="input input-sm input-bordered w-full pl-10 pr-10 bg-white" :disabled="!modalShopId" @input="debounceModalProductSearch" @focus="showModalProductDropdown = true" @blur="handleModalProductBlur" />
-                  <span class="icon-[tabler--search] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-4"></span>
-                  <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-error" :disabled="!selectedModalProduct" @click="clearModalProductSelection"><span class="icon-[tabler--x] size-4"></span></button>
-                  <div v-if="showModalProductDropdown && filteredModalProducts.length > 0" class="absolute left-0 right-0 z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    <div v-for="product in filteredModalProducts" :key="product.id" class="px-4 py-3 hover:bg-gray-100 cursor-pointer flex items-center gap-3" @click="selectModalProduct(product)">
-                      <div class="flex-1"><div class="font-medium">{{ product.product_name }}</div><div class="text-xs text-gray-500">{{ product.type_name }}</div></div>
-                      <div class="text-right"><div class="font-medium text-primary text-sm">{{ formatPrice(product.price) }}</div></div>
+                  <input v-model="modalProductSearch" type="text" placeholder="ພິມຊື່ສິນຄ້າ ຫຼື ລະຫັດ…"
+                    class="input input-sm input-bordered w-full pl-10 pr-10 bg-white" :disabled="!modalShopId"
+                    @input="debounceModalProductSearch" @focus="showModalProductDropdown = true"
+                    @blur="handleModalProductBlur" />
+                  <span
+                    class="icon-[tabler--search] absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 size-4"></span>
+                  <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-error"
+                    :disabled="!selectedModalProduct" @click="clearModalProductSelection"><span
+                      class="icon-[tabler--x] size-4"></span></button>
+                  <div v-if="showModalProductDropdown && filteredModalProducts.length > 0"
+                    class="absolute left-0 right-0 z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div v-for="product in filteredModalProducts" :key="product.id"
+                      class="px-4 py-3 hover:bg-gray-100 cursor-pointer flex items-center gap-3"
+                      @click="selectModalProduct(product)">
+                      <div class="flex-1">
+                        <div class="font-medium">{{ product.product_name }}</div>
+                        <div class="text-xs text-gray-500">{{ product.type_name }}</div>
+                      </div>
+                      <div class="text-right">
+                        <div class="font-medium text-primary text-sm">{{ formatPrice(product.price) }}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div v-if="selectedModalProduct" class="form-control mb-4 border border-gray-200 dark:border-gray-700 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                <label class="label pt-0"><span class="label-text font-medium text-gray-800 dark:text-white">ເລືອກ ສີ / ຂະໜາດ <span v-if="modalProductVariants.length > 0" class="text-error">*</span></span></label>
-                <div v-if="isModalLoadingVariants" class="text-sm text-gray-500 flex items-center gap-2"><span class="loading loading-spinner loading-xs"></span> ກຳລັງໂຫຼດຕົວເລືອກຍ່ອຍ...</div>
-                <div v-else-if="modalProductVariants.length === 0" class="text-sm text-gray-500 flex items-center gap-2"><span class="icon-[tabler--info-circle] size-4 text-gray-400"></span><span>ສິນຄ້ານີ້ບໍ່ມີຕົວເລືອກຍ່ອຍ</span></div>
+              <div v-if="selectedModalProduct"
+                class="form-control mb-4 border border-gray-200 dark:border-gray-700 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <label class="label pt-0"><span class="label-text font-medium text-gray-800 dark:text-white">ເລືອກ ສີ /
+                    ຂະໜາດ
+                    <span v-if="modalProductVariants.length > 0" class="text-error">*</span></span></label>
+                <div v-if="isModalLoadingVariants" class="text-sm text-gray-500 flex items-center gap-2"><span
+                    class="loading loading-spinner loading-xs"></span> ກຳລັງໂຫຼດຕົວເລືອກຍ່ອຍ...</div>
+                <div v-else-if="modalProductVariants.length === 0"
+                  class="text-sm text-gray-500 flex items-center gap-2"><span
+                    class="icon-[tabler--info-circle] size-4 text-gray-400"></span><span>ສິນຄ້ານີ້ບໍ່ມີຕົວເລືອກຍ່ອຍ</span>
+                </div>
                 <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div v-for="variant in modalProductVariants" :key="variant.id" class="border rounded p-2 cursor-pointer flex justify-between items-center transition-all bg-white" :class="modalSelectedVariant?.id === variant.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 hover:border-primary/30'" @click="selectModalVariant(variant)">
-                    <div><div class="font-medium text-sm text-gray-800 dark:text-white">{{ variant.color || 'ບໍ່ລະບຸ' }} / {{ variant.size_or_capacity || 'ບໍ່ລະບຸ' }}</div></div>
+                  <div v-for="variant in modalProductVariants" :key="variant.id"
+                    class="border rounded p-2 cursor-pointer flex justify-between items-center transition-all bg-white"
+                    :class="modalSelectedVariant?.id === variant.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 hover:border-primary/30'"
+                    @click="selectModalVariant(variant)">
+                    <div>
+                      <div class="font-medium text-sm text-gray-800 dark:text-white">{{ variant.color || 'ບໍ່ລະບຸ' }} /
+                        {{
+                          variant.size_or_capacity || 'ບໍ່ລະບຸ' }}</div>
+                    </div>
                     <div class="font-bold text-primary text-sm">{{ formatPrice(variant.price) }}</div>
                   </div>
                 </div>
@@ -227,21 +322,32 @@
             </div>
 
             <div class="border-t pt-6">
-              <h4 class="font-medium text-lg mb-4 flex items-center gap-2"><span class="icon-[tabler--file-invoice] size-5 text-primary"></span> ລາຍລະອຽດສິນເຊື່ອ</h4>
+              <h4 class="font-medium text-lg mb-4 flex items-center gap-2"><span
+                  class="icon-[tabler--file-invoice] size-5 text-primary"></span> ລາຍລະອຽດສິນເຊື່ອ</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="form-control">
-                  <label class="label"><span class="label-text font-medium">ລາຄາສິນຄ້າ <span class="text-error">*</span></span></label>
-                  <input type="text" :value="formatCurrencyInput(modalLoanForm.total_amount)" @input="handleModalPriceInput" class="input input-sm input-bordered w-full font-bold text-primary bg-white" required placeholder="ປ້ອນລາຄາສິນຄ້າ" />
+                  <label class="label"><span class="label-text font-medium">ລາຄາສິນຄ້າ <span
+                        class="text-error">*</span></span></label>
+                  <input type="text" :value="formatCurrencyInput(modalLoanForm.total_amount)"
+                    @input="handleModalPriceInput"
+                    class="input input-sm input-bordered w-full font-bold text-primary bg-white" required
+                    placeholder="ປ້ອນລາຄາສິນຄ້າ" />
                 </div>
                 <div class="form-control">
                   <label class="label">
-                    <span class="label-text font-medium">ຈຳນວນເງິນດາວ <span v-if="modalLoanForm.total_amount > 0" class="text-xs text-gray-500">ຍອດຈັດ: {{ formatPrice(Math.max(0, modalLoanForm.total_amount - (modalLoanForm.down_payment || 0))) }}</span></span>
+                    <span class="label-text font-medium">ຈຳນວນເງິນດາວ <span v-if="modalLoanForm.total_amount > 0"
+                        class="text-xs text-gray-500">ຍອດຈັດ: {{ formatPrice(Math.max(0, modalLoanForm.total_amount -
+                          (modalLoanForm.down_payment || 0))) }}</span></span>
                   </label>
-                  <input type="text" :value="formatCurrencyInput(modalLoanForm.down_payment)" @input="handleModalDownPaymentInput" class="input input-sm input-bordered w-full bg-white" placeholder="ປ້ອນເງິນດາວ" />
+                  <input type="text" :value="formatCurrencyInput(modalLoanForm.down_payment)"
+                    @input="handleModalDownPaymentInput" class="input input-sm input-bordered w-full bg-white"
+                    placeholder="ປ້ອນເງິນດາວ" />
                 </div>
                 <div class="form-control">
-                  <label class="label"><span class="label-text font-medium">ໄລຍະເວລາ (ເດືອນ) <span class="text-error">*</span></span></label>
-                  <select v-model.number="modalLoanForm.loan_period" class="select select-sm select-bordered w-full bg-white" required @change="handleModalTermChange">
+                  <label class="label"><span class="label-text font-medium">ໄລຍະເວລາ (ເດືອນ) <span
+                        class="text-error">*</span></span></label>
+                  <select v-model.number="modalLoanForm.loan_period"
+                    class="select select-sm select-bordered w-full bg-white" required @change="handleModalTermChange">
                     <option value="0" disabled>-- ເລືອກຈຳນວນງວດ --</option>
 
                     <!-- 🟢 ຖ້າບໍ່ແມ່ນແຄມເປນພິເສດ -->
@@ -256,6 +362,7 @@
 
                     <!-- 🌟 ຖ້າເປັນແຄມເປນ iPhone 18 -->
                     <template v-else>
+
                       <option value="18">18 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
                       <option value="24">24 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
                       <option value="30">30 ເດືອນ (ໂປຣໂມຊັ່ນ)</option>
@@ -265,18 +372,28 @@
                   </select>
                 </div>
                 <div class="form-control">
-                  <label class="label"><span class="label-text font-medium">ອັດຕາດອກເບ້ຍ (ອັດຕະໂນມັດ) <span class="text-error">*</span> <span class="badge badge-primary badge-xs badge-soft ml-1">{{ modalLoanForm.interest_rate_type === 'yearly' ? '% ຕໍ່ປີ' : '% ຕໍ່ເດືອນ' }}</span></span></label>
-                  <input v-model.number="modalLoanForm.interest_rate" type="number" class="input input-sm input-bordered w-full bg-gray-100 cursor-not-allowed" min="0" max="100" step="0.01" readonly required />
+                  <label class="label"><span class="label-text font-medium">ອັດຕາດອກເບ້ຍ (ອັດຕະໂນມັດ) <span
+                        class="text-error">*</span> <span class="badge badge-primary badge-xs badge-soft ml-1">{{
+                          modalLoanForm.interest_rate_type === 'yearly' ? '% ຕໍ່ປີ' : '% ຕໍ່ເດືອນ'
+                        }}</span></span></label>
+                  <input v-model.number="modalLoanForm.interest_rate" type="number"
+                    class="input input-sm input-bordered w-full bg-gray-100 cursor-not-allowed" min="0" max="100"
+                    step="0.01" readonly required />
                 </div>
                 <div class="form-control">
-                  <label class="label"><span class="label-text font-medium">ປະເພດດອກເບ້ຍ <span class="text-error">*</span></span></label>
-                  <select v-model="modalLoanForm.interest_type" @change="handleModalCalculationChange" class="select select-sm select-bordered w-full bg-white">
-                    <option value="flat_rate">ດອກເບ້ຍຄົງທີ່ (Flat Rate)</option><option value="effective_rate">ລົດຕົ້ນລົດດອກ (Effective Rate)</option>
+                  <label class="label"><span class="label-text font-medium">ປະເພດດອກເບ້ຍ <span
+                        class="text-error">*</span></span></label>
+                  <select v-model="modalLoanForm.interest_type" @change="handleModalCalculationChange"
+                    class="select select-sm select-bordered w-full bg-white">
+                    <option value="flat_rate">ດອກເບ້ຍຄົງທີ່ (Flat Rate)</option>
+                    <option value="effective_rate">ລົດຕົ້ນລົດດອກ (Effective Rate)</option>
                   </select>
                 </div>
                 <div class="form-control">
                   <label class="label"><span class="label-text font-medium">ຄ່າງວດຕໍ່ເດືອນ</span></label>
-                  <input :value="formatPrice(modalLoanForm.monthly_payment)" type="text" class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold cursor-not-allowed" readonly />
+                  <input :value="formatPrice(modalLoanForm.monthly_payment)" type="text"
+                    class="input input-sm input-bordered w-full bg-blue-50 text-blue-700 font-bold cursor-not-allowed"
+                    readonly />
                 </div>
               </div>
             </div>
@@ -284,25 +401,39 @@
         </div>
 
         <div v-else-if="activeTab === 'loanContract'" class="space-y-6">
-          <LoanContractForm :loan-contract-id="selectedLoan?.id" :loan-application="selectedLoan" :loan-contract="selectedContract" :is-editing="isEditingInModal" @cancel-edit="isEditingInModal = false" @enable-edit="isEditingInModal = true" @save-form="handleSaveContract" />
+          <LoanContractForm :loan-contract-id="selectedLoan?.id" :loan-application="selectedLoan"
+            :loan-contract="selectedContract" :is-editing="isEditingInModal" @cancel-edit="isEditingInModal = false"
+            @enable-edit="isEditingInModal = true" @save-form="handleSaveContract" />
         </div>
 
         <div v-else-if="activeTab === 'documents'" class="space-y-6">
           <div v-if="!isEditingInModal" class="space-y-6 bg-slate-50/50 p-2 sm:p-4 rounded-xl">
-            <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0" class="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4"><span class="icon-[tabler--file-off] size-8 text-gray-400"></span></div>
+            <div v-if="!loanApplicationStore.currentDocuments || loanApplicationStore.currentDocuments.length === 0"
+              class="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div
+                class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="icon-[tabler--file-off] size-8 text-gray-400"></span>
+              </div>
               <p class="text-lg font-medium">ບໍ່ມີເອກະສານແນບ</p>
             </div>
             <template v-else>
-              <div v-for="(cat, catIndex) in allDocumentCategories" :key="'view-cat-' + catIndex" v-show="cat.files && cat.files.length > 0" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+              <div v-for="(cat, catIndex) in allDocumentCategories" :key="'view-cat-' + catIndex"
+                v-show="cat.files && cat.files.length > 0"
+                class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b pb-3">
-                  <h4 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2"><span class="icon-[tabler--folder-open] size-5 text-indigo-600"></span> {{ cat.name }}</h4>
+                  <h4 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2"><span
+                      class="icon-[tabler--folder-open] size-5 text-indigo-600"></span> {{ cat.name }}</h4>
                 </div>
                 <div class="flex flex-wrap gap-4">
-                  <div v-for="(f, fileIndex) in cat.files" :key="fileIndex" class="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50 w-full sm:w-48 group cursor-pointer shadow-sm hover:shadow-md transition-all" @click="openInNewTab(f.preview)">
+                  <div v-for="(f, fileIndex) in cat.files" :key="fileIndex"
+                    class="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50 w-full sm:w-48 group cursor-pointer shadow-sm hover:shadow-md transition-all"
+                    @click="openInNewTab(f.preview)">
                     <div class="h-32 w-full overflow-hidden bg-slate-100">
-                      <img v-if="!f.isPdf" :src="f.preview" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      <div v-else class="w-full h-full flex flex-col items-center justify-center"><span class="icon-[tabler--file-type-pdf] size-10 text-red-500 mb-2"></span><span class="text-xs text-gray-500 truncate w-3/4 text-center">{{ f.name }}</span></div>
+                      <img v-if="!f.isPdf" :src="f.preview"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <div v-else class="w-full h-full flex flex-col items-center justify-center"><span
+                          class="icon-[tabler--file-type-pdf] size-10 text-red-500 mb-2"></span><span
+                          class="text-xs text-gray-500 truncate w-3/4 text-center">{{ f.name }}</span></div>
                     </div>
                   </div>
                 </div>
@@ -311,41 +442,84 @@
           </div>
 
           <div v-else class="space-y-6">
-            <div v-for="cat in allDocumentCategories" :key="'edit-cat-' + cat.id" class="border rounded-2xl p-5 bg-white shadow-sm border-slate-200">
+            <div v-for="cat in allDocumentCategories" :key="'edit-cat-' + cat.id"
+              class="border rounded-2xl p-5 bg-white shadow-sm border-slate-200">
               <div class="flex justify-between items-start mb-4">
-                <div><h5 class="font-bold text-slate-800">{{ cat.name }}</h5><p class="text-[11px] text-slate-400 mt-1">{{ cat.description }}</p></div>
-                <span v-if="cat.required" class="badge badge-error badge-soft text-[10px] font-bold px-2 py-1">ຕ້ອງການ</span>
+                <div>
+                  <h5 class="font-bold text-slate-800">{{ cat.name }}</h5>
+                  <p class="text-[11px] text-slate-400 mt-1">{{ cat.description }}</p>
+                </div>
+                <span v-if="cat.required"
+                  class="badge badge-error badge-soft text-[10px] font-bold px-2 py-1">ຕ້ອງການ</span>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-                <div v-for="(f, fileIndex) in cat.files" :key="fileIndex" class="relative aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-50 group">
-                  <button type="button" @click.stop="removeDocument(cat.id, fileIndex)" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 z-20 shadow-md hover:scale-110 transition-transform"><span class="icon-[tabler--x] size-4"></span></button>
-                  <img v-if="!f.isPdf" :src="f.preview" class="w-full h-full object-cover cursor-pointer hover:opacity-75 transition-opacity" @click="openInNewTab(f.preview)" />
-                  <div v-else class="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors" @click="openInNewTab(f.preview)"><span class="icon-[tabler--file-type-pdf] size-10 text-red-500 mb-1"></span><span class="text-[10px] text-center truncate px-2 w-full">{{ f.name }}</span></div>
-                  <div class="absolute bottom-1.5 left-1.5 pointer-events-none z-10"><span v-if="f.file" class="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded shadow font-bold">ໃໝ່</span></div>
+                <div v-for="(f, fileIndex) in cat.files" :key="fileIndex"
+                  class="relative aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-50 group">
+                  <button type="button" @click.stop="removeDocument(cat.id, fileIndex)"
+                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 z-20 shadow-md hover:scale-110 transition-transform"><span
+                      class="icon-[tabler--x] size-4"></span></button>
+                  <img v-if="!f.isPdf" :src="f.preview"
+                    class="w-full h-full object-cover cursor-pointer hover:opacity-75 transition-opacity"
+                    @click="openInNewTab(f.preview)" />
+                  <div v-else
+                    class="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors"
+                    @click="openInNewTab(f.preview)"><span
+                      class="icon-[tabler--file-type-pdf] size-10 text-red-500 mb-1"></span><span
+                      class="text-[10px] text-center truncate px-2 w-full">{{ f.name }}</span></div>
+                  <div class="absolute bottom-1.5 left-1.5 pointer-events-none z-10"><span v-if="f.file"
+                      class="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded shadow font-bold">ໃໝ່</span></div>
                 </div>
-                <label class="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all group">
-                  <input type="file" class="hidden" multiple accept="image/*,.pdf" @change="(e) => handleDocumentUpload(cat.id, e)" />
-                  <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-indigo-100 transition-colors"><span class="icon-[tabler--plus] size-6 text-slate-400 group-hover:text-indigo-600"></span></div>
+                <label
+                  class="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all group">
+                  <input type="file" class="hidden" multiple accept="image/*,.pdf"
+                    @change="(e) => handleDocumentUpload(cat.id, e)" />
+                  <div
+                    class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                    <span class="icon-[tabler--plus] size-6 text-slate-400 group-hover:text-indigo-600"></span>
+                  </div>
                   <span class="text-[11px] font-bold text-slate-400 mt-2 group-hover:text-indigo-600">ເພີ່ມໄຟລ໌</span>
                 </label>
               </div>
             </div>
-            <div v-if="isUploadingDocuments" class="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-center font-bold text-indigo-700 shadow-sm flex items-center justify-center gap-2"><span class="loading loading-spinner loading-sm"></span> ກຳລັງອັບໂຫຼດເອກະສານ... ກະລຸນາລໍຖ້າ</div>
+            <div v-if="isUploadingDocuments"
+              class="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-center font-bold text-indigo-700 shadow-sm flex items-center justify-center gap-2">
+              <span class="loading loading-spinner loading-sm"></span> ກຳລັງອັບໂຫຼດເອກະສານ... ກະລຸນາລໍຖ້າ
+            </div>
           </div>
         </div>
 
         <div v-else-if="activeTab === 'map'" class="space-y-4">
           <div v-if="customerLocations.length === 0" class="alert alert-warning shadow-sm py-2">
-            <span class="icon-[tabler--map-pin-off] size-5"></span><span class="text-sm">ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງ.</span>
+            <span class="icon-[tabler--map-pin-off] size-5"></span><span
+              class="text-sm">ລູກຄ້າຄົນນີ້ຍັງບໍ່ມີຂໍ້ມູນທີ່ຕັ້ງ.</span>
           </div>
-          <CustomerLocationMap v-if="selectedLoan?.customer_id" :customer-id="selectedLoan.customer_id" :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading" :can-add-location="canManageLocation" :can-edit-location="canManageLocation" :can-delete-location="canManageLocation" :can-set-primary="canManageLocation" @add-location="handleAddLocation" @update-location="handleUpdateLocation" @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
+          <CustomerLocationMap v-if="selectedLoan?.customer_id" :customer-id="selectedLoan.customer_id"
+            :locations="customerLocations" :google-maps-api-key="''" :is-loading="isLocationLoading"
+            :can-add-location="canManageLocation" :can-edit-location="canManageLocation"
+            :can-delete-location="canManageLocation" :can-set-primary="canManageLocation"
+            @add-location="handleAddLocation" @update-location="handleUpdateLocation"
+            @delete-location="handleDeleteLocation" @set-primary="handleSetPrimary" />
         </div>
 
         <div class="flex justify-end gap-3 mt-6 border-t pt-6">
-          <button class="btn btn-soft btn-secondary" @click="closeModal">{{ isEditingInModal ? 'ຍົກເລີກ' : 'ປິດ' }}</button>
-          <button v-if="!isEditingInModal && selectedLoan?.status !== 'closed' && selectedLoan?.status !== 'disbursed' && (activeTab === 'details' || activeTab === 'documents' || activeTab === 'map')" v-show="permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create')" class="btn btn-primary" @click="startEditInModal"><span class="icon-[tabler--edit] size-4 mr-1"></span> ແກ້ໄຂ</button>
-          <button v-else-if="isEditingInModal && activeTab === 'details'" class="btn btn-success text-white" @click="saveLoanFromModal" :disabled="isSaving || (modalProductVariants.length > 0 && !modalSelectedVariant)"><span v-if="isSaving" class="loading loading-spinner loading-xs"></span><span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span><span v-if="!isSaving">ບັນທຶກການປ່ຽນແປງ</span></button>
-          <button v-else-if="isEditingInModal && activeTab === 'documents'" class="btn btn-success text-white" @click="saveDocumentsOnly" :disabled="isSaving || isUploadingDocuments"><span v-if="isSaving || isUploadingDocuments" class="loading loading-spinner loading-xs"></span><span v-else class="icon-[tabler--device-floppy] size-4 mr-1"></span><span v-if="!(isSaving || isUploadingDocuments)">ອັບໂຫຼດເອກະສານ</span></button>
+          <button class="btn btn-soft btn-secondary" @click="closeModal">{{ isEditingInModal ? 'ຍົກເລີກ' : 'ປິດ'
+            }}</button>
+          <button
+            v-if="!isEditingInModal && selectedLoan?.status !== 'closed' && selectedLoan?.status !== 'disbursed' && (activeTab === 'details' || activeTab === 'documents' || activeTab === 'map')"
+            v-show="permissionStore.hasPermission('loan_edit') || permissionStore.hasPermission('loan_create')"
+            class="btn btn-primary" @click="startEditInModal"><span class="icon-[tabler--edit] size-4 mr-1"></span>
+            ແກ້ໄຂ</button>
+          <button v-else-if="isEditingInModal && activeTab === 'details'" class="btn btn-success text-white"
+            @click="saveLoanFromModal"
+            :disabled="isSaving || (modalProductVariants.length > 0 && !modalSelectedVariant)"><span v-if="isSaving"
+              class="loading loading-spinner loading-xs"></span><span v-else
+              class="icon-[tabler--device-floppy] size-4 mr-1"></span><span
+              v-if="!isSaving">ບັນທຶກການປ່ຽນແປງ</span></button>
+          <button v-else-if="isEditingInModal && activeTab === 'documents'" class="btn btn-success text-white"
+            @click="saveDocumentsOnly" :disabled="isSaving || isUploadingDocuments"><span
+              v-if="isSaving || isUploadingDocuments" class="loading loading-spinner loading-xs"></span><span v-else
+              class="icon-[tabler--device-floppy] size-4 mr-1"></span><span
+              v-if="!(isSaving || isUploadingDocuments)">ອັບໂຫຼດເອກະສານ</span></button>
         </div>
 
       </div>
@@ -443,6 +617,7 @@ const modalLoanForm = reactive({
 const applyModalCampaignRules = () => {
   if (!activeModalCampaign.value) return;
 
+  // ກ. ບັງຄັບຈຳນວນງວດທີ່ອະນຸຍາດ
   const allowedTerms = [18, 24, 30, 36];
   if (!allowedTerms.includes(modalLoanForm.loan_period)) {
     modalLoanForm.loan_period = 18;
@@ -835,7 +1010,8 @@ const selectModalProduct = async (product: any) => {
 
   activeModalCampaign.value = checkIphone18Campaign(product.product_name, product.model);
   if (activeModalCampaign.value) {
-    customAlert.info('🌟 ແຄມເປນພິເສດ iPhone 18 Series', 'ດອກເບ້ຍຈະປ່ຽນຕາມ % ເງິນດາວ (1.09% - 0.84%) ແລະ ຜ່ອນໄດ້ສະເພາະ 18, 24, 30, 36 ເດືອນ');
+    // 🌟 ອັບເດດຂໍ້ຄວາມແຈ້ງເຕືອນ
+    customAlert.info('🌟 ແຄມເປນພິເສດ iPhone 18 Series', 'ດອກເບ້ຍຈະປ່ຽນຕາມ % ເງິນດາວ (1.09% - 0.84%) ແລະ ຜ່ອນໄດ້ສະເພາະ 18,24,30,36 ເດືອນ.');
   }
 
   await loadVariantsForEdit(product.id);
@@ -893,10 +1069,42 @@ const handleSetPrimary = async (id: number) => { const { updateCustomerLocation 
 </script>
 
 <style scoped>
-.address-grid-custom { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center; }
-.input-sub { display: flex; align-items: center; gap: 5px; }
-.input-sub span { font-size: 12px; white-space: nowrap; color: #666; }
-.select-addr { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; background-color: white; }
-.select-addr:disabled { background-color: #f5f5f5; cursor: not-allowed; }
-@media (max-width: 768px) { .address-grid-custom { grid-template-columns: 1fr; } }
+.address-grid-custom {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.input-sub span {
+  font-size: 12px;
+  white-space: nowrap;
+  color: #666;
+}
+
+.select-addr {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  background-color: white;
+}
+
+.select-addr:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .address-grid-custom {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

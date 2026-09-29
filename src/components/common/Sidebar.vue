@@ -1,4 +1,3 @@
-
 <template>
   <div>
     <button type="button" class="btn btn-text btn-square sm:hidden fixed top-4 left-4 z-30" @click="toggleMobile">
@@ -288,6 +287,13 @@ const menuItems = [
         icon: 'icon-[tabler--report-analytics]',
         to: '/reports/disbursed-loans',
         permissions: ['loan_view_all']
+      },
+      // 🌟 ເພີ່ມເມນູລາຍງານໜີ້ຄ້າງຊຳລະໃໝ່ 🌟
+      {
+        label: 'ລາຍລະອຽດໜີ້ຄ້າງຊຳລະ',
+        icon: 'icon-[tabler--report-money]',
+        to: '/reports/portfolio-health',
+        permissions: ['loan_view_all']
       }
     ]
   },
@@ -376,4 +382,3 @@ onUnmounted(() => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>
-

@@ -19,8 +19,10 @@
 
     <input type="file" ref="fileInputRef" accept=".pdf" class="hidden" @change="$emit('handleFileUpload', $event)" />
 
-    <div v-for="(detail, index) in formCIBDetails" :key="index" class="border rounded-lg p-6 relative bg-white dark:bg-base-100 shadow-sm">
-      <button v-if="canEdit" class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error" @click="$emit('removeCibDetail', index)">
+    <div v-for="(detail, index) in formCIBDetails" :key="index"
+      class="border rounded-lg p-6 relative bg-white dark:bg-base-100 shadow-sm">
+      <button v-if="canEdit" class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-error"
+        @click="$emit('removeCibDetail', index)">
         <span class="icon-[tabler--trash] size-5"></span>
       </button>
 
@@ -28,23 +30,28 @@
         <div class="form-control">
           <label class="label">
             <span class="label-text font-bold">ສະຖາບັນການເງິນ *</span>
-            <span v-if="detail.institution_name && (String(detail.institution_name).toLowerCase().includes('insee') || String(detail.institution_name).includes('ອິນຊີ'))"
-                  class="badge badge-xs"
-                  :class="checklistStore.incomeData.internal_active_installments > 0 ? 'badge-warning' : 'badge-info'">
-              {{ checklistStore.incomeData.internal_active_installments > 0 ? 'ໜີ້ພາຍໃນ (ຈະບໍ່ຄຳນວນຊ້ຳ)' : 'ໜີ້ພາຍໃນເກົ່າ (ລວມໃນ CIB)' }}
+            <span
+              v-if="detail.institution_name && (String(detail.institution_name).toLowerCase().includes('insee') || String(detail.institution_name).includes('ອິນຊີ'))"
+              class="badge badge-xs"
+              :class="checklistStore.incomeData.internal_active_installments > 0 ? 'badge-warning' : 'badge-info'">
+              {{ checklistStore.incomeData.internal_active_installments > 0 ? 'ໜີ້ພາຍໃນ (ຈະບໍ່ຄຳນວນຊ້ຳ)' :
+              'ໜີ້ພາຍໃນເກົ່າ (ລວມໃນ CIB)' }}
             </span>
           </label>
-          <input v-model="detail.institution_name" type="text" placeholder="ເຊັ່ນ: BCEL, JDB, INSEE..." class="input input-bordered w-full" :disabled="!canEdit" />
+          <input v-model="detail.institution_name" type="text" placeholder="ເຊັ່ນ: BCEL, JDB, INSEE..."
+            class="input input-bordered w-full" :disabled="!canEdit" />
         </div>
 
         <div class="form-control">
           <label class="label"><span class="label-text font-bold">ປະເພດສິນເຊື່ອ</span></label>
-          <input v-model="detail.account_type" type="text" placeholder="ເຊັ່ນ: ບັດເຄຣດິດ, ສິນເຊື່ອລົດຈັກ" class="input input-bordered w-full" :disabled="!canEdit" />
+          <input v-model="detail.account_type" type="text" placeholder="ເຊັ່ນ: ບັດເຄຣດິດ, ສິນເຊື່ອລົດຈັກ"
+            class="input input-bordered w-full" :disabled="!canEdit" />
         </div>
 
         <div class="form-control">
           <label class="label"><span class="label-text font-bold text-primary">ສະຖານະການຊຳລະ *</span></label>
-          <select v-model="detail.history_status" class="select select-bordered font-medium" :class="getCibStatusColor(String(detail.history_status))" :disabled="!canEdit">
+          <select v-model="detail.history_status" class="select select-bordered font-medium"
+            :class="getCibStatusColor(String(detail.history_status))" :disabled="!canEdit">
             <option value="no_delay">ດີຫຼາຍ: ບໍ່ມີຊັກຊ້າ (20 ຄະແນນ)</option>
             <option value="delay_30_days">ດີ: ຊັກຊ້າບໍ່ເກີນ 30 ວັນ (15 ຄະແນນ)</option>
             <option value="delay_60_days">ປານກາງ: ຊັກຊ້າ 30-60 ວັນ (10 ຄະແນນ)</option>
@@ -85,7 +92,8 @@
       <h4 class="font-bold text-lg mb-4">ຂໍ້ມູນອື່ນໆ</h4>
       <div class="form-control">
         <label class="cursor-pointer label justify-start gap-4">
-          <input type="checkbox" v-model="formCIB.is_existing_customer" class="toggle toggle-primary" :disabled="!canEdit" />
+          <input type="checkbox" v-model="formCIB.is_existing_customer" class="toggle toggle-primary"
+            :disabled="!canEdit" />
           <span class="font-bold">ເຄີຍເປັນລູກຄ້າເກົ່າຂອງ INSEE ມາກ່ອນບໍ?</span>
         </label>
       </div>
@@ -101,7 +109,8 @@
 
       <div class="form-control mt-4">
         <label class="label"><span class="label-text">ໝາຍເຫດເພີ່ມເຕີມ</span></label>
-        <textarea v-model="formCIB.remark" class="textarea textarea-bordered h-24" placeholder="ລາຍລະອຽດເພີ່ມເຕີມຈາກໃບລາຍງານ CIB..." :disabled="!canEdit"></textarea>
+        <textarea v-model="formCIB.remark" class="textarea textarea-bordered h-24"
+          placeholder="ລາຍລະອຽດເພີ່ມເຕີມຈາກໃບລາຍງານ CIB..." :disabled="!canEdit"></textarea>
       </div>
     </div>
   </div>
@@ -113,8 +122,8 @@ import { formatPrice } from '@/utils/formatters';
 import { useChecklistStore } from '@/stores/checklist';
 
 const props = defineProps<{
-  formCIB: Record<string, unknown>;
-  formCIBDetails: Record<string, unknown>[];
+  formCIB: Record<string, any>;
+  formCIBDetails: Record<string, any>[];
   canEdit: boolean;
   isImporting: boolean;
 }>();

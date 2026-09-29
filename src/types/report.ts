@@ -5,6 +5,7 @@ export interface ReportFilters {
   startDate?: string;
   endDate?: string;
   search?: string;
+  dpdBucket?: string; // 🌟 ສຳລັບ Portfolio Health (current, 1-30, 31-90, npl)
   limit?: number;
   page?: number;
   [key: string]: any;
@@ -14,7 +15,26 @@ export interface ReportResponse<T> {
   success: boolean;
   message: string;
   data: T[];
-  meta?: any;
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+    date_range?: { start: string; end: string };
+  };
+}
+
+// 🌟 Interface ໃໝ່ສຳລັບ Portfolio Health SQL Response
+export interface PortfolioHealthReportRow {
+  application_id: number;
+  disbursed_at: string;
+  approved_amount: number;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  customer_name: string;
+  contract_number: string;
+  max_dpd: number;
+  outstanding_principal: number;
 }
 
 export interface DisbursedLoanReportRow {
