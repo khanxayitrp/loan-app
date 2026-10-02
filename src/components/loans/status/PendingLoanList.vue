@@ -333,6 +333,32 @@
               </div>
             </div>
 
+            <div v-if="selectedLoan.loan_guarantors && selectedLoan.loan_guarantors.length > 0" class="border-t pt-4">
+              <h4 class="font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <span class="icon-[tabler--user-shield] size-5 text-indigo-500"></span> ຂໍ້ມູນຜູ້ຄ້ຳປະກັນ
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label class="text-sm font-medium text-gray-500">ຊື່ຜູ້ຄ້ຳປະກັນ</label>
+                  <p>{{ selectedLoan.loan_guarantors[0]?.name || (selectedLoan.loan_guarantors[0] as any)?.fullname }}</p>
+                </div>
+                <div><label class="text-sm font-medium text-gray-500">ເບີໂທຜູ້ຄ້ຳ</label>
+                  <p>{{ selectedLoan.loan_guarantors[0]?.phone }}</p>
+                </div>
+                <div class="md:col-span-2"><label class="text-sm font-medium text-gray-500">ທີ່ຢູ່ຜູ້ຄ້ຳປະກັນ</label>
+                  <p class="whitespace-pre-line">{{ selectedLoan.loan_guarantors[0]?.address }}</p>
+                </div>
+                <div><label class="text-sm font-medium text-gray-500">ສະຖານທີ່ເຮັດວຽກຜູ້ຄ້ຳ</label>
+                  <p>{{ selectedLoan.loan_guarantors[0]?.work_company_name || (selectedLoan.loan_guarantors[0] as any)?.companyName || '-' }}</p>
+                </div>
+                <div><label class="text-sm font-medium text-gray-500">ເບີໂທບ່ອນເຮັດວຽກ</label>
+                  <p>{{ selectedLoan.loan_guarantors[0]?.work_phone || '-' }}</p>
+                </div>
+                <div class="md:col-span-2"><label class="text-sm font-medium text-gray-500">ທີ່ຢູ່ບ່ອນເຮັດວຽກຜູ້ຄ້ຳປະກັນ</label>
+                  <p class="whitespace-pre-line">{{ (selectedLoan.loan_guarantors[0] as any)?.work_location || (selectedLoan.loan_guarantors[0] as any)?.workAddress || '-' }}</p>
+                </div>
+              </div>
+            </div>
+
             <ApprovalTimeline v-if="approvalLogs.length > 0" :logs="approvalLogs" @reply="handleReply" />
 
             <div class="mt-6 border-t pt-4">
